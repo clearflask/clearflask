@@ -4,7 +4,7 @@
 /// <reference path="../@types/transform-media-imports.d.ts"/>
 import loadable from '@loadable/component';
 import { Button, ButtonGroup, Container, IconButton, Size, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
-import { createStyles, fade, makeStyles, Theme } from '@material-ui/core/styles';
+import { Theme, createStyles, fade, makeStyles } from '@material-ui/core/styles';
 import AccessibilityIcon from '@material-ui/icons/AccessibilityNew';
 import PaymentIcon from '@material-ui/icons/AccountBalance';
 import OncallIcon from '@material-ui/icons/Alarm';
@@ -118,33 +118,35 @@ import TeamImg from '../../public/img/landing/team.svg';
 import ValueImg from '../../public/img/landing/value.svg';
 import VersionControlImg from '../../public/img/landing/versioncontrol.svg';
 import SalesImg from '../../public/img/support/sales.svg';
+import { importFailed, importSuccess } from '../Main';
 import * as Admin from '../api/admin';
 import * as Client from '../api/client';
 import { ReduxStateAdmin } from '../api/serverAdmin';
 import { SSO_TOKEN_PARAM_NAME } from '../app/App';
 import AppThemeProvider from '../app/AppThemeProvider';
-import CommentList from '../app/comps/CommentList';
 import PostStatusIframe from '../app/PostStatusIframe';
+import CommentList from '../app/comps/CommentList';
 import DividerCorner from '../app/utils/DividerCorner';
 import Loading from '../app/utils/Loading';
 import ClosablePopper from '../common/ClosablePopper';
-import Templater, { createTemplateV2OptionsDefault } from '../common/config/configTemplater';
-import CreditView from '../common/config/CreditView';
-import { contentScrollApplyStyles, Orientation, Side } from '../common/ContentScroll';
+import { Orientation, Side, contentScrollApplyStyles } from '../common/ContentScroll';
 import FakeBrowser from '../common/FakeBrowser';
 import Hr from '../common/Hr';
+import ImgIso from '../common/ImgIso';
+import Stack from '../common/Stack';
+import CreditView from '../common/config/CreditView';
+import Templater, { createTemplateV2OptionsDefault } from '../common/config/configTemplater';
 import GoogleIcon from '../common/icon/GoogleIcon';
 import GuestIcon from '../common/icon/GuestIcon';
 import LockSimpleIcon from '../common/icon/LockSimpleIcon';
 import OpenSourceIcon from '../common/icon/OpenSourceIcon';
-import ImgIso from '../common/ImgIso';
-import Stack from '../common/Stack';
 import { isProd } from '../common/util/detectEnv';
 import { IframeWithUrlSync } from '../common/util/iframeUrlSync';
 import { vh } from '../common/util/screenUtil';
 import windowIso from '../common/windowIso';
-import { importFailed, importSuccess } from '../Main';
 import Competitors from './Competitors';
+import Logo from './Logo';
+import PricingPage from './PricingPage';
 import Background from './landing/Background';
 import Block from './landing/Block';
 import BlockContent from './landing/BlockContent';
@@ -152,8 +154,6 @@ import Demo from './landing/Demo';
 import Hero from './landing/Hero';
 import HorizontalPanels from './landing/HorizontalPanels';
 import PrioritizationControlsCredits from './landing/PrioritizationControlsCredits';
-import Logo from './Logo';
-import PricingPage from './PricingPage';
 
 const WorkflowPreview = loadable(() => import(/* webpackChunkName: "WorkflowPreview" */'../common/config/settings/injects/WorkflowPreview').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
 
@@ -896,7 +896,7 @@ export function LandingHero() {
         mirror
         buttonTitle={t('get-started')}
         buttonLink='/signup'
-        buttonRemark={(<div>{t('free-14-day-trial')}</div>)}
+        // buttonRemark={(<div>{t('free-14-day-trial')}</div>)}
         // buttonAddOauth
         button2Title={t('see-demo')}
         button2Link='/product/demo'
