@@ -7,12 +7,12 @@ import com.google.inject.Inject;
 import com.smotana.clearflask.testutil.AbstractTest;
 import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTime;
-import org.joda.time.LocalDate;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.time.Instant;
+import java.time.LocalDate;
 
 import static org.junit.Assert.assertEquals;
 
@@ -32,6 +32,7 @@ public class GsonConverterTest extends AbstractTest {
                 {Instant.class, Instant.now()},
                 {DateTime.class, DateTime.parse("2023-03-26T00:26:05.983-04:00")},
                 {LocalDate.class, LocalDate.now()},
+                {org.joda.time.LocalDate.class, org.joda.time.LocalDate.now()},
         };
     }
 
