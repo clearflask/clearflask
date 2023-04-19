@@ -1,15 +1,83 @@
 ## SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 ## SPDX-License-Identifier: Apache-2.0
+
+# Proxy to S3 in case it's inaccessible such as when using localstack inside Docker
+# Example: https://clearflask-upload.s3.amazonaws.com/img/ugc/sandbox-9intu/928210c760f3483aa67fe5553a1b2a31/4f259d665aa0435895fbfa94ccdf0ac2.jpeg
+#  ?X-Amz-Security-Token=IQoJb3JpZ2luX2VjEGsaCXVzLWVhc3QtMSJHMEUCIQCJSCqHr0zKyj4u4TtFUUwwFbDH8Mwi6ALcu82l6SdK%2FQIgd09tmyEU%2F77igSDk2TrP6ldYtBzWnpvZRTECwkWO0YsqsgUIZBACGgw3NTA5ODQ4MTM5MDciDBlOI6NZ15w7kJY38SqPBSnZ5rB%2Fjr%2FarAFliC8GaJev2W5R7MgQdQiAHwouBhs3XvKIvIjHXJRjIwPkW9F3pbCS%2F8ybcyDtwciT8G0oZZ%2FtAIxE4UCUfpp0TIUkT573JfRosRM%2Bd80G%2BC8XXBjk9uWEFsngjApa48qOC4aZhJSBQsOzO1I1Ysf72EI8otQwhmRhQ6enfslkC8dmB1CM%2B3jcPQDY6suEiju91MKKWnUmlkfPcyUqtfb%2BFwKHRDoEYiYwZlGmUNt5W7awXiEyCfwkRwS7v4sOq3fShql%2BvD202SbRGNfjpShyhO4oM3hJIMxRnexvCqFJZPYBSsU4bHxDFjOKCFMtHLd2Zl6RpGSc3iYeLCjD%2FePK%2BBZclPrGtCNip7WnMYnhnfWkpF6mfPCxkjKQV3e%2Bn8g%2BjHzH%2FzarfICnlNirg%2FYgcCLosWT3cqoNd%2BbVe%2FEZhxkRmqv%2BCiByAcEN7IQ8Hwhb7guX0S%2B09vid9FNR3shLqIoohlwuBqGTI0UaivxCzJ1jj2VX9SarN72iheIL3xtFWbPGitY0Ze2J9QAmRgsE2G30PyVKQQH1xb%2BaU%2Byxg%2BpEtxXLMVgPmR5OQ2YuREiYAgy0thOzat%2B%2BqWqCTmNR3%2Bl%2BzfL8kmGqcoGJRNux9Y9Afg6a%2FrmExXuyQWUz%2FgEMzdn5OVCTbm0y0U4i1pqH5NPNCn7JVE2iSAr3JaPxJp36fbe7h804rWQQqgkKe3iAjuQaT9Jll6ViBuQCjmG0QtX%2B3Acs4tQte1kx3tUjIaXqRiO88JvLuBBHfgHEbWn%2Fkml1wtyjsrqR%2BWBQf94FJr6Vlc3rm77kdU0ak5Ppl0SXQXnWdnVYuQlJRkOAZe3oD0W4O%2F%2F5F3O2P0e%2FdgBLn%2BzaJGQwncj7oQY6sQH0N7pW8mbW09rlZGWbh%2Bt0Tovrj5fnLQFRoIp499%2BPZrdgZp6g7W4xbh9VXWWjb1Fb0W3GNFEGNdWyGvja0KY%2FCMBmNaFqjKFJGojW12COKWsq9uPo%2BYoxBx3jqLMFLeMGODC1UTnSUyZTZFGP1XqRY7KvrxaeGgWIrdb3Um1k7J%2BXl%2BJi2wdDGK7Kst2tPjKNcKbJpXV%2FlJ5lXkuUfFOMRXYMESFTvagDwO2kxdIzjFg%3D
+#  &X-Amz-Algorithm=AWS4-HMAC-SHA256
+#  &X-Amz-Date=20230418T200334Z
+#  &X-Amz-SignedHeaders=host
+#  &X-Amz-Expires=10800
+#  &X-Amz-Credential=ASIA25WRO3VJRY23TKUG%2F20230418%2Fus-east-1%2Fs3%2Faws4_request
+#  &X-Amz-Signature=b2edcf54763494dbdc9ef55b5415a304ec98c5bfe74597ef50ca42fbf5ae88fd
+/project/{projectId}/content/proxy/userId/{userId}/file/{file}:
+  get:
+    operationId: contentProxy
+    tags: [ Content ]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: file
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-Amz-Security-Token
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: X-Amz-Algorithm
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: X-Amz-Date
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: X-Amz-SignedHeaders
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: X-Amz-Expires
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: X-Amz-Credential
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: X-Amz-Signature
+        in: query
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Response is proxied
 /project/{projectId}/content/upload:
   post:
     operationId: contentUpload
-    tags: [Content]
+    tags: [ Content ]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
     requestBody:
       required: true
       content:
@@ -19,31 +87,31 @@
             format: binary
     responses:
       '200':
-        content: 
+        content:
           application/json:
             schema:
               title: ContentUploadResponse
               type: object
-              required: 
-              - url
+              required:
+                - url
               properties:
-                url: 
+                url:
                   type: string
 /project/{projectId}/admin/content/uploadAs:
   post:
     operationId: contentUploadAsAdmin
-    tags: [ContentAdmin]
+    tags: [ ContentAdmin ]
     parameters:
-    - name: projectId
-      in: path
-      required: true
-      schema:
-        type: string
-    - name: authorId
-      in: query
-      required: true
-      schema:
-        type: string
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: authorId
+        in: query
+        required: true
+        schema:
+          type: string
     requestBody:
       required: true
       content:
@@ -53,13 +121,13 @@
             format: binary
     responses:
       '200':
-        content: 
+        content:
           application/json:
             schema:
               title: ContentUploadAsAdminResponse
               type: object
-              required: 
-              - url
+              required:
+                - url
               properties:
-                url: 
+                url:
                   type: string

@@ -3,7 +3,9 @@
 package com.smotana.clearflask.store.impl;
 
 import com.amazonaws.HttpMethod;
+import com.amazonaws.auth.internal.SignerConstants;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.Headers;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -18,9 +20,32 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.ContentStore;
 import com.smotana.clearflask.util.IdUtil;
+import com.smotana.clearflask.web.ApiException;
+import com.smotana.clearflask.web.Application;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.config.RegistryBuilder;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
+import org.apache.http.impl.conn.SystemDefaultDnsResolver;
+import org.elasticsearch.common.Strings;
 
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
@@ -49,8 +74,19 @@ public class S3ContentStore extends ManagedService implements ContentStore {
 
         @DefaultValue("PT3H")
         Duration presignedUrlExpiry();
+
+        @DefaultValue("false")
+        boolean proxyEnabled();
+
+        /**
+         * Used for localstack where "*.localstack.cloud" needs to be resolved to "localstack"
+         */
+        @DefaultValue("")
+        String proxyResolveTo();
     }
 
+    @Inject
+    private Application.Config configApp;
     @Inject
     private Config config;
     @Inject
@@ -82,6 +118,64 @@ public class S3ContentStore extends ManagedService implements ContentStore {
     public String uploadAndSign(String projectId, String userId, ContentType contentType, InputStream inputStream, int length) {
         ContentUrl contentUrl = upload(projectId, userId, contentType, inputStream, length);
         return signUrl(contentUrl);
+    }
+
+    @Override
+    public void proxy(String projectId, String userId, String object, String xAmzSecurityToken, String xAmzAlgorithm, String xAmzDate, String xAmzSignedHeaders, String xAmzExpires, String xAmzCredential, String xAmzSignature) throws WebApplicationException {
+        if (!config.proxyEnabled()) {
+            log.debug("Not enabled, skipping");
+            throw new NotFoundException();
+        }
+        HttpClientBuilder clientBuilder = HttpClientBuilder.create();
+        if (!Strings.isNullOrEmpty(config.proxyResolveTo())) {
+            clientBuilder.setConnectionManager(new BasicHttpClientConnectionManager(RegistryBuilder.<ConnectionSocketFactory>create()
+                    .register("http", PlainConnectionSocketFactory.getSocketFactory())
+                    .register("https", SSLConnectionSocketFactory.getSocketFactory()).build(),
+                    null, null, new SystemDefaultDnsResolver() {
+                @Override
+                public InetAddress[] resolve(final String host) throws UnknownHostException {
+                    if (config.hostname().split(":")[0].equalsIgnoreCase(host)) {
+                        log.trace("Proxy resolving {} to {}", host, config.proxyResolveTo());
+                        return super.resolve(config.proxyResolveTo());
+                    } else {
+                        log.debug("Proxy NOT resolving {} to {}", host, config.proxyResolveTo());
+                        return super.resolve(host);
+                    }
+                }
+            }
+            ));
+        }
+        try (CloseableHttpClient client = clientBuilder.build()) {
+            String url = getContentUrl(getContentKey(projectId, userId, object));
+            URIBuilder uriBuilder = new URIBuilder(url)
+                    .setParameter(SignerConstants.X_AMZ_SECURITY_TOKEN, xAmzSecurityToken)
+                    .setParameter(SignerConstants.X_AMZ_ALGORITHM, xAmzAlgorithm)
+                    .setParameter(SignerConstants.X_AMZ_DATE, xAmzDate)
+                    .setParameter(SignerConstants.X_AMZ_SIGNED_HEADER, xAmzSignedHeaders)
+                    .setParameter(SignerConstants.X_AMZ_EXPIRES, xAmzExpires)
+                    .setParameter(SignerConstants.X_AMZ_CREDENTIAL, xAmzCredential)
+                    .setParameter(SignerConstants.X_AMZ_SIGNATURE, xAmzSignature);
+            HttpGet request = new HttpGet(uriBuilder.build());
+            log.trace("Proxying to url {}", request.getURI());
+            try (CloseableHttpResponse response = client.execute(request)) {
+                if (response.getStatusLine().getStatusCode() < 200
+                        || response.getStatusLine().getStatusCode() > 299) {
+                    log.info("Failed to proxy content with {} projectId {} userId {} object {}",
+                            response.getStatusLine().getStatusCode(), projectId, userId, object);
+                    throw new WebApplicationException(Response.Status.NOT_FOUND);
+                }
+                byte[] responseBytes = response.getEntity().getContent().readAllBytes();
+                throw new WebApplicationException(Response
+                        .status(response.getStatusLine().getStatusCode())
+                        .entity(responseBytes)
+                        .header(Headers.CONTENT_TYPE, response.getEntity().getContentType().getValue())
+                        .header(Headers.CONTENT_LENGTH, response.getEntity().getContentLength())
+                        .header(Headers.CONTENT_ENCODING, response.getEntity().getContentEncoding())
+                        .build());
+            }
+        } catch (IOException | URISyntaxException ex) {
+            throw new ApiException(Response.Status.NOT_FOUND, ex);
+        }
     }
 
     @Override
@@ -146,12 +240,27 @@ public class S3ContentStore extends ManagedService implements ContentStore {
     }
 
     @Override
+    @SneakyThrows
     public String signUrl(ContentUrl contentUrl) {
-        return s3.generatePresignedUrl(
+        String signedUrl = s3.generatePresignedUrl(
                 config.bucketName(),
                 contentUrl.getKey(),
                 Date.from(Instant.now().plus(config.presignedUrlExpiry())),
                 HttpMethod.GET).toString();
+
+        if (!config.proxyEnabled()) {
+            return signedUrl;
+        }
+
+        URI signedUri = URI.create(signedUrl);
+        String signedProxyUrl = new URI(
+                "https",
+                configApp.domain(),
+                "/api" + Application.RESOURCE_VERSION + "/project/" + contentUrl.getProjectId() + "/content/proxy/userId/" + contentUrl.getUserId() + "/file/" + contentUrl.getFileName(),
+                signedUri.getQuery(),
+                signedUri.getFragment())
+                .toString();
+        return signedProxyUrl;
     }
 
     @Override
@@ -181,10 +290,18 @@ public class S3ContentStore extends ManagedService implements ContentStore {
     @VisibleForTesting
     public ContentUrl generateContentUrl(String projectId, String userId, ContentType contentType) {
         String fileName = IdUtil.randomId() + "." + contentType.getExtension();
-        String key = KEY_PREFIX + projectId + "/" + userId + "/" + fileName;
-        String url = config.scheme() + "://" + config.hostname() + "/" + key;
+        String key = getContentKey(projectId, userId, fileName);
+        String url = getContentUrl(key);
 
         return new ContentUrl(url, key, fileName, null, projectId, userId, contentType);
+    }
+
+    private String getContentKey(String projectId, String userId, String fileName) {
+        return KEY_PREFIX + projectId + "/" + userId + "/" + fileName;
+    }
+
+    private String getContentUrl(String path) {
+        return config.scheme() + "://" + config.hostname() + "/" + path;
     }
 
     public static Module module() {
