@@ -32,7 +32,7 @@ jobs:
         run: |
           aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }} --profile clearflask
           aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }} --profile clearflask
-          aws configure set region ${{ secrets.AWS_SECRET_ACCESS_KEY }} --profile clearflask
+          aws configure set region ${{ secrets.AWS_DEFAULT_REGION }} --profile clearflask
       - name: Maven deploy
         timeout-minutes: 60
         run: make deploy
