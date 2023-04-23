@@ -6,6 +6,7 @@ import { Box, Grid, Table, TableBody, TableCell, TableHead, TableRow, Typography
 import { Theme, WithStyles, createStyles, useTheme, withStyles } from '@material-ui/core/styles';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
 import CheckIcon from '@material-ui/icons/CheckRounded';
+import GithubIcon from '@material-ui/icons/GitHub';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import ReactGA from 'react-ga';
@@ -160,7 +161,8 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
         key={communityPlan.basePlanId}
         plan={communityPlan}
         selected={this.state.highlightedBasePlanid === communityPlan.basePlanId}
-        actionTitle='Install it'
+        actionIcon={(<GithubIcon />)}
+        actionTitle='Deploy'
         // remark='Join our community'
         actionOnClick={() => {
           trackingBlock(() => {

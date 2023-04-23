@@ -75,6 +75,7 @@ interface Props {
   selected?: boolean;
   customPrice?: string | React.ReactNode;
   actionTitle?: string;
+  actionIcon?: React.ReactNode;
   actionType?: 'button' | 'radio';
   actionTo?: LinkProps['to'];
   actionToExt?: string;
@@ -149,6 +150,12 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
                     href: this.props.actionToExt,
                   } : {})}
                 >
+                  {this.props.actionIcon && (
+                    <>
+                      {this.props.actionIcon}
+                      &nbsp;&nbsp;&nbsp;
+                    </>
+                  )}
                   {this.props.actionTitle}
                 </Button>
               )}

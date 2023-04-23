@@ -898,8 +898,11 @@ export function LandingHero() {
         buttonLink='/signup'
         // buttonRemark={(<div>{t('free-14-day-trial')}</div>)}
         // buttonAddOauth
-        button2Title={t('see-demo')}
-        button2Link='/product/demo'
+        button2Title={t('source-code')}
+        button2LinkExt='https://github.com/clearflask/clearflask'
+        button2Icon={(<GithubIcon />)}
+        // button2Title={t('see-demo')}
+        // button2Link='/product/demo'
       />
     </Background>
   );

@@ -1,18 +1,18 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import { Button, Grid, Typography } from '@material-ui/core';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { Theme, WithStyles, createStyles, withStyles } from '@material-ui/core/styles';
 import GithubIcon from '@material-ui/icons/GitHub';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
 import ServerAdmin from '../../api/serverAdmin';
-import GoogleIcon from '../../common/icon/GoogleIcon';
 import ImgIso from '../../common/ImgIso';
+import Vidyard from '../../common/Vidyard';
+import GoogleIcon from '../../common/icon/GoogleIcon';
 import { OAuthFlow } from '../../common/util/oauthUtil';
 import { redirectIso } from '../../common/util/routerUtil';
-import Vidyard from '../../common/Vidyard';
 
 const styles = (theme: Theme) => createStyles({
   hero: {
@@ -100,8 +100,11 @@ interface Props {
   buttonLink?: string;
   buttonRemark?: React.ReactNode;
   buttonAddOauth?: boolean;
+  button2Image?: string;
   button2Title?: string;
+  button2LinkExt?: string;
   button2Link?: string;
+  button2Icon?: React.ReactNode;
 }
 class Hero extends Component<Props & RouteComponentProps & WithStyles<typeof styles, true>> {
   readonly oauthFlow = new OAuthFlow({ accountType: 'admin', redirectPath: '/login' });
@@ -155,7 +158,17 @@ class Hero extends Component<Props & RouteComponentProps & WithStyles<typeof sty
                       component: Link,
                       to: this.props.button2Link,
                     } : {})}
+                    {...(this.props.button2LinkExt ? {
+                      component: 'a',
+                      href: this.props.button2LinkExt,
+                    } : {})}
                   >
+                    {this.props.button2Icon && (
+                      <>
+                        {this.props.button2Icon}
+                        &nbsp;&nbsp;&nbsp;
+                      </>
+                    )}
                     {this.props.button2Title}
                   </Button>
                 )}
