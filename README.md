@@ -2,7 +2,10 @@
   <a href="https://clearflask.com/" rel="noopener" target="_blank">
     <img width="100" src="./clearflask-frontend/public/img/clearflask-logo.png" alt="Logo">
     <br />
-    <img width="300" src="./clearflask-frontend/public/img/clearflask-text.png" alt="ClearFlask">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="./clearflask-frontend/public/img/clearflask-text-dark.png">
+      <img width="300" src="./clearflask-frontend/public/img/clearflask-text.png" alt="ClearFlask">
+    </picture>
   </a>
 </p>
 
@@ -85,8 +88,8 @@ There are several dependencies you need for running ClearFlask:
 - **ScyllaDB** or **AWS DynamoDB** or API-compatible alternative
 - **MinIO** or **AWS S3** or API-compatible alternative
 - One of:
-  - **MySQL** or **Aurora**
-  - **ElasticSearch** or **OpenSearch**
+    - **MySQL** or **Aurora**
+    - **ElasticSearch** or **OpenSearch**
 - **Email service via SMTP** or **AWS SES**
 
 And a few optional:
@@ -152,7 +155,8 @@ IAM actions, all in these categories:
 - Write
 - Tagging
 
-Alternatively you can deploy it yourself (cheaper) or host it on Elastic. Or you can choose to use MySQL/Aurora as a cheaper alternative.
+Alternatively you can deploy it yourself (cheaper) or host it on Elastic. Or you can choose to use MySQL/Aurora as a
+cheaper alternative.
 
 ##### AWS SES
 
