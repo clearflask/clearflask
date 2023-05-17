@@ -37,6 +37,14 @@ jobs:
         uses: FedericoCarboni/setup-ffmpeg@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Initialize Git
+        timeout-minutes: 1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          git config --global user.name 'Matus Faro'
+          git config --global user.email 'matus@matus.io'
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
       - name: Maven release
         timeout-minutes: 60
         env:
