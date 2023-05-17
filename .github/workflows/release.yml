@@ -39,12 +39,24 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Initialize Git
         timeout-minutes: 1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
         run: |
           git config --global user.name 'Matus Faro'
           git config --global user.email 'matus@matus.io'
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git remote set-url origin https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
+      - name: Setup Github credentials for Maven
+        run: |
+          mkdir -p ~/.m2
+          cat << EOF > ~/.m2/settings.xml
+          <settings>
+            <servers>
+              <server>
+                <id>github</id>
+                <username>${{ github.triggering_actor }}</username>
+                <password>${{ github.token }}</password>
+              </server>
+            </servers>
+          </settings>
+          EOF
       - name: Maven release
         timeout-minutes: 60
         env:
