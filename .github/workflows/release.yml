@@ -27,6 +27,8 @@ jobs:
           java-version: '11'
           distribution: 'corretto'
           architecture: x64
+          cache: 'maven'
+          server-id: github
       - name: Cache local Maven repository
         uses: actions/cache@v3
         with:
@@ -43,22 +45,8 @@ jobs:
         run: |
           git config --global user.name 'Matus Faro'
           git config --global user.email 'matus@users.noreply.github.com'
-      - name: Setup Github credentials for Maven
-        run: |
-          mkdir -p ~/.m2
-          cat << EOF > ~/.m2/settings.xml
-          <settings>
-            <servers>
-              <server>
-                <id>github</id>
-                <username>${{ github.triggering_actor }}</username>
-                <password>${{ github.token }}</password>
-              </server>
-            </servers>
-          </settings>
-          EOF
       - name: Maven release
         timeout-minutes: 60
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: make release-${{ github.event.inputs.versionType }}
