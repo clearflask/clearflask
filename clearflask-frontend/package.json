@@ -138,6 +138,7 @@
     "react-dom": "16.14.0",
     "react-dropzone": "11.2.4",
     "react-ga": "2.5.7",
+    "react-ga4": "2.1.0",
     "react-google-recaptcha": "2.0.1",
     "react-hotjar": "2.2.1",
     "react-i18next": "^11.18.3",

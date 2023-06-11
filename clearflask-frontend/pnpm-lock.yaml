@@ -155,6 +155,7 @@ specifiers:
   react-dom: 16.14.0
   react-dropzone: 11.2.4
   react-ga: 2.5.7
+  react-ga4: 2.1.0
   react-google-recaptcha: 2.0.1
   react-hotjar: 2.2.1
   react-i18next: ^11.18.3
@@ -330,6 +331,7 @@ dependencies:
   react-dom: 16.14.0_react@17.0.2
   react-dropzone: 11.2.4_react@17.0.2
   react-ga: 2.5.7_at7mkepldmzoo6silmqc5bca74
+  react-ga4: 2.1.0
   react-google-recaptcha: 2.0.1_react@17.0.2
   react-hotjar: 2.2.1
   react-i18next: 11.18.3_vqjd66hxipuuwic5xlwvt2dcnq
@@ -10053,7 +10055,7 @@ packages:
     resolution: {integrity: sha512-oWb1Z6mkHIskLzEJ/XWX0srkpkTQ7vaopMQkyaEIoq0fmtFVxOthb8cCxeT+p3ynTdkk/RZwbgG4brR5BeWECw==}
     engines: {node: '>= 4.0'}
     os: [darwin]
-    deprecated: fsevents 1 will break on node v14+ and could be using insecure binaries. Upgrade to fsevents 2.
+    deprecated: The v1 package contains DANGEROUS / INSECURE binaries. Upgrade to safe fsevents v2
     requiresBuild: true
     dependencies:
       bindings: 1.5.0
@@ -15590,6 +15592,10 @@ packages:
     dependencies:
       prop-types: 15.8.1
       react: 17.0.2
+    dev: false
+
+  /react-ga4/2.1.0:
+    resolution: {integrity: sha512-ZKS7PGNFqqMd3PJ6+C2Jtz/o1iU9ggiy8Y8nUeksgVuvNISbmrQtJiZNvC/TjDsqD0QlU5Wkgs7i+w9+OjHhhQ==}
     dev: false
 
   /react-google-recaptcha/2.0.1_react@17.0.2:

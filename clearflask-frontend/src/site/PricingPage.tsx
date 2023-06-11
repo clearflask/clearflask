@@ -10,6 +10,7 @@ import GithubIcon from '@material-ui/icons/GitHub';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import ReactGA from 'react-ga';
+import ReactGA4 from 'react-ga4';
 import { WithTranslation, withTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
@@ -166,11 +167,13 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
         // remark='Join our community'
         actionOnClick={() => {
           trackingBlock(() => {
-            ReactGA.event({
-              category: 'pricing',
-              action: 'click-plan',
-              label: communityPlan.basePlanId,
-            });
+            [ReactGA4, ReactGA].forEach(ga =>
+              ga.event({
+                category: 'pricing',
+                action: 'click-plan',
+                label: communityPlan.basePlanId,
+              })
+            );
           });
         }}
         actionToExt='https://github.com/clearflask/clearflask#self-hosting'
@@ -201,11 +204,13 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
         actionTo='/contact/sales'
         actionOnClick={() => {
           trackingBlock(() => {
-            ReactGA.event({
-              category: 'pricing',
-              action: 'click-plan',
-              label: talkPlan.basePlanId,
-            });
+            [ReactGA4, ReactGA].forEach(ga =>
+              ga.event({
+                category: 'pricing',
+                action: 'click-plan',
+                label: talkPlan.basePlanId,
+              })
+            );
           });
         }}
       />
@@ -239,11 +244,13 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
           //     : this.props.t('let-us-help-you'))}
           actionOnClick={() => {
             trackingBlock(() => {
-              ReactGA.event({
-                category: 'pricing',
-                action: 'click-plan',
-                label: plan.basePlanId,
-              });
+              [ReactGA4, ReactGA].forEach(ga =>
+                ga.event({
+                  category: 'pricing',
+                  action: 'click-plan',
+                  label: plan.basePlanId,
+                })
+              );
             });
           }}
           actionTo={plan.basePlanId !== 'flat-yearly' && (SIGNUP_PROD_ENABLED || !isProd())

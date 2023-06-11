@@ -8,8 +8,9 @@ import WarnIcon from '@material-ui/icons/Warning';
 import { Color } from '@material-ui/lab';
 import { CardNumberElement, ElementsConsumer } from '@stripe/react-stripe-js';
 import { PaymentIntent, Stripe, StripeElements, StripeError } from '@stripe/stripe-js';
-import React, { Component } from 'react';
+import { Component } from 'react';
 import ReactGA from 'react-ga';
+import ReactGA4 from 'react-ga4';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
@@ -513,11 +514,13 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                       disabled={this.state.showAddPayment}
                       onClick={() => {
                         trackingBlock(() => {
-                          ReactGA.event({
-                            category: 'billing',
-                            action: this.props.accountBilling?.payment ? 'click-payment-update-open' : 'click-payment-add-open',
-                            label: this.props.accountBilling?.plan.basePlanId,
-                          });
+                          [ReactGA4, ReactGA].forEach(ga =>
+                            ga.event({
+                              category: 'billing',
+                              action: this.props.accountBilling?.payment ? 'click-payment-update-open' : 'click-payment-add-open',
+                              label: this.props.accountBilling?.plan.basePlanId,
+                            })
+                          );
                         });
                         this.setState({ showAddPayment: true });
                         next();
@@ -760,11 +763,13 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                   disabled={this.state.isSubmitting || this.state.showPlanChange}
                   onClick={() => {
                     trackingBlock(() => {
-                      ReactGA.event({
-                        category: 'billing',
-                        action: 'click-plan-switch-open',
-                        label: this.props.accountBilling?.plan.basePlanId,
-                      });
+                      [ReactGA4, ReactGA].forEach(ga =>
+                        ga.event({
+                          category: 'billing',
+                          action: 'click-plan-switch-open',
+                          label: this.props.accountBilling?.plan.basePlanId,
+                        })
+                      );
                     });
 
                     this.setState({ showPlanChange: true });
@@ -978,11 +983,13 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               onClose={() => this.setState({ showPlanChange: undefined })}
               onSubmit={basePlanId => {
                 trackingBlock(() => {
-                  ReactGA.event({
-                    category: 'billing',
-                    action: 'click-plan-switch-submit',
-                    label: basePlanId,
-                  });
+                  [ReactGA4, ReactGA].forEach(ga =>
+                    ga.event({
+                      category: 'billing',
+                      action: 'click-plan-switch-submit',
+                      label: basePlanId,
+                    })
+                  );
                 });
 
                 this.setState({ isSubmitting: true });
@@ -1016,12 +1023,14 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
 
   async onPaymentSubmit(elements: StripeElements, stripe: Stripe): Promise<boolean> {
     trackingBlock(() => {
-      ReactGA.event({
-        category: 'billing',
-        action: this.props.accountBilling?.payment ? 'click-payment-update-submit' : 'click-payment-add-submit',
-        label: this.props.accountBilling?.plan.basePlanId,
-        value: this.props.accountBilling?.plan.pricing?.basePrice,
-      });
+      [ReactGA4, ReactGA].forEach(ga =>
+        ga.event({
+          category: 'billing',
+          action: this.props.accountBilling?.payment ? 'click-payment-update-submit' : 'click-payment-add-submit',
+          label: this.props.accountBilling?.plan.basePlanId,
+          value: this.props.accountBilling?.plan.pricing?.basePrice,
+        })
+      );
     });
 
     this.setState({ isSubmitting: true, stripePaymentError: undefined });

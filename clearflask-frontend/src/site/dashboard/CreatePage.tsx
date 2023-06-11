@@ -4,7 +4,7 @@
 /// <reference path="../../@types/transform-media-imports.d.ts"/>
 import { Box, Button, Card, CardActionArea, CardContent, CardHeader, Collapse, Hidden, InputAdornment, SvgIconTypeMap, TextField, Typography } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
-import { createStyles, makeStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { Theme, WithStyles, createStyles, makeStyles, withStyles } from '@material-ui/core/styles';
 import InternalFeedbackIcon from '@material-ui/icons/AccountBoxRounded';
 import BlankIcon from '@material-ui/icons/CheckBoxOutlineBlank';
 import OpenCommunityIcon from '@material-ui/icons/Group';
@@ -12,7 +12,8 @@ import CustomerFeedbackIcon from '@material-ui/icons/RecordVoiceOver';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import ReactGA from 'react-ga';
-import { withTranslation, WithTranslation } from 'react-i18next';
+import ReactGA4 from 'react-ga4';
+import { WithTranslation, withTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
@@ -26,15 +27,15 @@ import * as Admin from '../../api/admin';
 import ServerAdmin, { ReduxStateAdmin } from '../../api/serverAdmin';
 import { HeaderLogoLogo } from '../../app/Header';
 import { tourSetGuideState } from '../../common/ClearFlaskTourProvider';
-import * as ConfigEditor from '../../common/config/configEditor';
-import Templater, { CreateTemplateV2Options, createTemplateV2OptionsBlank, createTemplateV2OptionsDefault, CreateTemplateV2Result } from '../../common/config/configTemplater';
-import UpgradeWrapper, { ProjectMaxCount, TeammatePlanId } from '../../common/config/settings/UpgradeWrapper';
 import FakeBrowser from '../../common/FakeBrowser';
 import HoverArea from '../../common/HoverArea';
 import ImgIso from '../../common/ImgIso';
 import SubmitButton from '../../common/SubmitButton';
+import * as ConfigEditor from '../../common/config/configEditor';
+import Templater, { CreateTemplateV2Options, CreateTemplateV2Result, createTemplateV2OptionsBlank, createTemplateV2OptionsDefault } from '../../common/config/configTemplater';
+import UpgradeWrapper, { ProjectMaxCount, TeammatePlanId } from '../../common/config/settings/UpgradeWrapper';
 import { TourDefinitionGuideState } from '../../common/tour';
-import { detectEnv, Environment } from '../../common/util/detectEnv';
+import { Environment, detectEnv } from '../../common/util/detectEnv';
 import { trackingBlock } from '../../common/util/trackingDelay';
 import windowIso from '../../common/windowIso';
 import Logo from '../Logo';
@@ -301,11 +302,13 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
                           step: 'feedback-layout-select',
                         });
                         trackingBlock(() => {
-                          ReactGA.event({
-                            category: 'new-project',
-                            action: 'choose-scenario',
-                            label: 'customer-feedback',
-                          });
+                          [ReactGA4, ReactGA].forEach(ga =>
+                            ga.event({
+                              category: 'new-project',
+                              action: 'choose-scenario',
+                              label: 'customer-feedback',
+                            })
+                          );
                         });
                       }}
                     />
@@ -325,11 +328,13 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
                           step: 'feedback-layout-select',
                         });
                         trackingBlock(() => {
-                          ReactGA.event({
-                            category: 'new-project',
-                            action: 'choose-scenario',
-                            label: 'open-community',
-                          });
+                          [ReactGA4, ReactGA].forEach(ga =>
+                            ga.event({
+                              category: 'new-project',
+                              action: 'choose-scenario',
+                              label: 'open-community',
+                            })
+                          );
                         });
                       }}
                     />
@@ -352,11 +357,13 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
                             step: 'feedback-layout-select',
                           });
                           trackingBlock(() => {
-                            ReactGA.event({
-                              category: 'new-project',
-                              action: 'choose-scenario',
-                              label: 'internal-feedback',
-                            });
+                            [ReactGA4, ReactGA].forEach(ga =>
+                              ga.event({
+                                category: 'new-project',
+                                action: 'choose-scenario',
+                                label: 'internal-feedback',
+                              })
+                            );
                           });
                         }}
                       />
@@ -374,11 +381,13 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
                             step: 'project-details',
                           });
                           trackingBlock(() => {
-                            ReactGA.event({
-                              category: 'new-project',
-                              action: 'choose-scenario',
-                              label: 'blank',
-                            });
+                            [ReactGA4, ReactGA].forEach(ga =>
+                              ga.event({
+                                category: 'new-project',
+                                action: 'choose-scenario',
+                                label: 'blank',
+                              })
+                            );
                           });
                         }}
                       />
@@ -420,11 +429,13 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
                         step: 'project-details',
                       });
                       trackingBlock(() => {
-                        ReactGA.event({
-                          category: 'new-project',
-                          action: 'choose-feedback-layout',
-                          label: 'feedback-first',
-                        });
+                        [ReactGA4, ReactGA].forEach(ga =>
+                          ga.event({
+                            category: 'new-project',
+                            action: 'choose-feedback-layout',
+                            label: 'feedback-first',
+                          })
+                        );
                       });
                     }}
                   />
@@ -447,11 +458,13 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
                         step: 'project-details',
                       });
                       trackingBlock(() => {
-                        ReactGA.event({
-                          category: 'new-project',
-                          action: 'choose-feedback-layout',
-                          label: 'community-first',
-                        });
+                        [ReactGA4, ReactGA].forEach(ga =>
+                          ga.event({
+                            category: 'new-project',
+                            action: 'choose-feedback-layout',
+                            label: 'community-first',
+                          })
+                        );
                       });
                     }}
                   />

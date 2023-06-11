@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import { Button, Collapse, Container, IconButton, InputAdornment, Paper, TextField, Typography } from '@material-ui/core';
-import { createStyles, fade, makeStyles, Theme, useTheme, WithStyles } from '@material-ui/core/styles';
+import { Theme, WithStyles, createStyles, fade, makeStyles, useTheme } from '@material-ui/core/styles';
 import BathtubIcon from '@material-ui/icons/Bathtub';
 import EmailIcon from '@material-ui/icons/Email';
 import GithubIcon from '@material-ui/icons/GitHub';
@@ -12,7 +12,8 @@ import { withStyles } from '@material-ui/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import ReactGA from 'react-ga';
-import { withTranslation, WithTranslation } from 'react-i18next';
+import ReactGA4 from 'react-ga4';
+import { WithTranslation, withTranslation } from 'react-i18next';
 import LinkedInTag from 'react-linkedin-insight';
 import { connect } from 'react-redux';
 import { RouteComponentProps, StaticContext, withRouter } from 'react-router';
@@ -26,18 +27,18 @@ import LoadingPage from '../app/LoadingPage';
 import Loading from '../app/utils/Loading';
 import AcceptTerms from '../common/AcceptTerms';
 import Hr from '../common/Hr';
-import GoogleIcon from '../common/icon/GoogleIcon';
 import Message from '../common/Message';
 import SubmitButton from '../common/SubmitButton';
+import GoogleIcon from '../common/icon/GoogleIcon';
 import { saltHashPassword } from '../common/util/auth';
-import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
+import { Environment, detectEnv, isProd } from '../common/util/detectEnv';
 import { OAuthFlow } from '../common/util/oauthUtil';
 import { RedirectIso } from '../common/util/routerUtil';
 import { trackingBlock } from '../common/util/trackingDelay';
 import windowIso from '../common/windowIso';
 import { SUPPORT_MESSAGE_FIELD_CONTACT, SUPPORT_MESSAGE_FIELD_TYPE } from './ContactPage';
-import AnimBubble from './landing/AnimBubble';
 import PricingPlan from './PricingPlan';
+import AnimBubble from './landing/AnimBubble';
 
 /** Toggle whether production has signups enabled. Test environments are unaffected. */
 export const SIGNUP_PROD_ENABLED = true;
@@ -724,11 +725,13 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
 
   async signUp(selectedPlanId: string) {
     trackingBlock(() => {
-      ReactGA.event({
-        category: 'account-signup',
-        action: 'click-create',
-        label: selectedPlanId,
-      });
+      [ReactGA4, ReactGA].forEach(ga =>
+        ga.event({
+          category: 'account-signup',
+          action: 'click-create',
+          label: selectedPlanId,
+        })
+      );
       LinkedInTag.track('5353172');
     });
 

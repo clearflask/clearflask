@@ -1,11 +1,12 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import { Slider, Typography } from '@material-ui/core';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { Theme, WithStyles, createStyles, withStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
-import React, { Component } from 'react';
+import { Component } from 'react';
 import ReactGA from 'react-ga';
-import { withTranslation, WithTranslation } from 'react-i18next';
+import ReactGA4 from 'react-ga4';
+import { WithTranslation, withTranslation } from 'react-i18next';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Admin from '../api/admin';
 import { isProd } from '../common/util/detectEnv';
@@ -146,12 +147,14 @@ class PricingSlider extends Component<Props & RouteComponentProps & WithTranslat
         )}
         actionOnClick={() => {
           trackingBlock(() => {
-            ReactGA.event({
-              category: 'pricing',
-              action: 'click-plan',
-              label: standardPlan.basePlanId,
-              value: price,
-            });
+            [ReactGA4, ReactGA].forEach(ga =>
+              ga.event({
+                category: 'pricing',
+                action: 'click-plan',
+                label: standardPlan.basePlanId,
+                value: price,
+              })
+            );
           });
         }}
         actionTo={(SIGNUP_PROD_ENABLED || !isProd())

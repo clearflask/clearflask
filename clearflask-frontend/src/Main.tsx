@@ -9,6 +9,7 @@ import i18n from 'i18next';
 import { SnackbarProvider } from 'notistack';
 import React, { Component } from 'react';
 import ReactGA from 'react-ga';
+import ReactGA4 from 'react-ga4';
 import { I18nextProvider } from 'react-i18next';
 import LinkedInTag from 'react-linkedin-insight';
 import { Provider } from 'react-redux';
@@ -108,14 +109,16 @@ class Main extends Component<Props> {
 
     trackingBlock(() => {
       try {
-        ReactGA.initialize('UA-127162051-3', {
-          gaOptions: {}
-        });
+        ReactGA4.initialize('G-5YG6HJ8X98');
+
+        // TODO Remove after July 1, 2023
+        ReactGA.initialize('UA-127162051-3');
         ReactGA.set({
           anonymizeIp: true,
           forceSSL: true
         });
         ReactGA.pageview(windowIso.location.pathname + windowIso.location.search);
+
         LinkedInTag.init('3564876', 'dc', false);
       } catch (e) { }
     });
