@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       versionType:
+        type: choice
         description: 'Version type'
         required: true
         default: 'patch'
