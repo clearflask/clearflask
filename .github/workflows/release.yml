@@ -41,8 +41,7 @@ jobs:
         timeout-minutes: 1
         run: |
           git config --global user.name 'Matus Faro'
-          git config --global user.email 'matus@matus.io'
-          git remote set-url origin https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}
+          git config --global user.email 'matus@users.noreply.github.com'
       - name: Setup Github credentials for Maven
         run: |
           mkdir -p ~/.m2
