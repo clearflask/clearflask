@@ -28,7 +28,6 @@ jobs:
           distribution: 'corretto'
           architecture: x64
           cache: 'maven'
-          server-id: github
       - name: Cache local Maven repository
         uses: actions/cache@v3
         with:
@@ -44,9 +43,19 @@ jobs:
         timeout-minutes: 1
         run: |
           git config --global user.name 'Matus Faro'
-          git config --global user.email 'matus@users.noreply.github.com'
-      - name: Maven release
-        timeout-minutes: 60
+          git config --global user.email 'matus@matus.io'
+      - name: View settings.xml (DEBUG ONLY, REMOVE ME)
+        run: cat /home/runner/.m2/settings.xml
+      - name: Verify ssh connection to GitHub (DEBUG ONLY, REMOVE ME)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: make release-${{ github.event.inputs.versionType }}
+        run: ssh -T git@github.com
+      - name: Verify ssh connection to GitHub (DEBUG ONLY, REMOVE ME)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: git checkout master && git pull origin master && git push origin master
+#      - name: Maven release
+#        timeout-minutes: 60
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        run: make release-${{ github.event.inputs.versionType }}
