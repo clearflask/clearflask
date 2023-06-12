@@ -21,6 +21,11 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v3
+        with:
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Test
+        timeout-minutes: 1
+        run: ssh -T git@github.com
       - name: Setup Java
         uses: actions/setup-java@v3
         with:

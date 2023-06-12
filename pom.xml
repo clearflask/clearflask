@@ -55,8 +55,8 @@
         <skipTests/>
         <skipITs/>
         <skipLicenseUpdate>true</skipLicenseUpdate>
-        <!-- For local deploy over SSH, use "scm:git:git@github.com:clearflask/clearflask.git" -->
-        <scmConnection>scm:git:https://github.com/clearflask/clearflask.git</scmConnection>
+        <!-- For HTTPS, use "scm:git:https://github.com/clearflask/clearflask.git" -->
+        <scmConnection>scm:git:git@github.com:clearflask/clearflask.git</scmConnection>
     </properties>
 
     <modules>
