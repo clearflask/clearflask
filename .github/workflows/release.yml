@@ -44,12 +44,8 @@ jobs:
         run: |
           git config --global user.name 'Matus Faro'
           git config --global user.email 'matus@matus.io'
-      - name: Verify ssh connection to GitHub (DEBUG ONLY, REMOVE ME)
+      - name: Maven release
+        timeout-minutes: 60
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: git checkout master && git pull origin master && git push origin master
-#      - name: Maven release
-#        timeout-minutes: 60
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        run: make release-${{ github.event.inputs.versionType }}
+        run: make release-${{ github.event.inputs.versionType }}
