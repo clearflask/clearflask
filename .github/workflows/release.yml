@@ -25,6 +25,9 @@ jobs:
           ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
       - name: Test
         timeout-minutes: 1
+        run: git remote -v
+      - name: Test
+        timeout-minutes: 1
         run: ssh -T git@github.com
       - name: Setup Java
         uses: actions/setup-java@v3
