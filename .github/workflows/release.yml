@@ -44,12 +44,6 @@ jobs:
         run: |
           git config --global user.name 'Matus Faro'
           git config --global user.email 'matus@matus.io'
-      - name: View settings.xml (DEBUG ONLY, REMOVE ME)
-        run: cat /home/runner/.m2/settings.xml
-      - name: Verify ssh connection to GitHub (DEBUG ONLY, REMOVE ME)
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ssh -T git@github.com
       - name: Verify ssh connection to GitHub (DEBUG ONLY, REMOVE ME)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
