@@ -176,7 +176,6 @@
                 <version>3.0.0-M4</version>
                 <configuration>
                     <releaseProfiles>docker-images-push</releaseProfiles>
-                    <signTag>true</signTag>
                     <tagNameFormat>@{project.version}</tagNameFormat>
                     <scmCommentPrefix>[release]</scmCommentPrefix>
                 </configuration>

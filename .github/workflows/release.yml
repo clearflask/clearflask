@@ -46,6 +46,12 @@ jobs:
         run: |
           git config --global user.name 'Matus Faro'
           git config --global user.email 'matus@matus.io'
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Maven release
         timeout-minutes: 60
         env:
