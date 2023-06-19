@@ -11,6 +11,10 @@ import Main from './Main';
 Sentry.init({
   dsn: "https://600460a790e34b3e884ebe25ed26944d@o934836.ingest.sentry.io/5884409",
   integrations: [new Integrations.BrowserTracing()],
+  ignoreErrors:[
+    'Non-Error exception captured',
+    'Non-Error promise rejection captured',
+  ],
   tracesSampleRate: !isProd() ? 1.0 : 0.1,
   replaysSessionSampleRate: !isProd() ? 1.0 : 0.1,
   replaysOnErrorSampleRate: !isProd() ? 1.0 : 0.1,
