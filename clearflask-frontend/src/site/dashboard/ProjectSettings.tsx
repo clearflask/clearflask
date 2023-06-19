@@ -3265,7 +3265,7 @@ export const ProjectSettingsGitHub = (props: {
                                           closedStatuses = [
                                             ...(feedback?.statusIdAccepted ? [feedback.statusIdAccepted] : []),
                                             ...(category ? category.workflow.statuses
-                                              .filter(status => ['accepted', 'closed', 'completed', 'complete', 'cancelled'].includes(status.name.toLowerCase()))
+                                              .filter(status => ['accepted', 'closed', 'completed', 'complete', 'cancelled'].includes(status.name?.toLowerCase()))
                                               .map(status => status.statusId) : []),
                                           ];
                                           closedStatus = feedback?.statusIdAccepted || closedStatuses?.[0];

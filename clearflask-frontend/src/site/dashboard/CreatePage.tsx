@@ -505,7 +505,7 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
                       var slug: string | undefined = undefined;
                       var name: string | undefined = undefined;
                       if (nameMatch && nameMatch[2]) {
-                        name = nameMatch[2].toLowerCase();
+                        name = nameMatch[2]?.toLowerCase();
                         if (name) {
                           name = name.charAt(0).toUpperCase() + name.slice(1);
                           slug = this.nameToSlug(name);
