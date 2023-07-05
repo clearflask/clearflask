@@ -178,7 +178,7 @@ public interface ProjectStore {
 
         /**
          * Version for auto-upgrades.
-         *
+         * <p>
          * Currently only for ElasticSearch schema updates
          */
         Long projectVersion;
@@ -239,13 +239,19 @@ public interface ProjectStore {
         @NonNull
         String inviteeName;
 
-        @NonNull
+        /**
+         * Should be NonNull, however some projects in the past had an empty string as name so we need to handle nulls
+         */
         String projectName;
 
         String isAcceptedByAccountId;
 
         @NonNull
         Long ttlInEpochSec;
+
+        public String getProjectNameNonNull() {
+            return Strings.isNullOrEmpty(projectName) ? projectId : projectName;
+        }
 
         public boolean isAccepted() {
             return !Strings.isNullOrEmpty(getIsAcceptedByAccountId());

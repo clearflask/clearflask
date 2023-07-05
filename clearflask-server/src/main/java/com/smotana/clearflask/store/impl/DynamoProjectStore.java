@@ -137,6 +137,8 @@ public class DynamoProjectStore implements ProjectStore {
     @Inject
     private Sanitizer sanitizer;
     @Inject
+    private ProjectUtil projectUtil;
+    @Inject
     private ConfigSchemaUpgrader configSchemaUpgrader;
     @Inject
     private ProjectUpgrader projectUpgrader;
@@ -532,13 +534,13 @@ public class DynamoProjectStore implements ProjectStore {
 
     @Override
     public InvitationModel createInvitation(String projectId, String invitedEmail, String inviteeName) {
-        Project project = getProject(projectId, true).get();
+        Project project = getProject(projectId, true).orElseThrow();
         InvitationModel invitation = new InvitationModel(
                 genInvitationId(),
                 projectId,
                 invitedEmail,
                 inviteeName,
-                project.getVersionedConfigAdmin().getConfig().getName(),
+                projectUtil.getProjectName(project.getVersionedConfigAdmin().getConfig()),
                 null,
                 Instant.now().plus(config.invitationExpireAfterCreation()).getEpochSecond());
         invitationSchema.table().putItem(new PutItemSpec()

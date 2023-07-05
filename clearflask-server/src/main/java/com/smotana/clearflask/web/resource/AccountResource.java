@@ -423,7 +423,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         checkState(guidOpt.isPresent() || passwordOpt.isPresent());
         // More robust check than sanitizer.email(email);
         emailValidator.assertValid(email);
-        sanitizer.accountName(name);
+        name = sanitizer.accountName(name);
 
         String accountId = accountStore.genAccountId();
 
@@ -638,7 +638,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
 
         return new InvitationResult(
                 invitation.getInviteeName(),
-                invitation.getProjectName(),
+                invitation.getProjectNameNonNull(),
                 InvitationResult.RoleEnum.ADMIN,
                 invitation.getIsAcceptedByAccountId() != null);
     }

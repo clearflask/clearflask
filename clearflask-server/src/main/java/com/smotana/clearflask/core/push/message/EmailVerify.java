@@ -11,6 +11,7 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.core.push.provider.EmailService.Email;
+import com.smotana.clearflask.util.ProjectUtil;
 import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
 
@@ -34,6 +35,8 @@ public class EmailVerify {
     private Application.Config configApp;
     @Inject
     private EmailTemplates emailTemplates;
+    @Inject
+    private ProjectUtil projectUtil;
 
     public Email email(ConfigAdmin configAdmin, String email, String token) {
         checkArgument(!Strings.isNullOrEmpty(email));
@@ -41,7 +44,7 @@ public class EmailVerify {
         String subject = config.subjectTemplate();
         String content = config.contentTemplate();
 
-        String projectName = emailTemplates.sanitize(configAdmin.getName());
+        String projectName = emailTemplates.sanitize(projectUtil.getProjectName(configAdmin));
         content = content.replace("__project_name__", projectName);
 
         String templateHtml = emailTemplates.getVerificationTemplateHtml();

@@ -13,6 +13,7 @@ import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.core.push.provider.EmailService.Email;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
+import com.smotana.clearflask.util.ProjectUtil;
 import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,6 +40,8 @@ public class OnModInvite {
     private UserStore userStore;
     @Inject
     private EmailTemplates emailTemplates;
+    @Inject
+    private ProjectUtil projectUtil;
 
     public Email email(ConfigAdmin configAdmin, UserModel user, String link, String authToken) {
         checkArgument(!Strings.isNullOrEmpty(user.getEmail()));
@@ -46,7 +49,7 @@ public class OnModInvite {
         String subject = config.subjectTemplate();
         String content = config.contentTemplate();
 
-        String projectName = emailTemplates.sanitize(configAdmin.getName());
+        String projectName = emailTemplates.sanitize(projectUtil.getProjectName(configAdmin));
         subject = subject.replace("__project_name__", projectName);
         content = content.replace("__project_name__", projectName);
 
