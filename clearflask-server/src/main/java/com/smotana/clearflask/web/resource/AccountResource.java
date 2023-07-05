@@ -508,10 +508,10 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         Account account = getExtendedPrincipal()
                 .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
                 .flatMap(accountId -> accountStore.getAccount(accountId, false))
-                .get();
+                .orElseThrow();
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getName())) {
-            sanitizer.accountName(accountUpdateAdmin.getName());
-            account = accountStore.updateName(account.getAccountId(), accountUpdateAdmin.getName()).getAccount();
+            String accountName = sanitizer.accountName(accountUpdateAdmin.getName());
+            account = accountStore.updateName(account.getAccountId(), accountName).getAccount();
         }
         if (accountUpdateAdmin.getAttrs() != null && !accountUpdateAdmin.getAttrs().isEmpty()) {
             log.info("{} using deprecated call to update attrs via accountUpdateAdmin", accountUpdateAdmin.getName());

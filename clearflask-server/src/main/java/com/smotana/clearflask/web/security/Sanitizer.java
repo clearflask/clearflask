@@ -131,10 +131,15 @@ public class Sanitizer {
         }
     }
 
-    public void accountName(String accountName) {
-        if (accountName != null && accountName.length() > NAME_MAX_LENGTH) {
+    public String accountName(String accountName) {
+        accountName = Strings.nullToEmpty(accountName).trim();
+        if (Strings.isNullOrEmpty(accountName)) {
+            throw new ApiException(BAD_REQUEST, "Name is required");
+        }
+        if (accountName.length() > NAME_MAX_LENGTH) {
             throw new ApiException(BAD_REQUEST, "Name is too long, must be at most " + NAME_MAX_LENGTH + " characters");
         }
+        return accountName;
     }
 
     public void userName(String userName) {
