@@ -278,7 +278,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 ? ImmutableSet.of()
                 : projectStore.getProjects(allProjectIds, false);
         if (allProjectIds.size() != projects.size()) {
-            log.warn("ProjectIds on account not found in project table, email {} missing projects {}",
+            log.info("ProjectIds on account not found in project table, email {} missing projects {}",
                     account.getEmail(), Sets.difference(allProjectIds, projects.stream()
                             .map(c -> c.getVersionedConfigAdmin().getConfig().getProjectId()).collect(ImmutableSet.toImmutableSet())));
         }
