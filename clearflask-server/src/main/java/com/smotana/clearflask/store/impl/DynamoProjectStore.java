@@ -62,6 +62,7 @@ import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.ProjectUpgrader;
+import com.smotana.clearflask.util.ProjectUtil;
 import com.smotana.clearflask.util.StringSerdeUtil;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
