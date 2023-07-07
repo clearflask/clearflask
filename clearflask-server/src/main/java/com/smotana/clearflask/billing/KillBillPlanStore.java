@@ -445,7 +445,10 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
         Subscription subscription = billing.getSubscription(accountId);
         String planToChangeFrom = billing.getEndOfTermChangeToPlanId(subscription)
                 .orElse(subscription.getPlanName());
-        Plan currentPlan = getPlan(planToChangeFrom, Optional.of(accountId)).get();
+        // Let's not pass account into getPlan, there is a weird situation where if you are changing plans at end of
+        // term, the plan you are given is the final one, but the price is set as your current one leading to
+        // non-sensical price.
+        Plan currentPlan = getPlan(planToChangeFrom, Optional.empty()).get();
         Set<Plan> planOptions = Sets.newHashSet();
         switch (currentPlan.getBasePlanId()) {
             case "growth-monthly":

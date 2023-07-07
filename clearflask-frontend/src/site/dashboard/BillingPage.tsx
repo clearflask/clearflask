@@ -871,14 +871,12 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                     onClick={() => this.setState({ showFlatYearlyChange: true })}
                   >Flatten</Button>
                 </div>
-                {this.props.accountBilling.plan.basePlanId === 'sponsor-monthly' && (
-                  <div className={this.props.classes.sectionButtons}>
-                    <Button
-                      disabled={this.state.isSubmitting}
-                      onClick={() => this.setState({ showSponsorMonthlyChange: true })}
-                      >Sponsor</Button>
-                  </div>
-                )}
+                <div className={this.props.classes.sectionButtons}>
+                  <Button
+                    disabled={this.state.isSubmitting}
+                    onClick={() => this.setState({ showSponsorMonthlyChange: true })}
+                    >Sponsor</Button>
+                </div>
               </>
             )}
             {this.props.isSuperAdmin && (
