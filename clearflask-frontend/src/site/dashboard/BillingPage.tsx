@@ -15,6 +15,7 @@ import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
 import TimeAgo from 'react-timeago';
+import PoweredByStripe from '../../../public/img/dashboard/PoweredByStripe.svg';
 import * as Admin from '../../api/admin';
 import { Status } from '../../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../../api/serverAdmin';
@@ -23,6 +24,7 @@ import Loader from '../../app/utils/Loader';
 import { tourSetGuideState } from '../../common/ClearFlaskTourProvider';
 import { StarterMaxPosts, TeammatePlanId } from '../../common/config/settings/UpgradeWrapper';
 import CreditCard from '../../common/CreditCard';
+import ImgIso from '../../common/ImgIso';
 import Message from '../../common/Message';
 import StripeCreditCard from '../../common/StripeCreditCard';
 import SubmitButton from '../../common/SubmitButton';
@@ -109,6 +111,13 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
+  },
+  addPaymentDialogPaper: {
+    margin: theme.spacing(2),
+  },
+  poweredByStripeImg: {
+    // margin: theme.spacing(1,0),
+    width: '100%',
   },
   sectionSpacing: {
     marginTop: theme.spacing(2),
@@ -558,6 +567,9 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             <Dialog
               open={!!this.state.showAddPayment}
               onClose={() => this.setState({ showAddPayment: undefined })}
+              classes={{
+                paper: this.props.classes.addPaymentDialogPaper,
+              }}
             >
               <ElementsConsumer>
                 {({ elements, stripe }) => (
@@ -570,6 +582,11 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                           <Collapse in={!!this.state.stripePaymentError}>
                             <Message message={this.state.stripePaymentError} severity='error' />
                           </Collapse>
+                          <ImgIso
+                            img={PoweredByStripe}
+                            className={this.props.classes.poweredByStripeImg}
+                            width={110}
+                          />
                         </DialogContent>
                         <DialogActions>
                           <Button onClick={() => this.setState({ showAddPayment: undefined })}>
