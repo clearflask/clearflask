@@ -1212,14 +1212,13 @@ const ProjectSettingsUsersOnboardingInternal = (props: {
   const website = useSelector<ReduxState, string | undefined>(state => state.conf.conf?.website, shallowEqual);
   const websiteWithoutProtocol = website?.replace(/^https?:\/\/(www\.)?/, '');
   const allowedDomainsProp = props.editor.getProperty(['users', 'onboarding', 'notificationMethods', 'email', 'allowedDomains']) as ConfigEditor.ArrayProperty;
-  const [allowedDomain, setAllowedDomain] = useDebounceProp<string>(
-    (email?.allowedDomains?.[0] !== undefined ? email.allowedDomains[0] : websiteWithoutProtocol) || '',
-    text => {
+  const [allowedDomains, setAllowedDomains] = useDebounceProp<string[]>(
+    !!email?.allowedDomains?.length
+      ? email.allowedDomains
+      : (!!websiteWithoutProtocol ? [websiteWithoutProtocol, ''] : ['']),
+    newAllowedDomains => {
       if (!allowedDomainsProp.value) allowedDomainsProp.set(true);
-      const allowedDomainProp = (!!allowedDomainsProp.childProperties?.length
-        ? allowedDomainsProp.childProperties[0]
-        : allowedDomainsProp.insert()) as ConfigEditor.StringProperty
-      allowedDomainProp.set(text || '');
+      allowedDomainsProp.setRaw(newAllowedDomains.filter(newAllowedDomain => !!newAllowedDomain));
     }
   );
 
@@ -1334,26 +1333,45 @@ const ProjectSettingsUsersOnboardingInternal = (props: {
                 label={(
                   <span className={classes.usersInlineTextField}>
                     Email from&nbsp;
-                    <TextField
-                      style={{ width: 140 }}
-                      placeholder='company.com'
-                      required
-                      disabled={!email?.allowedDomains}
-                      error={!!email && !allowedDomain}
-                      value={allowedDomain}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position='start'>
-                            <EmailAtIcon fontSize='inherit' />
-                          </InputAdornment>
-                        ),
-                      }}
-                      onChange={e => {
-                        setAllowedDomain(e.target.value || '');
-                        next();
-                        tourSetGuideState('onboarding', TourDefinitionGuideState.Completed);
-                      }}
-                    />
+                    {allowedDomains.map((allowedDomain, i) => (
+                      <>
+                        {i > 0 && (
+                          <>
+                            &nbsp;or&nbsp;
+                          </>
+                        )}
+                        <TextField
+                          key={i}
+                          style={{ width: 140, display: 'block' }}
+                          placeholder={i === 0 ? 'company.com' : 'Add another'}
+                          required
+                          disabled={!email?.allowedDomains}
+                          value={allowedDomain}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position='start'>
+                                <EmailAtIcon fontSize='inherit' />
+                              </InputAdornment>
+                            ),
+                          }}
+                          onChange={e => {
+                            // Clone array
+                            var newAllowedDomains = [...allowedDomains];
+                            // Update value
+                            newAllowedDomains[i] = e.target.value || '';
+                            // Remove empty deleted values
+                            newAllowedDomains = newAllowedDomains.filter(newAllowedDomain => !!newAllowedDomain);
+                            // Add one empty at the end
+                            if(newAllowedDomains[newAllowedDomains.length - 1] !== '') {
+                              newAllowedDomains.push('');
+                            }
+                            setAllowedDomains(newAllowedDomains);
+                            next();
+                            tourSetGuideState('onboarding', TourDefinitionGuideState.Completed);
+                          }}
+                        />
+                      </>
+                    ))}
                   </span>
                 )}
                 className={classes.usersOnboardOption}
@@ -1368,7 +1386,7 @@ const ProjectSettingsUsersOnboardingInternal = (props: {
                           mode: Admin.EmailSignupModeEnum.SignupAndLogin,
                           password: Admin.EmailSignupPasswordEnum.None,
                           verification: Admin.EmailSignupVerificationEnum.None,
-                          allowedDomains: [allowedDomain],
+                          allowedDomains: allowedDomains.filter(allowedDomain => !!allowedDomain),
                         }) : undefined);
                       next();
                       tourSetGuideState('onboarding', TourDefinitionGuideState.Completed);
