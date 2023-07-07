@@ -72,7 +72,7 @@ services:
     ports:
       - 8081:8080
     environment:
-      - KAUI_CONFIG_DAO_URL=jdbc:mysql://mysql-db:3306/kaui
+      - KAUI_CONFIG_DAO_URL=jdbc:mysql://mysql-db:3306/killbill
       - KAUI_CONFIG_DAO_USER=root
       - KAUI_CONFIG_DAO_PASSWORD=killbill
       - KAUI_KILLBILL_URL=http://killbill-engine:8080

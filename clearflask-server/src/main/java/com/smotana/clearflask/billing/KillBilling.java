@@ -88,6 +88,7 @@ import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -96,7 +97,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static com.smotana.clearflask.api.model.SubscriptionStatus.*;
+import static com.smotana.clearflask.api.model.SubscriptionStatus.ACTIVE;
+import static com.smotana.clearflask.api.model.SubscriptionStatus.ACTIVENORENEWAL;
+import static com.smotana.clearflask.api.model.SubscriptionStatus.ACTIVEPAYMENTRETRY;
+import static com.smotana.clearflask.api.model.SubscriptionStatus.ACTIVETRIAL;
+import static com.smotana.clearflask.api.model.SubscriptionStatus.BLOCKED;
+import static com.smotana.clearflask.api.model.SubscriptionStatus.CANCELLED;
+import static com.smotana.clearflask.api.model.SubscriptionStatus.LIMITED;
+import static com.smotana.clearflask.api.model.SubscriptionStatus.NOPAYMENTMETHOD;
 import static com.smotana.clearflask.billing.KillBillClientProvider.STRIPE_PLUGIN_NAME;
 
 @Slf4j
@@ -259,6 +267,41 @@ public class KillBilling extends ManagedService implements Billing {
         return account;
     }
 
+    private Optional<List<PhasePrice>> getUserChosenPriceOverrides(String accountId, String planId, Optional<Long> recurringPriceOpt) {
+        if (!PlanStore.ALLOW_USER_CHOOSE_PRICING_FOR_PLANS.contains(planId)) {
+            if (recurringPriceOpt.isPresent()) {
+                log.warn("Account {} requested a recurring price for a plan {} that doesn't support it",
+                        accountId, planId);
+                throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
+                        "Failed to setup your subscription, try again later");
+            }
+            return Optional.empty();
+        }
+        if (recurringPriceOpt.isEmpty()) {
+            return Optional.empty();
+        }
+        if (recurringPriceOpt.get() > PlanStore.ALLOW_USER_CHOOSE_PRICING_MAX) {
+            log.warn("Account {} requested monthly price above allowed limit {}",
+                    accountId, recurringPriceOpt.get());
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
+                    "Failed to setup your subscription, try again later");
+        }
+        if (recurringPriceOpt.get() < PlanStore.ALLOW_USER_CHOOSE_PRICING_MIN) {
+            log.warn("Account {} requested monthly price below allowed limit {}",
+                    accountId, recurringPriceOpt.get());
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
+                    "Failed to setup your subscription, try again later");
+        }
+        return Optional.of(ImmutableList.of(
+                new PhasePrice(
+                        planId,
+                        planId + "-evergreen",
+                        PhaseType.EVERGREEN.name(),
+                        null,
+                        BigDecimal.valueOf(recurringPriceOpt.get()),
+                        null)));
+    }
+
     @Extern
     private Subscription createSubscription(AccountStore.Account accountInDyn, Account account) {
         Subscription subscription;
@@ -269,7 +312,12 @@ public class KillBilling extends ManagedService implements Billing {
                             .setPhaseType(PlanStore.PLANS_WITHOUT_TRIAL.contains(accountInDyn.getPlanid())
                                     ? PhaseType.EVERGREEN
                                     : PhaseType.TRIAL)
-                            .setPlanName(accountInDyn.getPlanid()),
+                            .setPlanName(accountInDyn.getPlanid())
+                            .setPriceOverrides(getUserChosenPriceOverrides(
+                                    accountInDyn.getAccountId(),
+                                    accountInDyn.getPlanid(),
+                                    Optional.ofNullable(accountInDyn.getRequestedRecurringPrice()))
+                                    .orElse(null)),
                     null,
                     null,
                     false,
@@ -766,7 +814,7 @@ public class KillBilling extends ManagedService implements Billing {
 
     @Extern
     @Override
-    public Subscription changePlan(String accountId, String planId) {
+    public Subscription changePlan(String accountId, String planId, Optional<Long> recurringPriceOpt) {
         try {
             Account accountInKb = getAccount(accountId);
             Subscription subscriptionInKb = getSubscription(accountId);
@@ -839,7 +887,9 @@ public class KillBilling extends ManagedService implements Billing {
                             .setBundleExternalKey(accountId)
                             .setAccountId(accountInKb.getAccountId())
                             .setPlanName(planId)
-                            .setPhaseType(newPhase),
+                            .setPhaseType(newPhase)
+                            .setPriceOverrides(getUserChosenPriceOverrides(accountId, planId, recurringPriceOpt)
+                                    .orElse(null)),
                     null,
                     true,
                     TimeUnit.MILLISECONDS.toSeconds(config.callTimeoutInMillis()),
@@ -914,19 +964,22 @@ public class KillBilling extends ManagedService implements Billing {
     @Override
     public boolean tryAutoUpgradePlan(AccountStore.Account accountInDyn, String requiredPlanId) {
         boolean allowUpgrade = false;
+        /*
+         * CURRENTLY DISABLED, current standard plan has no trial and the upgrade plan is sponsor plan which requires an amount
+         */
         if (ACTIVETRIAL.equals(accountInDyn.getStatus())
                 && getDefaultPaymentMethodDetails(accountInDyn.getAccountId()).isEmpty()
-                && "standard-unlimited".equals(requiredPlanId)) {
+                && "standard2-unlimited".equals(requiredPlanId)) {
             allowUpgrade = true;
         } else if (PlanStore.TEAMMATE_PLAN_ID.equals(accountInDyn.getPlanid())
-                && "standard-unlimited".equals(requiredPlanId)) {
+                && "standard2-unlimited".equals(requiredPlanId)) {
             allowUpgrade = true;
         }
 
         if (allowUpgrade) {
             usageExecutor.submit(() -> {
                 try {
-                    changePlan(accountInDyn.getAccountId(), requiredPlanId);
+                    changePlan(accountInDyn.getAccountId(), requiredPlanId, Optional.empty());
                 } catch (Throwable th) {
                     log.error("Failed to auto upgrade accountId {} to plan {}",
                             accountInDyn.getAccountId(), requiredPlanId, th);

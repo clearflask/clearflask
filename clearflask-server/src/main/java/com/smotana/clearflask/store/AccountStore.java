@@ -206,6 +206,12 @@ public interface AccountStore {
         ImmutableMap<String, String> addons;
 
         /**
+         * If set, monthly subscription should be created with this price. Only used if subscription failed to create on
+         * signup and needs to be created on-demand and need to know what price to use.
+         */
+        Long requestedRecurringPrice;
+
+        /**
          * ClearFlask Feedback page guid
          */
         public String getClearFlaskGuid() {

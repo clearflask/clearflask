@@ -4,16 +4,29 @@ package com.smotana.clearflask.billing;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.common.primitives.Longs;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
+import com.smotana.clearflask.api.model.AllPlansGetResponse;
+import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.api.model.FeaturesTable;
+import com.smotana.clearflask.api.model.FeaturesTableFeatures;
+import com.smotana.clearflask.api.model.Onboarding;
 import com.smotana.clearflask.api.model.Plan;
-import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.PlanPerk;
+import com.smotana.clearflask.api.model.PlanPricing;
 import com.smotana.clearflask.api.model.PlanPricing.PeriodEnum;
+import com.smotana.clearflask.api.model.PlanPricingAdmins;
+import com.smotana.clearflask.api.model.PlansGetResponse;
+import com.smotana.clearflask.api.model.Whitelabel;
 import com.smotana.clearflask.billing.CouponStore.CouponModel;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.AccountStore;
@@ -27,13 +40,26 @@ import org.killbill.billing.catalog.api.BillingPeriod;
 import org.killbill.billing.catalog.api.PhaseType;
 import org.killbill.billing.client.api.gen.CatalogApi;
 import org.killbill.billing.client.model.Catalogs;
+import org.killbill.billing.client.model.gen.Catalog;
+import org.killbill.billing.client.model.gen.Phase;
+import org.killbill.billing.client.model.gen.PhasePrice;
+import org.killbill.billing.client.model.gen.Price;
 import org.killbill.billing.client.model.gen.Subscription;
-import org.killbill.billing.client.model.gen.*;
+import org.killbill.billing.client.model.gen.TieredBlock;
+import org.killbill.billing.client.model.gen.Usage;
 
 import javax.annotation.Nullable;
 import javax.ws.rs.core.Response;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.AbstractCollection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.OptionalLong;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -41,6 +67,7 @@ import java.util.stream.Stream;
 @Slf4j
 @Singleton
 public class KillBillPlanStore extends ManagedService implements PlanStore {
+    public static final String DEFAULT_UPGRADE_REQUIRED_PLAN = "sponsor-monthly";
     /**
      * If changed, also change in UpgradeWrapper.tsx
      */
@@ -80,7 +107,8 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     private static final String TERMS_WHITELABEL = "Remove ClearFlask branding";
     private static final String TERMS_ELASTICSEARCH = "Search powered by ElasticSearch for fast and accurate search capability";
     private static final ImmutableSet<String> AVAILABLE_PLAN_NAMES = ImmutableSet.of(
-            "standard-unlimited");
+            "standard2-unlimited",
+            "sponsor-monthly");
     private static final ImmutableMap<String, Function<PlanPricing, Plan>> PLANS_BUILDER = ImmutableMap.<String, Function<PlanPricing, Plan>>builder()
             // Deprecated plan with unlimited trial up to 10 MAU
             .put("growth-monthly", pp -> new Plan("growth-monthly", "Growth",
@@ -206,8 +234,20 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             .put("standard-unlimited", pp -> new Plan("standard-unlimited", "Standard",
                     pp, ImmutableList.of(
                     new PlanPerk("Unlimited projects", TERMS_PROJECTS),
-                    new PlanPerk("Unlimited teammates", null),
+                    new PlanPerk("Unlimited teammates", TERMS_ADMINS),
                     new PlanPerk("Unlimited users", null)),
+                    null, null))
+            .put("standard2-unlimited", pp -> new Plan("standard2-unlimited", "Standard",
+                    pp, ImmutableList.of(
+                    new PlanPerk("Unlimited projects", TERMS_PROJECTS),
+                    new PlanPerk("Unlimited users", null),
+                    new PlanPerk("3 teammates", null)),
+                    null, null))
+            .put("sponsor-monthly", pp -> new Plan("sponsor-monthly", "Sponsor",
+                    pp, ImmutableList.of(
+                    new PlanPerk("Unlimited teammates", null),
+                    new PlanPerk("Private projects", null),
+                    new PlanPerk("Whitelabel", null)),
                     null, null))
             .build();
     private static final ImmutableList<Plan> PLANS_STATIC = ImmutableList.of(
@@ -223,17 +263,17 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     null, null)
     );
     private static final FeaturesTable FEATURES_TABLE = new FeaturesTable(
-            ImmutableList.of("Self-host", "Standard", "Enterprise"),
+            ImmutableList.of("Self-host", "Standard", "Sponsor"),
             ImmutableList.of(
                     new FeaturesTableFeatures("Projects", ImmutableList.of("No limit", "No limit", "No limit"), TERMS_PROJECTS),
                     new FeaturesTableFeatures("Users", ImmutableList.of("No limit", "No limit", "No limit"), null),
                     new FeaturesTableFeatures("Posts", ImmutableList.of("No limit", "No limit", "No limit"), TERMS_POSTS),
-                    new FeaturesTableFeatures("Teammates", ImmutableList.of("No limit", "No limit", "No limit"), TERMS_ADMINS),
+                    new FeaturesTableFeatures("Teammates", ImmutableList.of("No limit", "3", "No limit"), TERMS_ADMINS),
                     new FeaturesTableFeatures("Credit System", ImmutableList.of("Yes", "Yes", "Yes"), TERMS_CREDIT_SYSTEM),
                     new FeaturesTableFeatures("Roadmap", ImmutableList.of("Yes", "Yes", "Yes"), null),
                     new FeaturesTableFeatures("Content customization", ImmutableList.of("Yes", "Yes", "Yes"), null),
                     new FeaturesTableFeatures("Custom domain", ImmutableList.of("Yes", "Yes", "Yes"), null),
-                    new FeaturesTableFeatures("Private projects", ImmutableList.of("Yes", "Yes", "Yes"), TERMS_PRIVATE_PROJECTS),
+                    new FeaturesTableFeatures("Private projects", ImmutableList.of("Yes", "No", "Yes"), TERMS_PRIVATE_PROJECTS),
                     new FeaturesTableFeatures("SSO and OAuth", ImmutableList.of("Yes", "Yes", "Yes"), TERMS_SSO_AND_OAUTH),
                     new FeaturesTableFeatures("API", ImmutableList.of("Yes", "Yes", "Yes"), TERMS_API),
                     new FeaturesTableFeatures("GitHub integration", ImmutableList.of("Yes", "Yes", "Yes"), TERMS_GITHUB),
@@ -241,9 +281,8 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     new FeaturesTableFeatures("Tracking integrations", ImmutableList.of("Yes", "Yes", "Yes"), TERMS_TRACKING),
                     new FeaturesTableFeatures("Site template", ImmutableList.of("Yes", "Yes", "Yes"), TERMS_SITE_TEMPLATE),
                     new FeaturesTableFeatures("Whitelabel", ImmutableList.of("No", "No", "Yes"), TERMS_WHITELABEL),
-                    new FeaturesTableFeatures("Search engine", ImmutableList.of("Yes", "No", "Yes"), TERMS_ELASTICSEARCH),
-                    new FeaturesTableFeatures("Premium support", ImmutableList.of("No", "No", "Yes"), null),
-                    new FeaturesTableFeatures("SLA", ImmutableList.of("No", "No", "Yes"), null)
+                    // new FeaturesTableFeatures("Search engine", ImmutableList.of("Yes", "No", "No"), TERMS_ELASTICSEARCH),
+                    new FeaturesTableFeatures("Priority support", ImmutableList.of("No", "No", "Yes"), null)
             ), null);
 
     @Inject
@@ -283,12 +322,11 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     .flatMap(p -> p.getPhases().stream())
                     .filter(p -> PhaseType.EVERGREEN.name().equals(p.getType()))
                     .findAny();
-            Optional<Price> priceOpt = evergreenOpt.stream()
+            long basePrice = evergreenOpt.stream()
                     .flatMap(p -> p.getPrices().stream())
-                    .findFirst();
-            long basePrice = priceOpt
                     .map(Price::getValue)
                     .map(BigDecimal::longValueExact)
+                    .max(Long::compareTo)
                     .orElse(0L);
             Optional<Usage> usageOpt = evergreenOpt.stream()
                     .flatMap(p -> p.getUsages().stream())
@@ -425,9 +463,16 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             case "pitchground-d-lifetime":
             case "pitchground-e-lifetime":
             case "flat-yearly":
-                planOptions.add(availablePlans.get("standard-unlimited"));
-                break;
             case "standard-unlimited":
+                planOptions.add(availablePlans.get("standard2-unlimited"));
+                planOptions.add(availablePlans.get("sponsor-monthly"));
+                break;
+            case "sponsor-monthly":
+                planOptions.add(availablePlans.get("standard2-unlimited"));
+                break;
+            case "standard2-unlimited":
+                planOptions.add(availablePlans.get("sponsor-monthly"));
+                break;
             default:
                 break;
         }
@@ -472,7 +517,11 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                         .filter(Objects::nonNull)
                         .flatMap(List::stream)
                         .filter(phasePrice -> subscription.getPlanName().equals(phasePrice.getPlanName()))
-                        .filter(phasePrice -> subscription.getPhaseType().name().equals(phasePrice.getPhaseType()))
+                        .filter(phasePrice -> (subscription.getPhaseType() == PhaseType.TRIAL
+                                // For trial phase, show the price of evergreen
+                                // For any other phase, find the specific price of that phase
+                                ? PhaseType.EVERGREEN : subscription.getPhaseType())
+                                .name().equals(phasePrice.getPhaseType()))
                         .findFirst()
                         .map(PhasePrice::getRecurringPrice)
                         .map(BigDecimal::longValueExact);
@@ -599,7 +648,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     @Override
     public void verifyAccountMeetsLimits(String planId, String accountId) throws ApiException {
         if (isAccountExceedsPostLimit(planId, accountId)) {
-            throw new RequiresUpgradeException("starter3-monthly", "Maximum number of posts reached, please delete old ones");
+            throw new RequiresUpgradeException("Maximum number of posts reached, please delete old ones");
         }
     }
 
@@ -634,9 +683,9 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             case TEAMMATE_PLAN_ID:
                 switch (action) {
                     case CREATE_PROJECT:
-                        throw new RequiresUpgradeException("standard-unlimited", "Not allowed to create projects without a plan");
+                        throw new RequiresUpgradeException("Not allowed to create projects without a plan");
                     case API_KEY:
-                        throw new RequiresUpgradeException("standard-unlimited", "Not allowed to use API without a plan");
+                        throw new RequiresUpgradeException("Not allowed to use API without a plan");
                 }
                 return;
             case "starter-unlimited":
@@ -647,7 +696,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             case "pitchground-b-lifetime":
                 switch (action) {
                     case API_KEY:
-                        throw new RequiresUpgradeException("standard-unlimited", "Not allowed to use API on your plan");
+                        throw new RequiresUpgradeException("Not allowed to use API on your plan");
                 }
                 return;
             default:
@@ -668,7 +717,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
 
         switch (getBasePlanId(planId)) {
             case TEAMMATE_PLAN_ID:
-                throw new RequiresUpgradeException("standard-unlimited", "Not allowed to have projects without a plan");
+                throw new RequiresUpgradeException("Not allowed to have projects without a plan");
             case "starter-unlimited":
             case "starter3-monthly":
             case "growth-monthly":
@@ -680,68 +729,68 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 }
                 // Restrict OAuth
                 if (!config.getUsers().getOnboarding().getNotificationMethods().getOauth().isEmpty()) {
-                    throw new RequiresUpgradeException("standard-unlimited", "Not allowed to use OAuth on your plan");
+                    throw new RequiresUpgradeException("Not allowed to use OAuth on your plan");
                 }
                 // Restrict Single Sign-On
                 if (config.getUsers().getOnboarding().getNotificationMethods().getSso() != null) {
-                    throw new RequiresUpgradeException("standard-unlimited", "Not allowed to use SSO on your plan");
+                    throw new RequiresUpgradeException("Not allowed to use SSO on your plan");
                 }
                 // Restrict Private projects
                 if (!hasAddonPrivateProjects && config.getUsers().getOnboarding().getVisibility() == Onboarding.VisibilityEnum.PRIVATE) {
-                    throw new RequiresUpgradeException("standard-unlimited", "Not allowed to use Private visibility on your plan");
+                    throw new RequiresUpgradeException("Not allowed to use Private visibility on your plan");
                 }
                 // Restrict Site template
                 if (config.getStyle().getTemplates() != null) {
-                    throw new RequiresUpgradeException("standard-unlimited", "Not allowed to use Templates on your plan");
+                    throw new RequiresUpgradeException("Not allowed to use Templates on your plan");
                 }
                 // Restrict Integrations
                 if (config.getGithub() != null) {
-                    throw new RequiresUpgradeException("standard-unlimited", "Not allowed to use GitHub integration on your plan");
+                    throw new RequiresUpgradeException("Not allowed to use GitHub integration on your plan");
                 }
                 if (config.getIntegrations().getGoogleAnalytics() != null) {
-                    throw new RequiresUpgradeException("standard-unlimited", "Not allowed to use Google Analytics integration on your plan");
+                    throw new RequiresUpgradeException("Not allowed to use Google Analytics integration on your plan");
                 }
                 if (config.getIntegrations().getHotjar() != null) {
-                    throw new RequiresUpgradeException("standard-unlimited", "Not allowed to use HotJar integration on your plan");
+                    throw new RequiresUpgradeException("Not allowed to use HotJar integration on your plan");
                 }
                 if (config.getIntegrations().getIntercom() != null) {
-                    throw new RequiresUpgradeException("standard-unlimited", "Not allowed to use Intercom integration on your plan");
+                    throw new RequiresUpgradeException("Not allowed to use Intercom integration on your plan");
                 }
                 // Restrict No Index
                 if (config.getNoIndex() == Boolean.TRUE) {
-                    throw new RequiresUpgradeException("standard-unlimited", "Not allowed to disable Search Indexing on your plan");
+                    throw new RequiresUpgradeException("Not allowed to disable Search Indexing on your plan");
                 }
                 return;
             case "pitchground-a-lifetime":
             case "pitchground-b-lifetime":
                 // Restrict OAuth
                 if (!config.getUsers().getOnboarding().getNotificationMethods().getOauth().isEmpty()) {
-                    throw new RequiresUpgradeException("standard-unlimited", "Not allowed to use OAuth on your plan");
+                    throw new RequiresUpgradeException("Not allowed to use OAuth on your plan");
                 }
                 // Restrict Single Sign-On
                 if (config.getUsers().getOnboarding().getNotificationMethods().getSso() != null) {
-                    throw new RequiresUpgradeException("standard-unlimited", "Not allowed to use SSO on your plan");
+                    throw new RequiresUpgradeException("Not allowed to use SSO on your plan");
                 }
                 // Restrict Private projects
                 if (!hasAddonPrivateProjects && config.getUsers().getOnboarding().getVisibility() == Onboarding.VisibilityEnum.PRIVATE) {
-                    throw new RequiresUpgradeException("standard-unlimited", "Not allowed to use Private visibility on your plan");
+                    throw new RequiresUpgradeException("Not allowed to use Private visibility on your plan");
                 }
                 // Restrict Site template
                 if (config.getStyle().getTemplates() != null) {
-                    throw new RequiresUpgradeException("standard-unlimited", "Not allowed to use Templates on your plan");
+                    throw new RequiresUpgradeException("Not allowed to use Templates on your plan");
                 }
                 // Restrict Integrations
                 if (config.getGithub() != null) {
-                    throw new RequiresUpgradeException("standard-unlimited", "Not allowed to use GitHub integration on your plan");
+                    throw new RequiresUpgradeException("Not allowed to use GitHub integration on your plan");
                 }
                 if (config.getIntegrations().getGoogleAnalytics() != null) {
-                    throw new RequiresUpgradeException("standard-unlimited", "Not allowed to use Google Analytics integration on your plan");
+                    throw new RequiresUpgradeException("Not allowed to use Google Analytics integration on your plan");
                 }
                 if (config.getIntegrations().getHotjar() != null) {
-                    throw new RequiresUpgradeException("standard-unlimited", "Not allowed to use HotJar integration on your plan");
+                    throw new RequiresUpgradeException("Not allowed to use HotJar integration on your plan");
                 }
                 if (config.getIntegrations().getIntercom() != null) {
-                    throw new RequiresUpgradeException("standard-unlimited", "Not allowed to use Intercom integration on your plan");
+                    throw new RequiresUpgradeException("Not allowed to use Intercom integration on your plan");
                 }
                 // rollover to next case
             case "pitchground-c-lifetime":
@@ -762,6 +811,18 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 if (!hasAddonWhitelabel && !Whitelabel.PoweredByEnum.SHOW.equals(config.getStyle().getWhitelabel().getPoweredBy())) {
                     throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to Whitelabel Powered By on your plan");
                 }
+                break;
+            case "standard2-unlimited":
+                // Restrict Private projects
+                if (!hasAddonPrivateProjects && config.getUsers().getOnboarding().getVisibility() == Onboarding.VisibilityEnum.PRIVATE) {
+                    throw new RequiresUpgradeException("Not allowed to use Private visibility on your plan");
+                }
+                // Restrict Whitelabel
+                if (!hasAddonWhitelabel && !Whitelabel.PoweredByEnum.SHOW.equals(config.getStyle().getWhitelabel().getPoweredBy())) {
+                    throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to Whitelabel Powered By on your plan");
+                }
+                break;
+            case "sponsor-monthly":
                 break;
         }
     }
@@ -781,26 +842,26 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     @Override
     public void verifyTeammateInviteMeetsPlanRestrictions(String planId, String projectId, boolean addOne) throws ApiException {
         Optional<Long> teammateLimitOpt = Optional.empty();
-        String requiredPlanId = "flat-yearly";
+        String requiredPlanId = DEFAULT_UPGRADE_REQUIRED_PLAN;
         switch (getBasePlanId(planId)) {
             case "starter-unlimited":
             case "pro-lifetime":
             case "pitchground-a-lifetime":
                 teammateLimitOpt = Optional.of(1L);
-                requiredPlanId = "standard2-monthly";
+                requiredPlanId = DEFAULT_UPGRADE_REQUIRED_PLAN;
                 break;
             case "pitchground-b-lifetime":
                 teammateLimitOpt = Optional.of(3L);
-                requiredPlanId = "standard2-monthly";
+                requiredPlanId = DEFAULT_UPGRADE_REQUIRED_PLAN;
                 break;
             case "pitchground-c-lifetime":
                 teammateLimitOpt = Optional.of(5L);
-                requiredPlanId = "standard2-monthly";
+                requiredPlanId = DEFAULT_UPGRADE_REQUIRED_PLAN;
                 break;
             case "growth-monthly":
             case "growth2-monthly":
                 teammateLimitOpt = Optional.of(GROWTH_MAX_TEAMMATES);
-                requiredPlanId = "standard2-monthly";
+                requiredPlanId = DEFAULT_UPGRADE_REQUIRED_PLAN;
                 break;
             case "standard-monthly":
             case "standard2-monthly":
@@ -812,10 +873,14 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             case "pitchground-e-lifetime":
                 teammateLimitOpt = Optional.of(25L);
                 break;
+            case "standard2-unlimited":
+                teammateLimitOpt = Optional.of(3L);
+                break;
             case "starter3-monthly":
             case "standard3-monthly":
             case "standard-unlimited":
             case "flat-yearly":
+            case "sponsor-monthly":
                 break; // No limit
             default:
                 if (LogUtil.rateLimitAllowLog("killbillplanstore-teammates-unknown-limit")) {
@@ -823,7 +888,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 }
         }
         if (teammateLimitOpt.isPresent()) {
-            if (teammateLimitOpt.get() == 1L) {
+            if (teammateLimitOpt.get() <= 1L) {
                 if (addOne || getCurrentTeammateCount(projectId) > 1L) {
                     throw new RequiresUpgradeException(requiredPlanId, "Your plan has reached the teammate limit");
                 }
@@ -836,15 +901,15 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     }
 
     private long getCurrentTeammateCount(String projectId) {
-        long invitationCount = projectStore.getProject(projectId, true).map(ProjectStore.Project::getModel)
+        long adminCount = projectStore.getProject(projectId, true).map(ProjectStore.Project::getModel)
                 .map(ProjectStore.ProjectModel::getAdminsAccountIds)
                 .map(AbstractCollection::size)
                 .orElse(0);
-        long adminCount = projectStore.getInvitations(projectId)
+        long pendingInvitationCount = projectStore.getInvitations(projectId)
                 .stream()
                 .filter(Predicate.not(ProjectStore.InvitationModel::isAccepted))
                 .count();
-        return invitationCount = adminCount;
+        return pendingInvitationCount + adminCount;
     }
 
     /**
@@ -880,7 +945,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             long projectCount = accountStore.getAccount(accountId, true).get()
                     .getProjectIds().size();
             if ((projectCount + (addOne ? 1 : 0)) > projectCountLimitOpt.get()) {
-                throw new RequiresUpgradeException("standard-unlimited", "Your plan has reached project limit");
+                throw new RequiresUpgradeException("Your plan has reached project limit");
             }
         }
     }

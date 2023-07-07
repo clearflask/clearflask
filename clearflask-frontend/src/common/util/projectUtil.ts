@@ -5,6 +5,7 @@ import windowIso from '../windowIso';
 import { escapeHtml } from './htmlUtil';
 
 export function getProjectName(config?: Admin.ConfigAdmin): string {
+  // If changed, also change in ProjectUtil.java
   return config?.name
     || config?.slug
     || config?.domain

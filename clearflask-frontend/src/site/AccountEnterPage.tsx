@@ -36,7 +36,6 @@ import { OAuthFlow } from '../common/util/oauthUtil';
 import { RedirectIso } from '../common/util/routerUtil';
 import { trackingBlock } from '../common/util/trackingDelay';
 import windowIso from '../common/windowIso';
-import { SUPPORT_MESSAGE_FIELD_CONTACT, SUPPORT_MESSAGE_FIELD_TYPE } from './ContactPage';
 import PricingPlan from './PricingPlan';
 import AnimBubble from './landing/AnimBubble';
 
@@ -739,30 +738,18 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
     const dispatchAdmin = await ServerAdmin.get().dispatchAdmin();
     try {
       const couponId = this.props.location.state?.[ADMIN_ENTER_COUPON_ID];
-      const account = await dispatchAdmin.accountSignupAdmin({
+      const preSelectedPlanPrice = this.props.location.state?.[PRE_SELECTED_PLAN_PRICE];
+      await dispatchAdmin.accountSignupAdmin({
         accountSignupAdmin: {
           name: this.state.name!,
           email: this.state.email!,
           password: saltHashPassword(this.state.pass!),
           basePlanId: selectedPlanId,
+          requestedPrice: preSelectedPlanPrice || undefined,
           invitationId: this.props.location.state?.[ADMIN_ENTER_INVITATION_ID],
           couponId,
         }
       });
-      const preSelectedPlanPrice = this.props.location.state?.[PRE_SELECTED_PLAN_PRICE];
-      if (preSelectedPlanPrice !== undefined) {
-        dispatchAdmin.supportMessage({
-          supportMessage: {
-            content: {
-              details: 'Pay what you can request',
-              amount: preSelectedPlanPrice,
-              accountId: account.accountId,
-              [SUPPORT_MESSAGE_FIELD_CONTACT]: account.email,
-              [SUPPORT_MESSAGE_FIELD_TYPE]: 'price-increase',
-            }
-          },
-        });
-      }
       this.setState({
         isSubmitting: false,
         accountWasCreated: true,

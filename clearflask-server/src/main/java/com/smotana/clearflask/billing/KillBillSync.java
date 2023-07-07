@@ -58,7 +58,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.smotana.clearflask.billing.KillBillClientProvider.STRIPE_PLUGIN_NAME;
 import static com.smotana.clearflask.billing.ReportConfigurationJson.Frequency.DAILY;
 import static com.smotana.clearflask.billing.ReportConfigurationJson.Frequency.HOURLY;
-import static com.smotana.clearflask.billing.ReportConfigurationJson.ReportType.*;
+import static com.smotana.clearflask.billing.ReportConfigurationJson.ReportType.COUNTERS;
+import static com.smotana.clearflask.billing.ReportConfigurationJson.ReportType.TABLE;
+import static com.smotana.clearflask.billing.ReportConfigurationJson.ReportType.TIMELINE;
 
 @Slf4j
 @Singleton
@@ -76,6 +78,7 @@ public class KillBillSync extends ManagedService {
             .add("catalog009.xml")
             .add("catalog010.xml")
             .add("catalog011.xml")
+            .add("catalog012.xml")
             .build();
     private static final String PER_TENANT_CONFIG = "\"org.killbill.payment.retry.days=1,2,3\"," +
             "\"org.killbill.billing.server.notifications.retries=1m,2h,1d,2d\"";
@@ -105,7 +108,8 @@ public class KillBillSync extends ManagedService {
                     .setSubscriptionCancellationPolicy(OverdueCancellationPolicy.NONE)
                     .setAutoReevaluationIntervalDays(20));
     /**
-     * Reports extracted from: https://github.com/killbill/killbill-analytics-plugin/blob/master/src/main/resources/seed_reports.sh
+     * Reports extracted from:
+     * https://github.com/killbill/killbill-analytics-plugin/blob/master/src/main/resources/seed_reports.sh
      */
     private static final ImmutableList<ReportConfigurationJson> DEFAULT_ANALYTICS_REPORTS = ImmutableList.<ReportConfigurationJson>builder()
             // Dashboard views

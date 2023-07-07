@@ -302,7 +302,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                                 Optional.of(oauthResult.get().getGuid()),
                                 Optional.ofNullable(Strings.emptyToNull(accountBindAdmin.getOauthToken().getInvitationId())),
                                 Optional.ofNullable(Strings.emptyToNull(accountBindAdmin.getOauthToken().getCouponId())),
-                                Optional.ofNullable(Strings.emptyToNull(accountBindAdmin.getOauthToken().getBasePlanId()))));
+                                Optional.ofNullable(Strings.emptyToNull(accountBindAdmin.getOauthToken().getBasePlanId())),
+                                Optional.empty()));
                         created = true;
                     }
                 }
@@ -402,7 +403,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 Optional.empty(),
                 Optional.ofNullable(Strings.emptyToNull(signup.getInvitationId())),
                 Optional.ofNullable(Strings.emptyToNull(signup.getCouponId())),
-                Optional.of(signup.getBasePlanId())
+                Optional.of(signup.getBasePlanId()),
+                Optional.ofNullable(signup.getRequestedPrice())
         );
 
         return account.toAccountAdmin(intercomUtil, chatwootUtil, planStore, cfSso, superAdminPredicate);
@@ -415,7 +417,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             Optional<String> guidOpt,
             Optional<String> invitationIdOpt,
             Optional<String> couponIdOpt,
-            Optional<String> preferredPlanIdOpt) {
+            Optional<String> preferredPlanIdOpt,
+            Optional<Long> preferredPriceOpt) {
         if (!config.signupEnabled()) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Signups are disabled");
         }
@@ -479,7 +482,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 externalProjectIds,
                 guidOpt.orElse(null),
                 ImmutableMap.of(),
-                ImmutableMap.of());
+                ImmutableMap.of(),
+                preferredPriceOpt.orElse(null));
         account = accountStore.createAccount(account).getAccount();
 
         // Create customer in KillBill asynchronously because:
@@ -595,7 +599,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot change to this plan");
             }
 
-            account = changePlan(account, newPlanid, ImmutableMap.of());
+            account = changePlan(account, newPlanid, ImmutableMap.of(), Optional.ofNullable(accountUpdateAdmin.getRequestedPrice()));
+        } else if (accountUpdateAdmin.getRequestedPrice() != null) {
+            account = changePlan(account, account.getPlanid(), ImmutableMap.of(), Optional.of(accountUpdateAdmin.getRequestedPrice()));
         }
         return account.toAccountAdmin(intercomUtil, chatwootUtil, planStore, cfSso, superAdminPredicate);
     }
@@ -771,7 +777,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         PlanWithAddons planWithAddons = planStore.getCouponPlan(coupon, Optional.of(account.getAccountId()))
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Coupon plan is not available"));
 
-        account = changePlan(account, planWithAddons.getPlan().getBasePlanId(), planWithAddons.getAddons());
+        account = changePlan(account, planWithAddons.getPlan().getBasePlanId(), planWithAddons.getAddons(), Optional.empty());
 
         return account.toAccountAdmin(intercomUtil, chatwootUtil, planStore, cfSso, superAdminPredicate);
     }
@@ -978,14 +984,14 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         return planStore.getAllPlans();
     }
 
-    private Account changePlan(Account account, String newPlanid, ImmutableMap<String, String> addons) {
+    private Account changePlan(Account account, String newPlanid, ImmutableMap<String, String> addons, Optional<Long> recurringPriceOpt) {
         planStore.verifyAccountMeetsPlanRestrictions(newPlanid, account.getAccountId());
 
-        boolean isAddonsChangeOnly = newPlanid.equals(account.getPlanid());
+        boolean isAddonsChangeOnly = newPlanid.equals(account.getPlanid()) && recurringPriceOpt.isEmpty();
 
         boolean isPlanChangingNow = false;
         if (!isAddonsChangeOnly) {
-            Subscription subscription = billing.changePlan(account.getAccountId(), newPlanid);
+            Subscription subscription = billing.changePlan(account.getAccountId(), newPlanid, recurringPriceOpt);
             // Only update account if plan was changed immediately, as oppose to end of term
             isPlanChangingNow = newPlanid.equals(subscription.getPlanName());
             if (!newPlanid.equals(subscription.getPlanName())

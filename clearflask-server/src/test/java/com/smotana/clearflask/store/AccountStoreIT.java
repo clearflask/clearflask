@@ -65,7 +65,9 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static io.dataspray.singletable.TableType.Primary;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @Slf4j
 @RunWith(Parameterized.class)
@@ -144,6 +146,7 @@ public class AccountStoreIT extends AbstractIT {
                 ImmutableSet.of(),
                 null,
                 ImmutableMap.of(),
+                null,
                 null);
         store.createAccount(account).getIndexingFuture().get();
         assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
@@ -264,6 +267,7 @@ public class AccountStoreIT extends AbstractIT {
                 ImmutableSet.of(),
                 null,
                 ImmutableMap.of(),
+                null,
                 null);
         store.createAccount(account).getIndexingFuture().get();
 
@@ -317,6 +321,7 @@ public class AccountStoreIT extends AbstractIT {
                 null,
                 // Prior to adding attrs, all accounts have this as null
                 // test the creation of this map
+                null,
                 null,
                 null);
 
@@ -397,6 +402,7 @@ public class AccountStoreIT extends AbstractIT {
                 ImmutableSet.of(),
                 null,
                 ImmutableMap.of(),
+                null,
                 null);
         String accountId2 = store.genAccountId();
         Account account2 = new Account(
@@ -412,6 +418,7 @@ public class AccountStoreIT extends AbstractIT {
                 ImmutableSet.of(),
                 null,
                 ImmutableMap.of(),
+                null,
                 null);
 
         store.createAccount(account1).getIndexingFuture().get();
@@ -472,6 +479,7 @@ public class AccountStoreIT extends AbstractIT {
                 null,
                 // Prior to adding attrs, all accounts have this as null
                 // test the creation of this map
+                null,
                 null,
                 null);
         account = store.createAccount(account).getAccount();

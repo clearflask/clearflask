@@ -28,13 +28,21 @@ const TeammatePlan: Admin.Plan = {
   ],
 };
 const AvailablePlans: { [planId: string]: Admin.Plan } = {
-  'standard-unlimited': {
-    basePlanId: 'standard-unlimited', title: 'Standard',
-    pricing: { basePrice: 0, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Yearly },
+  'standard2-unlimited': {
+    basePlanId: 'standard2-unlimited', title: 'Standard',
     perks: [
       { desc: 'Unlimited projects', terms: termsProjects },
-      { desc: 'Unlimited teammates' },
+      { desc: '3 teammates' },
       { desc: 'Unlimited users' },
+    ],
+  },
+  'sponsor-monthly': {
+    basePlanId: 'sponsor-monthly', title: 'Sponsor',
+    pricing: { basePrice: 0, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Monthly },
+    perks: [
+      { desc: 'Unlimited teammates' },
+      { desc: 'Private projects' },
+      { desc: 'Whitelabel' },
     ],
   },
 };
@@ -173,7 +181,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
           name: 'Joe Doe',
           email: 'joe-doe@example.com',
           password: 'unused-in-server-mock',
-          basePlanId: request.accountBindAdmin.oauthToken.basePlanId || 'standard-unlimited',
+          basePlanId: request.accountBindAdmin.oauthToken.basePlanId || 'standard2-unlimited',
           invitationId: request.accountBindAdmin.oauthToken.invitationId,
           couponId: request.accountBindAdmin.oauthToken.couponId,
         }
@@ -263,7 +271,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         : (request.accountSignupAdmin.couponId
           ? 'pro-lifetime'
           : request.accountSignupAdmin.basePlanId))
-        || 'standard-unlimited',
+        || 'standard2-unlimited',
       name: request.accountSignupAdmin.name,
       email: request.accountSignupAdmin.email,
       isSuperAdmin: request.accountSignupAdmin.email === SuperAdminEmail || undefined,
@@ -327,8 +335,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         // Auto-upgrade test, simulate Java-land background upgrade
         setTimeout(() => {
           if (this.account) {
-            this.account.planId = 'standard-unlimited';
-            this.account.basePlanId = 'standard-unlimited';
+            this.account.planId = 'standard2-unlimited';
+            this.account.basePlanId = 'standard2-unlimited';
           }
         }, 500);
       }

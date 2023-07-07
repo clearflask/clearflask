@@ -149,6 +149,8 @@ interface State {
   paymentActionMessageSeverity?: Color;
   showFlatYearlyChange?: boolean;
   flatYearlyPrice?: number;
+  showSponsorPriceChange?: boolean;
+  sponsorPrice?: number;
   showAddonsChange?: boolean;
   whitelabel?: boolean;
   privateProjects?: boolean;
@@ -792,6 +794,42 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             {this.props.isSuperAdmin && (
               <>
                 <Dialog
+                  open={!!this.state.showSponsorPriceChange}
+                  onClose={() => this.setState({ showSponsorPriceChange: undefined })}
+                  scroll='body'
+                  maxWidth='md'
+                >
+                  <DialogTitle>Sponsor price change</DialogTitle>
+                  <DialogContent>
+                    <TextField
+                      variant='outlined'
+                      type='number'
+                      label='Monthly price'
+                      value={this.state.sponsorPrice !== undefined ? this.state.sponsorPrice : ''}
+                      onChange={e => this.setState({ sponsorPrice: parseInt(e.target.value) >= 0 ? parseInt(e.target.value) : undefined })}
+                    />
+                  </DialogContent>
+                  <DialogActions>
+                    <Button onClick={() => this.setState({ showSponsorPriceChange: undefined })}
+                    >Cancel</Button>
+                    <SubmitButton
+                      isSubmitting={this.state.isSubmitting}
+                      disabled={this.state.sponsorPrice === undefined}
+                      color='primary'
+                      onClick={() => {
+                        this.setState({ isSubmitting: true });
+                        ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
+                          accountUpdateAdmin: {
+                            requestedPrice : this.state.sponsorPrice,
+                          },
+                        }).then(() => d.accountBillingAdmin({})))
+                          .then(() => this.setState({ isSubmitting: false, showSponsorPriceChange: undefined }))
+                          .catch(er => this.setState({ isSubmitting: false }));
+                      }}
+                    >Change</SubmitButton>
+                  </DialogActions>
+                </Dialog>
+                <Dialog
                   open={!!this.state.showFlatYearlyChange}
                   onClose={() => this.setState({ showFlatYearlyChange: undefined })}
                   scroll='body'
@@ -815,7 +853,6 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                       disabled={this.state.flatYearlyPrice === undefined}
                       color='primary'
                       onClick={() => {
-
                         this.setState({ isSubmitting: true });
                         ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateSuperAdmin({
                           accountUpdateSuperAdmin: {
@@ -834,6 +871,14 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                     onClick={() => this.setState({ showFlatYearlyChange: true })}
                   >Flatten</Button>
                 </div>
+                {this.props.accountBilling.plan.basePlanId === 'sponsor-monthly' && (
+                  <div className={this.props.classes.sectionButtons}>
+                    <Button
+                      disabled={this.state.isSubmitting}
+                      onClick={() => this.setState({ showSponsorPriceChange: true })}
+                      >Sponsor price</Button>
+                  </div>
+                )}
               </>
             )}
             {this.props.isSuperAdmin && (

@@ -16,7 +16,15 @@ import { Path, pathEquals } from '../configEditor';
 export const TeammatePlanId = 'teammate-unlimited';
 
 /** If changed, also change in KillBillPlanStore.java */
+const UnrestrictedProperties: Path[] = [
+];
+/** If changed, also change in KillBillPlanStore.java */
 const RestrictedPropertiesByDefault: Path[] = [
+  ['style', 'whitelabel', 'poweredBy'],
+];
+/** If changed, also change in KillBillPlanStore.java */
+const Standard2Properties: Path[] = [
+  ['users', 'onboarding', 'visibility'],
   ['style', 'whitelabel', 'poweredBy'],
 ];
 /** If changed, also change in KillBillPlanStore.java */
@@ -55,6 +63,8 @@ const EPitchGroundRestrictedProperties: Path[] = [
 const RestrictedPropertiesByPlan: { [basePlanId: string]: Path[] } = {
   'starter-unlimited': GrowthRestrictedProperties,
   'standard-unlimited': RestrictedPropertiesByDefault,
+  'standard2-unlimited': Standard2Properties,
+  'sponsor-monthly': UnrestrictedProperties,
   'pro-lifetime': GrowthRestrictedProperties,
   'growth-monthly': GrowthRestrictedProperties,
   'growth2-monthly': GrowthRestrictedProperties,
@@ -82,6 +92,7 @@ export const TeammatesMaxCount: { [basePlanId: string]: number } = {
   'standard2-monthly': 8,
   'pitchground-d-lifetime': 10,
   'pitchground-e-lifetime': 25,
+  'standard2-unlimited': 3,
 };
 /** If changed, also change in KillBillPlanStore.java */
 export const ProjectMaxCount: { [basePlanId: string]: number } = {

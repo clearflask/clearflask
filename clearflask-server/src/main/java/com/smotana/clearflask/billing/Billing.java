@@ -54,7 +54,7 @@ public interface Billing {
 
     Subscription resumeSubscription(String accountId);
 
-    Subscription changePlan(String accountId, String planId);
+    Subscription changePlan(String accountId, String planId, Optional<Long> recurringPriceOpt);
 
     Subscription changePlanToFlatYearly(String accountId, long yearlyPrice);
 

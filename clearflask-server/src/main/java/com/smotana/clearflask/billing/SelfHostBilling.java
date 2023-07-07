@@ -164,7 +164,7 @@ public class SelfHostBilling implements Billing {
     }
 
     @Override
-    public Subscription changePlan(String accountId, String planId) {
+    public Subscription changePlan(String accountId, String planId, Optional<Long> recurringPriceOpt) {
         throw new ApiException(Response.Status.BAD_REQUEST, "Billing is not configured");
     }
 

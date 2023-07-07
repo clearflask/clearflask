@@ -33,6 +33,18 @@ public interface PlanStore {
      * If changed, also update PricingPage.tsx
      */
     ImmutableSet<String> RECORD_TEAMMATES_FOR_PLANS = ImmutableSet.of("standard3-monthly");
+    /**
+     * If changed, also update PricingPage.tsx
+     */
+    ImmutableSet<String> ALLOW_USER_CHOOSE_PRICING_FOR_PLANS = ImmutableSet.of("sponsor-monthly");
+    /**
+     * If changed, also update PricingSlider.tsx
+     */
+    long ALLOW_USER_CHOOSE_PRICING_MIN = 1;
+    /**
+     * If changed, also update PricingSlider.tsx
+     */
+    long ALLOW_USER_CHOOSE_PRICING_MAX = 200;
 
     /**
      * Plan used for accounts with only external accounts.
@@ -44,6 +56,7 @@ public interface PlanStore {
     ImmutableSet<String> PLANS_WITHOUT_TRIAL = ImmutableSet.of(
             "starter-unlimited",
             "standard-unlimited",
+            "standard2-unlimited",
             TEAMMATE_PLAN_ID,
             "pro-lifetime",
             "pitchground-a-lifetime",

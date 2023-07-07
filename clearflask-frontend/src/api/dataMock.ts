@@ -488,8 +488,7 @@ class DataMock {
         name: 'Matus Faro',
         email: SuperAdminEmail,
         password: saltHashPassword('pass'),
-        // basePlanId: 'pro-lifetime',
-        basePlanId: 'growth2-monthly',
+        basePlanId: 'standard2-unlimited',
       }
     });
   }

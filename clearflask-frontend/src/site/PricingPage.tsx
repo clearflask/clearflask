@@ -23,14 +23,15 @@ import ImgIso from '../common/ImgIso';
 import { isProd } from '../common/util/detectEnv';
 import { trackingBlock } from '../common/util/trackingDelay';
 import { PRE_SELECTED_BASE_PLAN_ID, SIGNUP_PROD_ENABLED } from './AccountEnterPage';
-import { LandingCustomers } from './LandingPages';
 import PricingPlan from './PricingPlan';
+import PricingSlider from './PricingSlider';
 import Background from './landing/Background';
 
 /** If changed, also update PlanStore.java */
 export const StopTrialAfterActiveUsersReaches = 10;
 export const EstimatedPercUsersBecomeTracked = 0.05;
 export const FlatYearlyStartingPrice = 1000;
+export const AllowUserChoosePricingForPlans = new Set(['sponsor-monthly']);
 
 const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
   {
@@ -164,7 +165,7 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
         selected={this.state.highlightedBasePlanid === communityPlan.basePlanId}
         actionIcon={(<GithubIcon />)}
         actionTitle='Deploy'
-        // remark='Join our community'
+        remark='Join our community'
         actionOnClick={() => {
           trackingBlock(() => {
             [ReactGA4, ReactGA].forEach(ga =>
@@ -181,52 +182,50 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
     );
 
     // Extra features talk to us plan
-    const talkPlan: Admin.Plan = {
-      basePlanId: 'talk',
-      title: 'Enterprise',
-      perks: [
-        { desc: 'Support & SLA' },
-        { desc: 'Whitelabel' },
-        { desc: 'Search engine' },
-      ],
-    };
-    const talkPlanCmpt = (
-      <PricingPlan
-        key={talkPlan.basePlanId}
-        customPrice='200+'
-        plan={talkPlan}
-        selected={this.state.highlightedBasePlanid === talkPlan.basePlanId}
-        overrideMauTerms={[
-          'Self-hosted',
-          'Own your data',
-        ]}
-        actionTitle='Talk to us'
-        actionTo='/contact/sales'
-        actionOnClick={() => {
-          trackingBlock(() => {
-            [ReactGA4, ReactGA].forEach(ga =>
-              ga.event({
-                category: 'pricing',
-                action: 'click-plan',
-                label: talkPlan.basePlanId,
-              })
-            );
-          });
-        }}
-      />
-    );
-
-    // Pay what you can -- for now not needed
-    // const pricingSlider = (
-    //   <PricingSlider
-    //     key='pricingSlider'
-    //     className={this.props.classes.pricingSlider}
-    //     plans={[communityPlan, ...(this.props.plans || [])]}
+    // const talkPlan: Admin.Plan = {
+    //   basePlanId: 'talk',
+    //   title: 'Enterprise',
+    //   perks: [
+    //     { desc: 'Support & SLA' },
+    //     { desc: 'Whitelabel' },
+    //     { desc: 'Search engine' },
+    //   ],
+    // };
+    // const talkPlanCmpt = (
+    //   <PricingPlan
+    //     key={talkPlan.basePlanId}
+    //     customPrice='200+'
+    //     plan={talkPlan}
+    //     selected={this.state.highlightedBasePlanid === talkPlan.basePlanId}
+    //     overrideMauTerms={[
+    //       'Self-hosted',
+    //       'Own your data',
+    //     ]}
+    //     actionTitle='Talk to us'
+    //     actionTo='/contact/sales'
+    //     actionOnClick={() => {
+    //       trackingBlock(() => {
+    //         [ReactGA4, ReactGA].forEach(ga =>
+    //           ga.event({
+    //             category: 'pricing',
+    //             action: 'click-plan',
+    //             label: talkPlan.basePlanId,
+    //           })
+    //         );
+    //       });
+    //     }}
     //   />
     // );
+
     const plansAll: JSX.Element[] = [];
     for (const plan of this.props.plans || []) {
-      const pricingPlan = (
+      const pricingPlan = AllowUserChoosePricingForPlans.has(plan.basePlanId) ? (
+        <PricingSlider
+          key='pricingSlider'
+          className={this.props.classes.pricingSlider}
+          plan={plan}
+        />
+      ) : (
         <PricingPlan
           key={plan.basePlanId}
           customPrice={plan.basePlanId === 'flat-yearly' ? FlatYearlyStartingPrice + '+' : undefined}
@@ -237,11 +236,11 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
           plan={plan}
           selected={this.state.highlightedBasePlanid === plan.basePlanId}
           actionTitle={plan.basePlanId !== 'flat-yearly' && (SIGNUP_PROD_ENABLED || !isProd()) ? 'Get started' : 'Talk to us'}
-          // remark={plan.basePlanId === 'starter-unlimited'
-          //   ? this.props.t('free-forever')
-          //   : (plan.pricing
-          //     ? this.props.t('free-14-day-trial')
-          //     : this.props.t('let-us-help-you'))}
+          remark={plan.basePlanId === 'standard2-unlimited'
+            ? this.props.t('free-forever')
+            : (plan.pricing
+              ? this.props.t('free-14-day-trial')
+              : this.props.t('let-us-help-you'))}
           actionOnClick={() => {
             trackingBlock(() => {
               [ReactGA4, ReactGA].forEach(ga =>
@@ -267,7 +266,6 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
     const plansGrouped = this.groupPlans([
       communityPlanCmpt,
       ...plansAll,
-      talkPlanCmpt,
     ]);
 
     return (
@@ -299,7 +297,7 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
               {plansGrouped}
             </div>
           </Loader>
-          <LandingCustomers />
+          {/* <LandingCustomers /> */}
           <br />
           <br />
           {this.props.featuresTable && (
