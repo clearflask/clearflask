@@ -71,7 +71,8 @@ public class Application extends ResourceConfig {
         ServiceInjector.Environment env = injector.getInstance(ServiceInjector.Environment.class);
         Sentry.init(options -> {
             options.setEnvironment(env.name());
-            options.setTracesSampleRate(env.isProduction() ? 0.1d : 1d);
+            options.setSampleRate(1d);
+            options.setTracesSampleRate(1d);
             options.setDsn("https://600460a790e34b3e884ebe25ed26944d@o934836.ingest.sentry.io/5884409");
         });
 
