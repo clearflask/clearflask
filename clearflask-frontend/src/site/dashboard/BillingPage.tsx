@@ -149,8 +149,8 @@ interface State {
   paymentActionMessageSeverity?: Color;
   showFlatYearlyChange?: boolean;
   flatYearlyPrice?: number;
-  showSponsorPriceChange?: boolean;
-  sponsorPrice?: number;
+  showSponsorMonthlyChange?: boolean;
+  sponsorMonthlyPrice?: number;
   showAddonsChange?: boolean;
   whitelabel?: boolean;
   privateProjects?: boolean;
@@ -794,36 +794,36 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             {this.props.isSuperAdmin && (
               <>
                 <Dialog
-                  open={!!this.state.showSponsorPriceChange}
-                  onClose={() => this.setState({ showSponsorPriceChange: undefined })}
+                  open={!!this.state.showSponsorMonthlyChange}
+                  onClose={() => this.setState({ showSponsorMonthlyChange: undefined })}
                   scroll='body'
                   maxWidth='md'
                 >
-                  <DialogTitle>Sponsor price change</DialogTitle>
+                  <DialogTitle>Switch to sponsor plan</DialogTitle>
                   <DialogContent>
                     <TextField
                       variant='outlined'
                       type='number'
                       label='Monthly price'
-                      value={this.state.sponsorPrice !== undefined ? this.state.sponsorPrice : ''}
-                      onChange={e => this.setState({ sponsorPrice: parseInt(e.target.value) >= 0 ? parseInt(e.target.value) : undefined })}
+                      value={this.state.sponsorMonthlyPrice !== undefined ? this.state.sponsorMonthlyPrice : ''}
+                      onChange={e => this.setState({ sponsorMonthlyPrice: parseInt(e.target.value) >= 0 ? parseInt(e.target.value) : undefined })}
                     />
                   </DialogContent>
                   <DialogActions>
-                    <Button onClick={() => this.setState({ showSponsorPriceChange: undefined })}
+                    <Button onClick={() => this.setState({ showSponsorMonthlyChange: undefined })}
                     >Cancel</Button>
                     <SubmitButton
                       isSubmitting={this.state.isSubmitting}
-                      disabled={this.state.sponsorPrice === undefined}
+                      disabled={this.state.sponsorMonthlyPrice === undefined}
                       color='primary'
                       onClick={() => {
                         this.setState({ isSubmitting: true });
-                        ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
-                          accountUpdateAdmin: {
-                            requestedPrice : this.state.sponsorPrice,
+                        ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateSuperAdmin({
+                          accountUpdateSuperAdmin: {
+                            changeToSponsorPlanWithMonthlyPrice : this.state.sponsorMonthlyPrice,
                           },
                         }).then(() => d.accountBillingAdmin({})))
-                          .then(() => this.setState({ isSubmitting: false, showSponsorPriceChange: undefined }))
+                          .then(() => this.setState({ isSubmitting: false, showSponsorMonthlyChange: undefined }))
                           .catch(er => this.setState({ isSubmitting: false }));
                       }}
                     >Change</SubmitButton>
@@ -875,8 +875,8 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                   <div className={this.props.classes.sectionButtons}>
                     <Button
                       disabled={this.state.isSubmitting}
-                      onClick={() => this.setState({ showSponsorPriceChange: true })}
-                      >Sponsor price</Button>
+                      onClick={() => this.setState({ showSponsorMonthlyChange: true })}
+                      >Sponsor</Button>
                   </div>
                 )}
               </>

@@ -178,7 +178,7 @@
                     <recurringPrice>
                         <price>
                             <currency>USD</currency>
-                            <value>10.00</value>
+                            <value>50.00</value>
                         </price>
                     </recurringPrice>
                 </recurring>

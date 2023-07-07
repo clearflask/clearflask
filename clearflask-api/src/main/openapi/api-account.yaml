@@ -259,9 +259,6 @@ components:
               type: string
         basePlanId:
           type: string
-        requestedPrice:
-          type: integer
-          format: int64
         cancelEndOfTerm:
           type: boolean
         resume:
@@ -275,6 +272,9 @@ components:
       type: object
       properties:
         changeToFlatPlanWithYearlyPrice:
+          type: integer
+          format: int64
+        changeToSponsorPlanWithMonthlyPrice:
           type: integer
           format: int64
         addons:

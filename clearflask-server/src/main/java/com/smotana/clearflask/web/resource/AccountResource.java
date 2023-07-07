@@ -599,9 +599,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot change to this plan");
             }
 
-            account = changePlan(account, newPlanid, ImmutableMap.of(), Optional.ofNullable(accountUpdateAdmin.getRequestedPrice()));
-        } else if (accountUpdateAdmin.getRequestedPrice() != null) {
-            account = changePlan(account, account.getPlanid(), ImmutableMap.of(), Optional.of(accountUpdateAdmin.getRequestedPrice()));
+            account = changePlan(account, newPlanid, ImmutableMap.of(), Optional.empty());
         }
         return account.toAccountAdmin(intercomUtil, chatwootUtil, planStore, cfSso, superAdminPredicate);
     }
@@ -677,6 +675,17 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                     billing.getAccount(account.getAccountId()),
                     subscription,
                     "Change to flat plan");
+        }
+
+        if (accountUpdateAdmin.getChangeToSponsorPlanWithMonthlyPrice() != null) {
+            Subscription subscription = billing.changePlan(account.getAccountId(), "sponsor-monthly", Optional.of(accountUpdateAdmin.getChangeToSponsorPlanWithMonthlyPrice()));
+
+            // Sync entitlement status
+            SubscriptionStatus status = billing.updateAndGetEntitlementStatus(
+                    account.getStatus(),
+                    billing.getAccount(account.getAccountId()),
+                    subscription,
+                    "Change to sponsor plan");
         }
 
         if (accountUpdateAdmin.getAddons() != null && !accountUpdateAdmin.getAddons().isEmpty()) {
