@@ -7,7 +7,7 @@ import DiscussionIcon from '@material-ui/icons/ChatBubbleOutlined';
 import OpenIdeasIcon from '@material-ui/icons/FeedbackOutlined';
 import UsersIcon from '@material-ui/icons/PersonAdd';
 import moment from 'moment';
-import React, { Component } from 'react';
+import { Component } from 'react';
 import { withTranslation, WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
@@ -169,6 +169,7 @@ class DashboardHome extends Component<Props & ConnectProps & WithTranslation<'si
                   ideaHistogramSearchAdmin: {
                     interval: Admin.HistogramInterval.DAY,
                     filterCreatedStart: moment().subtract(7, 'd').toDate(),
+                    filterCategoryIds: [this.props.feedback!.categoryAndIndex.category.categoryId],
                   }
                 }).then(histogramResults => ({
                   ...histogramResults,
@@ -182,6 +183,11 @@ class DashboardHome extends Component<Props & ConnectProps & WithTranslation<'si
                     ] || 0,
                   },
                 }))}
+                overrideValue={!!feedbackAggregate
+                  // Filter out for only initial feedback status, typically 'New'
+                  ? (feedbackAggregate.statuses[this.props.feedback!.categoryAndIndex.category.workflow.entryStatus || ''] || 0)
+                  // Wait for the aggregate call to finish
+                  : ''}
               />
             )}
             {!!this.props.roadmap?.statusIdCompleted && (

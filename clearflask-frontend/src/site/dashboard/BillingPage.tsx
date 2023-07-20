@@ -116,7 +116,6 @@ const styles = (theme: Theme) => createStyles({
     margin: theme.spacing(2),
   },
   poweredByStripeImg: {
-    // margin: theme.spacing(1,0),
     width: '100%',
   },
   sectionSpacing: {

@@ -43,6 +43,7 @@ interface Props {
     max: Date;
   };
   search: (dispatcher: Admin.Dispatcher) => Promise<Admin.HistogramResponse>;
+  overrideValue?: React.ReactNode;
 }
 interface State {
   results?: Admin.HistogramResponse;
@@ -189,9 +190,11 @@ class Histogram extends Component<Props & WithStyles<typeof styles, true>, State
             {chart}
           </div>
         )}
-        value={this.state.results === undefined
-          ? ' '
-          : this.state.results.hits?.value || 0}
+        value={this.props.overrideValue !== undefined
+          ? this.props.overrideValue
+          : (this.state.results === undefined
+            ? ' '
+            : this.state.results.hits?.value || 0)}
       />
     );
   }
