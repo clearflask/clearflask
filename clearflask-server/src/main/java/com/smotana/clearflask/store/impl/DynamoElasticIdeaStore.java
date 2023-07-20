@@ -1338,7 +1338,9 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
             org.elasticsearch.action.search.SearchResponse response = elasticUtil.retry(() -> elastic.get().search(new SearchRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId))
                     .source(new SearchSourceBuilder()
                             .fetchSource(false)
-                            .query(QueryBuilders.termQuery("categoryId", categoryId))
+                            .query(QueryBuilders.boolQuery()
+                                    .must(QueryBuilders.termQuery("categoryId", categoryId))
+                                    .mustNot(QueryBuilders.existsQuery("mergedToPostId")))
                             .aggregation(AggregationBuilders
                                     .terms("statuses")
                                     .field("statusId"))
