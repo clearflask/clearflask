@@ -171,18 +171,7 @@ class DashboardHome extends Component<Props & ConnectProps & WithTranslation<'si
                     filterCreatedStart: moment().subtract(7, 'd').toDate(),
                     filterCategoryIds: [this.props.feedback!.categoryAndIndex.category.categoryId],
                   }
-                }).then(histogramResults => ({
-                  ...histogramResults,
-                  // Quick hack to show histogram of all feedback, but show a count
-                  // of only the open/new/unaddressed feedback
-                  hits: {
-                    value: feedbackAggregate.statuses[
-                      this.props.feedback?.categoryAndIndex.category.workflow.entryStatus
-                      || this.props.feedback?.categoryAndIndex.category.workflow.statuses[0]?.statusId
-                      || ''
-                    ] || 0,
-                  },
-                }))}
+                })}
                 overrideValue={!!feedbackAggregate
                   // Filter out for only initial feedback status, typically 'New'
                   ? (feedbackAggregate.statuses[this.props.feedback!.categoryAndIndex.category.workflow.entryStatus || ''] || 0)

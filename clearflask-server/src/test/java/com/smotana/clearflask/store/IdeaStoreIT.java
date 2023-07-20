@@ -10,30 +10,15 @@ import com.google.inject.Inject;
 import com.google.inject.name.Names;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
-import com.smotana.clearflask.api.model.HistogramResponse;
-import com.smotana.clearflask.api.model.HistogramResponsePoints;
-import com.smotana.clearflask.api.model.IdeaAggregateResponse;
-import com.smotana.clearflask.api.model.IdeaHistogramSearchAdmin;
-import com.smotana.clearflask.api.model.IdeaSearchAdmin;
-import com.smotana.clearflask.api.model.IdeaUpdate;
-import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
-import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
-import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
-import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
-import com.smotana.clearflask.store.impl.DynamoProjectStore;
-import com.smotana.clearflask.store.impl.DynamoVoteStore;
+import com.smotana.clearflask.store.impl.*;
 import com.smotana.clearflask.store.mysql.MysqlUtil;
 import com.smotana.clearflask.testutil.AbstractIT;
-import com.smotana.clearflask.util.ChatwootUtil;
-import com.smotana.clearflask.util.DefaultServerSecret;
-import com.smotana.clearflask.util.IdUtil;
-import com.smotana.clearflask.util.IntercomUtil;
-import com.smotana.clearflask.util.ProjectUpgraderImpl;
-import com.smotana.clearflask.util.ServerSecretTest;
+import com.smotana.clearflask.util.*;
 import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
 import lombok.extern.slf4j.Slf4j;
@@ -328,14 +313,18 @@ public class IdeaStoreIT extends AbstractIT {
         return ideaAndIndexingFuture.getIdea();
     }
 
-    /** Assert presence with specific order */
+    /**
+     * Assert presence with specific order
+     */
     void assertSearchResult(String projectId, IdeaSearchAdmin search, ImmutableList<String> expectedPostIds) {
         assertEquals(expectedPostIds, store.searchIdeas(
                         projectId, search, false, Optional.empty())
                 .getIdeaIds());
     }
 
-    /** Assert presence without ordering */
+    /**
+     * Assert presence without ordering
+     */
     void assertSearchResult(String projectId, IdeaSearchAdmin search, ImmutableSet<String> expectedPostIds) {
         assertEquals(expectedPostIds, ImmutableSet.copyOf(store.searchIdeas(
                         projectId, search, false, Optional.empty())
@@ -454,11 +443,18 @@ public class IdeaStoreIT extends AbstractIT {
                 .tagIds(ImmutableSet.of(tagId1, tagId2, tagId3))
                 .statusId(statusId3)
                 .build();
+        IdeaModel idea6 = MockModelUtil.getRandomIdea().toBuilder().projectId(projectId)
+                .categoryId(categoryId1)
+                .tagIds(ImmutableSet.of(tagId1))
+                .statusId(statusId1)
+                .mergedToPostId(idea1.getIdeaId())
+                .build();
         store.createIdea(idea1).get();
         store.createIdea(idea2).get();
         store.createIdea(idea3).get();
         store.createIdea(idea4).get();
         store.createIdea(idea5).get();
+        store.createIdea(idea6).get();
 
         IdeaAggregateResponse response = store.countIdeas(projectId, categoryId1);
         assertEquals(IdeaAggregateResponse.builder()
