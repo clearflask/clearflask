@@ -148,6 +148,18 @@ function createApp(serverApi) {
   serverApp.use(cookieParser());
   serverApp.use(compression());
 
+  // Health check and acme challenge before http->https redirect
+
+  serverApp.get('/api/health', function (req, res) {
+    serverApi.web(req, res, {
+      target: connectConfig.apiBasePath,
+    });
+  });
+
+  addAcmeRoute(serverApp);
+
+  // Redirect http to https
+
   if (connectConfig.forceRedirectHttpToHttps) {
     serverApp.set('trust proxy', true);
     serverApp.use((req, res, next) => {
@@ -185,8 +197,6 @@ function createApp(serverApi) {
       res.sendFile(path.resolve(connectConfig.publicPath, 'api', 'openapi.yaml'));
     });
   }
-
-  addAcmeRoute(serverApp);
 
   serverApp.use(serveStatic(connectConfig.publicPath, {
     index: false,
@@ -241,7 +251,6 @@ if (!connectConfig.disableAutoFetchCertificate) {
 
     // ACME challenger
     const serverAcme = express();
-    addAcmeRoute(serverAcme);
     serverAcme.use('*', serverApp);
 
     // Http
