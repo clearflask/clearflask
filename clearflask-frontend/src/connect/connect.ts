@@ -111,6 +111,14 @@ const sniCallback: ServerOptions['SNICallback'] = async (servername, callback) =
   callback(null, secureContext);
 }
 
+function addHealthRoute(server, serverApi) {
+  server.get('/api/health', function (req, res) {
+    serverApi.web(req, res, {
+      target: connectConfig.apiBasePath,
+    });
+  });
+}
+
 function addAcmeRoute(server) {
   server.get('/.well-known/acme-challenge/:key', async function (req, res) {
     const key = req.params.key;
@@ -149,17 +157,10 @@ function createApp(serverApi) {
   serverApp.use(compression());
 
   // Health check and acme challenge before http->https redirect
-
-  serverApp.get('/api/health', function (req, res) {
-    serverApi.web(req, res, {
-      target: connectConfig.apiBasePath,
-    });
-  });
-
+  addHealthRoute(serverApp, serverApi)
   addAcmeRoute(serverApp);
 
   // Redirect http to https
-
   if (connectConfig.forceRedirectHttpToHttps) {
     serverApp.set('trust proxy', true);
     serverApp.use((req, res, next) => {
@@ -249,12 +250,14 @@ if (!connectConfig.disableAutoFetchCertificate) {
     // App
     const serverApp = createApp(serverApi);
 
-    // ACME challenger
-    const serverAcme = express();
-    serverAcme.use('*', serverApp);
+    // Http Listener
+    const serverHttpListener = express();
+    addHealthRoute(serverHttpListener, serverApi)
+    addAcmeRoute(serverHttpListener);
+    serverHttpListener.use('*', serverApp);
 
     // Http
-    const serverHttp = http.createServer(serverAcme);
+    const serverHttp = http.createServer(serverHttpListener);
 
     // Https
     const serverHttps = https.createServer({
