@@ -168,6 +168,14 @@ deploy-cloudfront-invalidate:
 deploy-cloudfront-invalidate-all:
 	aws cloudfront create-invalidation --distribution-id EQHBQLQZXVKCU --paths "/*"
 
+deploy-emergency:
+	make deploy-running-configs
+	make deploy-running-servers
+	make deploy-running-connects
+	make deploy-cloudfront-invalidate-all
+	make deploy-server
+	make deploy-connect
+
 autoscale-server-suspend:
 	aws autoscaling suspend-processes --auto-scaling-group-name clearflask-server --scaling-processes Launch Terminate
 
