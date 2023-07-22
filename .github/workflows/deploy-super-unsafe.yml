@@ -32,7 +32,7 @@ jobs:
         run: |
           mkdir -p ~/.ssh/
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_gh_action.pem
-          sudo chmod 600 ~/id_gh_action.pem
+          sudo chmod 600 ~/.ssh/id_gh_action.pem
           cat <<EOF >> ~/.ssh/config 
           Host ec2-*.compute*.amazonaws.com
             IdentityFile ~/.ssh/id_gh_action.pem
@@ -43,7 +43,7 @@ jobs:
       - name: Maven build
         timeout-minutes: 60
         run: mvn install -DskipTests
-      - name: Add profile credentials to ~/.aws/credentials 
+      - name: Add profile credentials to ~/.aws/credentials
         run: |
           aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }} --profile clearflask
           aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }} --profile clearflask
