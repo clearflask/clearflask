@@ -1,0 +1,38 @@
+name: Deploy Unsafe
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'corretto'
+          architecture: x64
+      - name: Cache local Maven repository
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      - name: Setup FFmpeg
+        uses: FedericoCarboni/setup-ffmpeg@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Maven build
+        timeout-minutes: 60
+        run: mvn install -DskipITs
+      - name: Add profile credentials to ~/.aws/credentials 
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }} --profile clearflask
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }} --profile clearflask
+          aws configure set region ${{ secrets.AWS_DEFAULT_REGION }} --profile clearflask
+      - name: Maven deploy
+        timeout-minutes: 60
+        run: make deploy
