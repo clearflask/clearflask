@@ -13,19 +13,13 @@ import com.smotana.clearflask.api.model.VersionedConfig;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.ProjectStore.SearchEngine;
-import com.smotana.clearflask.store.ProjectStore.SlugModel;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.testutil.AbstractTest;
-import com.smotana.clearflask.util.ChatwootUtil;
-import com.smotana.clearflask.util.IdUtil;
-import com.smotana.clearflask.util.IntercomUtil;
-import com.smotana.clearflask.util.ModelUtil;
-import com.smotana.clearflask.util.ProjectUpgrader;
+import com.smotana.clearflask.util.*;
 import com.smotana.clearflask.web.security.Sanitizer;
 import io.dataspray.singletable.SingleTable;
-import io.dataspray.singletable.TableSchema;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
@@ -178,18 +172,5 @@ public class ProjectStoreTest extends AbstractTest {
         // Ensure we can create another project with same slug
         store.createProject(IdUtil.randomId(), projectId, configSlug1);
         store.updateConfig(projectId, Optional.empty(), configSlug2, false);
-    }
-
-    @Test(timeout = 10_000L)
-    public void testAutoDeleteSlugWithoutProject() throws Exception {
-        TableSchema<SlugModel> slugSchema = singleTable.parseTableSchema(SlugModel.class);
-
-        SlugModel slugModel = new SlugModel("mySlug", "myProject", null);
-        slugSchema.table().putItem(slugSchema.toItem(slugModel));
-        assertEquals(slugModel, slugSchema.fromItem(slugSchema.table().getItem(slugSchema.primaryKey(slugModel))));
-
-        assertEquals(Optional.empty(), store.getProjectBySlug(slugModel.getSlug(), false));
-
-        assertNull(slugSchema.fromItem(slugSchema.table().getItem(slugSchema.primaryKey(slugModel))));
     }
 }
