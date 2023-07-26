@@ -28,12 +28,14 @@ jobs:
       - name: Setup SSH key for running instances
         shell: bash
         env:
-          SSH_PRIVATE_KEY_EC2: ${{secrets.SSH_PRIVATE_KEY_EC2}}
+          SSH_PRIVATE_KEY_EC2: ${{ secrets.SSH_PRIVATE_KEY_EC2 }}
         run: |
           mkdir -p ~/.ssh/
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_gh_action.pem
+          cat <<EOF >~/.ssh/id_gh_action.pem
+          ${{ secrets.SSH_PRIVATE_KEY }}
+          EOF
           sudo chmod 600 ~/.ssh/id_gh_action.pem
-          cat <<EOF >> ~/.ssh/config 
+          cat <<EOF >>~/.ssh/config
           Host ec2-*.compute*.amazonaws.com
             IdentityFile ~/.ssh/id_gh_action.pem
             User ec2-user
