@@ -27,12 +27,10 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Setup SSH key for running instances
         shell: bash
-        env:
-          SSH_PRIVATE_KEY_EC2: ${{ secrets.SSH_PRIVATE_KEY_EC2 }}
         run: |
           mkdir -p ~/.ssh/
           cat <<EOF >~/.ssh/id_gh_action.pem
-          ${{ secrets.SSH_PRIVATE_KEY }}
+          ${{ secrets.SSH_PRIVATE_KEY_EC2 }}
           EOF
           sudo chmod 600 ~/.ssh/id_gh_action.pem
           cat <<EOF >>~/.ssh/config
