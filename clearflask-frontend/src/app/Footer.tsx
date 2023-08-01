@@ -50,7 +50,7 @@ interface ConnectProps {
 class Footer extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
   render() {
     const isSelfHost = detectEnv() === Environment.PRODUCTION_SELF_HOST;
-    var footerTemplate = (this.props.config?.style.templates?.pageFooters || []).find(p => p.pageId === this.props.page?.pageId)?.template
+    var footerTemplate = (this.props.config?.style.templates?.pageFooters || []).find(p => !!p && p.pageId === this.props.page?.pageId)?.template
       || this.props.config?.style.templates?.footer;
     var footer;
     if (footerTemplate) {
