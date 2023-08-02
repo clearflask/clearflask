@@ -18,10 +18,10 @@ import { TourAnchor, TourDefinitionGuideState } from '../../common/tour';
 import { notEmpty } from '../../common/util/arrayUtil';
 import { getProjectLink } from '../../common/util/projectUtil';
 import setTitle from "../../common/util/titleUtil";
-import { Dashboard, DashboardPageContext } from "../Dashboard";
-import { droppableDataSerialize } from "./dashboardDndActionHandler";
+import { Dashboard, DashboardPageContext, PostPreviewSize } from "../Dashboard";
 import DragndropPostList from './DragndropPostList';
 import PostList from './PostList';
+import { droppableDataSerialize } from "./dashboardDndActionHandler";
 
 export async function renderRoadmap(this: Dashboard, context: DashboardPageContext) {
   setTitle('Roadmap - Dashboard');
@@ -310,6 +310,7 @@ export async function renderRoadmap(this: Dashboard, context: DashboardPageConte
     stateKey: 'roadmapPreview',
     createCategoryIds: [this.state.roadmap.categoryAndIndex.category.categoryId],
     extra: {
+      size: PostPreviewSize,
       breakAlways: true,
     },
   });

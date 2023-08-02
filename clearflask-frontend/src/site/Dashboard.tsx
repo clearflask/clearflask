@@ -306,6 +306,7 @@ interface State {
   usersUserFilter?: Partial<AdminClient.UserSearchAdmin>;
   usersUserSearch?: string;
   usersPreview?: PreviewState,
+  usersPreviewRight?: PreviewState,
   postCreateOnLoggedIn?: (userId: string) => void;
   // Below is state for various template options that are updated after publish
   // Null means, we received it, but its not present, undefined means we are still waiting
@@ -941,6 +942,8 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                 userId={userId}
                 suppressSignOut
                 onDeleted={() => this.setState({ [stateKey]: undefined } as any)}
+                onClickPost={postId => this.pageClicked('post', [postId])}
+                onUserClick={userId => this.pageClicked('user', [userId])}
               />
             </div>
           </Fade>
@@ -1108,20 +1111,19 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
   }
 
   pageClicked(path: string, subPath: ConfigEditor.Path = []): void {
+    const redirectPath = subPath[1];
+    const redirect = !!redirectPath ? () => this.props.history.push('/dashboard/' + redirectPath) : undefined;
+    const activePath = redirectPath || this.props.match.params['path'] || '';
     if (path === 'post') {
       // For post, expected parameters for subPath are:
       // 0: postId or null for create
       // 1: page to redirect to
       const postId = !!subPath[0] ? (subPath[0] + '') : undefined;
-      const redirectPath = subPath[1];
-      const redirect = !!redirectPath ? () => this.props.history.push('/dashboard/' + redirectPath) : undefined;
-      const activePath = redirectPath || this.props.match.params['path'] || '';
       const preview: State['explorerPreview'] & State['feedbackPreview'] & State['roadmapPreview'] = !!postId
         ? { type: 'post', id: postId }
         : { type: 'create-post' };
       if (activePath === 'feedback') {
         this.setState({
-          // previewShowOnPage: 'feedback', // Always shown 
           feedbackPreview: preview,
         }, redirect);
       } else if (activePath === 'explore') {
@@ -1139,6 +1141,11 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
           previewShowOnPage: 'changelog',
           changelogPreview: preview,
         }, redirect);
+      } else if (activePath === 'users') {
+        this.setState({
+          previewShowOnPage: 'users',
+          usersPreviewRight: preview,
+        }, redirect);
       } else {
         this.setState({
           previewShowOnPage: 'explore',
@@ -1147,11 +1154,10 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
       }
     } else if (path === 'user') {
       this.setState({
-        previewShowOnPage: 'users',
         usersPreview: !!subPath[0]
           ? { type: 'user', id: subPath[0] + '' }
           : { type: 'create-user' },
-      }, () => this.props.history.push('/dashboard/users'));
+      }, redirect);
     } else {
       this.props.history.push(`/dashboard/${[path, ...subPath].join('/')}`);
     }

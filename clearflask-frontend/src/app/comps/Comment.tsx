@@ -112,7 +112,7 @@ interface Props {
   loggedInUser?: Client.User;
   replyOpen?: boolean;
   linkToPost?: boolean;
-  onCommentClick?: () => void;
+  onCommentClick?: (comment: Client.CommentWithVote) => void;
   onReplyClicked?: () => void;
   logIn: () => Promise<void>;
   truncateLines?: number;
@@ -145,7 +145,7 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
     ) : (
       <div
         className={classNames(this.props.classes.content, this.props.onCommentClick && this.props.classes.clickable)}
-        onClick={this.props.onCommentClick}
+        onClick={e => this.props.onCommentClick?.(this.props.comment!)}
       >
         {content}
       </div>

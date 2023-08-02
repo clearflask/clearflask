@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { withSnackbar, WithSnackbarProps } from 'notistack';
-import React, { Component } from 'react';
+import { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { ReduxState, Server } from '../api/server';

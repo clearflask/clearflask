@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import React, { Component } from 'react';
+import { Component } from 'react';
 import { connect } from 'react-redux';
 import { ReduxState, Server } from '../../api/server';
 import UserContributions from '../../common/UserContributions';
@@ -37,6 +37,8 @@ interface Props {
   userId?: string;
   suppressSignOut?: boolean;
   onDeleted?: () => void;
+  onClickPost?: (postId: string) => void;
+  onUserClick?: (userId: string) => void;
 }
 interface ConnectProps {
   projectName?: string,
@@ -63,6 +65,8 @@ class UserPage extends Component<Props & ConnectProps & WithStyles<typeof styles
             <UserContributions
               server={this.props.server}
               userId={this.props.userId}
+              onClickPost={this.props.onClickPost}
+              onUserClick={this.props.onUserClick}
             />
           )}
         </div>

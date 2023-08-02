@@ -2,12 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 import { Divider } from '@material-ui/core';
 import CreateIcon from '@material-ui/icons/Create';
-import React from 'react';
 import { Provider } from 'react-redux';
 import { Orientation } from '../../common/ContentScroll';
 import UserFilterControls from '../../common/search/UserFilterControls';
 import setTitle from "../../common/util/titleUtil";
-import { Dashboard, DashboardPageContext, UserPreviewSize } from "../Dashboard";
+import { Dashboard, DashboardPageContext, PostPreviewSize, UserPreviewSize } from "../Dashboard";
 import DashboardSearchControls from './DashboardSearchControls';
 import UserList from './UserList';
 
@@ -70,6 +69,8 @@ export async function renderUsers(this: Dashboard, context: DashboardPageContext
     renderEmpty: 'No user selected',
     extra: {
       size: UserPreviewSize,
+      breakAction: 'show',
+      collapseBottom: true,
       header: {
         title: { title: 'Users' },
         action: {
@@ -81,7 +82,19 @@ export async function renderUsers(this: Dashboard, context: DashboardPageContext
     },
   });
 
+  const previewContent = this.renderPreview({
+    project: activeProject,
+    stateKey: 'usersPreviewRight',
+    extra: {
+      name: 'previewContent',
+      breakAlways: true,
+      breakAction: 'drawer',
+      size: PostPreviewSize,
+    },
+  });
+
   previewUser && context.sections.push(previewUser);
+  previewContent && context.sections.push(previewContent);
 
   context.showProjectLink = true;
 }

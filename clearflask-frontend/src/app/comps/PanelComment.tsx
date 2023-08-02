@@ -45,6 +45,7 @@ interface Props {
   maxHeight?: string | number;
   hideIfEmpty?: boolean;
   hideAuthor?: boolean;
+  CommentProps?: Partial<React.ComponentProps<typeof Comment>>;
 }
 interface ConnectProps {
   callOnMount?: () => void,
@@ -107,6 +108,7 @@ class PanelComment extends Component<Props & ConnectProps & WithStyles<typeof st
               linkToPost
               truncateLines={3}
               hideAuthor={this.props.hideAuthor}
+              {...this.props.CommentProps}
             />
           ));
         }
