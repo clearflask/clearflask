@@ -7,7 +7,7 @@ import { saltHashPassword } from "../common/util/auth";
 import { textToHtml } from "../common/util/richEditorUtil";
 import { capitalize } from "../common/util/stringUtil";
 import * as Admin from "./admin";
-import ServerMock, { SuperAdminEmail } from "./serverMock";
+import ServerMock, { DefaultMockUserPlanId, SuperAdminEmail } from "./serverMock";
 
 interface MockedComment {
   content?: string;
@@ -488,7 +488,7 @@ class DataMock {
         name: 'Matus Faro',
         email: SuperAdminEmail,
         password: saltHashPassword('pass'),
-        basePlanId: 'standard2-unlimited',
+        basePlanId: DefaultMockUserPlanId,
       }
     });
   }

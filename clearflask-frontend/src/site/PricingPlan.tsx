@@ -207,7 +207,7 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
           monthlyPrice = Math.ceil(this.props.plan.pricing.basePrice / 12);
           billed = `$${this.props.plan.pricing.basePrice} billed ${this.props.plan.pricing.period.toLowerCase()}`;
           break;
-      }
+        }
     }
     if (billed) billed = (
       <Typography component='div' variant='subtitle1'>{billed}</Typography>
@@ -251,8 +251,19 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
         extraMau = (
           <>
             {extraMau}
-            <Typography component='div' variant='subtitle2' color='textSecondary'>{`${this.props.plan.pricing.admins.amountIncluded} Teammates`}</Typography>
+            <Typography component='div' variant='subtitle2' color='textSecondary'>{`${this.props.plan.pricing.admins.amountIncluded} Teammate${this.props.plan.pricing.admins.amountIncluded > 1 ? 's' : ''}`}</Typography>
             <Typography component='div' variant='subtitle2' color='textSecondary'>{`+ $${this.props.plan.pricing.admins.additionalPrice} / Teammate`}</Typography>
+          </>
+        );
+      }
+      if (this.props.plan.pricing?.period === Admin.PlanPricingPeriodEnum.Lifetime) {
+        extraMau = (
+          <>
+            {extraMau}
+            {this.props.plan.basePlanId === 'lifetime-lifetime' && (
+              <Typography component='div' variant='subtitle2' color='textSecondary'>{`Unlimited teammates`}</Typography>
+            )}
+            <Typography component='div' variant='subtitle2' color='textSecondary'>{`One-time purchase`}</Typography>
           </>
         );
       }
@@ -263,7 +274,9 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
         <div className={this.props.classes.cardPricing}>
           <Typography component='h2' variant='subtitle2' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
           <Typography component='h2' variant='h4'>{monthlyPrice}</Typography>
-          <Typography component='h2' variant='subtitle2' color='textSecondary'>{'/ mo'}</Typography>
+          {this.props.plan.pricing?.period !== Admin.PlanPricingPeriodEnum.Lifetime && (
+            <Typography component='h2' variant='subtitle2' color='textSecondary'>{'/ mo'}</Typography>
+          )}
         </div>
         {(extraMau || billed) && (
           <div className={this.props.classes.cardPricingTerms}>

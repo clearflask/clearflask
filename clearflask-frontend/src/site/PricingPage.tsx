@@ -155,7 +155,7 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
       perks: [
         { desc: 'Quickstart deploy' },
         { desc: 'Apache 2.0 license' },
-        { desc: 'Own your data' },
+        { desc: 'All features' },
       ],
     };
     const communityPlanCmpt = (

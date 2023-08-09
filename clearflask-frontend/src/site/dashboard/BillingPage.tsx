@@ -257,15 +257,15 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         break;
       case Admin.SubscriptionStatus.ActiveTrial:
         if (this.props.accountBilling?.payment) {
-          paymentTitle = 'Automatic renewal is active';
+          paymentTitle = 'Automatic payment is active';
           if (this.props.accountBilling?.billingPeriodEnd) {
             paymentDesc = (
               <>
-                Your first payment will be automatically billed at the end of the trial period in&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />.
+                A payment will be automatically billed at the end of the trial period in&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />.
               </>
             );
           } else {
-            paymentDesc = `Your first payment will be automatically billed at the end of the trial period.`;
+            paymentDesc = `A payment will be automatically billed at the end of the trial period.`;
           }
           cardState = 'active';
           showSetPayment = true;
@@ -277,8 +277,8 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             showPlanChange = true;
           }
         } else {
-          paymentTitle = 'Automatic renewal requires a payment method';
-          paymentDesc = 'To continue using our service beyond the trial period, add a payment method to enable automatic renewal.';
+          paymentTitle = 'Automatic payment requires a payment method';
+          paymentDesc = 'To continue using our service beyond the trial period, add a payment method to enable automatic payment.';
           cardState = 'warn';
           showSetPayment = true;
           setPaymentTitle = 'Add payment method';
@@ -759,6 +759,16 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                       && this.props.accountBilling.postCount > StarterMaxPosts
                       ? 'error' : undefined}>
                     {this.props.accountBilling.postCount}
+                  </Typography>
+                </Box>
+              </Box>
+            )}
+            {(this.props.accountBilling?.teammateCount !== undefined) && (
+              <Box display='grid' gridTemplateAreas='"teammateCountLbl teammateCountAmt"' alignItems='baseline' gridGap='10px 10px'>
+                <Box gridArea='teammateCountLbl'><Typography component='div'>Teammate count:</Typography></Box>
+                <Box gridArea='teammateCountAmt' display='flex'>
+                  <Typography component='div' variant='h5'>
+                    {this.props.accountBilling.teammateCount}
                   </Typography>
                 </Box>
               </Box>
@@ -1248,7 +1258,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
 }
 
 export const BillingPaymentActionRedirect = () => {
-  !windowIso.isSsr && windowIso.top.postMessage(BillingPaymentActionRedirectPath, windowIso.location.origin);
+  !windowIso.isSsr && windowIso.top?.postMessage(BillingPaymentActionRedirectPath, windowIso.location.origin);
   return (
     <Message message='Please wait...' severity='info' />
   );

@@ -19,33 +19,7 @@ import com.smotana.clearflask.api.AccountAdminApi;
 import com.smotana.clearflask.api.AccountSuperAdminApi;
 import com.smotana.clearflask.api.PlanAdminApi;
 import com.smotana.clearflask.api.PlanSuperAdminApi;
-import com.smotana.clearflask.api.model.AccountAcceptInvitationResponse;
-import com.smotana.clearflask.api.model.AccountAdmin;
-import com.smotana.clearflask.api.model.AccountAttrsUpdateAdmin;
-import com.smotana.clearflask.api.model.AccountBilling;
-import com.smotana.clearflask.api.model.AccountBillingPayment;
-import com.smotana.clearflask.api.model.AccountBillingPaymentActionRequired;
-import com.smotana.clearflask.api.model.AccountBindAdmin;
-import com.smotana.clearflask.api.model.AccountBindAdminResponse;
-import com.smotana.clearflask.api.model.AccountCreditAdjustment;
-import com.smotana.clearflask.api.model.AccountLogin;
-import com.smotana.clearflask.api.model.AccountLoginAs;
-import com.smotana.clearflask.api.model.AccountSearchResponse;
-import com.smotana.clearflask.api.model.AccountSearchSuperAdmin;
-import com.smotana.clearflask.api.model.AccountSignupAdmin;
-import com.smotana.clearflask.api.model.AccountUpdateAdmin;
-import com.smotana.clearflask.api.model.AccountUpdateSuperAdmin;
-import com.smotana.clearflask.api.model.AllPlansGetResponse;
-import com.smotana.clearflask.api.model.AvailableRepos;
-import com.smotana.clearflask.api.model.CouponGenerateSuperAdmin;
-import com.smotana.clearflask.api.model.InvitationResult;
-import com.smotana.clearflask.api.model.InvoiceHtmlResponse;
-import com.smotana.clearflask.api.model.Invoices;
-import com.smotana.clearflask.api.model.LegalResponse;
-import com.smotana.clearflask.api.model.Plan;
-import com.smotana.clearflask.api.model.PlansGetResponse;
-import com.smotana.clearflask.api.model.SubscriptionStatus;
-import com.smotana.clearflask.api.model.ViewCouponResponse;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.Billing.Gateway;
 import com.smotana.clearflask.billing.CouponStore;
@@ -58,20 +32,12 @@ import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.security.EmailValidator;
 import com.smotana.clearflask.security.limiter.Limit;
-import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.*;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.AccountStore.SearchAccountsResponse;
-import com.smotana.clearflask.store.GitHubStore;
-import com.smotana.clearflask.store.LegalStore;
-import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.InvitationModel;
-import com.smotana.clearflask.store.UserStore;
-import com.smotana.clearflask.util.ChatwootUtil;
-import com.smotana.clearflask.util.IntercomUtil;
-import com.smotana.clearflask.util.LogUtil;
-import com.smotana.clearflask.util.OAuthUtil;
-import com.smotana.clearflask.util.PasswordUtil;
+import com.smotana.clearflask.util.*;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.AuthCookie;
@@ -130,7 +96,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         @DefaultValue("true")
         boolean signupEnabled();
 
-        /** For testing only, allow signup and plan changes to any plan */
+        /**
+         * For testing only, allow signup and plan changes to any plan
+         */
         @DefaultValue("false")
         boolean enableNonPublicPlans();
     }
@@ -877,6 +845,11 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             postCount = accountStore.getPostCountForAccount(account.getAccountId());
         }
 
+        Long teammateCount = null;
+        if (PlanStore.RECORD_TEAMMATES_FOR_PLANS.contains(plan.getBasePlanId())) {
+            teammateCount = accountStore.getTeammateCountForAccount(account.getAccountId());
+        }
+
         Instant billingPeriodEnd = null;
         if (subscription.getPhaseType() == PhaseType.EVERGREEN
                 && subscription.getChargedThroughDate() != null) {
@@ -914,6 +887,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 billingPeriodEnd,
                 (trackedUsers == null || trackedUsers <= 0) ? null : trackedUsers,
                 postCount,
+                teammateCount,
                 availablePlans.asList(),
                 invoices,
                 accountReceivable,

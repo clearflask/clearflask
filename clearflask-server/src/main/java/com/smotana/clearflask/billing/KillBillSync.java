@@ -9,11 +9,8 @@ import com.google.common.collect.Maps;
 import com.google.common.io.Resources;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
 import com.google.inject.Module;
-import com.google.inject.Provider;
-import com.google.inject.Singleton;
+import com.google.inject.*;
 import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
@@ -26,19 +23,10 @@ import org.killbill.billing.catalog.api.TimeUnit;
 import org.killbill.billing.client.KillBillClientException;
 import org.killbill.billing.client.KillBillHttpClient;
 import org.killbill.billing.client.RequestOptions;
-import org.killbill.billing.client.api.gen.CatalogApi;
-import org.killbill.billing.client.api.gen.InvoiceApi;
-import org.killbill.billing.client.api.gen.OverdueApi;
-import org.killbill.billing.client.api.gen.PluginInfoApi;
-import org.killbill.billing.client.api.gen.TenantApi;
+import org.killbill.billing.client.api.gen.*;
 import org.killbill.billing.client.model.DateTimes;
 import org.killbill.billing.client.model.PluginInfos;
-import org.killbill.billing.client.model.gen.Duration;
-import org.killbill.billing.client.model.gen.Overdue;
-import org.killbill.billing.client.model.gen.OverdueCondition;
-import org.killbill.billing.client.model.gen.OverdueStateConfig;
-import org.killbill.billing.client.model.gen.Tenant;
-import org.killbill.billing.client.model.gen.TenantKeyValue;
+import org.killbill.billing.client.model.gen.*;
 import org.killbill.billing.overdue.api.OverdueCancellationPolicy;
 import org.w3c.dom.Document;
 import rx.Observable;
@@ -58,9 +46,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.smotana.clearflask.billing.KillBillClientProvider.STRIPE_PLUGIN_NAME;
 import static com.smotana.clearflask.billing.ReportConfigurationJson.Frequency.DAILY;
 import static com.smotana.clearflask.billing.ReportConfigurationJson.Frequency.HOURLY;
-import static com.smotana.clearflask.billing.ReportConfigurationJson.ReportType.COUNTERS;
-import static com.smotana.clearflask.billing.ReportConfigurationJson.ReportType.TABLE;
-import static com.smotana.clearflask.billing.ReportConfigurationJson.ReportType.TIMELINE;
+import static com.smotana.clearflask.billing.ReportConfigurationJson.ReportType.*;
 
 @Slf4j
 @Singleton
@@ -79,6 +65,7 @@ public class KillBillSync extends ManagedService {
             .add("catalog010.xml")
             .add("catalog011.xml")
             .add("catalog012.xml")
+            .add("catalog013.xml")
             .build();
     private static final String PER_TENANT_CONFIG = "\"org.killbill.payment.retry.days=1,2,3\"," +
             "\"org.killbill.billing.server.notifications.retries=1m,2h,1d,2d\"";

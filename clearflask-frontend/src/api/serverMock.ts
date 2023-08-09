@@ -28,24 +28,27 @@ const TeammatePlan: Admin.Plan = {
   ],
 };
 const AvailablePlans: { [planId: string]: Admin.Plan } = {
-  'standard2-unlimited': {
-    basePlanId: 'standard2-unlimited', title: 'Standard',
+  'standard3-monthly': {
+    basePlanId: 'standard3-monthly', title: 'Standard',
+    pricing: {
+      basePrice: 8, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Monthly,
+      admins: { amountIncluded: 1, additionalPrice: 4 }
+    },
     perks: [
-      { desc: 'Unlimited projects', terms: termsProjects },
-      { desc: '3 teammates' },
-      { desc: 'Unlimited users' },
+      { desc: 'All features', terms: termsProjects },
     ],
   },
-  'sponsor-monthly': {
-    basePlanId: 'sponsor-monthly', title: 'Sponsor',
-    pricing: { basePrice: 0, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Monthly },
+  'lifetime-lifetime': {
+    basePlanId: 'lifetime-lifetime', title: 'Lifetime',
+    pricing: {
+      basePrice: 250, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Lifetime,
+    },
     perks: [
-      { desc: 'Unlimited teammates' },
-      { desc: 'Private projects' },
-      { desc: 'Whitelabel' },
+      { desc: 'All features' },
     ],
   },
 };
+export const DefaultMockUserPlanId = Object.keys(AvailablePlans)[0];
 const AllPlans: { [planId: string]: Admin.Plan } = {
   ...AvailablePlans,
   'pro-lifetime': {
@@ -181,7 +184,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
           name: 'Joe Doe',
           email: 'joe-doe@example.com',
           password: 'unused-in-server-mock',
-          basePlanId: request.accountBindAdmin.oauthToken.basePlanId || 'standard2-unlimited',
+          basePlanId: request.accountBindAdmin.oauthToken.basePlanId || DefaultMockUserPlanId,
           invitationId: request.accountBindAdmin.oauthToken.invitationId,
           couponId: request.accountBindAdmin.oauthToken.couponId,
         }
@@ -271,7 +274,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         : (request.accountSignupAdmin.couponId
           ? 'pro-lifetime'
           : request.accountSignupAdmin.basePlanId))
-        || 'standard2-unlimited',
+        || DefaultMockUserPlanId,
       name: request.accountSignupAdmin.name,
       email: request.accountSignupAdmin.email,
       isSuperAdmin: request.accountSignupAdmin.email === SuperAdminEmail || undefined,
@@ -335,8 +338,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         // Auto-upgrade test, simulate Java-land background upgrade
         setTimeout(() => {
           if (this.account) {
-            this.account.planId = 'standard2-unlimited';
-            this.account.basePlanId = 'standard2-unlimited';
+            this.account.planId = DefaultMockUserPlanId;
+            this.account.basePlanId = DefaultMockUserPlanId;
           }
         }, 500);
       }
@@ -441,6 +444,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       billingPeriodEnd: this.account.subscriptionStatus === Admin.SubscriptionStatus.ActiveTrial ? undefined : billingPeriodEnd,
       trackedUsers: 341,
       postCount: 32,
+      teammateCount: 4,
       availablePlans: Object.values(AvailablePlans).filter(p => p.basePlanId !== 'flat-yearly'),
       invoices: {
         cursor: 'one more',

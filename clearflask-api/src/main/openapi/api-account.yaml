@@ -54,6 +54,7 @@ components:
                 - Monthly
                 - Quarterly
                 - Yearly
+                - Lifetime
         perks:
           type: array
           items:
@@ -319,6 +320,9 @@ components:
           type: integer
           format: int64
         postCount:
+          type: integer
+          format: int64
+        teammateCount:
           type: integer
           format: int64
         availablePlans:

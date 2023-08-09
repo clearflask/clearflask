@@ -71,13 +71,14 @@ const RestrictedPropertiesByPlan: { [basePlanId: string]: Path[] } = {
   'standard-monthly': RestrictedPropertiesByDefault,
   'standard2-monthly': RestrictedPropertiesByDefault,
   'starter3-monthly': GrowthRestrictedProperties,
-  'standard3-monthly': RestrictedPropertiesByDefault,
   'flat-yearly': RestrictedPropertiesByDefault,
   'pitchground-a-lifetime': AbPitchGroundRestrictedProperties,
   'pitchground-b-lifetime': AbPitchGroundRestrictedProperties,
   'pitchground-c-lifetime': CdPitchGroundRestrictedProperties,
   'pitchground-d-lifetime': CdPitchGroundRestrictedProperties,
   'pitchground-e-lifetime': EPitchGroundRestrictedProperties,
+  'standard3-monthly': UnrestrictedProperties,
+  'lifetime-lifetime': UnrestrictedProperties,
 };
 /** If changed, also change in KillBillPlanStore.java */
 export const TeammatesMaxCount: { [basePlanId: string]: number } = {
