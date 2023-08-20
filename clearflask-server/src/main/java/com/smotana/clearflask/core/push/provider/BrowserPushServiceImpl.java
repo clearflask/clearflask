@@ -54,6 +54,8 @@ public class BrowserPushServiceImpl implements BrowserPushService {
         @DefaultValue("true")
         boolean enabled();
 
+        Observable<Boolean> enabledObservable();
+
         @DefaultValue("NORMAL")
         Urgency urgency();
 
@@ -101,17 +103,23 @@ public class BrowserPushServiceImpl implements BrowserPushService {
     @Inject
     private void setup() {
         if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
-            Security.addProvider(new BouncyCastleProvider());
+            Security.insertProviderAt(new BouncyCastleProvider(), 1);
         }
 
         Stream.of(
-                config.publicKeyObservable(),
-                config.privateKeyObservable())
+                        config.enabledObservable(),
+                        config.publicKeyObservable(),
+                        config.privateKeyObservable())
                 .forEach(o -> o.subscribe(v -> setKeyPair(config.publicKey(), config.privateKey())));
         setKeyPair(config.publicKey(), config.privateKey());
     }
 
     private void setKeyPair(String publicKeyStr, String privateKeyStr) {
+        if (!config.enabled()) {
+            log.debug("Not enabled, not setting keypair");
+            return;
+        }
+
         PublicKey publicKey;
         PrivateKey privateKey;
         try {
@@ -152,7 +160,8 @@ public class BrowserPushServiceImpl implements BrowserPushService {
                                     .build())
                             .build()))
                     .build());
-        } catch (InterruptedException | ExecutionException | GeneralSecurityException | IOException | JoseException ex) {
+        } catch (InterruptedException | ExecutionException | GeneralSecurityException | IOException |
+                 JoseException ex) {
             throw new RuntimeException("Cannot parse public key for subscription: " + browserPush.getSubscription(), ex);
         }
 
