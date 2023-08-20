@@ -32,7 +32,7 @@ set -ex
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash
 . ~/.nvm/nvm.sh
 nvm install 14.15.1
-nvm use --lts
+nvm use 14.15.1
 nvm alias default
 EOF
 sudo tee /etc/systemd/system/connect.service <<"EOF"

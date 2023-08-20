@@ -1,11 +1,96 @@
 #!/bin/bash
-
 set -ex
+
+# Run as ec2-user
+[ "$(whoami)" == 'ec2-user' ]
+
+if false; then # If working off of existing ClearFlask AMI, skip these as they're already done
+
+# Clearflask
+sudo mkdir -p /opt/clearflask
+
 sudo yum install -y mc telnet
-sudo amazon-linux-extras install -y ruby2.6 tomcat8.5
+sudo yum install -y java-11-amazon-corretto
+
+sudo amazon-linux-extras install -y tomcat8.5
 ln -s /usr/share/tomcat ~/tomcat
 sudo ln -s /usr/share/tomcat ~/tomcat
-sudo yum install -y java-1.8.0-openjdk gcc ruby-devel
+sudo tee /etc/tomcat/conf.d/jmx.conf <<"EOF"
+CATALINA_OPTS="$CATALINA_OPTS
+               -Dcom.sun.management.jmxremote
+               -Dcom.sun.management.jmxremote.port=9050
+               -Dcom.sun.management.jmxremote.ssl=false
+               -Dlog4j2.formatMsgNoLookups=true
+               -Dcom.sun.management.jmxremote.authenticate=false
+               -Dcom.sun.management.jmxremote.local.only=false
+               -Djava.rmi.server.hostname=localhost
+               -Dcom.sun.management.jmxremote.rmi.port=9051"
+EOF
+echo 'CLEARFLASK_ENVIRONMENT=PRODUCTION_AWS' | sudo tee -a /usr/share/tomcat/conf/tomcat.conf
+
+sudo mkdir -p /srv/clearflask-connect
+sudo adduser connect
+sudo chown connect:connect /srv/clearflask-connect
+ln -s /srv/clearflask-connect ~/connect
+sudo su - connect <<'EOF'
+set -ex
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash
+. ~/.nvm/nvm.sh
+nvm install 14.15.1
+nvm use 14.15.1
+nvm alias default
+EOF
+sudo tee /etc/systemd/system/connect.service <<"EOF"
+[Unit]
+Description=ClearFlask Connect
+After=syslog.target
+After=network.target
+[Service]
+Environment=ENV=production
+Environment=NODE_ENV=production
+Environment=NODE_VERSION=14.15.1
+Environment=PATH=/usr/bin:/usr/local/bin
+ExecStart=/home/connect/.nvm/nvm-exec ./start.sh
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=Connect
+Type=simple
+Restart=always
+KillMode=control-group
+User=connect
+Group=connect
+WorkingDirectory=/srv/clearflask-connect
+[Install]
+WantedBy=multi-user.target
+EOF
+sudo systemctl daemon-reload
+sudo systemctl disable connect
+sudo tee /etc/rsyslog.d/00-connect.conf <<"EOF"
+if $programname == 'Connect' then /var/log/clearflask-connect.log
+& ~
+EOF
+sudo service rsyslog restart
+sudo tee /etc/logrotate.d/connect <<"EOF"
+/var/log/clearflask-connect.log {
+    copytruncate
+    weekly
+    size 5m
+    rotate 7
+    compress
+    missingok
+    create 0644 ec2-user ec2-user
+}
+EOF
+
+fi # If working off of existing ClearFlask AMI, skip until here
+
+sudo mkdir -p /var/lib/tomcat/webapps/300clearflask
+sudo chown -R tomcat:tomcat /var/lib/tomcat/webapps
+
+# Killbill
+
+sudo amazon-linux-extras install -y ruby2.6 tomcat8.5
+sudo yum install -y gcc ruby-devel
 sudo gem update --system 2.7.5 --install-dir=/usr/share/gems --bindir /usr/local/bin
 sudo gem install io-console
 sudo gem install kpm
@@ -20,24 +105,24 @@ killbill:
         version: 7.0.8
       - name: stripe
         version: 7.0.4
-  webapp_path: /var/lib/tomcat/webapps/killbill/ROOT.war
+  webapp_path: /var/lib/tomcat/webapps/100killbill/ROOT.war
   plugins_dir: /var/lib/killbill/bundles
 kaui:
   version: 2.0.8
   plugins_dir: /var/lib/killbill # Used for sha1.yml
-  webapp_path: /var/lib/tomcat/webapps/kaui/ROOT.war
+  webapp_path: /var/lib/tomcat/webapps/200kaui/ROOT.war
 EOF
 sudo kpm install /var/lib/killbill/kpm.yml
 sudo mkdir -p /var/lib/killbill/bundles/plugins/ruby
 
-sudo unzip -od /var/lib/tomcat/webapps/killbill/ROOT /var/lib/tomcat/webapps/killbill/ROOT.war
-sudo unzip -od /var/lib/tomcat/webapps/kaui/ROOT /var/lib/tomcat/webapps/kaui/ROOT.war
+sudo unzip -od /var/lib/tomcat/webapps/100killbill/ROOT /var/lib/tomcat/webapps/100killbill/ROOT.war
+sudo unzip -od /var/lib/tomcat/webapps/200kaui/ROOT /var/lib/tomcat/webapps/200kaui/ROOT.war
 
 sudo aws s3 cp s3://killbill-secret/clearflask-logging-0.1-standalone.jar /var/lib/killbill/clearflask-logging-0.1-standalone.jar
-sudo cp /var/lib/killbill/clearflask-logging-0.1-standalone.jar /usr/share/tomcat/webapps/kaui/ROOT/WEB-INF/lib
-sudo mv /var/lib/killbill/clearflask-logging-0.1-standalone.jar /usr/share/tomcat/webapps/killbill/ROOT/WEB-INF/lib
+sudo cp /var/lib/killbill/clearflask-logging-0.1-standalone.jar /usr/share/tomcat/webapps/200kaui/ROOT/WEB-INF/lib
+sudo mv /var/lib/killbill/clearflask-logging-0.1-standalone.jar /usr/share/tomcat/webapps/100killbill/ROOT/WEB-INF/lib
 
-sudo tee /usr/share/tomcat/webapps/kaui/ROOT/WEB-INF/classes/logback.xml <<"EOF"
+sudo tee /usr/share/tomcat/webapps/200kaui/ROOT/WEB-INF/classes/logback.xml <<"EOF"
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration debug="true" scan="true" scanPeriod="60 seconds">
     <jmxConfigurator />
@@ -99,7 +184,7 @@ sudo tee /usr/share/tomcat/webapps/kaui/ROOT/WEB-INF/classes/logback.xml <<"EOF"
 </configuration>
 EOF
 
-sudo tee /usr/share/tomcat/webapps/killbill/ROOT/WEB-INF/classes/logback.xml <<"EOF"
+sudo tee /usr/share/tomcat/webapps/100killbill/ROOT/WEB-INF/classes/logback.xml <<"EOF"
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration debug="true" scan="true" scanPeriod="60 seconds">
     <jmxConfigurator/>
@@ -284,7 +369,7 @@ sudo tee /usr/share/tomcat/webapps/killbill/ROOT/WEB-INF/classes/logback.xml <<"
         </filter>
     </appender>
 
-    <!-- Logs only SQL. SQL executed within a prepared statement is automatically shown with it's bind arguments replaced with the data bound at that position, for greatly increased readability. -->
+    <!-- Logs only SQL. SQL executed within a prepared statement is automatically shown with its bind arguments replaced with the data bound at that position, for greatly increased readability. -->
     <logger name="jdbc.sqlonly" level="OFF" additivity="false">
         <appender-ref ref="SIFT-jdbc-sqlonly"/>
     </logger>
@@ -333,76 +418,6 @@ EOF
 
 sudo chown -R tomcat:tomcat /var/lib/tomcat/webapps
 
-sudo tee /etc/tomcat/server.xml <<"EOF"
-<?xml version='1.0' encoding='utf-8'?>
-<Server port="8005" shutdown="SHUTDOWN">
-  <Listener className="org.apache.catalina.startup.VersionLoggerListener" />
-  <!-- APR library loader. Documentation at /docs/apr.html -->
-  <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on" />
-  <!-- Prevent memory leaks due to use of particular java/javax APIs-->
-  <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
-  <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
-  <Listener className="org.apache.catalina.core.ThreadLocalLeakPreventionListener" />
-
-  <Service name="killbill">
-    <Executor name="tomcatThreadPool"
-              namePrefix="catalina-exec-"
-              maxThreads="20"
-              maxIdleTime="30000"
-              minSpareThreads="4"
-              prestartminSpareThreads="true" />
-
-    <Connector executor="tomcatThreadPool"
-               port="8080"
-               address="0.0.0.0"
-               protocol="HTTP/1.1"
-               useIPVHosts="true"
-               connectionTimeout="20000" />
-
-    <Engine name="Catalina" defaultHost="localhost">
-      <Host name="localhost"
-            appBase="webapps/killbill"
-            unpackWARs="true"
-            autoDeploy="true">
-
-        <Valve className="org.apache.catalina.valves.RemoteIpValve"
-               protocolHeader="x-forwarded-proto"
-               portHeader="x-forwarded-port" />
-      </Host>
-    </Engine>
-  </Service>
-
-  <Service name="kaui">
-    <Executor name="tomcatThreadPool"
-              namePrefix="catalina-exec-"
-              maxThreads="20"
-              maxIdleTime="30000"
-              minSpareThreads="4"
-              prestartminSpareThreads="true" />
-
-    <Connector executor="tomcatThreadPool"
-               port="8081"
-               address="0.0.0.0"
-               protocol="HTTP/1.1"
-               useIPVHosts="true"
-               connectionTimeout="20000" />
-
-    <Engine name="Catalina" defaultHost="localhost">
-      <Host name="localhost"
-            appBase="webapps/kaui"
-            unpackWARs="true"
-            autoDeploy="true">
-
-        <Valve className="org.apache.catalina.valves.RemoteIpValve"
-               protocolHeader="x-forwarded-proto"
-               portHeader="x-forwarded-port" />
-      </Host>
-    </Engine>
-  </Service>
-</Server>
-EOF
-
-
 # THE BELOW FILES HAVE SECRETS
 # When you modify them, replace the secrets and upload to s3://killbill-secret
 
@@ -410,10 +425,10 @@ sudo aws s3 cp s3://killbill-secret/killbill.properties /var/lib/killbill/killbi
 #sudo tee /var/lib/killbill/killbill.properties <<"EOF"
 #org.killbill.billing.osgi.bundles.jruby.conf.dir=/var/lib/killbill/config
 #org.killbill.billing.osgi.dao.password=$DB_PASSWORD
-#org.killbill.billing.osgi.dao.url=jdbc:mysql:aurora:://killbill.cluster-cobdzpzyvu7i.us-east-1.rds.amazonaws.com:3306/killbill
+#org.killbill.billing.osgi.dao.url=jdbc:mysql:://localhost:3306/killbill
 #org.killbill.billing.osgi.dao.user=killbill
 #org.killbill.dao.password=$DB_PASSWORD
-#org.killbill.dao.url=jdbc:mysql:aurora::mysql://killbill.cluster-cobdzpzyvu7i.us-east-1.rds.amazonaws.com:3306/killbill
+#org.killbill.dao.url=jdbc:mysql://localhost:3306/killbill
 #org.killbill.dao.user=killbill
 #org.killbill.notificationq.analytics.historyTableName=analytics_notifications_history
 #org.killbill.notificationq.analytics.tableName=analytics_notifications
@@ -448,8 +463,8 @@ sudo aws s3 cp s3://killbill-secret/killbill.conf /etc/tomcat/conf.d/killbill.co
 #               -XX:SurvivorRatio=10
 #               -XX:+DisableExplicitGC"
 #CATALINA_OPTS="$CATALINA_OPTS
-#                      -Dkaui.url=http://127.0.0.1:8080
-#                      -Dkaui.db.url=jdbc:mysql:aurora://killbill.cluster-cobdzpzyvu7i.us-east-1.rds.amazonaws.com:3306/killbill
+#                      -Dkaui.url=http://127.0.0.1:8082
+#                      -Dkaui.db.url=jdbc:mysql://localhost:3306/killbill
 #                      -Dkaui.db.password=$DB_PASSWORD
 #                      -Dkaui.db.username=killbill
 #                      -Dkaui.db.adapter=jdbcmysql
@@ -460,4 +475,115 @@ sudo aws s3 cp s3://killbill-secret/killbill.conf /etc/tomcat/conf.d/killbill.co
 #                      -Djruby.compile.invokedynamic=false
 #                      -Dlog4jdbc.sqltiming.error.threshold=1000"
 #EOF
+
+
+
+
+
+# Combined ClearFlask and Killbill Tomcat configuration
+
+sudo tee /etc/tomcat/server.xml <<"EOF"
+<?xml version='1.0' encoding='utf-8'?>
+<Server port="8005" shutdown="SHUTDOWN">
+  <Listener className="org.apache.catalina.startup.VersionLoggerListener" />
+  <!-- APR library loader. Documentation at /docs/apr.html -->
+  <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="on" />
+  <!-- Prevent memory leaks due to use of particular java/javax APIs-->
+  <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
+  <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
+  <Listener className="org.apache.catalina.core.ThreadLocalLeakPreventionListener" />
+
+  <Service name="killbill">
+    <Executor name="tomcatThreadPool"
+              namePrefix="catalina-exec-"
+              maxThreads="20"
+              maxIdleTime="30000"
+              minSpareThreads="4"
+              prestartminSpareThreads="true" />
+
+    <Connector executor="tomcatThreadPool"
+               port="8081"
+               address="0.0.0.0"
+               protocol="HTTP/1.1"
+               useIPVHosts="true"
+               connectionTimeout="20000" />
+
+    <Engine name="Catalina" defaultHost="localhost">
+      <Host name="localhost"
+            appBase="webapps/100killbill"
+            unpackWARs="true"
+            autoDeploy="true">
+
+        <Valve className="org.apache.catalina.valves.RemoteIpValve"
+               protocolHeader="x-forwarded-proto"
+               portHeader="x-forwarded-port" />
+      </Host>
+    </Engine>
+  </Service>
+
+  <Service name="kaui">
+    <Executor name="tomcatThreadPool"
+              namePrefix="catalina-exec-"
+              maxThreads="20"
+              maxIdleTime="30000"
+              minSpareThreads="4"
+              prestartminSpareThreads="true" />
+
+    <Connector executor="tomcatThreadPool"
+               port="8082"
+               address="0.0.0.0"
+               protocol="HTTP/1.1"
+               useIPVHosts="true"
+               connectionTimeout="20000" />
+
+    <Engine name="Catalina" defaultHost="localhost">
+      <Host name="localhost"
+            appBase="webapps/200kaui"
+            unpackWARs="true"
+            autoDeploy="true">
+
+        <Valve className="org.apache.catalina.valves.RemoteIpValve"
+               protocolHeader="x-forwarded-proto"
+               portHeader="x-forwarded-port" />
+      </Host>
+    </Engine>
+  </Service>
+
+  <Service name="clearflask">
+    <Executor name="tomcatThreadPool"
+              namePrefix="catalina-exec-"
+              maxThreads="20"
+              maxIdleTime="30000"
+              minSpareThreads="4"
+              prestartminSpareThreads="true" />
+
+    <Connector executor="tomcatThreadPool"
+               port="8080"
+               address="0.0.0.0"
+               protocol="HTTP/1.1"
+               useIPVHosts="true"
+               connectionTimeout="20000" />
+
+    <Engine name="Catalina" defaultHost="localhost">
+      <Host name="localhost"
+            appBase="webapps/300clearflask"
+            unpackWARs="true"
+            autoDeploy="true">
+
+        <Valve className="org.apache.catalina.valves.RemoteIpValve"
+               protocolHeader="x-forwarded-proto"
+               portHeader="x-forwarded-port" />
+      </Host>
+    </Engine>
+  </Service>
+</Server>
+EOF
+
+
+
+
+# MariaDB
+
+sudo amazon-linux-extras enable mariadb10.5
+sudo yum install -y mariadb
 
