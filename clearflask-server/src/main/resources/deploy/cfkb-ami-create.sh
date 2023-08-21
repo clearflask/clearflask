@@ -4,8 +4,6 @@ set -ex
 # Run as ec2-user
 [ "$(whoami)" == 'ec2-user' ]
 
-if false; then # If working off of existing ClearFlask AMI, skip these as they're already done
-
 # Clearflask
 sudo mkdir -p /opt/clearflask
 
@@ -82,9 +80,7 @@ sudo tee /etc/logrotate.d/connect <<"EOF"
 }
 EOF
 
-fi # If working off of existing ClearFlask AMI, skip until here
-
-sudo mkdir -p /var/lib/tomcat/webapps/300clearflask
+sudo mkdir -p /var/lib/tomcat/webapps/150clearflask
 sudo chown -R tomcat:tomcat /var/lib/tomcat/webapps
 
 # Killbill
@@ -566,7 +562,7 @@ sudo tee /etc/tomcat/server.xml <<"EOF"
 
     <Engine name="Catalina" defaultHost="localhost">
       <Host name="localhost"
-            appBase="webapps/300clearflask"
+            appBase="webapps/150clearflask"
             unpackWARs="true"
             autoDeploy="true">
 
@@ -587,3 +583,29 @@ EOF
 sudo amazon-linux-extras enable mariadb10.5
 sudo yum install -y mariadb
 
+sudo service mariadb start
+cat ddl-history/*.sql | sudo mariadb
+sudo service mariadb stop
+
+
+
+
+
+# Port forward
+
+sudo tee /etc/init.d/setup_port_forward_clearflask <<"EOF"
+#!/bin/bash
+
+echo '1' | sudo tee /proc/sys/net/ipv4/conf/eth0/forwarding
+iptables -t nat -A PREROUTING -p tcp -i eth0 --dport 80 -j REDIRECT --to-ports 44380
+iptables -t nat -A PREROUTING -p tcp -i eth0 --dport 443 -j REDIRECT --to-ports 44380
+EOF
+chmod +x /etc/init.d/setup_port_forward_clearflask
+
+
+
+
+
+
+# DONE
+echo COMPLETE

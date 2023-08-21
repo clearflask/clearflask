@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/clearflask-api/clearflask-api.iml" filepath="$PROJECT_DIR$/clearflask-api/clearflask-api.iml" />
       <module fileurl="file://$PROJECT_DIR$/clearflask-frontend/clearflask-frontend.iml" filepath="$PROJECT_DIR$/clearflask-frontend/clearflask-frontend.iml" />
+      <module fileurl="file://$PROJECT_DIR$/clearflask-server/clearflask-server.iml" filepath="$PROJECT_DIR$/clearflask-server/clearflask-server.iml" />
     </modules>
   </component>
 </project>
