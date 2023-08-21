@@ -19,11 +19,7 @@ import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import nl.martijndwars.webpush.Notification;
-import nl.martijndwars.webpush.PushService;
-import nl.martijndwars.webpush.Subscription;
-import nl.martijndwars.webpush.Urgency;
-import nl.martijndwars.webpush.Utils;
+import nl.martijndwars.webpush.*;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -33,14 +29,9 @@ import rx.Observable;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.GeneralSecurityException;
-import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.Security;
+import java.security.*;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
@@ -102,8 +93,17 @@ public class BrowserPushServiceImpl implements BrowserPushService {
 
     @Inject
     private void setup() {
-        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
-            Security.insertProviderAt(new BouncyCastleProvider(), 1);
+        Optional<String> providerInfoOpt = Optional.ofNullable(Security.getProvider(BouncyCastleProvider.PROVIDER_NAME))
+                .map(Provider::getInfo);
+        if (!providerInfoOpt.equals(Optional.of("BouncyCastle Security Provider v1.70"))) {
+            BouncyCastleProvider bouncyCastleProvider = new BouncyCastleProvider();
+            Security.insertProviderAt(bouncyCastleProvider, 1);
+            log.info("Inserted Security Provider {}; existing info {} new info {}",
+                    BouncyCastleProvider.PROVIDER_NAME, providerInfoOpt, bouncyCastleProvider.getInfo());
+        }
+        Provider[] providers = Security.getProviders();
+        for (int i = 0; i < providers.length; i++) {
+            log.info("Security Provider {}: {} ", i + 1, providers[i].getName());
         }
 
         Stream.of(
