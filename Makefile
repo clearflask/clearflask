@@ -105,7 +105,31 @@ release-github-release:
 		-DgithubReleaseVersion=\$${parsedVersion.majorVersion}.\$${parsedVersion.minorVersion}.\$${parsedVersion.incrementalVersion} \
 		-Dgithub.draft=true --non-recursive github-release:release
 
-deploy:
+deploy-reload:
+	make $(foreach server, \
+		$(shell aws ec2 describe-instances --no-paginate --output text \
+			--instance-ids $(shell aws ec2 describe-instances --filters 'Name=tag:Name,Values=cf-kb' --output text --query 'Reservations[*].Instances[*].InstanceId') \
+			--query "Reservations[].Instances[].{Host:PublicDnsName}"), \
+		deploy-reload-server-$(server) )
+
+deploy-reload-server-%: get-project-version
+	echo "Deploying to $*"
+	scp ./clearflask-server/target/clearflask-server-$(PROJECT_VERSION).war $*:/home/ec2-user/clearflask-server-0.1.war
+	ssh $* "sudo cp /home/ec2-user/clearflask-server-0.1.war /var/lib/tomcat/webapps/150clearflask/ROOT.war && sudo service tomcat start"
+
+deploy-restart:
+	make $(foreach server, \
+		$(shell aws ec2 describe-instances --no-paginate --output text \
+			--instance-ids $(shell aws ec2 describe-instances --filters 'Name=tag:Name,Values=cf-kb' --output text --query 'Reservations[*].Instances[*].InstanceId') \
+			--query "Reservations[].Instances[].{Host:PublicDnsName}"), \
+		deploy-restart-server-$(server) )
+
+deploy-restart-server-%: get-project-version
+	echo "Deploying to $*"
+	scp ./clearflask-server/target/clearflask-server-$(PROJECT_VERSION).war $*:/home/ec2-user/clearflask-server-0.1.war
+	ssh $* "sudo service tomcat stop && sudo rm -fr /var/lib/tomcat/webapps/150clearflask/ROOT.war /var/lib/tomcat/webapps/150clearflask/ROOT && sudo cp /home/ec2-user/clearflask-server-0.1.war /var/lib/tomcat/webapps/150clearflask/ROOT.war && sudo service tomcat start"
+
+deploy-autoscale:
 	make deploy-server
 	make deploy-connect
 	make deploy-rotate-instances
@@ -187,6 +211,11 @@ autoscale-killbill-suspend:
 
 autoscale-killbill-resume:
 	aws autoscaling resume-processes --auto-scaling-group-name killbill-webserver --scaling-processes Launch Terminate
+
+list-instances-cf-kb:
+	aws ec2 describe-instances --no-paginate --output table \
+		--instance-ids $(shell aws ec2 describe-instances --filters 'Name=tag:Name,Values=cf-kb' --output text --query 'Reservations[*].Instances[*].InstanceId') \
+		--query "Reservations[].Instances[].{Host:PublicDnsName,Id:InstanceId,AZ:Placement.AvailabilityZone,Type:InstanceType,State:State.Name,Name:Tags[?Key=='Name']|[0].Value}"
 
 list-instances-clearflask:
 	aws ec2 describe-instances --no-paginate --output table \
