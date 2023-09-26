@@ -44,34 +44,9 @@ import org.killbill.billing.catalog.api.PhaseType;
 import org.killbill.billing.catalog.api.ProductCategory;
 import org.killbill.billing.client.KillBillClientException;
 import org.killbill.billing.client.KillBillHttpClient;
-import org.killbill.billing.client.api.gen.AccountApi;
-import org.killbill.billing.client.api.gen.BundleApi;
-import org.killbill.billing.client.api.gen.CatalogApi;
-import org.killbill.billing.client.api.gen.CreditApi;
-import org.killbill.billing.client.api.gen.InvoiceApi;
-import org.killbill.billing.client.api.gen.PaymentApi;
-import org.killbill.billing.client.api.gen.PaymentMethodApi;
-import org.killbill.billing.client.api.gen.SubscriptionApi;
-import org.killbill.billing.client.api.gen.UsageApi;
-import org.killbill.billing.client.model.Bundles;
-import org.killbill.billing.client.model.InvoiceItems;
-import org.killbill.billing.client.model.PaymentMethods;
-import org.killbill.billing.client.model.Payments;
-import org.killbill.billing.client.model.PlanDetails;
-import org.killbill.billing.client.model.gen.Account;
-import org.killbill.billing.client.model.gen.EventSubscription;
-import org.killbill.billing.client.model.gen.Invoice;
-import org.killbill.billing.client.model.gen.OverdueState;
-import org.killbill.billing.client.model.gen.PaymentMethod;
-import org.killbill.billing.client.model.gen.PaymentMethodPluginDetail;
-import org.killbill.billing.client.model.gen.PaymentTransaction;
-import org.killbill.billing.client.model.gen.PhasePrice;
-import org.killbill.billing.client.model.gen.PlanDetail;
-import org.killbill.billing.client.model.gen.PluginProperty;
-import org.killbill.billing.client.model.gen.Subscription;
-import org.killbill.billing.client.model.gen.SubscriptionUsageRecord;
-import org.killbill.billing.client.model.gen.UnitUsageRecord;
-import org.killbill.billing.client.model.gen.UsageRecord;
+import org.killbill.billing.client.api.gen.*;
+import org.killbill.billing.client.model.*;
+import org.killbill.billing.client.model.gen.*;
 import org.killbill.billing.entitlement.api.Entitlement;
 import org.killbill.billing.entitlement.api.Entitlement.EntitlementState;
 import org.killbill.billing.entitlement.api.SubscriptionEventType;
@@ -85,35 +60,27 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static com.smotana.clearflask.api.model.SubscriptionStatus.ACTIVE;
-import static com.smotana.clearflask.api.model.SubscriptionStatus.ACTIVENORENEWAL;
-import static com.smotana.clearflask.api.model.SubscriptionStatus.ACTIVEPAYMENTRETRY;
-import static com.smotana.clearflask.api.model.SubscriptionStatus.ACTIVETRIAL;
-import static com.smotana.clearflask.api.model.SubscriptionStatus.BLOCKED;
-import static com.smotana.clearflask.api.model.SubscriptionStatus.CANCELLED;
-import static com.smotana.clearflask.api.model.SubscriptionStatus.LIMITED;
-import static com.smotana.clearflask.api.model.SubscriptionStatus.NOPAYMENTMETHOD;
+import static com.smotana.clearflask.api.model.SubscriptionStatus.*;
 import static com.smotana.clearflask.billing.KillBillClientProvider.STRIPE_PLUGIN_NAME;
 
 @Slf4j
 @Singleton
 public class KillBilling extends ManagedService implements Billing {
 
-    /** If changed, also change in catalogXXX.xml */
+    /**
+     * If changed, also change in catalogXXX.xml
+     */
     public static final String TRACKED_USER_UNIT_NAME = "tracked-user";
-    /** If changed, also change in catalogXXX.xml */
+    /**
+     * If changed, also change in catalogXXX.xml
+     */
     public static final String TRACKED_TEAMMATE_UNIT_NAME = "tracked-teammate";
 
     public interface Config {
@@ -129,15 +96,21 @@ public class KillBilling extends ManagedService implements Billing {
         @DefaultValue("true")
         boolean finalizeInvoiceEnabled();
 
-        /** Used in testing for deterministic number of invoices */
+        /**
+         * Used in testing for deterministic number of invoices
+         */
         @DefaultValue("true")
         boolean reuseDraftInvoices();
 
-        /** Retry creating account again assuming it failed before */
+        /**
+         * Retry creating account again assuming it failed before
+         */
         @DefaultValue("true")
         boolean createAccountIfNotExists();
 
-        /** Retry creating subscription again assuming it failed before */
+        /**
+         * Retry creating subscription again assuming it failed before
+         */
         @DefaultValue("true")
         boolean createSubscriptionIfNotExists();
 
@@ -322,6 +295,7 @@ public class KillBilling extends ManagedService implements Billing {
                     null,
                     false,
                     false,
+                    false,
                     true,
                     TimeUnit.MILLISECONDS.toSeconds(config.callTimeoutInMillis()),
                     null,
@@ -495,18 +469,18 @@ public class KillBilling extends ManagedService implements Billing {
 
     /**
      * Note: Any changes to the logic needs to be updated here and properly tested.
-     *
+     * <p>
      * Preview below state diagram with https://www.planttext.com/
-     *
+     * <p>
      * [*] --> ActiveTrial
-     *
+     * <p>
      * ActiveTrial : - Phase is TRIAL
      * ActiveTrial --> Active : Reach MAU limit (With payment)
      * ActiveTrial --> NoPaymentMethod : Reach MAU limit (Without payment)
      * ActiveTrial --> ActiveTrial : Add payment
      * ActiveTrial --> ActiveTrial : Change plan
      * ActiveTrial --> [*] : Delete account
-     *
+     * <p>
      * Active : - Subscription active
      * Active : - No outstanding balance
      * Active : - Not overdue
@@ -516,35 +490,35 @@ public class KillBilling extends ManagedService implements Billing {
      * Active --> Active : Update payment
      * Active --> Active : Change plan
      * Active --> [*] : Delete account
-     *
+     * <p>
      * Limited : - Subscription active
      * Limited : - Limited functionality
      * Limited : - ie exceeded plan max posts
      * Limited --> Active : Plan within limits
      * Limited --> [*] : Delete account
-     *
+     * <p>
      * Blocked : - Not TRIAL phase
      * Blocked : - Phase is BLOCKED
      * Blocked :   or Overdue cancelled
      * Blocked --> [*] : Delete account
-     *
+     * <p>
      * Cancelled : Subscription is cancelled
      * Cancelled --> Active : User resumes
      * Cancelled --> Active : Update payment method
      * Cancelled --> [*] : Delete account
-     *
+     * <p>
      * ActiveNoRenewal : Subscription pending cancel
      * ActiveNoRenewal --> Active : User resumes
      * ActiveNoRenewal --> Cancelled : Expires
      * ActiveNoRenewal --> Active : Update payment method
      * ActiveNoRenewal --> [*] : Delete account
-     *
+     * <p>
      * NoPaymentMethod : - No payment method
      * NoPaymentMethod : - Outstanding balance
      * NoPaymentMethod : - Not overdue cancelled
      * NoPaymentMethod --> Active : Add payment
      * NoPaymentMethod --> [*] : Delete account
-     *
+     * <p>
      * ActivePaymentRetry : - Has payment method
      * ActivePaymentRetry : - Outstanding balance
      * ActivePaymentRetry : - Overdue unpaid
@@ -799,6 +773,7 @@ public class KillBilling extends ManagedService implements Billing {
                         null,
                         true,
                         false,
+                        false,
                         true,
                         TimeUnit.MILLISECONDS.toSeconds(config.callTimeoutInMillis()),
                         null,
@@ -960,7 +935,9 @@ public class KillBilling extends ManagedService implements Billing {
         }
     }
 
-    /** If changed, also change in UpgradeWrapper.tsx:canAutoUpgrade */
+    /**
+     * If changed, also change in UpgradeWrapper.tsx:canAutoUpgrade
+     */
     @Override
     public boolean tryAutoUpgradePlan(AccountStore.Account accountInDyn, String requiredPlanId) {
         boolean allowUpgrade = false;
@@ -1010,6 +987,7 @@ public class KillBilling extends ManagedService implements Billing {
                         false, // "We don't support fetching migration invoices and specifying a start date" -kb
                         false,
                         true,
+                        null,
                         null,
                         KillBillUtil.roDefault());
             } else {
@@ -1502,7 +1480,9 @@ public class KillBilling extends ManagedService implements Billing {
                 : ImmutableList.of(ControlTagType.AUTO_INVOICING_DRAFT.getId());
     }
 
-    /** If changed, also change in BillingPage.tsx */
+    /**
+     * If changed, also change in BillingPage.tsx
+     */
     private AccountBillingPaymentActionRequired getPaymentStripeAction(String paymentIntentClientSecret) {
         return new AccountBillingPaymentActionRequired("stripe-next-action", ImmutableMap.of(
                 "paymentIntentClientSecret", paymentIntentClientSecret));
