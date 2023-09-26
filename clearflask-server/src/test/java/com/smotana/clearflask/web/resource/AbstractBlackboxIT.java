@@ -18,7 +18,6 @@ import com.google.inject.Inject;
 import com.google.inject.name.Names;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
-import com.ning.http.client.Response;
 import com.smotana.clearflask.TestUtil;
 import com.smotana.clearflask.api.model.AccountAdmin;
 import com.smotana.clearflask.api.model.AccountBillingPayment;
@@ -453,7 +452,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
 
     protected void kbClockReset() throws Exception {
         // https://github.com/killbill/killbill/blob/master/jaxrs/src/main/java/org/killbill/billing/jaxrs/resources/TestResource.java#L170
-        Response response = kbClient.doPost("/1.0/kb/test/clock", "", KillBillUtil.roDefault());
+        var response = kbClient.doPost("/1.0/kb/test/clock", "", KillBillUtil.roDefault());
         log.info("Reset clock to {}", response.getResponseBody());
     }
 
@@ -465,7 +464,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
 
     protected void kbClockSleep(long sleepInDays) throws Exception {
         // https://github.com/killbill/killbill/blob/master/jaxrs/src/main/java/org/killbill/billing/jaxrs/resources/TestResource.java#L193
-        Response response = kbClient.doPut("/1.0/kb/test/clock?days=" + sleepInDays, "", KillBillUtil.roDefault());
+        var response = kbClient.doPut("/1.0/kb/test/clock?days=" + sleepInDays, "", KillBillUtil.roDefault());
         log.info("Slept for {} days, current clock is {}", sleepInDays, response.getResponseBody());
         refreshStatus();
     }
@@ -544,6 +543,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 false,
                 false,
                 null,
+                null,
                 KillBillUtil.roDefault());
         long invoicesCommitted = 0L;
         for (Invoice invoice : invoices) {
@@ -582,6 +582,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 false,
                 false,
                 true,
+                null,
                 null,
                 KillBillUtil.roDefault());
         log.info("KB invoices:\n{}", invoicesKb);

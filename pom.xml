@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.smotana.clearflask</groupId>
@@ -51,8 +52,8 @@
         <bytebuddy.version>1.10.22</bytebuddy.version>
         <bouncycastle.version>1.70</bouncycastle.version>
         <githubReleaseVersion>${project.version}</githubReleaseVersion>
-        <skipTests />
-        <skipITs />
+        <skipTests/>
+        <skipITs/>
         <skipLicenseUpdate>true</skipLicenseUpdate>
         <!-- For HTTPS, use "scm:git:https://github.com/clearflask/clearflask.git" -->
         <scmConnection>scm:git:git@github.com:clearflask/clearflask.git</scmConnection>
@@ -479,6 +480,14 @@
             </dependency>
 
             <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-bom</artifactId>
+                <version>4.1.94.Final</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
                 <groupId>com.twelvemonkeys.common</groupId>
                 <artifactId>common-image</artifactId>
                 <version>${twelvemonkeys.version}</version>
@@ -757,12 +766,12 @@
             <dependency>
                 <groupId>com.stripe</groupId>
                 <artifactId>stripe-java</artifactId>
-                <version>20.26.0</version>
+                <version>23.5.0</version>
             </dependency>
             <dependency>
                 <groupId>org.kill-bill.billing</groupId>
                 <artifactId>killbill-client-java</artifactId>
-                <version>1.1.10</version>
+                <version>1.2.6</version>
             </dependency>
             <dependency>
                 <groupId>org.kill-bill.billing.plugin</groupId>
@@ -773,24 +782,24 @@
                 <groupId>org.kill-bill.billing.plugin.java</groupId>
                 <artifactId>payment-test-plugin</artifactId>
                 <!-- Compatibility matrix https://github.com/killbill/killbill-payment-test-plugin -->
-                <version>7.0.4</version>
+                <version>7.0.5</version>
             </dependency>
             <dependency>
                 <groupId>org.kill-bill.billing.plugin.java</groupId>
                 <artifactId>stripe-plugin</artifactId>
                 <!-- Compatibility matrix https://github.com/killbill/killbill-stripe-plugin -->
-                <version>7.0.4</version>
+                <version>7.3.3</version>
             </dependency>
             <dependency>
                 <groupId>org.kill-bill.billing.plugin.java</groupId>
                 <artifactId>analytics-plugin</artifactId>
                 <!-- Compatibility matrix https://github.com/killbill/killbill-analytics-plugin -->
-                <version>7.0.8</version>
+                <version>7.2.7</version>
             </dependency>
             <dependency>
                 <groupId>org.kill-bill.billing</groupId>
                 <artifactId>killbill-catalog</artifactId>
-                <version>0.22.20</version>
+                <version>0.22.33</version>
                 <scope>test</scope>
             </dependency>
 
@@ -1016,7 +1025,7 @@
             <dependency>
                 <groupId>org.elasticsearch.plugin</groupId>
                 <artifactId>transport-netty4-client</artifactId>
-                <version>5.1.1</version>
+                <version>7.17.11</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>

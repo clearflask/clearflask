@@ -94,17 +94,17 @@ sudo mkdir -p /var/lib/killbill
 sudo chown -R ec2-user:ec2-user /var/lib/killbill
 cat > /var/lib/killbill/kpm.yml <<"EOF"
 killbill:
-  version: 0.22.20
+  version: 0.22.32
   plugins:
     java:
       - name: analytics
-        version: 7.0.8
+        version: 7.2.7
       - name: stripe
-        version: 7.0.4
+        version: 7.3.3
   webapp_path: /var/lib/tomcat/webapps/100killbill/ROOT.war
   plugins_dir: /var/lib/killbill/bundles
 kaui:
-  version: 2.0.8
+  version: 2.1.1
   plugins_dir: /var/lib/killbill # Used for sha1.yml
   webapp_path: /var/lib/tomcat/webapps/200kaui/ROOT.war
 EOF
@@ -431,7 +431,7 @@ sudo aws s3 cp s3://killbill-secret/killbill.properties /var/lib/killbill/killbi
 #org.killbill.osgi.bundle.install.dir=/var/lib/killbill/bundles
 #org.killbill.server.baseUrl=http://localhost:8080
 #org.killbill.server.test.mode=false
-#org.killbill.billing.plugin.kpm.kpmPath=/usr/local/bin/kpm
+#org.killbill.billing.plugin.kpm.kpmPath=/bin/kpm
 #org.killbill.billing.plugin.kpm.bundlesPath=/var/lib/killbill/bundles
 #org.killbill.dao.healthCheckExpected99thPercentile=0ms
 #EOF
@@ -459,7 +459,7 @@ sudo aws s3 cp s3://killbill-secret/killbill.conf /etc/tomcat/conf.d/killbill.co
 #               -XX:SurvivorRatio=10
 #               -XX:+DisableExplicitGC"
 #CATALINA_OPTS="$CATALINA_OPTS
-#                      -Dkaui.url=http://127.0.0.1:8082
+#                      -Dkaui.url=http://127.0.0.1:8081
 #                      -Dkaui.db.url=jdbc:mysql://localhost:3306/killbill
 #                      -Dkaui.db.password=$DB_PASSWORD
 #                      -Dkaui.db.username=killbill
@@ -469,9 +469,11 @@ sudo aws s3 cp s3://killbill-secret/killbill.conf /etc/tomcat/conf.d/killbill.co
 #                      -Dcom.sun.xml.bind.v2.bytecode.ClassTailor.noOptimize=true
 #                      -Djava.security.egd=file:/dev/./urandom
 #                      -Djruby.compile.invokedynamic=false
-#                      -Dlog4jdbc.sqltiming.error.threshold=1000"
+#                      -Dlog4jdbc.sqltiming.error.threshold=1000
+#                      -Djdk.util.zip.disableZip64ExtraFieldValidation=true"
 #EOF
 
+sudo chown -R tomcat:tomcat /var/lib/killbill
 
 
 
