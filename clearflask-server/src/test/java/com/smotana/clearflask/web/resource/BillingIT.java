@@ -16,7 +16,7 @@ import static org.junit.Assert.assertEquals;
  * <p>
  * Re-run when you make changes to Billing.
  */
-//@Ignore
+@Ignore
 @Slf4j
 public class BillingIT extends AbstractBlackboxIT {
 
