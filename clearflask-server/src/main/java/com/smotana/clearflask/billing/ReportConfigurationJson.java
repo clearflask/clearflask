@@ -2,14 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.smotana.clearflask.billing;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
-import org.killbill.billing.client.model.gen.AuditLog;
 
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Mimics ReportConfigurationJson from org.kill-bill.billing.plugin.java:analytics-plugin
@@ -17,6 +15,7 @@ import java.util.List;
 
 @Value
 @EqualsAndHashCode(exclude = {"recordId", "schema"})
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ReportConfigurationJson {
     private final Integer recordId;
     private final String reportName;
