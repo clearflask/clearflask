@@ -550,7 +550,7 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
                       label={this.props.t('portal-domain')}
                       disabled={!!this.state.isSubmitting}
                       value={this.state.infoDomain !== undefined ? this.state.infoDomain : windowIso.parentDomain}
-                      onChange={e => this.setState({ infoSlug: e.target.value })}
+                      onChange={e => this.setState({ infoDomain: e.target.value })}
                     />
                   ) : (
                     <div className={this.props.classes.subdomainFields}>
