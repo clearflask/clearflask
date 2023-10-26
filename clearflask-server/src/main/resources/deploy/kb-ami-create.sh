@@ -13,17 +13,17 @@ sudo mkdir -p /var/lib/killbill
 sudo chown -R ec2-user:ec2-user /var/lib/killbill
 cat > /var/lib/killbill/kpm.yml <<"EOF"
 killbill:
-  version: 0.22.20
+  version: 0.22.32
   plugins:
     java:
       - name: analytics
-        version: 7.0.8
+        version: 7.2.7
       - name: stripe
-        version: 7.0.4
+        version: 7.3.3
   webapp_path: /var/lib/tomcat/webapps/killbill/ROOT.war
   plugins_dir: /var/lib/killbill/bundles
 kaui:
-  version: 2.0.8
+  version: 2.1.1
   plugins_dir: /var/lib/killbill # Used for sha1.yml
   webapp_path: /var/lib/tomcat/webapps/kaui/ROOT.war
 EOF

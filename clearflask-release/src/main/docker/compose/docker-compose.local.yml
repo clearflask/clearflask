@@ -44,7 +44,7 @@ services:
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
   killbill-engine:
-    image: killbill/killbill:0.22.20
+    image: killbill/killbill:0.22.32
     depends_on:
       - mysql-db
     ports:

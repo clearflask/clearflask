@@ -763,7 +763,7 @@
                         </image>
                         <image>
                             <alias>killbill-engine</alias>
-                            <name>killbill/killbill:0.22.20</name>
+                            <name>killbill/killbill:0.22.32</name>
                             <build>
                                 <createImageOptions>
                                     <platform>${docker.platform}</platform>
