@@ -77,7 +77,7 @@ services:
       - KAUI_CONFIG_DAO_PASSWORD=killbill
       - KAUI_KILLBILL_URL=http://killbill-engine:8080
   mysql-db:
-    image: mysql:5.7
+    image: mysql:5.7@sha256:2c23f254c6b9444ecda9ba36051a9800e8934a2f5828ecc8730531db8142af83
     platform: linux/amd64
     command:
       - 'mysqld'
