@@ -44,7 +44,7 @@ services:
       - '--explicit-defaults-for-timestamp'
       - '--secure-file-priv=/tmp'
     volumes:
-      - ./killbill-db:/docker-entrypoint-initdb.d
+      - ./data/mysql:/var/lib/mysql
     ports:
       - 3306:3306
     environment:
@@ -66,7 +66,7 @@ services:
   localstack:
     profiles:
       - with-deps
-    image: localstack/localstack
+    image: localstack/localstack:0.14.3
     expose:
       - 4566
       - 4571
@@ -80,5 +80,6 @@ services:
       - USE_SSL=0
       - FORCE_NONINTERACTIVE=true
       - DATA_DIR=/tmp/localstack/data
+      - LEGACY_PERSISTENCE=1
     volumes:
-      - ./data/localstack:/var/lib/localstack
+      - ./data/localstack:/tmp/localstack
