@@ -40,6 +40,7 @@ services:
     image: mysql:5.7
     command:
       - 'mysqld'
+      - '--port=3306'
       - '--sql-mode=IGNORE_SPACE'
       - '--explicit-defaults-for-timestamp'
       - '--secure-file-priv=/tmp'

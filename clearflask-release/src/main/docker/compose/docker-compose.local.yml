@@ -81,6 +81,7 @@ services:
     platform: linux/amd64
     command:
       - 'mysqld'
+      - '--port=3306'
       - '--sql-mode=IGNORE_SPACE'
       - '--explicit-defaults-for-timestamp'
       - '--secure-file-priv=/tmp'
