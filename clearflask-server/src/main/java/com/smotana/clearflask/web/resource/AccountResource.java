@@ -37,6 +37,7 @@ import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.AccountStore.SearchAccountsResponse;
 import com.smotana.clearflask.store.ProjectStore.InvitationModel;
+import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.util.*;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
@@ -685,6 +686,39 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                         });
             }
         };
+    }
+
+    @RolesAllowed({Role.SUPER_ADMIN})
+    @Override
+    public void projectOwnerSwapSuperAdmin(ProjectOwnerSwapSuperAdmin projectOwnerSwapSuperAdmin) {
+        Project project = projectStore.getProject(projectOwnerSwapSuperAdmin.getProjectId(), false).orElseThrow();
+        Account ownerOld = accountStore.getAccount(project.getAccountId(), false).orElseThrow();
+        Account ownerNew = accountStore.getAccount(projectOwnerSwapSuperAdmin.getNewOwnerAccountId(), false).orElseThrow();
+
+        // Ensure old owner is an owner
+        checkState(ownerOld.getProjectIds().contains(project.getProjectId()));
+        checkState(project.getAccountId().equals(ownerOld.getAccountId()));
+
+        // First remove new owner as an admin
+        if (ownerNew.getExternalProjectIds().contains(project.getProjectId())) {
+            accountStore.removeExternalProject(ownerNew.getAccountId(), project.getProjectId());
+        }
+        if (project.getModel().getAdminsAccountIds().contains(ownerNew.getAccountId())) {
+            project = projectStore.removeAdmin(project.getProjectId(), ownerNew.getAccountId());
+        }
+
+        // Swap owner
+        ownerOld = accountStore.removeProject(ownerOld.getAccountId(), project.getProjectId()).getAccount();
+        project = projectStore.changeOwner(project.getProjectId(), ownerNew.getAccountId());
+        ownerNew = accountStore.addProject(ownerNew.getAccountId(), project.getProjectId()).getAccount();
+
+        // Add old owner as admin
+        if (!ownerOld.getExternalProjectIds().contains(project.getProjectId())) {
+            ownerOld = accountStore.addExternalProject(ownerOld.getAccountId(), project.getProjectId());
+        }
+        if (!project.getModel().getAdminsAccountIds().contains(ownerOld.getAccountId())) {
+            project = projectStore.removeAdmin(project.getProjectId(), ownerNew.getAccountId());
+        }
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})

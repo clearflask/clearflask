@@ -95,6 +95,8 @@ paths:
     $ref: 'api-account.yaml#/~1superadmin~1account~1loginas'
   /superadmin/accountsearch:
     $ref: 'api-account.yaml#/~1superadmin~1accountsearch'
+  /superadmin/account/projectownerswap:
+    $ref: 'api-account.yaml#/~1superadmin~1account~1projectownerswap'
   /admin/account/coupon:
     $ref: 'api-account.yaml#/~1admin~1account~1coupon'
   /superadmin/coupon/generate:

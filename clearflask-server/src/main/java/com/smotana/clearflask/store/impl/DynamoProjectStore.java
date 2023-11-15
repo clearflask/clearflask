@@ -643,6 +643,23 @@ public class DynamoProjectStore implements ProjectStore {
         return project;
     }
 
+    @Override
+    public Project changeOwner(String projectId, String newOwnerAccountId) {
+        Project project = new ProjectImpl(projectSchema.fromItem(projectSchema.table().updateItem(new UpdateItemSpec()
+                        .withPrimaryKey(projectSchema.primaryKey(Map.of("projectId", projectId)))
+                        .withConditionExpression("attribute_exists(#partitionKey) AND #accountId <> :newOwnerAccountId")
+                        .withUpdateExpression("SET #accountId = :newOwnerAccountId")
+                        .withNameMap(Map.of(
+                                "#partitionKey", projectSchema.partitionKeyName(),
+                                "#accountId", "accountId"))
+                        .withValueMap(Map.of(
+                                ":newOwnerAccountId", projectSchema.toDynamoValue("accountId", newOwnerAccountId)))
+                        .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem()));
+        projectCache.put(projectId, Optional.of(project));
+        return project;
+    }
+
     private String packWebhookListener(WebhookListener listener) {
         return StringSerdeUtil.mergeStrings(listener.getResourceType().name(), listener.getEventType(), listener.getUrl());
     }
