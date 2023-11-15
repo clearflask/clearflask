@@ -231,6 +231,13 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         || account.email && account.email.indexOf(request.accountSearchSuperAdmin.searchText) >= 0),
       this.DEFAULT_LIMIT, request.cursor));
   }
+  projectOwnerSwapSuperAdmin(request: Admin.ProjectOwnerSwapSuperAdminRequest): Promise<void> {
+    if (!this.superLoggedIn) {
+      return this.throwLater(403, 'Not allowed');
+    }
+    // TODO
+    return this.returnLater(undefined);
+  }
   accountViewCouponAdmin(request: Admin.AccountViewCouponAdminRequest): Promise<Admin.ViewCouponResponse> {
     const redeemedByYou = this.account?.acceptedCoupons.has(request.couponId);
     return this.returnLater({
