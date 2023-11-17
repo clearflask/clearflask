@@ -57,6 +57,7 @@ import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
@@ -691,9 +692,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @RolesAllowed({Role.SUPER_ADMIN})
     @Override
     public void projectOwnerSwapSuperAdmin(ProjectOwnerSwapSuperAdmin projectOwnerSwapSuperAdmin) {
-        Project project = projectStore.getProject(projectOwnerSwapSuperAdmin.getProjectId(), false).orElseThrow();
+        Project project = projectStore.getProject(projectOwnerSwapSuperAdmin.getProjectId(), false).orElseThrow(NotFoundException::new);
+        Account ownerNew = accountStore.getAccount(projectOwnerSwapSuperAdmin.getNewOwnerAccountId(), false).orElseThrow(NotFoundException::new);
         Account ownerOld = accountStore.getAccount(project.getAccountId(), false).orElseThrow();
-        Account ownerNew = accountStore.getAccount(projectOwnerSwapSuperAdmin.getNewOwnerAccountId(), false).orElseThrow();
 
         // Ensure old owner is an owner
         checkState(ownerOld.getProjectIds().contains(project.getProjectId()));
@@ -701,7 +702,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
 
         // First remove new owner as an admin
         if (ownerNew.getExternalProjectIds().contains(project.getProjectId())) {
-            accountStore.removeExternalProject(ownerNew.getAccountId(), project.getProjectId());
+            ownerNew = accountStore.removeExternalProject(ownerNew.getAccountId(), project.getProjectId());
         }
         if (project.getModel().getAdminsAccountIds().contains(ownerNew.getAccountId())) {
             project = projectStore.removeAdmin(project.getProjectId(), ownerNew.getAccountId());
@@ -711,14 +712,6 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         ownerOld = accountStore.removeProject(ownerOld.getAccountId(), project.getProjectId()).getAccount();
         project = projectStore.changeOwner(project.getProjectId(), ownerNew.getAccountId());
         ownerNew = accountStore.addProject(ownerNew.getAccountId(), project.getProjectId()).getAccount();
-
-        // Add old owner as admin
-        if (!ownerOld.getExternalProjectIds().contains(project.getProjectId())) {
-            ownerOld = accountStore.addExternalProject(ownerOld.getAccountId(), project.getProjectId());
-        }
-        if (!project.getModel().getAdminsAccountIds().contains(ownerOld.getAccountId())) {
-            project = projectStore.removeAdmin(project.getProjectId(), ownerNew.getAccountId());
-        }
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})
