@@ -50,4 +50,4 @@ jobs:
           aws configure set region ${{ secrets.AWS_DEFAULT_REGION }} --profile clearflask
       - name: Maven deploy
         timeout-minutes: 60
-        run: make deploy-restart
+        run: AWS_PROFILE=clearflask make deploy-restart

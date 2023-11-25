@@ -1,6 +1,7 @@
 
 .EXPORT_ALL_VARIABLES:
-AWS_PROFILE=clearflask
+
+AWS_PROFILE = clearflask
 
 help:
 	@echo "\tmake run-dev-frontend\n\tmake build-no-test && make run-dev\n\tmake build && make publish-jar && make prod-rolling-restart"
