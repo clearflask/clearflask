@@ -526,7 +526,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                                     0L,
                                     0L,
                                     0L,
-                                    plan.getPricing().getAdmins(),
+                                    (plan.getPricing() == null) ? null : plan.getPricing().getAdmins(),
                                     billingPeriodToPeriodEnum(subscription.getBillingPeriod())))
                             .build());
                 }
