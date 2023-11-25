@@ -1,4 +1,4 @@
-name: Deploy & Reload
+name: Deploy & Restart
 
 on:
   workflow_dispatch:
@@ -42,7 +42,7 @@ jobs:
           sudo chmod 600 ~/.ssh/config
       - name: Maven build
         timeout-minutes: 60
-        run: mvn clean install
+        run: mvn clean install -DskipITs
       - name: Add profile credentials to ~/.aws/credentials
         run: |
           aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }} --profile clearflask
@@ -50,4 +50,4 @@ jobs:
           aws configure set region ${{ secrets.AWS_DEFAULT_REGION }} --profile clearflask
       - name: Maven deploy
         timeout-minutes: 60
-        run: make deploy-reload
+        run: make deploy-restart
