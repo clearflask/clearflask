@@ -7,6 +7,7 @@ import { ReactLiquid } from 'react-liquid';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
 import { ReduxState, Status } from '../../api/server';
+import ErrorBoundary from '../../common/util/ErrorBoundary';
 
 interface Props {
   template: string;
@@ -23,18 +24,21 @@ class TemplateLiquid extends Component<Props & ConnectProps> {
   render() {
     return (
       <NoSsr>
-        <ReactLiquid
-          template={this.props.template}
-          data={{
-            config: this.props.config,
-            page: this.props.page,
-            loggedInUser: this.props.loggedInUser,
-            core: this.props.state,
-          }}
-          render={(renderedTemplate) => {
-            return (<DangerouslySetInnerHtmlWithScriptExecution html={renderedTemplate?.__html} />);
-          }}
-        />
+        <ErrorBoundary hideOnError>
+          <ReactLiquid
+            template={this.props.template}
+            data={{
+              config: this.props.config,
+              page: this.props.page,
+              loggedInUser: this.props.loggedInUser,
+              core: this.props.state,
+            }}
+            render={(renderedTemplate) => {
+              return !renderedTemplate?.__html ? null
+                : (<DangerouslySetInnerHtmlWithScriptExecution html={renderedTemplate.__html} />);
+            }}
+          />
+        </ErrorBoundary>
       </NoSsr>
     );
   }
