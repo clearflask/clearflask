@@ -10,6 +10,12 @@
 </p>
 
 <div align="center">
+  Feedback Management Tool.
+  <br />
+  Open source alternative to <a href="https://canny.io">Canny</a> and <a href="https://uservoice.com/">UserVoice</a>.
+</div>
+
+<div align="center">
   <a href="https://github.com/clearflask/clearflask/actions?query=workflow%3A%22CI%22">
     <img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/clearflask/clearflask/ci.yml?style=for-the-badge">
   </a>
@@ -22,20 +28,12 @@
 </div>
 
 <div align="center">
-
-Listen to your users during product development with [ClearFlask](https://clearflask.com/)
-<br />Open-source Feedback Management Tool.
-
-<br />
-
-<img width="1024" src="./clearflask-frontend/public/img/landing/demo-page-feedback-classic.png" alt="Demo">
-
-<br />
-
-<img width="1024" src="./clearflask-frontend/public/img/landing/demo-dashboard-roadmap.png" alt="Demo">
-
-<img width="1024" src="./clearflask-frontend/public/img/landing/demo-dashboard-feedback.png" alt="Demo">
-
+  <br />
+  <img width="1024" src="./clearflask-frontend/public/img/landing/demo-page-feedback-classic.png" alt="Demo">
+  <br />
+  <img width="1024" src="./clearflask-frontend/public/img/landing/demo-dashboard-roadmap.png" alt="Demo">
+  <br />
+  <img width="1024" src="./clearflask-frontend/public/img/landing/demo-dashboard-feedback.png" alt="Demo">
 </div>
 
 ### Contents
