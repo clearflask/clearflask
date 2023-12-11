@@ -33,6 +33,10 @@ import java.io.InputStreamReader;
 import java.net.URLEncoder;
 import java.util.Optional;
 
+/**
+ * <a href="https://check-mail.org/">External email checker service</a> for validating email addresses
+ * and checking for disposable emails.
+ */
 @Slf4j
 @Singleton
 public class CheckMailOrgEmailValidator extends ManagedService implements EmailValidator {
@@ -193,7 +197,7 @@ public class CheckMailOrgEmailValidator extends ManagedService implements EmailV
 
     /**
      * API definition
-     *
+     * <p>
      * https://check-mail.org/get-started/
      * https://rapidapi.com/Top-Rated/api/e-mail-check-invalid-or-disposable-domain
      */
