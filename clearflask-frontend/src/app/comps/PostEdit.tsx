@@ -689,7 +689,6 @@ export const PostEditTagsInline = (props: {
     return props.children;
   }
 
-  const clickToEdit = !!props.children;
   return isEditing ? (
     <PostEditTags
       value={unsavedTagIds || post.tagIds}
@@ -720,7 +719,7 @@ export const PostEditTagsInline = (props: {
       TextFieldProps={props.TextFieldProps}
     />
   ) : (
-    <ClickToEdit isEditing={isEditing || !clickToEdit} setIsEditing={setIsEditing}>
+    <ClickToEdit isEditing={isEditing} setIsEditing={setIsEditing}>
       {props.children || props.noContentLabel || null}
     </ClickToEdit>
   );
