@@ -10,12 +10,6 @@
 </p>
 
 <div align="center">
-  Feedback Management Tool.
-  <br />
-  Open source alternative to <a href="https://canny.io">Canny</a> and <a href="https://uservoice.com/">UserVoice</a>.
-</div>
-
-<div align="center">
   <a href="https://github.com/clearflask/clearflask/actions?query=workflow%3A%22CI%22">
     <img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/clearflask/clearflask/ci.yml?style=for-the-badge">
   </a>
@@ -28,6 +22,17 @@
 </div>
 
 <div align="center">
+  Open-source Feedback Management Tool.
+  <br />
+  Alternative to <a href="https://canny.io">Canny</a> and <a href="https://uservoice.com/">UserVoice</a>.
+</div>
+
+<br />
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=oOw4pxyK6vs" rel="noopener" target="_blank">
+    <img width="1024" src="./clearflask-resources/clearflask-video-link.png" alt="Video link">
+  </a>
   <br />
   <img width="1024" src="./clearflask-frontend/public/img/landing/demo-page-feedback-classic.png" alt="Demo">
   <br />
