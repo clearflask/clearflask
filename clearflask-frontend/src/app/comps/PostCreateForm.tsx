@@ -279,6 +279,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
     const editCategory = this.renderEditCategory(draft, categoryOptions, selectedCategory, { className: this.props.classes.createFormField });
     const editStatus = this.renderEditStatus(draft, selectedCategory);
     const editUser = this.renderEditUser(draft, { className: this.props.classes.createFormField });
+    const editTags = this.renderEditTags(draft, selectedCategory, { className: this.props.classes.createFormField });
     const editLinks = this.renderEditLinks(draft, { className: this.props.classes.createFormField });
     const editNotify = this.renderEditNotify(draft, selectedCategory);
     const editNotifyTitle = this.renderEditNotifyTitle(draft, selectedCategory, { className: this.props.classes.createFormField });
@@ -315,15 +316,11 @@ class PostCreateForm extends Component<Props & ConnectProps & WithStyles<typeof 
             </div>
           </Grid>
         )}
-        {this.renderEditTags(draft, selectedCategory, {
-          wrapper: (children) => (
-            <Grid item xs={this.props.type === 'large' ? 6 : 12} className={this.props.classes.createGridItem}>
-              <div className={this.props.classes.createFormField}>
-                {children}
-              </div>
-            </Grid>
-          )
-        })}
+        {!!editTags && (
+          <Grid item xs={this.props.type === 'large' ? 6 : 12} className={this.props.classes.createGridItem}>
+            {editTags}
+          </Grid>
+        )}
         {!!editLinks && (
           <Grid item xs={this.props.type === 'large' ? 6 : 12} className={this.props.classes.createGridItem}>
             {editLinks}
