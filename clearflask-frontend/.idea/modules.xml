@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/clearflask.iml" filepath="$PROJECT_DIR$/.idea/clearflask.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/clearflask-frontend.iml" filepath="$PROJECT_DIR$/.idea/clearflask-frontend.iml" />
     </modules>
   </component>
 </project>
