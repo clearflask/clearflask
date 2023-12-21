@@ -20,12 +20,7 @@ import org.killbill.billing.catalog.api.BillingPeriod;
 import org.killbill.billing.catalog.api.Currency;
 import org.killbill.billing.catalog.api.PhaseType;
 import org.killbill.billing.catalog.api.ProductCategory;
-import org.killbill.billing.client.model.gen.Account;
-import org.killbill.billing.client.model.gen.PaymentMethod;
-import org.killbill.billing.client.model.gen.PaymentMethodPluginDetail;
-import org.killbill.billing.client.model.gen.PhasePrice;
-import org.killbill.billing.client.model.gen.PlanDetail;
-import org.killbill.billing.client.model.gen.Subscription;
+import org.killbill.billing.client.model.gen.*;
 import org.killbill.billing.entitlement.api.Entitlement;
 
 import javax.ws.rs.core.Response;
@@ -184,7 +179,7 @@ public class SelfHostBilling implements Billing {
     }
 
     @Override
-    public String getInvoiceHtml(String accountId, UUID invoiceId) {
+    public String getInvoiceHtml(UUID invoiceId, Optional<String> accountIdOpt) {
         throw new ApiException(Response.Status.BAD_REQUEST, "Billing is not configured");
     }
 

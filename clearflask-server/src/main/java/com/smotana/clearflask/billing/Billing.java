@@ -62,7 +62,7 @@ public interface Billing {
      * If user attempts to use a feature outside of their plan determined by PlanStore's
      * verifyActionMeetsPlanRestrictions
      * and verifyConfigMeetsPlanRestrictions, try to auto-upgrade to required plan.
-     *
+     * <p>
      * Possible at least in these circumstance:
      * - When on trial period without payment method set.
      * - When on Teammate Plan switching to a real plan.
@@ -73,7 +73,7 @@ public interface Billing {
 
     Invoices getInvoices(String accountId, Optional<String> cursorOpt);
 
-    String getInvoiceHtml(String accountId, UUID invoiceId);
+    String getInvoiceHtml(UUID invoiceId, Optional<String> accountIdOpt);
 
     Optional<PaymentMethodDetails> getDefaultPaymentMethodDetails(String accountId);
 

@@ -1036,9 +1036,12 @@ public class KillBilling extends ManagedService implements Billing {
         }
     }
 
+    /**
+     * Fetch invoice HTML from KillBill. If accountId is specified, ensure that the invoice belongs to that account.
+     */
     @Extern
     @Override
-    public String getInvoiceHtml(String accountId, UUID invoiceId) {
+    public String getInvoiceHtml(UUID invoiceId, Optional<String> accountIdOpt) {
         try {
             Invoice invoice = kbInvoice.getInvoice(invoiceId, KillBillUtil.roDefault());
             if (invoice == null) {
@@ -1047,14 +1050,12 @@ public class KillBilling extends ManagedService implements Billing {
             }
             UUID accountIdKb = getAccount(accountId).getAccountId();
             if (!invoice.getAccountId().equals(accountIdKb)) {
-                log.warn("Requested HTML for invoiceId {} with account ext id {} id {} belonging to different account id {}",
-                        invoiceId, accountId, accountIdKb, invoice.getAccountId());
                 throw new ApiException(Response.Status.BAD_REQUEST,
-                        "Invoice doesn't exist");
+                        "You need to log in to the right account to view this invoice");
             }
             if (invoice.getStatus() == InvoiceStatus.DRAFT) {
                 throw new ApiException(Response.Status.BAD_REQUEST,
-                        "Invoice doesn't exist");
+                        "Invoice is still in draft");
             }
             String invoiceHtml = kbInvoice.getInvoiceAsHTML(invoice.getInvoiceId(), KillBillUtil.roDefault());
             for (org.killbill.billing.client.model.gen.InvoiceItem item : invoice.getItems()) {

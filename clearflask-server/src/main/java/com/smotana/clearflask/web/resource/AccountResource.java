@@ -520,8 +520,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getEmail())) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Email cannot be changed, please contact support");
             // TODO Fix bug in email update requires password to be rehashed
-//            sanitizer.email(accountUpdateAdmin.getEmail());
-//            account = accountStore.updateEmail(account.getAccountId(), accountUpdateAdmin.getEmail(), accountSession.getSessionId()).getAccount();
+            //            sanitizer.email(accountUpdateAdmin.getEmail());
+            //            account = accountStore.updateEmail(account.getAccountId(), accountUpdateAdmin.getEmail(), accountSession.getSessionId()).getAccount();
         }
         boolean alsoResume = false;
         if (accountUpdateAdmin.getPaymentToken() != null) {
@@ -715,7 +715,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})
-    @Limit(requiredPermits = 1)
+    @Limit(requiredPermits = 100)
     @Override
     public InvoiceHtmlResponse invoiceHtmlGetAdmin(String invoiceIdStr) {
         if (invoiceIdStr == null) {
@@ -727,11 +727,20 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         } catch (IllegalArgumentException ex) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Invalid invoice number", ex);
         }
-        Account account = getExtendedPrincipal()
-                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
-                .flatMap(accountId -> accountStore.getAccount(accountId, true))
-                .get();
-        String invoiceHtml = billing.getInvoiceHtml(account.getAccountId(), invoiceId);
+        boolean isSuperAdmin = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedSuperAccountIdOpt)
+                .isPresent();
+        Optional<String> assertInvoiceBelongsToAccountId;
+        if (isSuperAdmin) {
+            assertInvoiceBelongsToAccountId = Optional.empty();
+        } else {
+            assertInvoiceBelongsToAccountId = getExtendedPrincipal()
+                    .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                    .flatMap(accountId -> accountStore.getAccount(accountId, true))
+                    .map(Account::getAccountId);
+            checkState(assertInvoiceBelongsToAccountId.isPresent());
+        }
+        String invoiceHtml = billing.getInvoiceHtml(invoiceId, assertInvoiceBelongsToAccountId);
         return new InvoiceHtmlResponse(invoiceHtml);
     }
 
