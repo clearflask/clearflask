@@ -1048,10 +1048,12 @@ public class KillBilling extends ManagedService implements Billing {
                 throw new ApiException(Response.Status.BAD_REQUEST,
                         "Invoice doesn't exist");
             }
-            UUID accountIdKb = getAccount(accountId).getAccountId();
-            if (!invoice.getAccountId().equals(accountIdKb)) {
-                throw new ApiException(Response.Status.BAD_REQUEST,
-                        "You need to log in to the right account to view this invoice");
+            if (accountIdOpt.isPresent()) {
+                UUID accountIdKb = getAccount(accountIdOpt.get()).getAccountId();
+                if (!invoice.getAccountId().equals(accountIdKb)) {
+                    throw new ApiException(Response.Status.BAD_REQUEST,
+                            "You need to log in to the right account to view this invoice");
+                }
             }
             if (invoice.getStatus() == InvoiceStatus.DRAFT) {
                 throw new ApiException(Response.Status.BAD_REQUEST,
@@ -1073,7 +1075,7 @@ public class KillBilling extends ManagedService implements Billing {
             invoiceHtml = invoiceHtml.replaceAll("standard3-teammates", "Teammates");
             return invoiceHtml;
         } catch (KillBillClientException ex) {
-            log.warn("Failed to get invoice HTML from KillBill for accountId {} invoiceId {}", accountId, invoiceId, ex);
+            log.warn("Failed to get invoice HTML from KillBill for invoiceId {} accountIdOpt {}", invoiceId, accountIdOpt, ex);
             throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
                     "Failed to fetch invoice", ex);
         }
