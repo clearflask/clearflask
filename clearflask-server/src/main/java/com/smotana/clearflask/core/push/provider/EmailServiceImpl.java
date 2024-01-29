@@ -3,39 +3,20 @@
 package com.smotana.clearflask.core.push.provider;
 
 import com.amazonaws.services.simpleemailv2.AmazonSimpleEmailServiceV2;
-import com.amazonaws.services.simpleemailv2.model.AccountSuspendedException;
-import com.amazonaws.services.simpleemailv2.model.BadRequestException;
-import com.amazonaws.services.simpleemailv2.model.Body;
-import com.amazonaws.services.simpleemailv2.model.Content;
-import com.amazonaws.services.simpleemailv2.model.Destination;
-import com.amazonaws.services.simpleemailv2.model.EmailContent;
-import com.amazonaws.services.simpleemailv2.model.LimitExceededException;
-import com.amazonaws.services.simpleemailv2.model.MailFromDomainNotVerifiedException;
-import com.amazonaws.services.simpleemailv2.model.Message;
-import com.amazonaws.services.simpleemailv2.model.MessageRejectedException;
-import com.amazonaws.services.simpleemailv2.model.MessageTag;
-import com.amazonaws.services.simpleemailv2.model.NotFoundException;
-import com.amazonaws.services.simpleemailv2.model.SendEmailRequest;
-import com.amazonaws.services.simpleemailv2.model.SendEmailResult;
-import com.amazonaws.services.simpleemailv2.model.SendingPausedException;
-import com.amazonaws.services.simpleemailv2.model.TooManyRequestsException;
+import com.amazonaws.services.simpleemailv2.model.*;
 import com.google.common.base.Charsets;
 import com.google.common.base.Enums;
 import com.google.common.base.Strings;
 import com.google.common.util.concurrent.GuavaRateLimiters;
 import com.google.common.util.concurrent.RateLimiter;
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
 import com.google.inject.Module;
-import com.google.inject.Provider;
-import com.google.inject.Singleton;
+import com.google.inject.*;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
 import org.simplejavamail.api.email.EmailPopulatingBuilder;
-import org.simplejavamail.api.mailer.AsyncResponse;
 import org.simplejavamail.api.mailer.Mailer;
 import org.simplejavamail.api.mailer.config.TransportStrategy;
 import org.simplejavamail.email.EmailBuilder;
@@ -45,6 +26,7 @@ import rx.Observable;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Singleton
@@ -54,7 +36,9 @@ public class EmailServiceImpl implements EmailService {
         @DefaultValue("true")
         boolean enabled();
 
-        /** Valid options: ses smtp */
+        /**
+         * Valid options: ses smtp
+         */
         @DefaultValue("ses")
         String useService();
 
@@ -83,7 +67,9 @@ public class EmailServiceImpl implements EmailService {
         @DefaultValue(value = "events@clearflask.com", innerType = String.class)
         List<String> bccEmails();
 
-        /** Valid options: TransportStrategy */
+        /**
+         * Valid options: TransportStrategy
+         */
         @DefaultValue("SMTP_TLS")
         String smtpStrategy();
 
@@ -98,6 +84,9 @@ public class EmailServiceImpl implements EmailService {
 
         @DefaultValue("")
         String smtpPassword();
+
+        @DefaultValue("TLSv1.2")
+        String smtpTlsProtocols();
     }
 
     @Inject
@@ -204,6 +193,7 @@ public class EmailServiceImpl implements EmailService {
                     email.getToAddress(), email.getProjectOrAccountId(), sendEmailResult.getMessageId(), email.getSubject());
         } else {
             if (this.smtpOpt.isEmpty()) {
+                System.setProperty("mail.smtp.ssl.protocols", config.smtpTlsProtocols());
                 this.smtpOpt = Optional.of(MailerBuilder
                         .withSMTPServer(
                                 config.smtpHost(),
@@ -225,18 +215,19 @@ public class EmailServiceImpl implements EmailService {
                     && config.bccOnTagTypes().contains(email.getTypeTag())) {
                 emailBuilder.bcc(String.join(",", config.bccEmails()));
             }
-            AsyncResponse asyncResponse = this.smtpOpt.get().sendMail(emailBuilder
-                    .buildEmail(), true);
-            if (asyncResponse != null) {
-                asyncResponse.onException(ex -> {
-                    if (LogUtil.rateLimitAllowLog("emailpush-smtp-exception")) {
-                        log.warn("SMTP Email cannot be delivered, strategy {} host {}",
-                                config.smtpStrategy(), config.smtpHost(), ex);
-                    }
-                });
-                asyncResponse.onSuccess(() -> log.trace("Email sent to {} project/account id {} to {} subject {}",
-                        email.getToAddress(), email.getProjectOrAccountId(), email.getToAddress(), email.getSubject()));
-            }
+            CompletableFuture<Void> asyncResponse = this.smtpOpt.get()
+                    .sendMail(emailBuilder.buildEmail(), true)
+                    .whenCompleteAsync((result, ex) -> {
+                        if (ex != null) {
+                            if (LogUtil.rateLimitAllowLog("emailpush-smtp-exception")) {
+                                log.warn("SMTP Email cannot be delivered, strategy {} host {}",
+                                        config.smtpStrategy(), config.smtpHost(), ex);
+                            }
+                        } else {
+                            log.trace("Email sent to {} project/account id {} to {} subject {}",
+                                    email.getToAddress(), email.getProjectOrAccountId(), email.getToAddress(), email.getSubject());
+                        }
+                    });
         }
     }
 
