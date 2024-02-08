@@ -5,7 +5,7 @@ sudo yum install -y mc telnet
 sudo amazon-linux-extras install -y ruby2.6 tomcat8.5
 ln -s /usr/share/tomcat ~/tomcat
 sudo ln -s /usr/share/tomcat ~/tomcat
-sudo yum install -y java-1.8.0-openjdk gcc ruby-devel
+sudo yum install -y java-1.8.0-openjdk gcc ruby-devel mysql-connector-java
 sudo gem update --system 2.7.5 --install-dir=/usr/share/gems --bindir /usr/local/bin
 sudo gem install io-console
 sudo gem install kpm
