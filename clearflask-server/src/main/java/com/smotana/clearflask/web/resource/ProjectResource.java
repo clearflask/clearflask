@@ -24,44 +24,19 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.ProjectAdminApi;
 import com.smotana.clearflask.api.ProjectApi;
-import com.smotana.clearflask.api.model.Category;
-import com.smotana.clearflask.api.model.ConfigAdmin;
-import com.smotana.clearflask.api.model.ConfigAndBindAllResult;
-import com.smotana.clearflask.api.model.ConfigAndBindAllResultByProjectId;
-import com.smotana.clearflask.api.model.ConfigAndUserBindSlugResult;
-import com.smotana.clearflask.api.model.ConfigBindSlugResult;
-import com.smotana.clearflask.api.model.IdeaStatus;
-import com.smotana.clearflask.api.model.ImportResponse;
-import com.smotana.clearflask.api.model.InvitationAdmin;
-import com.smotana.clearflask.api.model.NewProjectResult;
-import com.smotana.clearflask.api.model.Onboarding;
-import com.smotana.clearflask.api.model.ProjectAdmin;
-import com.smotana.clearflask.api.model.ProjectAdminsInviteResult;
-import com.smotana.clearflask.api.model.ProjectAdminsListResult;
-import com.smotana.clearflask.api.model.SubscriptionStatus;
-import com.smotana.clearflask.api.model.Tag;
-import com.smotana.clearflask.api.model.UserBind;
-import com.smotana.clearflask.api.model.UserBindResponse;
-import com.smotana.clearflask.api.model.VersionedConfigAdmin;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.billing.RequiresUpgradeException;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
-import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.*;
 import com.smotana.clearflask.store.AccountStore.Account;
-import com.smotana.clearflask.store.CommentStore;
-import com.smotana.clearflask.store.DraftStore;
-import com.smotana.clearflask.store.GitHubStore;
-import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
-import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.InvitationModel;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.ProjectStore.SearchEngine;
-import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
-import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
 import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
@@ -359,7 +334,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 .flatMap(accountId -> accountStore.getAccount(accountId, true))
                 .get();
         try {
-            planStore.verifyTeammateInviteMeetsPlanRestrictions(projectAccount.getPlanid(), projectId, true);
+            planStore.verifyTeammateInviteMeetsPlanRestrictions(projectAccount.getPlanid(), projectAccount.getAccountId(), true);
         } catch (RequiresUpgradeException ex) {
             if (!billing.tryAutoUpgradePlan(projectAccount, ex.getRequiredPlanId())) {
                 throw ex;
@@ -643,19 +618,19 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 100, challengeAfter = 10)
     @Override
     public ImportResponse projectImportPostAdmin(String projectId,
-                                                 String categoryId,
-                                                 String authorUserId,
-                                                 Long indexTitle,
-                                                 InputStream body,
-                                                 @Nullable Boolean firstRowIsHeader,
-                                                 @Nullable Long indexDescription,
-                                                 @Nullable Long indexStatusId,
-                                                 @Nullable Long indexStatusName,
-                                                 @Nullable Long indexTagIds,
-                                                 @Nullable Long indexTagNames,
-                                                 @Nullable Long indexVoteValue,
-                                                 @Nullable Long indexDateTime,
-                                                 @Nullable Long tzOffInMin) {
+            String categoryId,
+            String authorUserId,
+            Long indexTitle,
+            InputStream body,
+            @Nullable Boolean firstRowIsHeader,
+            @Nullable Long indexDescription,
+            @Nullable Long indexStatusId,
+            @Nullable Long indexStatusName,
+            @Nullable Long indexTagIds,
+            @Nullable Long indexTagNames,
+            @Nullable Long indexVoteValue,
+            @Nullable Long indexDateTime,
+            @Nullable Long tzOffInMin) {
         RateLimiter limiter = RateLimiter.create(config.importRateLimitPerSecond());
 
         Optional<UserModel> authorOpt = userStore.getUser(projectId, authorUserId);
@@ -817,7 +792,9 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         return projectId + "-" + type + "-" + DateTime.now().toString("yyyy-MM-dd-HH-mm-ss") + "." + extension;
     }
 
-    /** One-off method to clean up projects on blocked accounts. */
+    /**
+     * One-off method to clean up projects on blocked accounts.
+     */
     @Extern
     private void deleteProjectsForBlockedAccounts(boolean dryRun) {
         accountStore.listAllAccounts(account -> {

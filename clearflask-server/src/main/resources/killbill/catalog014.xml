@@ -1,0 +1,562 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<catalog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="CatalogSchema.xsd">
+
+    <effectiveDate>2024-02-21T00:00:00+00:00</effectiveDate>
+    <catalogName>ClearFlask</catalogName>
+    <recurringBillingMode>IN_ADVANCE</recurringBillingMode>
+
+    <currencies>
+        <currency>USD</currency>
+    </currencies>
+
+    <units>
+        <!-- If changed, also change unit name in KillBilling.java -->
+        <unit prettyName="Tracked Users" name="tracked-user"/>
+        <!-- If changed, also change unit name in KillBilling.java -->
+        <unit prettyName="Teammates" name="tracked-teammate"/>
+    </units>
+
+    <products>
+        <product prettyName="Starter" name="starter">
+            <category>BASE</category>
+        </product>
+        <product prettyName="Growth" name="growth">
+            <category>BASE</category>
+        </product>
+        <product prettyName="Standard" name="standard">
+            <category>BASE</category>
+        </product>
+        <product prettyName="Standard" name="standard3">
+            <category>BASE</category>
+        </product>
+        <product prettyName="Sponsor" name="sponsor">
+            <category>BASE</category>
+        </product>
+        <product prettyName="Lifetime" name="lifetime">
+            <category>BASE</category>
+        </product>
+        <product prettyName="Flat" name="flat">
+            <category>BASE</category>
+        </product>
+        <product prettyName="Teammate" name="teammate">
+            <category>BASE</category>
+        </product>
+        <product prettyName="Pro" name="pro">
+            <category>BASE</category>
+        </product>
+        <product prettyName="Pitchground A" name="pitchground-a">
+            <category>BASE</category>
+        </product>
+        <product prettyName="Pitchground B" name="pitchground-b">
+            <category>BASE</category>
+        </product>
+        <product prettyName="Pitchground C" name="pitchground-c">
+            <category>BASE</category>
+        </product>
+        <product prettyName="Pitchground D" name="pitchground-d">
+            <category>BASE</category>
+        </product>
+        <product prettyName="Pitchground E" name="pitchground-e">
+            <category>BASE</category>
+        </product>
+    </products>
+
+    <rules>
+        <changePolicy>
+            <changePolicyCase>
+                <phaseType>TRIAL</phaseType>
+                <policy>IMMEDIATE</policy>
+            </changePolicyCase>
+            <changePolicyCase>
+                <fromProduct>starter</fromProduct>
+                <policy>IMMEDIATE</policy>
+            </changePolicyCase>
+            <changePolicyCase>
+                <fromProduct>growth</fromProduct>
+                <toProduct>standard</toProduct>
+                <policy>IMMEDIATE</policy>
+            </changePolicyCase>
+            <changePolicyCase>
+                <toProduct>sponsor</toProduct>
+                <policy>IMMEDIATE</policy>
+            </changePolicyCase>
+            <changePolicyCase>
+                <toProduct>lifetime</toProduct>
+                <policy>IMMEDIATE</policy>
+            </changePolicyCase>
+            <changePolicyCase>
+                <toProduct>flat</toProduct>
+                <policy>IMMEDIATE</policy>
+            </changePolicyCase>
+            <changePolicyCase>
+                <policy>END_OF_TERM</policy>
+            </changePolicyCase>
+        </changePolicy>
+        <changeAlignment>
+            <changeAlignmentCase>
+                <toProductCategory>ADD_ON</toProductCategory>
+                <alignment>START_OF_BUNDLE</alignment>
+            </changeAlignmentCase>
+            <changeAlignmentCase>
+                <alignment>START_OF_SUBSCRIPTION</alignment>
+            </changeAlignmentCase>
+        </changeAlignment>
+        <cancelPolicy>
+            <cancelPolicyCase>
+                <policy>END_OF_TERM</policy>
+            </cancelPolicyCase>
+        </cancelPolicy>
+        <createAlignment>
+            <createAlignmentCase>
+                <alignment>START_OF_BUNDLE</alignment>
+            </createAlignmentCase>
+        </createAlignment>
+        <billingAlignment>
+            <billingAlignmentCase>
+                <alignment>SUBSCRIPTION</alignment>
+            </billingAlignmentCase>
+        </billingAlignment>
+        <priceList>
+            <priceListCase>
+                <toPriceList>DEFAULT</toPriceList>
+            </priceListCase>
+        </priceList>
+    </rules>
+
+    <plans>
+        <plan name="starter-unlimited" prettyName="Starter Plan (Grandfathered)">
+            <product>starter</product>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <fixed>
+                    <fixedPrice>
+                        <!-- $0 -->
+                    </fixedPrice>
+                </fixed>
+            </finalPhase>
+        </plan>
+        <plan name="standard-unlimited" prettyName="Standard Plan (Grandfathered)">
+            <product>standard</product>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <fixed>
+                    <fixedPrice>
+                        <!-- $0 -->
+                    </fixedPrice>
+                </fixed>
+            </finalPhase>
+        </plan>
+        <plan name="standard2-unlimited" prettyName="Standard Plan (Grandfathered)">
+            <product>standard</product>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <fixed>
+                    <fixedPrice>
+                        <!-- $0 -->
+                    </fixedPrice>
+                </fixed>
+            </finalPhase>
+        </plan>
+        <plan name="standard3-monthly" prettyName="Standard Plan">
+            <product>standard3</product>
+            <initialPhases>
+                <phase type="TRIAL" prettyName="Trial">
+                    <duration>
+                        <unit>DAYS</unit>
+                        <number>14</number>
+                    </duration>
+                    <fixed>
+                        <fixedPrice>
+                            <price>
+                                <currency>USD</currency>
+                                <value>0</value>
+                            </price>
+                        </fixedPrice>
+                    </fixed>
+                </phase>
+            </initialPhases>
+            <finalPhase type="EVERGREEN" prettyName="Monthly Billing">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <recurring>
+                    <billingPeriod>MONTHLY</billingPeriod>
+                    <recurringPrice>
+                        <price>
+                            <currency>USD</currency>
+                            <value>8.00</value>
+                        </price>
+                    </recurringPrice>
+                </recurring>
+                <usages>
+                    <usage prettyName="Teammates" name="standard3-teammates" billingMode="IN_ARREAR"
+                           usageType="CONSUMABLE" tierBlockPolicy="ALL_TIERS">
+                        <billingPeriod>MONTHLY</billingPeriod>
+                        <tiers>
+                            <tier>
+                                <blocks>
+                                    <tieredBlock>
+                                        <unit>tracked-teammate</unit>
+                                        <size>1</size>
+                                        <prices>
+                                            <price>
+                                                <currency>USD</currency>
+                                                <value>0</value>
+                                            </price>
+                                        </prices>
+                                        <max>1</max>
+                                    </tieredBlock>
+                                </blocks>
+                            </tier>
+                            <tier>
+                                <blocks>
+                                    <tieredBlock>
+                                        <unit>tracked-teammate</unit>
+                                        <size>1</size>
+                                        <prices>
+                                            <price>
+                                                <currency>USD</currency>
+                                                <value>4</value>
+                                            </price>
+                                        </prices>
+                                        <max>-1</max>
+                                    </tieredBlock>
+                                </blocks>
+                            </tier>
+                        </tiers>
+                    </usage>
+                </usages>
+            </finalPhase>
+        </plan>
+        <plan name="lifetime-lifetime" prettyName="Lifetime (Grandfathered)">
+            <product>lifetime</product>
+            <initialPhases>
+                <phase type="TRIAL" prettyName="Trial">
+                    <duration>
+                        <unit>DAYS</unit>
+                        <number>14</number>
+                    </duration>
+                    <fixed>
+                        <fixedPrice>
+                            <price>
+                                <currency>USD</currency>
+                                <value>0</value>
+                            </price>
+                        </fixedPrice>
+                    </fixed>
+                </phase>
+            </initialPhases>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <fixed type="ONE_TIME">
+                    <fixedPrice>
+                        <price>
+                            <currency>USD</currency>
+                            <value>250</value>
+                        </price>
+                    </fixedPrice>
+                </fixed>
+            </finalPhase>
+        </plan>
+        <plan name="lifetime2-lifetime" prettyName="Lifetime">
+            <product>lifetime</product>
+            <initialPhases>
+                <phase type="TRIAL" prettyName="Trial">
+                    <duration>
+                        <unit>DAYS</unit>
+                        <number>14</number>
+                    </duration>
+                    <fixed>
+                        <fixedPrice>
+                            <price>
+                                <currency>USD</currency>
+                                <value>0</value>
+                            </price>
+                        </fixedPrice>
+                    </fixed>
+                </phase>
+            </initialPhases>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <fixed type="ONE_TIME">
+                    <fixedPrice>
+                        <price>
+                            <currency>USD</currency>
+                            <value>150</value>
+                        </price>
+                    </fixedPrice>
+                </fixed>
+            </finalPhase>
+        </plan>
+        <plan name="sponsor-monthly" prettyName="Sponsor Plan">
+            <product>sponsor</product>
+            <initialPhases>
+                <phase type="TRIAL" prettyName="Trial">
+                    <duration>
+                        <unit>DAYS</unit>
+                        <number>14</number>
+                    </duration>
+                    <fixed>
+                        <fixedPrice>
+                            <!-- $0 -->
+                        </fixedPrice>
+                    </fixed>
+                </phase>
+            </initialPhases>
+            <finalPhase type="EVERGREEN" prettyName="Monthly Billing">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <recurring>
+                    <billingPeriod>MONTHLY</billingPeriod>
+                    <recurringPrice>
+                        <price>
+                            <currency>USD</currency>
+                            <value>50.00</value>
+                        </price>
+                    </recurringPrice>
+                </recurring>
+            </finalPhase>
+        </plan>
+        <plan name="flat-yearly" prettyName="Flat Plan">
+            <product>flat</product>
+            <initialPhases>
+                <phase type="TRIAL" prettyName="Trial">
+                    <duration>
+                        <unit>DAYS</unit>
+                        <number>14</number>
+                    </duration>
+                    <fixed>
+                        <fixedPrice>
+                            <price>
+                                <currency>USD</currency>
+                                <value>0</value>
+                            </price>
+                        </fixedPrice>
+                    </fixed>
+                </phase>
+            </initialPhases>
+            <finalPhase type="EVERGREEN" prettyName="Annual Billing">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <recurring>
+                    <billingPeriod>ANNUAL</billingPeriod>
+                    <recurringPrice>
+                        <price>
+                            <currency>USD</currency>
+                            <value>2000.00</value>
+                        </price>
+                    </recurringPrice>
+                </recurring>
+            </finalPhase>
+        </plan>
+        <plan name="teammate-unlimited" prettyName="Teammate Plan">
+            <product>teammate</product>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <fixed>
+                    <fixedPrice>
+                        <!-- $0 -->
+                    </fixedPrice>
+                </fixed>
+            </finalPhase>
+        </plan>
+        <plan name="pro-lifetime" prettyName="Pro Plan">
+            <product>pro</product>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <fixed>
+                    <fixedPrice>
+                        <!-- Paid for via external marketplace -->
+                        <!-- $0 -->
+                    </fixedPrice>
+                </fixed>
+            </finalPhase>
+        </plan>
+        <plan name="pitchground-a-lifetime" prettyName="PitchGround A Plan (Grandfathered)">
+            <product>pitchground-a</product>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <fixed>
+                    <fixedPrice>
+                        <!-- Paid for via external marketplace -->
+                        <!-- $0 -->
+                    </fixedPrice>
+                </fixed>
+                <usages>
+                    <usage prettyName="Tracked Users" name="pitchground-a-tracked-users" billingMode="IN_ARREAR"
+                           usageType="CONSUMABLE" tierBlockPolicy="ALL_TIERS">
+                        <billingPeriod>MONTHLY</billingPeriod>
+                        <tiers>
+                            <tier>
+                                <blocks>
+                                    <tieredBlock>
+                                        <unit>tracked-user</unit>
+                                        <size>50</size>
+                                        <prices>
+                                            <price>
+                                                <currency>USD</currency>
+                                                <value>0</value>
+                                            </price>
+                                        </prices>
+                                        <max>1</max>
+                                    </tieredBlock>
+                                </blocks>
+                            </tier>
+                            <tier>
+                                <blocks>
+                                    <tieredBlock>
+                                        <unit>tracked-user</unit>
+                                        <size>50</size>
+                                        <prices>
+                                            <price>
+                                                <currency>USD</currency>
+                                                <value>10</value>
+                                            </price>
+                                        </prices>
+                                        <max>-1</max>
+                                    </tieredBlock>
+                                </blocks>
+                            </tier>
+                        </tiers>
+                    </usage>
+                </usages>
+            </finalPhase>
+        </plan>
+        <plan name="pitchground-b-lifetime" prettyName="PitchGround B Plan (Grandfathered)">
+            <product>pitchground-b</product>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <fixed>
+                    <fixedPrice>
+                        <!-- Paid for via external marketplace -->
+                        <!-- $0 -->
+                    </fixedPrice>
+                </fixed>
+                <usages>
+                    <usage prettyName="Tracked Users" name="pitchground-b-tracked-users" billingMode="IN_ARREAR"
+                           usageType="CONSUMABLE" tierBlockPolicy="ALL_TIERS">
+                        <billingPeriod>MONTHLY</billingPeriod>
+                        <tiers>
+                            <tier>
+                                <blocks>
+                                    <tieredBlock>
+                                        <unit>tracked-user</unit>
+                                        <size>500</size>
+                                        <prices>
+                                            <price>
+                                                <currency>USD</currency>
+                                                <value>0</value>
+                                            </price>
+                                        </prices>
+                                        <max>1</max>
+                                    </tieredBlock>
+                                </blocks>
+                            </tier>
+                            <tier>
+                                <blocks>
+                                    <tieredBlock>
+                                        <unit>tracked-user</unit>
+                                        <size>500</size>
+                                        <prices>
+                                            <price>
+                                                <currency>USD</currency>
+                                                <value>50</value>
+                                            </price>
+                                        </prices>
+                                        <max>-1</max>
+                                    </tieredBlock>
+                                </blocks>
+                            </tier>
+                        </tiers>
+                    </usage>
+                </usages>
+            </finalPhase>
+        </plan>
+        <plan name="pitchground-c-lifetime" prettyName="PitchGround C Plan (Grandfathered)">
+            <product>pitchground-c</product>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <fixed>
+                    <fixedPrice>
+                        <!-- Paid for via external marketplace -->
+                        <!-- $0 -->
+                    </fixedPrice>
+                </fixed>
+            </finalPhase>
+        </plan>
+        <plan name="pitchground-d-lifetime" prettyName="PitchGround D Plan (Grandfathered)">
+            <product>pitchground-d</product>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <fixed>
+                    <fixedPrice>
+                        <!-- Paid for via external marketplace -->
+                        <!-- $0 -->
+                    </fixedPrice>
+                </fixed>
+            </finalPhase>
+        </plan>
+        <plan name="pitchground-e-lifetime" prettyName="PitchGround E Plan (Grandfathered)">
+            <product>pitchground-e</product>
+            <finalPhase type="EVERGREEN">
+                <duration>
+                    <unit>UNLIMITED</unit>
+                </duration>
+                <fixed>
+                    <fixedPrice>
+                        <!-- Paid for via external marketplace -->
+                        <!-- $0 -->
+                    </fixedPrice>
+                </fixed>
+            </finalPhase>
+        </plan>
+    </plans>
+
+    <priceLists>
+        <defaultPriceList name="DEFAULT" prettyName="Default">
+            <plans>
+                <plan>starter-unlimited</plan>
+                <plan>standard-unlimited</plan>
+                <plan>standard2-unlimited</plan>
+                <plan>standard3-monthly</plan>
+                <plan>lifetime-lifetime</plan>
+                <plan>lifetime2-lifetime</plan>
+                <plan>sponsor-monthly</plan>
+                <plan>flat-yearly</plan>
+                <plan>teammate-unlimited</plan>
+                <plan>pro-lifetime</plan>
+                <plan>pitchground-a-lifetime</plan>
+                <plan>pitchground-b-lifetime</plan>
+                <plan>pitchground-c-lifetime</plan>
+                <plan>pitchground-d-lifetime</plan>
+                <plan>pitchground-e-lifetime</plan>
+            </plans>
+        </defaultPriceList>
+    </priceLists>
+
+</catalog>

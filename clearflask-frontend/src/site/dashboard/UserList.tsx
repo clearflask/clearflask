@@ -16,6 +16,7 @@ import UserWithAvatarDisplay from '../../common/UserWithAvatarDisplay';
 import { notEmpty } from '../../common/util/arrayUtil';
 import keyMapper from '../../common/util/keyMapper';
 import { TabFragment, TabsVertical } from '../../common/util/tabsUtil';
+import { withTranslation, WithTranslation } from 'react-i18next';
 
 interface SearchResult {
   status: Status;
@@ -57,7 +58,7 @@ interface ConnectProps {
   searchResult: SearchResult;
   loadMore?: () => void;
 }
-class UserList extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
+class UserList extends Component<Props & ConnectProps & WithTranslation<'site'> & WithStyles<typeof styles, true>> {
 
   constructor(props) {
     super(props);
@@ -84,7 +85,7 @@ class UserList extends Component<Props & ConnectProps & WithStyles<typeof styles
         if (this.props.searchResult.users.length === 0) {
           return (
             <div className={this.props.classes.placeholder}>
-              <Typography variant='overline'>Empty</Typography>
+              <Typography variant='overline'>{this.props.t('empty')}</Typography>
             </div>
           );
         } else {
@@ -181,4 +182,4 @@ export default keyMapper(
     }
 
     return newProps;
-  }, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(UserList)));
+  }, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withTranslation('site', { withRef: true })(UserList))));

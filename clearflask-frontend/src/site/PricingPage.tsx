@@ -3,7 +3,7 @@
 /** Intentional comment to prevent licence-maven-plugin from deleting the below line */
 /// <reference path="../@types/transform-media-imports.d.ts"/>
 import { Box, Grid, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
-import { Theme, WithStyles, createStyles, useTheme, withStyles } from '@material-ui/core/styles';
+import { createStyles, Theme, useTheme, WithStyles, withStyles } from '@material-ui/core/styles';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
 import CheckIcon from '@material-ui/icons/CheckRounded';
 import GithubIcon from '@material-ui/icons/GitHub';
@@ -39,7 +39,8 @@ const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
     body: (
       <>
         <p>
-          Our entire stack is open sourced under the Apache-2.0 license and free to use. The commercial cloud hosting and the self-hosted installations are from the same repository.
+          Our entire stack is open sourced under the Apache-2.0 license and free to use. The commercial cloud
+          hosting and the self-hosted installations are from the same repository.
         </p>
       </>
     ),
@@ -49,7 +50,32 @@ const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
     body: (
       <>
         <p>
-          Yes, we provide both import and export functionality via CSV format. You can easily switch between our cloud-hosted plans and a self-hosted installation.
+          Yes, we provide both import and export functionality via CSV format. You can easily switch between
+          our cloud-hosted plans and a self-hosted installation.
+        </p>
+      </>
+    ),
+  },
+  {
+    heading: 'What is a teammate?',
+    body: (
+      <>
+        <p>
+          A teammate is a user with access to the ClearFlask admin dashboard. They can manage feedback, users,
+          and settings. You count as one teammate and any additional teammates may cost extra depending on the
+          plan.
+        </p>
+      </>
+    ),
+  },
+  {
+    heading: 'Can I add a teammate later?',
+    body: (
+      <>
+        <p>
+          For recurring plans, you will be charged based on the number of teammates you had during the billing
+          period.
+          For lifetime plans, you can purchase additional teammate slots at any time.
         </p>
       </>
     ),
@@ -79,7 +105,7 @@ const styles = (theme: Theme) => createStyles({
     '& > *': {
       margin: theme.spacing(4),
       minWidth: 250,
-    }
+    },
   },
   pricingSlider: {
     height: 250,
@@ -128,14 +154,17 @@ const styles = (theme: Theme) => createStyles({
 
 interface Props {
 }
+
 interface ConnectProps {
   callOnMount?: () => void,
   plans?: Admin.Plan[];
   featuresTable?: Admin.FeaturesTable;
 }
+
 interface State {
   highlightedBasePlanid?: string;
 }
+
 class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site'> & RouteComponentProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
 
@@ -153,9 +182,9 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
       title: 'Self-host',
       pricing: { basePrice: 0, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Monthly },
       perks: [
-        { desc: 'Quickstart deploy' },
-        { desc: 'Apache 2.0 license' },
         { desc: 'All features' },
+        { desc: 'Deploy via Docker' },
+        { desc: 'Apache 2.0 licensed' },
       ],
     };
     const communityPlanCmpt = (
@@ -164,8 +193,9 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
         plan={communityPlan}
         selected={this.state.highlightedBasePlanid === communityPlan.basePlanId}
         actionIcon={(<GithubIcon />)}
-        actionTitle='Deploy'
-        remark='Join our community'
+        actionTitle="Deploy"
+        remark="Community supported"
+        overrideMauTerms={[]}
         actionOnClick={() => {
           trackingBlock(() => {
             [ReactGA4, ReactGA].forEach(ga =>
@@ -173,11 +203,11 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
                 category: 'pricing',
                 action: 'click-plan',
                 label: communityPlan.basePlanId,
-              })
+              }),
             );
           });
         }}
-        actionToExt='https://github.com/clearflask/clearflask#self-hosting'
+        actionToExt="https://github.com/clearflask/clearflask#self-hosting"
       />
     );
 
@@ -221,7 +251,7 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
     for (const plan of this.props.plans || []) {
       const pricingPlan = AllowUserChoosePricingForPlans.has(plan.basePlanId) ? (
         <PricingSlider
-          key='pricingSlider'
+          key="pricingSlider"
           className={this.props.classes.pricingSlider}
           plan={plan}
         />
@@ -248,7 +278,7 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
                   category: 'pricing',
                   action: 'click-plan',
                   label: plan.basePlanId,
-                })
+                }),
               );
             });
           }}
@@ -266,6 +296,7 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
     const plansGrouped = this.groupPlans([
       communityPlanCmpt,
       ...plansAll,
+      // talkPlanCmpt,
     ]);
 
     return (
@@ -274,14 +305,15 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
           d: 'M 0 49.98 C 0 120 16 137 94 136 C 361 122 252 -31 500 49.98 L 500 0 L 0 0 Z',
           viewBox: '0 0 500 150',
           flexible: true,
-        }} height={500} align='top'>
+        }} height={500} align="top">
           <div className={this.props.classes.section}>
             <div className={this.props.classes.header}>
               <div>
-                <Typography component="h2" variant="h2" color="textPrimary">{this.props.t('pricing')}</Typography>
+                <Typography component="h2" variant="h2"
+                            color="textPrimary">{this.props.t('pricing')}</Typography>
               </div>
               <ImgIso
-                alt=''
+                alt=""
                 className={this.props.classes.image}
                 src={PricingImg.pathname}
                 aspectRatio={PricingImg.aspectRatio}
@@ -302,7 +334,7 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
           <br />
           {this.props.featuresTable && (
             <div className={this.props.classes.section}>
-              <FeatureList name='Features' planNames={this.props.featuresTable.plans}>
+              <FeatureList name="Features" planNames={this.props.featuresTable.plans}>
                 {this.props.featuresTable.features.map((feature, index) => (
                   <FeatureListItem
                     key={feature.feature}
@@ -313,8 +345,9 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
                 ))}
               </FeatureList>
               {this.props.featuresTable.extraTerms && (
-                <Box display='flex' justifyContent='center'>
-                  <Typography variant='caption' component='div'>{this.props.featuresTable.extraTerms}</Typography>
+                <Box display="flex" justifyContent="center">
+                  <Typography variant="caption"
+                              component="div">{this.props.featuresTable.extraTerms}</Typography>
                 </Box>
               )}
             </div>
@@ -323,15 +356,15 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
           <br />
           <br />
           <div className={this.props.classes.section}>
-            <Grid container spacing={5} alignItems='stretch' justify='center'>
+            <Grid container spacing={5} alignItems="stretch" justify="center">
               {Faq.map((faqItem, index) => (
                 <Grid key={index} item xs={12} sm={6}>
                   <div className={this.props.classes.faqItem}>
-                    <Typography component='div' variant='h5'>
+                    <Typography component="div" variant="h5">
                       {faqItem.heading}
                     </Typography>
                     <br />
-                    <Typography component='div' variant='body1' color='textSecondary'>
+                    <Typography component="div" variant="body1" color="textSecondary">
                       {faqItem.body}
                     </Typography>
                   </div>
@@ -347,9 +380,12 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
   mapFeaturesTableValues(values: string[]): (string | boolean)[] {
     return values.map(value => {
       switch (value) {
-        case 'Yes': return true;
-        case 'No': return false;
-        default: return value;
+        case 'Yes':
+          return true;
+        case 'No':
+          return false;
+        default:
+          return value;
       }
     });
   }
@@ -384,7 +420,7 @@ const FeatureList = withStyles(styles, { withTheme: true })((props: WithStyles<t
       >
         <TableHead>
           <TableRow>
-            <TableCell key='feature'><Typography variant='h6'>{props.name}</Typography></TableCell>
+            <TableCell key="feature"><Typography variant="h6">{props.name}</Typography></TableCell>
             {props.planNames.map(planName => (
               <TableCell key={planName}>{planName}</TableCell>
             ))}
@@ -404,8 +440,8 @@ const FeatureListItem = (props: {
   helpText?: string
 }) => {
   return (
-    <TableRow key='name'>
-      <TableCell key='feature'>
+    <TableRow key="name">
+      <TableCell key="feature">
         {props.name}
         {props.helpText && (
           <>
@@ -417,13 +453,13 @@ const FeatureListItem = (props: {
       {props.planContents.map((content, index) => (
         <TableCell key={index}>
           {content === true
-            ? (<CheckIcon fontSize='inherit' />)
+            ? (<CheckIcon fontSize="inherit" />)
             : content}
         </TableCell>
       ))}
     </TableRow>
   );
-}
+};
 
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
   const newProps: ConnectProps = {

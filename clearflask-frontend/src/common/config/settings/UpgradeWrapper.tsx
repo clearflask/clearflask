@@ -9,7 +9,11 @@ import { connect } from 'react-redux';
 import { Link } from 'react-router-dom';
 import * as Admin from '../../../api/admin';
 import { ReduxStateAdmin } from '../../../api/serverAdmin';
-import { AddonPrivateProjects, AddonWhitelabel } from '../../../site/dashboard/BillingPage';
+import {
+  AddonExtraTeammate,
+  AddonPrivateProjects,
+  AddonWhitelabel,
+} from '../../../site/dashboard/BillingPage';
 import { Path, pathEquals } from '../configEditor';
 
 /** If changed, also change in PlanStore.java */
@@ -79,6 +83,7 @@ const RestrictedPropertiesByPlan: { [basePlanId: string]: Path[] } = {
   'pitchground-e-lifetime': EPitchGroundRestrictedProperties,
   'standard3-monthly': UnrestrictedProperties,
   'lifetime-lifetime': UnrestrictedProperties,
+  'lifetime2-lifetime': UnrestrictedProperties,
 };
 /** If changed, also change in KillBillPlanStore.java */
 export const TeammatesMaxCount: { [basePlanId: string]: number } = {
@@ -94,6 +99,7 @@ export const TeammatesMaxCount: { [basePlanId: string]: number } = {
   'pitchground-d-lifetime': 10,
   'pitchground-e-lifetime': 25,
   'standard2-unlimited': 3,
+  'lifetime2-lifetime': 1,
 };
 /** If changed, also change in KillBillPlanStore.java */
 export const ProjectMaxCount: { [basePlanId: string]: number } = {
@@ -220,7 +226,9 @@ class UpgradeWrapper extends Component<Props & ConnectProps & WithStyles<typeof 
       && this.props.accountBasePlanId !== undefined
       && !this.canAutoUpgrade()
       && TeammatesMaxCount[this.props.accountBasePlanId] !== undefined
-      && (this.props.teammatesCount || 2) >= TeammatesMaxCount[this.props.accountBasePlanId];
+      && (((TeammatesMaxCount[this.props.accountBasePlanId] || Infinity)
+          + (parseInt(this.props.accountAddons?.[AddonExtraTeammate] || '') || 0))
+        <= (this.props.teammatesCount || 2));
   }
 
   /** If changed, also change in KillBilling.java:tryAutoUpgradePlan */

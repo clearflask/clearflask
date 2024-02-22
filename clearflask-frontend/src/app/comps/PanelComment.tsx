@@ -12,6 +12,7 @@ import Loading from '../utils/Loading';
 import Comment from './Comment';
 import LogIn from './LogIn';
 import Panel, { PanelTitle } from './Panel';
+import { WithTranslation, withTranslation } from 'react-i18next';
 
 export enum Direction {
   Horizontal,
@@ -55,7 +56,7 @@ interface ConnectProps {
 interface State {
   logInOpen?: boolean;
 }
-class PanelComment extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> {
+class PanelComment extends Component<Props & ConnectProps & WithTranslation<'app'> & WithStyles<typeof styles, true>, State> {
   state: State = {};
   onLoggedIn?: () => void;
 
@@ -84,7 +85,7 @@ class PanelComment extends Component<Props & ConnectProps & WithStyles<typeof st
         if (this.props.hideIfEmpty && this.props.searchResult.comments.length === 0) return null;
         if (this.props.searchResult.comments.length === 0) {
           content = (
-            <Typography variant='overline' className={this.props.classes.nothing}>Empty</Typography>
+            <Typography variant='overline' className={this.props.classes.nothing}>{this.props.t('empty')}</Typography>
           )
         } else {
           const logIn = () => {
@@ -170,4 +171,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   }
 
   return newProps;
-})(withStyles(styles, { withTheme: true })(PanelComment));
+})(withStyles(styles, { withTheme: true })(withTranslation('app', { withRef: true })(PanelComment)));

@@ -55,6 +55,10 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
      */
     private static final long STANDARD_MAX_TEAMMATES = 8L;
     /**
+     * If changed, also change in UpgradeWrapper.tsx
+     */
+    private static final long LIFETIME_MAX_TEAMMATES = 1L;
+    /**
      * If changed, also change in BillingPage.tsx
      */
     private static final String ADDON_WHITELABEL = "whitelabel";
@@ -66,6 +70,10 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
      * If changed, also change in BillingPage.tsx
      */
     private static final String ADDON_EXTRA_PROJECT = "extra-project";
+    /**
+     * If changed, also change in BillingPage.tsx
+     */
+    public static final String ADDON_EXTRA_TEAMMATE = "extra-teammate";
     private static final String TERMS_POSTS = "Keep your project tidy and delete old posts to stay within the limits.";
     private static final String TERMS_PROJECTS = "You can create separate projects each having their own set of users and content";
     private static final String TERMS_ADMINS = "Amount of administrators, product managers or support team members you can have on each project including yourself.";
@@ -82,7 +90,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     private static final String TERMS_ELASTICSEARCH = "Search powered by ElasticSearch for fast and accurate search capability";
     private static final ImmutableSet<String> AVAILABLE_PLAN_NAMES = ImmutableSet.of(
             "standard3-monthly",
-            "lifetime-lifetime");
+            "lifetime2-lifetime");
     private static final ImmutableMap<String, Function<PlanPricing, Plan>> PLANS_BUILDER = ImmutableMap.<String, Function<PlanPricing, Plan>>builder()
             // Deprecated plan with unlimited trial up to 10 MAU
             .put("growth-monthly", pp -> new Plan("growth-monthly", "Growth",
@@ -222,6 +230,10 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     new PlanPerk("All features", null)),
                     null, null))
             .put("lifetime-lifetime", pp -> new Plan("lifetime-lifetime", "Lifetime",
+                    pp, ImmutableList.of(
+                    new PlanPerk("All features", null)),
+                    null, null))
+            .put("lifetime2-lifetime", pp -> new Plan("lifetime2-lifetime", "Lifetime",
                     pp, ImmutableList.of(
                     new PlanPerk("All features", null)),
                     null, null))
@@ -387,6 +399,10 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                         .map(Double::valueOf)
                         .map(Double::longValue)
                         .orElse(0L);
+            } else if (LIFETIME_TEAMMATES_FOR_PLANS.contains(planName)) {
+                adminsOpt = Optional.of(new PlanPricingAdmins(
+                        LIFETIME_MAX_TEAMMATES,
+                        75L));
             }
             PlanPricing planPricing = (basePrice == 0L && unitPrice == 0L) ? null
                     : PlanPricing.builder()
@@ -458,14 +474,15 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             case "flat-yearly":
             case "standard-unlimited":
             case "sponsor-monthly":
-                planOptions.add(availablePlans.get("standard3-monthly"));
-                planOptions.add(availablePlans.get("lifetime-lifetime"));
-                break;
             case "lifetime-lifetime":
+                planOptions.add(availablePlans.get("standard3-monthly"));
+                planOptions.add(availablePlans.get("lifetime2-lifetime"));
+                break;
+            case "lifetime2-lifetime":
                 planOptions.add(availablePlans.get("standard3-monthly"));
                 break;
             case "standard3-monthly":
-                planOptions.add(availablePlans.get("lifetime-lifetime"));
+                planOptions.add(availablePlans.get("lifetime2-lifetime"));
                 break;
             default:
                 break;
@@ -582,6 +599,13 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                         isMultiple ? "Extra " + projectCount + " projects" : "Extra project",
                         "In addition to your plan limits, you can create "
                                 + (isMultiple ? projectCount + " additional projects" : "one additional project")));
+            case ADDON_EXTRA_TEAMMATE:
+                long teammateCount = Optional.ofNullable(Longs.tryParse(value)).orElse(0L);
+                boolean isMultipleTeammates = teammateCount > 1;
+                return Optional.of(new PlanPerk(
+                        isMultipleTeammates ? "Extra " + teammateCount + " teammates" : "Extra teammate",
+                        "In addition to your plan limits, you have "
+                                + (isMultipleTeammates ? teammateCount + " additional teammates" : "one additional teammate")));
             default:
                 return Optional.empty();
         }
@@ -627,8 +651,9 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 .map(Optional::get)
                 .forEach(project -> {
                     verifyConfigMeetsPlanRestrictions(planId, accountId, project.getVersionedConfigAdmin().getConfig());
-                    verifyTeammateInviteMeetsPlanRestrictions(planId, project.getProjectId(), false);
                 });
+
+        verifyTeammateInviteMeetsPlanRestrictions(planId, accountId, false);
 
         verifyAccountMeetsLimits(planId, accountId);
 
@@ -817,6 +842,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 break;
             case "sponsor-monthly":
             case "lifetime-lifetime":
+            case "lifetime2-lifetime":
             case "standard3-monthly":
                 break;
         }
@@ -835,7 +861,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
      * If changed, also change in UpgradeWrapper.tsx
      */
     @Override
-    public void verifyTeammateInviteMeetsPlanRestrictions(String planId, String projectId, boolean addOne) throws ApiException {
+    public void verifyTeammateInviteMeetsPlanRestrictions(String planId, String accountId, boolean addOne) throws ApiException {
         Optional<Long> teammateLimitOpt = Optional.empty();
         String requiredPlanId = DEFAULT_UPGRADE_REQUIRED_PLAN;
         switch (getBasePlanId(planId)) {
@@ -871,6 +897,10 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             case "standard2-unlimited":
                 teammateLimitOpt = Optional.of(3L);
                 break;
+            case "lifetime2-lifetime":
+                teammateLimitOpt = Optional.of(LIFETIME_MAX_TEAMMATES);
+                requiredPlanId = ""; // Not upgradeable
+                break;
             case "starter3-monthly":
             case "standard3-monthly":
             case "standard-unlimited":
@@ -883,29 +913,56 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     log.warn("Plan {} has no defined teammate limit", getBasePlanId(planId));
                 }
         }
+
+        // Project Addons
+        ImmutableMap<String, String> addons = accountStore.getAccount(accountId, true)
+                .map(Account::getAddons)
+                .orElse(ImmutableMap.of());
+        long addonExtraTeammateCount = Optional.ofNullable(addons.get(ADDON_EXTRA_TEAMMATE))
+                .flatMap(addonExtraProjectCountStr -> Optional.ofNullable(Longs.tryParse(addonExtraProjectCountStr)))
+                .orElse(0L);
+        teammateLimitOpt = teammateLimitOpt.map(planLimit -> planLimit + addonExtraTeammateCount);
+
         if (teammateLimitOpt.isPresent()) {
             if (teammateLimitOpt.get() <= 1L) {
-                if (addOne || getCurrentTeammateCount(projectId) > 1L) {
+                if (addOne || getCurrentTeammateCount(accountId) > 1L) {
                     throw new RequiresUpgradeException(requiredPlanId, "Your plan has reached the teammate limit");
                 }
             } else {
-                if ((getCurrentTeammateCount(projectId) + (addOne ? 1 : 0)) > teammateLimitOpt.get()) {
+                if ((getCurrentTeammateCount(accountId) + (addOne ? 1 : 0)) > teammateLimitOpt.get()) {
                     throw new RequiresUpgradeException(requiredPlanId, "Your plan has reached the teammate limit");
                 }
             }
         }
     }
 
-    private long getCurrentTeammateCount(String projectId) {
-        long adminCount = projectStore.getProject(projectId, true).map(ProjectStore.Project::getModel)
-                .map(ProjectStore.ProjectModel::getAdminsAccountIds)
-                .map(AbstractCollection::size)
-                .orElse(0);
-        long pendingInvitationCount = projectStore.getInvitations(projectId)
-                .stream()
+    private long getCurrentTeammateCount(String accountId) {
+        // Find all projects owned by this account
+        ImmutableSet<String> projectIds = accountStore.getAccount(accountId, true)
+                .orElseThrow()
+                .getProjectIds();
+
+        // Find all admins on those projects
+        Set<String> adminAccountIds = Sets.newHashSet();
+        projectIds.stream()
+                .map(projectId -> projectStore.getProject(projectId, true).orElseThrow())
+                .flatMap(project -> project.getModel().getAdminsAccountIds().stream())
+                .forEach(adminAccountIds::add);
+        // Include the account itself
+        adminAccountIds.add(accountId);
+        // Count all unique (by id) admins
+        long adminCount = adminAccountIds.size();
+
+        // Find all unique (by email) invitations that are not yet accepted
+        long pendingInvitationCount = projectIds.stream()
+                .flatMap(projectId -> projectStore.getInvitations(projectId).stream())
                 .filter(Predicate.not(ProjectStore.InvitationModel::isAccepted))
+                .map(ProjectStore.InvitationModel::getInvitedEmail)
+                .distinct()
                 .count();
-        return pendingInvitationCount + adminCount;
+
+        // Sum up admins and pending invitations
+        return adminCount + pendingInvitationCount;
     }
 
     /**
@@ -913,10 +970,6 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
      */
     @Override
     public void verifyProjectCountMeetsPlanRestrictions(String planId, String accountId, boolean addOne) throws ApiException {
-        ImmutableMap<String, String> addons = accountStore.getAccount(accountId, true)
-                .map(Account::getAddons)
-                .orElse(ImmutableMap.of());
-
         Optional<Long> projectCountLimitOpt = Optional.empty();
         switch (getBasePlanId(planId)) {
             case "pro-lifetime":
@@ -932,6 +985,9 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
         }
 
         // Project Addons
+        ImmutableMap<String, String> addons = accountStore.getAccount(accountId, true)
+                .map(Account::getAddons)
+                .orElse(ImmutableMap.of());
         long addonExtraProjectCount = Optional.ofNullable(addons.get(ADDON_EXTRA_PROJECT))
                 .flatMap(addonExtraProjectCountStr -> Optional.ofNullable(Longs.tryParse(addonExtraProjectCountStr)))
                 .orElse(0L);

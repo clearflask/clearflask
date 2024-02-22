@@ -1,6 +1,27 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
-import { Box, Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, FormHelperText, Switch, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import {
+  Box,
+  Button,
+  Collapse,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  FormControlLabel,
+  FormHelperText,
+  Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography,
+  withWidth,
+  WithWidthProps,
+} from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import ActiveIcon from '@material-ui/icons/Check';
 import ErrorIcon from '@material-ui/icons/Error';
@@ -48,6 +69,7 @@ interface PaymentStripeAction {
 export const AddonWhitelabel = 'whitelabel';
 export const AddonPrivateProjects = 'private-projects';
 export const AddonExtraProject = 'extra-project';
+export const AddonExtraTeammate = 'extra-teammate';
 
 export const BillingPaymentActionRedirectPath = 'billing-redirect';
 
@@ -128,11 +150,13 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     flexDirection: 'column',
     rowGap: theme.spacing(1),
-  }
+  },
 });
+
 interface Props {
   stripePromise: Promise<Stripe | null>;
 }
+
 interface ConnectProps {
   callOnMount?: () => void,
   accountStatus?: Status;
@@ -141,6 +165,7 @@ interface ConnectProps {
   accountBilling?: Admin.AccountBilling;
   isSuperAdmin: boolean;
 }
+
 interface State {
   isSubmitting?: boolean;
   showAddPayment?: boolean;
@@ -149,6 +174,8 @@ interface State {
   showCancelSubscription?: boolean;
   showResumePlan?: boolean;
   showPlanChange?: boolean;
+  showAddExtraTeammate?: boolean;
+  addExtraTeammateCount?: number;
   invoices?: Admin.InvoiceItem[];
   invoicesCursor?: string;
   paymentActionOpen?: boolean;
@@ -163,12 +190,16 @@ interface State {
   whitelabel?: boolean;
   privateProjects?: boolean;
   extraProjects?: number;
+  extraTeammates?: number;
   showCreditAdjustment?: boolean;
   creditAmount?: number;
   creditDescription?: string;
 }
+
 class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidthProps, State> {
-  state: State = {};
+  state: State = {
+    addExtraTeammateCount: 1,
+  };
   refreshBillingAfterPaymentClose?: boolean;
   paymentActionMessageListener?: any;
 
@@ -225,7 +256,10 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       .filter(p => p.basePlanId !== this.props.accountBilling?.plan.basePlanId)
       .length > 0;
     var cardState: 'active' | 'warn' | 'error' = 'active';
-    var paymentTitle, paymentDesc, showContactSupport, showSetPayment, setPaymentTitle, setPaymentAction, showCancelSubscription, showResumePlan, resumePlanDesc, planTitle, planDesc, showPlanChange, endOfTermChangeToPlanTitle, endOfTermChangeToPlanDesc, switchPlanTitle;
+    var showAddExtraTeammate = !!this.props.accountBilling?.teammateMax;
+    var paymentTitle, paymentDesc, showContactSupport, showSetPayment, setPaymentTitle, setPaymentAction,
+      showCancelSubscription, showResumePlan, resumePlanDesc, planTitle, planDesc, showPlanChange,
+      endOfTermChangeToPlanTitle, endOfTermChangeToPlanDesc, switchPlanTitle;
     switch (this.props.account.subscriptionStatus) {
       case Admin.SubscriptionStatus.Active:
         if (this.props.accountBilling?.plan.basePlanId === TeammatePlanId) {
@@ -238,7 +272,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           planDesc = 'While you only access external projects, you are not required to be on a plan. If you decide to create a project under your account, you will be able to choose a plan and your trial will begin.';
           if (hasAvailablePlansToSwitch) {
             showPlanChange = true;
-            switchPlanTitle = 'Choose plan'
+            switchPlanTitle = 'Choose plan';
           }
         } else {
           paymentTitle = 'Automatic renewal is active';
@@ -261,7 +295,8 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           if (this.props.accountBilling?.billingPeriodEnd) {
             paymentDesc = (
               <>
-                A payment will be automatically billed at the end of the trial period in&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />.
+                A payment will be automatically billed at the end of the trial period in&nbsp;<TimeAgo
+                date={this.props.accountBilling?.billingPeriodEnd} />.
               </>
             );
           } else {
@@ -286,7 +321,9 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           if (this.props.accountBilling?.billingPeriodEnd) {
             planDesc = (
               <>
-                You have full access to your {this.props.accountBilling.plan.title} plan until your trial expires in&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />. Add a payment method to continue using our service beyond the trial period.
+                You have full access to your {this.props.accountBilling.plan.title} plan until your
+                trial expires in&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />. Add
+                a payment method to continue using our service beyond the trial period.
               </>
             );
           } else {
@@ -382,17 +419,17 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     }
     switch (cardState) {
       case 'active':
-        cardStateIcon = (<ActiveIcon color='primary' />);
+        cardStateIcon = (<ActiveIcon color="primary" />);
         break;
       case 'warn':
         cardStateIcon = (<WarnIcon style={{ color: this.props.theme.palette.warning.main }} />);
         break;
       case 'error':
-        cardStateIcon = (<ErrorIcon color='error' />);
+        cardStateIcon = (<ErrorIcon color="error" />);
         break;
     }
     const creditCard = (
-      <TourAnchor anchorId='settings-credit-card' placement='bottom'>
+      <TourAnchor anchorId="settings-credit-card" placement="bottom">
         <CreditCard
           className={this.props.classes.creditCard}
           brand={cardStateIcon}
@@ -422,8 +459,8 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       <>
         <Message
           className={this.props.classes.paymentActionMessage}
-          message='One of your payments requires additional information'
-          severity='error'
+          message="One of your payments requires additional information"
+          severity="error"
           action={(
             <SubmitButton
               isSubmitting={!!this.state.paymentActionOpen && !this.state.paymentActionUrl && !this.state.paymentActionMessage}
@@ -452,7 +489,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             </>
           ) : (this.state.paymentActionUrl ? (
             <iframe
-              title='Complete outstanding payment action'
+              title="Complete outstanding payment action"
               width={this.getFrameActionWidth()}
               height={400}
               src={this.state.paymentActionUrl}
@@ -473,17 +510,20 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     const hasReceivable = (this.props.accountBilling?.accountReceivable || 0) > 0;
     const payment = (
       <Section
-        title='Payment'
+        title="Payment"
         preview={(
           <div className={this.props.classes.creditCardContainer}>
             {creditCard}
-            <Box display='grid' gridTemplateAreas='"payTtl payAmt" "rcvTtl rcvAmt"' alignItems='center' gridGap='10px 10px'>
+            <Box display="grid" gridTemplateAreas='"payTtl payAmt" "rcvTtl rcvAmt"' alignItems="center"
+                 gridGap="10px 10px">
               {hasPayable && (
                 <>
-                  <Box gridArea='payTtl'><Typography component='div'>Credits:</Typography></Box>
-                  <Box gridArea='payAmt' display='flex'>
-                    <Typography component='div' variant='h6' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
-                    <Typography component='div' variant='h4' color={hasPayable ? 'primary' : undefined}>
+                  <Box gridArea="payTtl"><Typography component="div">Credits:</Typography></Box>
+                  <Box gridArea="payAmt" display="flex">
+                    <Typography component="div" variant="h6" color="textSecondary"
+                                style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
+                    <Typography component="div" variant="h4"
+                                color={hasPayable ? 'primary' : undefined}>
                       {this.props.accountBilling?.accountPayable || 0}
                     </Typography>
                   </Box>
@@ -491,10 +531,12 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               )}
               {(hasReceivable || !hasPayable) && (
                 <>
-                  <Box gridArea='rcvTtl'><Typography component='div'>Overdue:</Typography></Box>
-                  <Box gridArea='rcvAmt' display='flex'>
-                    <Typography component='div' variant='h6' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
-                    <Typography component='div' variant='h4' color={hasReceivable ? 'error' : undefined}>
+                  <Box gridArea="rcvTtl"><Typography component="div">Overdue:</Typography></Box>
+                  <Box gridArea="rcvAmt" display="flex">
+                    <Typography component="div" variant="h6" color="textSecondary"
+                                style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
+                    <Typography component="div" variant="h4"
+                                color={hasReceivable ? 'error' : undefined}>
                       {this.props.accountBilling?.accountReceivable || 0}
                     </Typography>
                   </Box>
@@ -505,18 +547,18 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         )}
         content={(
           <div className={this.props.classes.actionContainer}>
-            <p><Typography variant='h6' color='textPrimary' component='div'>{paymentTitle}</Typography></p>
-            <Typography color='textSecondary'>{paymentDesc}</Typography>
+            <p><Typography variant="h6" color="textPrimary" component="div">{paymentTitle}</Typography></p>
+            <Typography color="textSecondary">{paymentDesc}</Typography>
             <div className={this.props.classes.sectionButtons}>
               {showContactSupport && (
                 <Button
                   disabled={this.state.isSubmitting || this.state.showAddPayment}
                   component={Link}
-                  to='/contact/support'
+                  to="/contact/support"
                 >Contact support</Button>
               )}
               {showSetPayment && (
-                <TourAnchor anchorId='settings-add-payment-open' placement='bottom'>
+                <TourAnchor anchorId="settings-add-payment-open" placement="bottom">
                   {(next, isActive, anchorRef) => (
                     <SubmitButton
                       buttonRef={anchorRef}
@@ -529,7 +571,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                               category: 'billing',
                               action: this.props.accountBilling?.payment ? 'click-payment-update-open' : 'click-payment-add-open',
                               label: this.props.accountBilling?.plan.basePlanId,
-                            })
+                            }),
                           );
                         });
                         this.setState({ showAddPayment: true });
@@ -555,7 +597,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 <SubmitButton
                   isSubmitting={this.state.isSubmitting}
                   disabled={this.state.showResumePlan}
-                  color='primary'
+                  color="primary"
                   onClick={() => this.setState({ showResumePlan: true })}
                 >
                   Resume payments
@@ -572,14 +614,16 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             >
               <ElementsConsumer>
                 {({ elements, stripe }) => (
-                  <TourAnchor anchorId='settings-add-payment-popup' placement='top'>
+                  <TourAnchor anchorId="settings-add-payment-popup" placement="top">
                     {(next, isActive, anchorRef) => (
                       <div ref={anchorRef}>
                         <DialogTitle>{setPaymentTitle || 'Add new payment method'}</DialogTitle>
                         <DialogContent className={this.props.classes.center}>
-                          <StripeCreditCard onFilledChanged={(isFilled) => this.setState({ stripePaymentFilled: isFilled })} />
+                          <StripeCreditCard
+                            onFilledChanged={(isFilled) => this.setState({ stripePaymentFilled: isFilled })} />
                           <Collapse in={!!this.state.stripePaymentError}>
-                            <Message message={this.state.stripePaymentError} severity='error' />
+                            <Message message={this.state.stripePaymentError}
+                                     severity="error" />
                           </Collapse>
                           <ImgIso
                             img={PoweredByStripe}
@@ -594,7 +638,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                           <SubmitButton
                             isSubmitting={this.state.isSubmitting}
                             disabled={!this.state.stripePaymentFilled || !elements || !stripe}
-                            color='primary'
+                            color="primary"
                             onClick={async () => {
                               const success = await this.onPaymentSubmit(elements!, stripe!);
                               if (success) {
@@ -616,7 +660,8 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             >
               <DialogTitle>Stop subscription</DialogTitle>
               <DialogContent className={this.props.classes.center}>
-                <DialogContentText>Stop automatic billing of your subscription. Any ongoing subscription will continue to work until it expires.</DialogContentText>
+                <DialogContentText>Stop automatic billing of your subscription. Any ongoing subscription
+                  will continue to work until it expires.</DialogContentText>
               </DialogContent>
               <DialogActions>
                 <Button onClick={() => this.setState({ showCancelSubscription: undefined })}>
@@ -632,7 +677,10 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                         cancelEndOfTerm: true,
                       },
                     }).then(() => d.accountBillingAdmin({})))
-                      .then(() => this.setState({ isSubmitting: false, showCancelSubscription: undefined }))
+                      .then(() => this.setState({
+                        isSubmitting: false,
+                        showCancelSubscription: undefined,
+                      }))
                       .catch(er => this.setState({ isSubmitting: false }));
                   }}
                 >Stop subscription</SubmitButton>
@@ -652,7 +700,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 </Button>
                 <SubmitButton
                   isSubmitting={this.state.isSubmitting}
-                  color='primary'
+                  color="primary"
                   onClick={() => {
                     this.setState({ isSubmitting: true });
                     ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
@@ -680,28 +728,33 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     ];
     const invoices = invoicesItems.length <= 0 ? undefined : (
       <Section
-        title='Invoices'
+        title="Invoices"
         content={(
           <>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell key='due'>Due</TableCell>
-                  <TableCell key='status'>Status</TableCell>
-                  <TableCell key='amount'>Amount</TableCell>
-                  <TableCell key='desc'>Description</TableCell>
-                  <TableCell key='invoiceLink'>Invoice</TableCell>
+                  <TableCell key="due">Due</TableCell>
+                  <TableCell key="status">Status</TableCell>
+                  <TableCell key="amount">Amount</TableCell>
+                  <TableCell key="desc">Description</TableCell>
+                  <TableCell key="invoiceLink">Invoice</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {invoicesItems.map((invoiceItem, index) => (
                   <TableRow key={index}>
-                    <TableCell key='due'><Typography>{new Date(invoiceItem.date).toLocaleDateString()}</Typography></TableCell>
-                    <TableCell key='status' align='center'><Typography>{invoiceItem.status}</Typography></TableCell>
-                    <TableCell key='amount' align='right'><Typography>{invoiceItem.amount}</Typography></TableCell>
-                    <TableCell key='desc'><Typography>{invoiceItem.description}</Typography></TableCell>
-                    <TableCell key='invoiceLink'>
-                      <Button onClick={() => this.onInvoiceClick(invoiceItem.invoiceId)}>View</Button>
+                    <TableCell
+                      key="due"><Typography>{new Date(invoiceItem.date).toLocaleDateString()}</Typography></TableCell>
+                    <TableCell key="status"
+                               align="center"><Typography>{invoiceItem.status}</Typography></TableCell>
+                    <TableCell key="amount"
+                               align="right"><Typography>{invoiceItem.amount}</Typography></TableCell>
+                    <TableCell
+                      key="desc"><Typography>{invoiceItem.description}</Typography></TableCell>
+                    <TableCell key="invoiceLink">
+                      <Button
+                        onClick={() => this.onInvoiceClick(invoiceItem.invoiceId)}>View</Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -730,10 +783,10 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
 
     const plan = (
       <Section
-        title='Plan'
+        title="Plan"
         preview={(
           <div className={this.props.classes.planContainer}>
-            <TourAnchor anchorId='settings-billing-plan' placement='bottom' disablePortal>
+            <TourAnchor anchorId="settings-billing-plan" placement="bottom" disablePortal>
               <PricingPlan
                 selected
                 className={this.props.classes.plan}
@@ -741,22 +794,24 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               />
             </TourAnchor>
             {(this.props.accountBilling?.trackedUsers !== undefined) && (
-              <Box display='grid' gridTemplateAreas='"mauLbl mauAmt"' alignItems='baseline' gridGap='10px 10px'>
-                <Box gridArea='mauLbl'><Typography component='div'>Tracked users:</Typography></Box>
-                <Box gridArea='mauAmt' display='flex'>
-                  <Typography component='div' variant='h5'>
+              <Box display="grid" gridTemplateAreas='"mauLbl mauAmt"' alignItems="baseline"
+                   gridGap="10px 10px">
+                <Box gridArea="mauLbl"><Typography component="div">Tracked users:</Typography></Box>
+                <Box gridArea="mauAmt" display="flex">
+                  <Typography component="div" variant="h5">
                     {this.props.accountBilling.trackedUsers}
                   </Typography>
                 </Box>
               </Box>
             )}
             {(this.props.accountBilling?.postCount !== undefined) && (
-              <Box display='grid' gridTemplateAreas='"postCountLbl postCountAmt"' alignItems='baseline' gridGap='10px 10px'>
-                <Box gridArea='postCountLbl'><Typography component='div'>Post count:</Typography></Box>
-                <Box gridArea='postCountAmt' display='flex'>
-                  <Typography component='div' variant='h5' color={
+              <Box display="grid" gridTemplateAreas='"postCountLbl postCountAmt"' alignItems="baseline"
+                   gridGap="10px 10px">
+                <Box gridArea="postCountLbl"><Typography component="div">Post count:</Typography></Box>
+                <Box gridArea="postCountAmt" display="flex">
+                  <Typography component="div" variant="h5" color={
                     this.props.account.basePlanId === 'starter-unlimited'
-                      && this.props.accountBilling.postCount > StarterMaxPosts
+                    && this.props.accountBilling.postCount > StarterMaxPosts
                       ? 'error' : undefined}>
                     {this.props.accountBilling.postCount}
                   </Typography>
@@ -764,11 +819,18 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               </Box>
             )}
             {(this.props.accountBilling?.teammateCount !== undefined) && (
-              <Box display='grid' gridTemplateAreas='"teammateCountLbl teammateCountAmt"' alignItems='baseline' gridGap='10px 10px'>
-                <Box gridArea='teammateCountLbl'><Typography component='div'>Teammate count:</Typography></Box>
-                <Box gridArea='teammateCountAmt' display='flex'>
-                  <Typography component='div' variant='h5'>
+              <Box display="grid" gridTemplateAreas='"teammateCountLbl teammateCountAmt"'
+                   alignItems="baseline" gridGap="10px 10px">
+                <Box gridArea="teammateCountLbl"><Typography component="div">Teammate
+                  count:</Typography></Box>
+                <Box gridArea="teammateCountAmt" display="flex">
+                  <Typography component="div" variant="h5">
                     {this.props.accountBilling.teammateCount}
+                    {this.props.accountBilling.teammateMax && (
+                      <>
+                        &nbsp;/&nbsp;{this.props.accountBilling.teammateMax}
+                      </>
+                    )}
                   </Typography>
                 </Box>
               </Box>
@@ -777,12 +839,14 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         )}
         content={(
           <div className={this.props.classes.actionContainer}>
-            <p><Typography variant='h6' component='div' color='textPrimary'>{planTitle}</Typography></p>
-            <Typography color='textSecondary'>{planDesc}</Typography>
+            <p><Typography variant="h6" component="div" color="textPrimary">{planTitle}</Typography></p>
+            <Typography color="textSecondary">{planDesc}</Typography>
             {(endOfTermChangeToPlanTitle || endOfTermChangeToPlanDesc) && (
               <>
-                <p><Typography variant='h6' component='div' color='textPrimary' className={this.props.classes.sectionSpacing}>{endOfTermChangeToPlanTitle}</Typography></p>
-                <Typography color='textSecondary'>{endOfTermChangeToPlanDesc}</Typography>
+                <p><Typography variant="h6" component="div" color="textPrimary"
+                               className={this.props.classes.sectionSpacing}>{endOfTermChangeToPlanTitle}</Typography>
+                </p>
+                <Typography color="textSecondary">{endOfTermChangeToPlanDesc}</Typography>
               </>
             )}
             {showPlanChange && (
@@ -796,7 +860,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                           category: 'billing',
                           action: 'click-plan-switch-open',
                           label: this.props.accountBilling?.plan.basePlanId,
-                        })
+                        }),
                       );
                     });
 
@@ -817,20 +881,91 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 </Button>
               </div>
             )}
+            {showAddExtraTeammate && (
+              <div className={this.props.classes.sectionButtons}>
+                <Button
+                  disabled={this.state.isSubmitting || this.state.showAddExtraTeammate}
+                  onClick={() => this.setState({ showAddExtraTeammate: true })}
+                >
+                  {switchPlanTitle || 'Add Teammate'}
+                </Button>
+                <Dialog
+                  open={!!this.state.showAddExtraTeammate}
+                  onClose={() => this.setState({ showAddExtraTeammate: undefined })}
+                  scroll="body"
+                  maxWidth="md"
+                >
+                  <DialogTitle>Add teammate</DialogTitle>
+                  <DialogContent>
+                    Add additional teammate slots to your plan.
+                    <p />
+                    <TextField
+                      variant="outlined"
+                      type="number"
+                      label="Number of extra teammates"
+                      value={this.state.addExtraTeammateCount !== undefined ? this.state.addExtraTeammateCount : 0}
+                      onChange={e => {
+                        var addExtraTeammateCount = parseInt(e.target.value);
+                        if (addExtraTeammateCount < 0) {
+                          addExtraTeammateCount = 0;
+                        } else if (addExtraTeammateCount > 10) {
+                          addExtraTeammateCount = 10;
+                        }
+                        this.setState({ addExtraTeammateCount: addExtraTeammateCount });
+                      }}
+                    />
+                    <p />
+                    You will be invoiced the following amount:
+                    <br />
+                    <Box display="flex" justifyContent="center">
+                      <Typography component="div" variant="h6" color="textSecondary"
+                                  style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
+                      <Typography component="div" variant="h4">
+                        {(this.state.addExtraTeammateCount || 0)
+                          * (this.props.accountBilling?.plan.pricing?.admins?.additionalPrice || 0)}
+                      </Typography>
+                    </Box>
+                  </DialogContent>
+                  <DialogActions>
+                    <Button onClick={() => this.setState({ showAddExtraTeammate: undefined })}
+                    >Cancel</Button>
+                    <SubmitButton
+                      isSubmitting={this.state.isSubmitting}
+                      disabled={!this.state.addExtraTeammateCount}
+                      color="primary"
+                      onClick={() => {
+                        this.setState({ isSubmitting: true });
+                        ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
+                          accountUpdateAdmin: {
+                            addExtraTeammates: this.state.addExtraTeammateCount,
+                          },
+                        }).then(() => d.accountBillingAdmin({})))
+                          .then(() => this.setState({
+                            isSubmitting: false,
+                            showAddExtraTeammate: undefined,
+                            addExtraTeammateCount: 1,
+                          }))
+                          .catch(er => this.setState({ isSubmitting: false }));
+                      }}
+                    >Purchase</SubmitButton>
+                  </DialogActions>
+                </Dialog>
+              </div>
+            )}
             {this.props.isSuperAdmin && (
               <>
                 <Dialog
                   open={!!this.state.showSponsorMonthlyChange}
                   onClose={() => this.setState({ showSponsorMonthlyChange: undefined })}
-                  scroll='body'
-                  maxWidth='md'
+                  scroll="body"
+                  maxWidth="md"
                 >
                   <DialogTitle>Switch to sponsor plan</DialogTitle>
                   <DialogContent>
                     <TextField
-                      variant='outlined'
-                      type='number'
-                      label='Monthly price'
+                      variant="outlined"
+                      type="number"
+                      label="Monthly price"
                       value={this.state.sponsorMonthlyPrice !== undefined ? this.state.sponsorMonthlyPrice : ''}
                       onChange={e => this.setState({ sponsorMonthlyPrice: parseInt(e.target.value) >= 0 ? parseInt(e.target.value) : undefined })}
                     />
@@ -841,15 +976,18 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                     <SubmitButton
                       isSubmitting={this.state.isSubmitting}
                       disabled={this.state.sponsorMonthlyPrice === undefined}
-                      color='primary'
+                      color="primary"
                       onClick={() => {
                         this.setState({ isSubmitting: true });
                         ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateSuperAdmin({
                           accountUpdateSuperAdmin: {
-                            changeToSponsorPlanWithMonthlyPrice : this.state.sponsorMonthlyPrice,
+                            changeToSponsorPlanWithMonthlyPrice: this.state.sponsorMonthlyPrice,
                           },
                         }).then(() => d.accountBillingAdmin({})))
-                          .then(() => this.setState({ isSubmitting: false, showSponsorMonthlyChange: undefined }))
+                          .then(() => this.setState({
+                            isSubmitting: false,
+                            showSponsorMonthlyChange: undefined,
+                          }))
                           .catch(er => this.setState({ isSubmitting: false }));
                       }}
                     >Change</SubmitButton>
@@ -858,15 +996,15 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 <Dialog
                   open={!!this.state.showFlatYearlyChange}
                   onClose={() => this.setState({ showFlatYearlyChange: undefined })}
-                  scroll='body'
-                  maxWidth='md'
+                  scroll="body"
+                  maxWidth="md"
                 >
                   <DialogTitle>Switch to yearly plan</DialogTitle>
                   <DialogContent>
                     <TextField
-                      variant='outlined'
-                      type='number'
-                      label='Yearly flat price'
+                      variant="outlined"
+                      type="number"
+                      label="Yearly flat price"
                       value={this.state.flatYearlyPrice !== undefined ? this.state.flatYearlyPrice : ''}
                       onChange={e => this.setState({ flatYearlyPrice: parseInt(e.target.value) >= 0 ? parseInt(e.target.value) : undefined })}
                     />
@@ -877,7 +1015,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                     <SubmitButton
                       isSubmitting={this.state.isSubmitting}
                       disabled={this.state.flatYearlyPrice === undefined}
-                      color='primary'
+                      color="primary"
                       onClick={() => {
                         this.setState({ isSubmitting: true });
                         ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateSuperAdmin({
@@ -885,7 +1023,10 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                             changeToFlatPlanWithYearlyPrice: this.state.flatYearlyPrice || 0,
                           },
                         }).then(() => d.accountBillingAdmin({})))
-                          .then(() => this.setState({ isSubmitting: false, showFlatYearlyChange: undefined }))
+                          .then(() => this.setState({
+                            isSubmitting: false,
+                            showFlatYearlyChange: undefined,
+                          }))
                           .catch(er => this.setState({ isSubmitting: false }));
                       }}
                     >Change</SubmitButton>
@@ -901,7 +1042,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                   <Button
                     disabled={this.state.isSubmitting}
                     onClick={() => this.setState({ showSponsorMonthlyChange: true })}
-                    >Sponsor</Button>
+                  >Sponsor</Button>
                 </div>
               </>
             )}
@@ -910,24 +1051,31 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 <Dialog
                   open={!!this.state.showAddonsChange}
                   onClose={() => this.setState({ showAddonsChange: undefined })}
-                  scroll='body'
-                  maxWidth='md'
+                  scroll="body"
+                  maxWidth="md"
                 >
                   <DialogTitle>Manage addons</DialogTitle>
                   <DialogContent className={this.props.classes.addonsContainer}>
                     <TextField
-                      label='Extra projects'
-                      variant='outlined'
-                      type='number'
+                      label="Extra projects"
+                      variant="outlined"
+                      type="number"
                       value={this.state.extraProjects !== undefined ? this.state.extraProjects : (this.props.account.addons?.[AddonExtraProject] || 0)}
                       onChange={e => this.setState({ extraProjects: parseInt(e.target.value) >= 0 ? parseInt(e.target.value) : undefined })}
+                    />
+                    <TextField
+                      label="Extra teammates"
+                      variant="outlined"
+                      type="number"
+                      value={this.state.extraTeammates !== undefined ? this.state.extraTeammates : (this.props.account.addons?.[AddonExtraTeammate] || 0)}
+                      onChange={e => this.setState({ extraTeammates: parseInt(e.target.value) >= 0 ? parseInt(e.target.value) : undefined })}
                     />
                     <FormControlLabel
                       control={(
                         <Switch
                           checked={this.state.whitelabel !== undefined ? this.state.whitelabel : !!this.props.account.addons?.[AddonWhitelabel]}
                           onChange={(e, checked) => this.setState({ whitelabel: !!checked })}
-                          color='default'
+                          color="default"
                         />
                       )}
                       label={(<FormHelperText>Whitelabel</FormHelperText>)}
@@ -937,7 +1085,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                         <Switch
                           checked={this.state.privateProjects !== undefined ? this.state.privateProjects : !!this.props.account.addons?.[AddonPrivateProjects]}
                           onChange={(e, checked) => this.setState({ privateProjects: !!checked })}
-                          color='default'
+                          color="default"
                         />
                       )}
                       label={(<FormHelperText>Private projects</FormHelperText>)}
@@ -950,30 +1098,38 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                       isSubmitting={this.state.isSubmitting}
                       disabled={this.state.whitelabel === undefined
                         && this.state.privateProjects === undefined
-                        && this.state.extraProjects === undefined}
-                      color='primary'
+                        && this.state.extraProjects === undefined
+                        && this.state.extraTeammates === undefined}
+                      color="primary"
                       onClick={() => {
                         if (this.state.whitelabel === undefined
                           && this.state.privateProjects === undefined
-                          && this.state.extraProjects === undefined) return;
+                          && this.state.extraProjects === undefined
+                          && this.state.extraTeammates === undefined) return;
 
                         this.setState({ isSubmitting: true });
                         ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateSuperAdmin({
                           accountUpdateSuperAdmin: {
                             addons: {
                               ...(this.state.whitelabel === undefined ? {} : {
-                                [AddonWhitelabel]: this.state.whitelabel ? 'true' : ''
+                                [AddonWhitelabel]: this.state.whitelabel ? 'true' : '',
                               }),
                               ...(this.state.privateProjects === undefined ? {} : {
-                                [AddonPrivateProjects]: this.state.privateProjects ? 'true' : ''
+                                [AddonPrivateProjects]: this.state.privateProjects ? 'true' : '',
                               }),
                               ...(this.state.extraProjects === undefined ? {} : {
-                                [AddonExtraProject]: `${this.state.extraProjects}`
+                                [AddonExtraProject]: `${this.state.extraProjects}`,
+                              }),
+                              ...(this.state.extraTeammates === undefined ? {} : {
+                                [AddonExtraTeammate]: `${this.state.extraTeammates}`,
                               }),
                             },
                           },
                         }).then(() => d.accountBillingAdmin({})))
-                          .then(() => this.setState({ isSubmitting: false, showAddonsChange: undefined }))
+                          .then(() => this.setState({
+                            isSubmitting: false,
+                            showAddonsChange: undefined,
+                          }))
                           .catch(er => this.setState({ isSubmitting: false }));
                       }}
                     >Change</SubmitButton>
@@ -992,21 +1148,25 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 <Dialog
                   open={!!this.state.showCreditAdjustment}
                   onClose={() => this.setState({ showCreditAdjustment: undefined })}
-                  scroll='body'
-                  maxWidth='md'
+                  scroll="body"
+                  maxWidth="md"
                 >
                   <DialogTitle>Credit adjustment</DialogTitle>
                   <DialogContent className={this.props.classes.addonsContainer}>
+                    Add the following amount to the account.
+                    <br />
+                    May be negative to add a charge on the account.
+                    <br />
                     <TextField
-                      label='Amount'
-                      variant='outlined'
-                      type='number'
+                      label="Amount"
+                      variant="outlined"
+                      type="number"
                       value={this.state.creditAmount || 0}
                       onChange={e => this.setState({ creditAmount: parseInt(e.target.value) })}
                     />
                     <TextField
-                      label='Description'
-                      variant='outlined'
+                      label="Description"
+                      variant="outlined"
                       value={this.state.creditDescription || ''}
                       onChange={e => this.setState({ creditDescription: e.target.value })}
                     />
@@ -1019,7 +1179,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                       disabled={!this.props.account
                         || !this.state.creditAmount
                         || !this.state.creditDescription}
-                      color='primary'
+                      color="primary"
                       onClick={() => {
                         if (!this.props.account
                           || !this.state.creditAmount
@@ -1033,7 +1193,12 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                             description: this.state.creditDescription!,
                           },
                         }).then(() => d.accountBillingAdmin({})))
-                          .then(() => this.setState({ isSubmitting: false, showCreditAdjustment: undefined, creditAmount: undefined, creditDescription: undefined }))
+                          .then(() => this.setState({
+                            isSubmitting: false,
+                            showCreditAdjustment: undefined,
+                            creditAmount: undefined,
+                            creditDescription: undefined,
+                          }))
                           .catch(er => this.setState({ isSubmitting: false }));
                       }}
                     >Change</SubmitButton>
@@ -1057,7 +1222,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                       category: 'billing',
                       action: 'click-plan-switch-submit',
                       label: basePlanId,
-                    })
+                    }),
                   );
                 });
 
@@ -1078,7 +1243,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     );
 
     return (
-      <ProjectSettingsBase title='Billing'>
+      <ProjectSettingsBase title="Billing">
         {plan}
         {payment}
         {invoices}
@@ -1087,7 +1252,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
   }
 
   onInvoiceClick(invoiceId: string) {
-    !windowIso.isSsr && windowIso.open(`${windowIso.location.origin}/invoice/${invoiceId}`, '_blank')
+    !windowIso.isSsr && windowIso.open(`${windowIso.location.origin}/invoice/${invoiceId}`, '_blank');
   }
 
   async onPaymentSubmit(elements: StripeElements, stripe: Stripe): Promise<boolean> {
@@ -1098,7 +1263,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           action: this.props.accountBilling?.payment ? 'click-payment-update-submit' : 'click-payment-add-submit',
           label: this.props.accountBilling?.plan.basePlanId,
           value: this.props.accountBilling?.plan.pricing?.basePrice,
-        })
+        }),
       );
     });
 
@@ -1185,7 +1350,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       this.setState({
         paymentActionMessage: 'Payment gateway unavailable',
         paymentActionMessageSeverity: 'error',
-      })
+      });
       return;
     }
 
@@ -1200,7 +1365,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       this.setState({
         paymentActionMessage: 'Failed to load payment gateway',
         paymentActionMessageSeverity: 'error',
-      })
+      });
       return;
     }
 
@@ -1209,7 +1374,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       this.setState({
         paymentActionMessage: result.error?.message || 'Unknown payment failure',
         paymentActionMessageSeverity: 'error',
-      })
+      });
       return;
     }
 
@@ -1218,7 +1383,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       this.setState({
         paymentActionMessage: 'No action necessary',
         paymentActionMessageSeverity: 'success',
-      })
+      });
       return;
     }
 
@@ -1227,7 +1392,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       this.setState({
         paymentActionMessage: 'Payment already canceled',
         paymentActionMessageSeverity: 'error',
-      })
+      });
       return;
     }
 
@@ -1237,7 +1402,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       this.setState({
         paymentActionMessage: `Unexpected payment status: ${result.paymentIntent.status}`,
         paymentActionMessageSeverity: 'error',
-      })
+      });
       return;
     }
 
@@ -1249,7 +1414,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       this.setState({
         paymentActionMessage: 'Action completed',
         paymentActionMessageSeverity: 'info',
-      })
+      });
     };
     !windowIso.isSsr && windowIso.addEventListener('message', this.paymentActionMessageListener);
 
@@ -1260,7 +1425,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
 export const BillingPaymentActionRedirect = () => {
   !windowIso.isSsr && windowIso.top?.postMessage(BillingPaymentActionRedirectPath, windowIso.location.origin);
   return (
-    <Message message='Please wait...' severity='info' />
+    <Message message="Please wait..." severity="info" />
   );
 };
 

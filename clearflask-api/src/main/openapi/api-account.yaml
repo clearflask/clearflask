@@ -271,6 +271,9 @@ components:
           type: boolean
         resume:
           type: boolean
+        addExtraTeammates:
+          type: integer
+          format: int64
         # Deprecated, use the /admin/account/update/attrs endpoint instead
         attrs:
           type: object
@@ -330,6 +333,9 @@ components:
           type: integer
           format: int64
         teammateCount:
+          type: integer
+          format: int64
+        teammateMax:
           type: integer
           format: int64
         availablePlans:
