@@ -220,5 +220,6 @@
   "blog": "Blog",
   "cookie-consent": "Consenso ai cookie",
   "free-forever": "Gratis per sempre",
-  "you-have-unsaved-changes": "Hai modifiche non salvate"
+  "you-have-unsaved-changes": "Hai modifiche non salvate",
+  "empty": "Vuoto"
 }
