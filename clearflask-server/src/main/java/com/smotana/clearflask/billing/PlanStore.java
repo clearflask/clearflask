@@ -36,6 +36,10 @@ public interface PlanStore {
     /**
      * If changed, also update PricingPage.tsx
      */
+    ImmutableSet<String> LIFETIME_TEAMMATES_FOR_PLANS = ImmutableSet.of("lifetime2-lifetime");
+    /**
+     * If changed, also update PricingPage.tsx
+     */
     ImmutableSet<String> ALLOW_USER_CHOOSE_PRICING_FOR_PLANS = ImmutableSet.of("sponsor-monthly");
     /**
      * If changed, also update PricingSlider.tsx
@@ -100,7 +104,7 @@ public interface PlanStore {
 
     void verifyConfigChangeMeetsRestrictions(boolean isSuperAdmin, Optional<ConfigAdmin> configAdminPreviousOpt, ConfigAdmin config) throws ApiException;
 
-    void verifyTeammateInviteMeetsPlanRestrictions(String planId, String projectId, boolean addOne) throws ApiException;
+    void verifyTeammateInviteMeetsPlanRestrictions(String planId, String accountId, String projectId, boolean addOne) throws ApiException;
 
     void verifyProjectCountMeetsPlanRestrictions(String planId, String accountId, boolean addOne) throws ApiException;
 

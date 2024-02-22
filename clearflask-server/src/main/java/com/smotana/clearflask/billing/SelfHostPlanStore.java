@@ -7,12 +7,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
-import com.smotana.clearflask.api.model.AllPlansGetResponse;
-import com.smotana.clearflask.api.model.ConfigAdmin;
-import com.smotana.clearflask.api.model.FeaturesTable;
-import com.smotana.clearflask.api.model.Plan;
-import com.smotana.clearflask.api.model.PlanPricing;
-import com.smotana.clearflask.api.model.PlansGetResponse;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.web.ApiException;
 
 import java.util.Optional;
@@ -108,7 +103,7 @@ public class SelfHostPlanStore implements PlanStore {
     }
 
     @Override
-    public void verifyTeammateInviteMeetsPlanRestrictions(String planId, String projectId, boolean addOne) throws ApiException {
+    public void verifyTeammateInviteMeetsPlanRestrictions(String planId, String accountId, String projectId, boolean addOne) throws ApiException {
         // No-op
     }
 

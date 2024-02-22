@@ -263,7 +263,7 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
             {this.props.plan.basePlanId === 'lifetime-lifetime' && (
               <Typography component='div' variant='subtitle2' color='textSecondary'>{`Unlimited teammates`}</Typography>
             )}
-            <Typography component='div' variant='subtitle2' color='textSecondary'>{`One-time purchase`}</Typography>
+            {/*<Typography component='div' variant='subtitle2' color='textSecondary'>{`One-time purchase`}</Typography>*/}
           </>
         );
       }

@@ -6,6 +6,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.primitives.Longs;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.inject.AbstractModule;
@@ -20,13 +21,10 @@ import com.smotana.clearflask.api.AccountSuperAdminApi;
 import com.smotana.clearflask.api.PlanAdminApi;
 import com.smotana.clearflask.api.PlanSuperAdminApi;
 import com.smotana.clearflask.api.model.*;
-import com.smotana.clearflask.billing.Billing;
+import com.smotana.clearflask.billing.*;
 import com.smotana.clearflask.billing.Billing.Gateway;
-import com.smotana.clearflask.billing.CouponStore;
 import com.smotana.clearflask.billing.CouponStore.CouponModel;
-import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.billing.PlanStore.PlanWithAddons;
-import com.smotana.clearflask.billing.RequiresUpgradeException;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.ClearFlaskSso;
@@ -556,6 +554,23 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                     subscription,
                     alsoResume ? "user requested update payment and resume" : "user requested resume");
         }
+        if (accountUpdateAdmin.getAddExtraTeammates() != null) {
+            if (accountUpdateAdmin.getAddExtraTeammates() > 10) {
+                throw new ApiException(Response.Status.BAD_REQUEST, "Cannot add more than 10 teammates at one time");
+            }
+            if (accountUpdateAdmin.getAddExtraTeammates() <= 0) {
+                throw new ApiException(Response.Status.BAD_REQUEST, "Invalid number of teammates to add");
+            }
+            long adminAdditionalPrice = planStore.getPlan(account.getPlanid(), Optional.of(account.getAccountId()))
+                    .flatMap(p -> Optional.ofNullable(p.getPricing()))
+                    .flatMap(p -> Optional.ofNullable(p.getAdmins()))
+                    .map(PlanPricingAdmins::getAdditionalPrice)
+                    .orElseThrow(() -> new ApiException(Response.Status.BAD_REQUEST, "Cannot add teammates to this plan"));
+            billing.creditAdjustment(account.getAccountId(), adminAdditionalPrice * accountUpdateAdmin.getAddExtraTeammates(), "Adding teammates: " + accountUpdateAdmin.getAddExtraTeammates());
+            accountStore.updateAddons(account.getAccountId(), ImmutableMap.of(
+                            KillBillPlanStore.ADDON_EXTRA_TEAMMATE, accountUpdateAdmin.getAddExtraTeammates().toString()),
+                    false);
+        }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getBasePlanId())) {
             String newPlanid = accountUpdateAdmin.getBasePlanId();
             Optional<Plan> newPlanOpt = (config.enableNonPublicPlans()
@@ -886,6 +901,18 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             teammateCount = accountStore.getTeammateCountForAccount(account.getAccountId());
         }
 
+        Long teammateMax = null;
+        if (PlanStore.LIFETIME_TEAMMATES_FOR_PLANS.contains(plan.getBasePlanId())) {
+            teammateMax = Optional.ofNullable(account.getAddons())
+                    .flatMap(addons -> Optional.ofNullable(addons.get(KillBillPlanStore.ADDON_EXTRA_TEAMMATE)))
+                    .map(Longs::tryParse)
+                    .orElse(0L)
+                    + Optional.ofNullable(plan.getPricing())
+                    .flatMap(p -> Optional.ofNullable(p.getAdmins()))
+                    .map(PlanPricingAdmins::getAmountIncluded)
+                    .orElse(0L);
+        }
+
         Instant billingPeriodEnd = null;
         if (subscription.getPhaseType() == PhaseType.EVERGREEN
                 && subscription.getChargedThroughDate() != null) {
@@ -924,6 +951,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 (trackedUsers == null || trackedUsers <= 0) ? null : trackedUsers,
                 postCount,
                 teammateCount,
+                teammateMax,
                 availablePlans.asList(),
                 invoices,
                 accountReceivable,
