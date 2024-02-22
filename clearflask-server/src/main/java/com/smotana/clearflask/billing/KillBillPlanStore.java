@@ -55,6 +55,10 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
      */
     private static final long STANDARD_MAX_TEAMMATES = 8L;
     /**
+     * If changed, also change in UpgradeWrapper.tsx
+     */
+    private static final long LIFETIME_MAX_TEAMMATES = 1L;
+    /**
      * If changed, also change in BillingPage.tsx
      */
     private static final String ADDON_WHITELABEL = "whitelabel";
@@ -397,7 +401,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                         .orElse(0L);
             } else if (LIFETIME_TEAMMATES_FOR_PLANS.contains(planName)) {
                 adminsOpt = Optional.of(new PlanPricingAdmins(
-                        1L,
+                        LIFETIME_MAX_TEAMMATES,
                         75L));
             }
             PlanPricing planPricing = (basePrice == 0L && unitPrice == 0L) ? null
@@ -478,7 +482,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 planOptions.add(availablePlans.get("standard3-monthly"));
                 break;
             case "standard3-monthly":
-                planOptions.add(availablePlans.get("lifetime-lifetime"));
+                planOptions.add(availablePlans.get("lifetime2-lifetime"));
                 break;
             default:
                 break;
@@ -647,8 +651,9 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 .map(Optional::get)
                 .forEach(project -> {
                     verifyConfigMeetsPlanRestrictions(planId, accountId, project.getVersionedConfigAdmin().getConfig());
-                    verifyTeammateInviteMeetsPlanRestrictions(planId, accountId, project.getProjectId(), false);
                 });
+
+        verifyTeammateInviteMeetsPlanRestrictions(planId, accountId, false);
 
         verifyAccountMeetsLimits(planId, accountId);
 
@@ -856,7 +861,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
      * If changed, also change in UpgradeWrapper.tsx
      */
     @Override
-    public void verifyTeammateInviteMeetsPlanRestrictions(String planId, String accountId, String projectId, boolean addOne) throws ApiException {
+    public void verifyTeammateInviteMeetsPlanRestrictions(String planId, String accountId, boolean addOne) throws ApiException {
         Optional<Long> teammateLimitOpt = Optional.empty();
         String requiredPlanId = DEFAULT_UPGRADE_REQUIRED_PLAN;
         switch (getBasePlanId(planId)) {
@@ -893,7 +898,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 teammateLimitOpt = Optional.of(3L);
                 break;
             case "lifetime2-lifetime":
-                teammateLimitOpt = Optional.of(3L);
+                teammateLimitOpt = Optional.of(LIFETIME_MAX_TEAMMATES);
                 requiredPlanId = ""; // Not upgradeable
                 break;
             case "starter3-monthly":
@@ -920,27 +925,44 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
 
         if (teammateLimitOpt.isPresent()) {
             if (teammateLimitOpt.get() <= 1L) {
-                if (addOne || getCurrentTeammateCount(projectId) > 1L) {
+                if (addOne || getCurrentTeammateCount(accountId) > 1L) {
                     throw new RequiresUpgradeException(requiredPlanId, "Your plan has reached the teammate limit");
                 }
             } else {
-                if ((getCurrentTeammateCount(projectId) + (addOne ? 1 : 0)) > teammateLimitOpt.get()) {
+                if ((getCurrentTeammateCount(accountId) + (addOne ? 1 : 0)) > teammateLimitOpt.get()) {
                     throw new RequiresUpgradeException(requiredPlanId, "Your plan has reached the teammate limit");
                 }
             }
         }
     }
 
-    private long getCurrentTeammateCount(String projectId) {
-        long adminCount = projectStore.getProject(projectId, true).map(ProjectStore.Project::getModel)
-                .map(ProjectStore.ProjectModel::getAdminsAccountIds)
-                .map(AbstractCollection::size)
-                .orElse(0);
-        long pendingInvitationCount = projectStore.getInvitations(projectId)
-                .stream()
+    private long getCurrentTeammateCount(String accountId) {
+        // Find all projects owned by this account
+        ImmutableSet<String> projectIds = accountStore.getAccount(accountId, true)
+                .orElseThrow()
+                .getProjectIds();
+
+        // Find all admins on those projects
+        Set<String> adminAccountIds = Sets.newHashSet();
+        projectIds.stream()
+                .map(projectId -> projectStore.getProject(projectId, true).orElseThrow())
+                .flatMap(project -> project.getModel().getAdminsAccountIds().stream())
+                .forEach(adminAccountIds::add);
+        // Include the account itself
+        adminAccountIds.add(accountId);
+        // Count all unique (by id) admins
+        long adminCount = adminAccountIds.size();
+
+        // Find all unique (by email) invitations that are not yet accepted
+        long pendingInvitationCount = projectIds.stream()
+                .flatMap(projectId -> projectStore.getInvitations(projectId).stream())
                 .filter(Predicate.not(ProjectStore.InvitationModel::isAccepted))
+                .map(ProjectStore.InvitationModel::getInvitedEmail)
+                .distinct()
                 .count();
-        return pendingInvitationCount + adminCount;
+
+        // Sum up admins and pending invitations
+        return adminCount + pendingInvitationCount;
     }
 
     /**

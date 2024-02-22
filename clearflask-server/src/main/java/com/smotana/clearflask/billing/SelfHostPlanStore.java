@@ -103,7 +103,7 @@ public class SelfHostPlanStore implements PlanStore {
     }
 
     @Override
-    public void verifyTeammateInviteMeetsPlanRestrictions(String planId, String accountId, String projectId, boolean addOne) throws ApiException {
+    public void verifyTeammateInviteMeetsPlanRestrictions(String planId, String accountId, boolean addOne) throws ApiException {
         // No-op
     }
 

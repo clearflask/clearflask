@@ -561,14 +561,19 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             if (accountUpdateAdmin.getAddExtraTeammates() <= 0) {
                 throw new ApiException(Response.Status.BAD_REQUEST, "Invalid number of teammates to add");
             }
+            long extraTeammates = Optional.ofNullable(account.getAddons())
+                    .flatMap(addons -> Optional.ofNullable(addons.get(KillBillPlanStore.ADDON_EXTRA_TEAMMATE)))
+                    .map(Longs::tryParse)
+                    .orElse(0L);
             long adminAdditionalPrice = planStore.getPlan(account.getPlanid(), Optional.of(account.getAccountId()))
                     .flatMap(p -> Optional.ofNullable(p.getPricing()))
                     .flatMap(p -> Optional.ofNullable(p.getAdmins()))
                     .map(PlanPricingAdmins::getAdditionalPrice)
                     .orElseThrow(() -> new ApiException(Response.Status.BAD_REQUEST, "Cannot add teammates to this plan"));
-            billing.creditAdjustment(account.getAccountId(), adminAdditionalPrice * accountUpdateAdmin.getAddExtraTeammates(), "Adding teammates: " + accountUpdateAdmin.getAddExtraTeammates());
+            billing.creditAdjustment(account.getAccountId(), -adminAdditionalPrice * accountUpdateAdmin.getAddExtraTeammates(), "Additional " + accountUpdateAdmin.getAddExtraTeammates() + " teammates");
             accountStore.updateAddons(account.getAccountId(), ImmutableMap.of(
-                            KillBillPlanStore.ADDON_EXTRA_TEAMMATE, accountUpdateAdmin.getAddExtraTeammates().toString()),
+                            KillBillPlanStore.ADDON_EXTRA_TEAMMATE,
+                            Long.toString(extraTeammates + accountUpdateAdmin.getAddExtraTeammates())),
                     false);
         }
         if (!Strings.isNullOrEmpty(accountUpdateAdmin.getBasePlanId())) {
@@ -897,7 +902,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         }
 
         Long teammateCount = null;
-        if (PlanStore.RECORD_TEAMMATES_FOR_PLANS.contains(plan.getBasePlanId())) {
+        if (PlanStore.RECORD_TEAMMATES_FOR_PLANS.contains(plan.getBasePlanId())
+                || PlanStore.LIFETIME_TEAMMATES_FOR_PLANS.contains(plan.getBasePlanId())) {
             teammateCount = accountStore.getTeammateCountForAccount(account.getAccountId());
         }
 

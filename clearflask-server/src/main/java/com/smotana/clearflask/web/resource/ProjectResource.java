@@ -334,7 +334,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 .flatMap(accountId -> accountStore.getAccount(accountId, true))
                 .get();
         try {
-            planStore.verifyTeammateInviteMeetsPlanRestrictions(projectAccount.getPlanid(), projectAccount.getAccountId(), projectId, true);
+            planStore.verifyTeammateInviteMeetsPlanRestrictions(projectAccount.getPlanid(), projectAccount.getAccountId(), true);
         } catch (RequiresUpgradeException ex) {
             if (!billing.tryAutoUpgradePlan(projectAccount, ex.getRequiredPlanId())) {
                 throw ex;

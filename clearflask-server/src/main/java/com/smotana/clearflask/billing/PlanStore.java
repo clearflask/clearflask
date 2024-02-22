@@ -104,7 +104,7 @@ public interface PlanStore {
 
     void verifyConfigChangeMeetsRestrictions(boolean isSuperAdmin, Optional<ConfigAdmin> configAdminPreviousOpt, ConfigAdmin config) throws ApiException;
 
-    void verifyTeammateInviteMeetsPlanRestrictions(String planId, String accountId, String projectId, boolean addOne) throws ApiException;
+    void verifyTeammateInviteMeetsPlanRestrictions(String planId, String accountId, boolean addOne) throws ApiException;
 
     void verifyProjectCountMeetsPlanRestrictions(String planId, String accountId, boolean addOne) throws ApiException;
 
