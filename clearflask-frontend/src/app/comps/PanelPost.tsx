@@ -21,6 +21,7 @@ import Loading from '../utils/Loading';
 import LoadMoreButton from './LoadMoreButton';
 import Panel, { PanelTitle } from './Panel';
 import Post, { MaxContentWidth, PostClassification, PostDescription, PostTitle } from './Post';
+import { WithTranslation, withTranslation } from 'react-i18next';
 
 export interface PanelPostNavigator {
   hasPrevious(): boolean;
@@ -115,7 +116,7 @@ interface ConnectProps {
 interface State {
   expandedPostId?: string;
 }
-class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof styles, true>, State> implements PanelPostNavigator {
+class PanelPost extends Component<Props & ConnectProps & WithTranslation<'app'> & WithStyles<typeof styles, true>, State> implements PanelPostNavigator {
   state: State = {};
   notifiedHasAnyCount?: number;
 
@@ -297,7 +298,7 @@ class PanelPost extends Component<Props & ConnectProps & WithStyles<typeof style
                 )}
               >
                 <Typography variant='overline' style={{
-                }}>Empty</Typography>
+                }}>{this.props.t('empty')}</Typography>
               </div>
             )}
           </>
@@ -626,4 +627,4 @@ export default keyMapper(
         return connectProps;
       });
     return (state, ownProps) => selectConnectProps(state, ownProps);
-  })(withStyles(styles, { withTheme: true })(PanelPost)));
+  })(withStyles(styles, { withTheme: true })(withTranslation('app', { withRef: true })(PanelPost))));
