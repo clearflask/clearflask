@@ -18,6 +18,7 @@
   "no": "Ei",
   "user-id": "Käyttäjän Tunnus",
   "sign-out-of-your-account": "Kirjaudu ulos tilistäsi",
+  "sign-out": "Kirjaudu ulos",
   "please-add-an-email-before": "Ole hyvä ja lisää sähköposti ennen kuin kirjaudut ulos tai poista tilisi sijaan.",
   "delete-account": "Poista tili",
   "delete": "Poista",
@@ -98,5 +99,6 @@
   "we-use-cookies-to": "Käytämme evästeitä sisällön personointiin ja käyttäjien parempaan ymmärtämiseen.",
   "accept-cookie": "Hyväksy",
   "reject-cookie": "Hylkää",
-  "no-voters": "Ei äänestäjiä"
+  "no-voters": "Ei äänestäjiä",
+  "discard": "Hylkää"
 }
