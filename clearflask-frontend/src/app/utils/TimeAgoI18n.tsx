@@ -4,8 +4,6 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import TimeAgo from 'react-timeago';
 
-const delay = 3000;
-
 export default function TimeAgoI18n(props: Omit<React.ComponentProps<typeof TimeAgo>, 'formatter'>) {
   const {...timeAgoProps} = props;
   const { t } = useTranslation('app');
