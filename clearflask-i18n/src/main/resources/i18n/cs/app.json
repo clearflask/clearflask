@@ -18,6 +18,7 @@
   "no": "Ne",
   "user-id": "ID uživatele",
   "sign-out-of-your-account": "Odhlásit se z Vašeho účtu",
+  "sign-out": "Odhlásit se",
   "please-add-an-email-before": "Před odhlášením nebo smazáním účtu prosím přidejte e-mail.",
   "delete-account": "Odstranit účet",
   "delete": "Vymazat",
@@ -98,5 +99,6 @@
   "we-use-cookies-to": "Soubory cookies používáme k personalizaci obsahu a k lepšímu pochopení našich uživatelů.",
   "accept-cookie": "Přijmout",
   "reject-cookie": "Odmítnout",
-  "no-voters": "Žádní voliči"
+  "no-voters": "Žádní voliči",
+  "discard": "Zahodit"
 }
