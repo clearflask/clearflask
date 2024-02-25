@@ -18,6 +18,7 @@
   "no": "Nein",
   "user-id": "Nutzer ID",
   "sign-out-of-your-account": "Account abmelden",
+  "sign-out": "Abmelden",
   "please-add-an-email-before": "Bitte fügen Sie eine E-Mail hinzu, bevor Sie sich abmelden oder löschen Sie ihren Account.",
   "delete-account": "Account Löschen",
   "delete": "Löschen",
@@ -106,5 +107,6 @@
   "empty": "Leer",
   "details-optional": "Details (optional)",
   "status": "Status",
-  "title": "Titel"
+  "title": "Titel",
+  "discard": "Verwerfen"
 }
