@@ -18,6 +18,7 @@
   "no": "Nej",
   "user-id": "Bruger ID",
   "sign-out-of-your-account": "Log ud af din konto",
+  "sign-out": "Log ud",
   "please-add-an-email-before": "Tilføj venligst en e-mail, før du logger ud eller sletter din konto i stedet.",
   "delete-account": "Slet konto",
   "delete": "Slet",
@@ -106,5 +107,6 @@
   "empty": "Tom",
   "details-optional": "Detaljer (valgfri)",
   "status": "Status",
-  "title": "Titel"
+  "title": "Titel",
+  "discard": "Kassér"
 }
