@@ -20,7 +20,6 @@ import Dropzone from 'react-dropzone';
 import { withTranslation, WithTranslation } from 'react-i18next';
 import { connect, Provider } from 'react-redux';
 import { Link } from 'react-router-dom';
-import TimeAgo from 'react-timeago';
 import TruncateEllipsis from 'react-truncate-markup';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
@@ -46,6 +45,7 @@ import { importFailed, importSuccess } from '../../Main';
 import { animateWrapper } from '../../site/landing/animateUtil';
 import Delimited from '../utils/Delimited';
 import Loading from '../utils/Loading';
+import TimeAgoI18n from '../utils/TimeAgoI18n';
 import CommentList from './CommentList';
 import CommentReply from './CommentReply';
 import ConnectedPost, { ConnectedPostsContainer, ConnectType, LinkDirection, OutlinePostContent } from './ConnectedPost';
@@ -689,7 +689,7 @@ class Post extends Component<Props & ConnectProps & WithTranslation<'app'> & Wit
 
     return (
       <Typography key='createdDatetime' className={this.props.classes.timeAgo} variant='caption'>
-        <TimeAgo date={this.props.idea.created} />
+        <TimeAgoI18n date={this.props.idea.created} />
       </Typography>
     );
   }
@@ -1701,7 +1701,7 @@ class Post extends Component<Props & ConnectProps & WithTranslation<'app'> & Wit
           )}
           {(!!edited && !isEditing) && (
             <Typography className={this.props.classes.timeAgo} variant='caption'>
-              <TimeAgo date={edited} />
+              <TimeAgoI18n date={edited} />
             </Typography>
           )}
         </div>

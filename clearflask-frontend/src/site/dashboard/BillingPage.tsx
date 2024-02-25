@@ -35,13 +35,13 @@ import ReactGA4 from 'react-ga4';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
-import TimeAgo from 'react-timeago';
 import PoweredByStripe from '../../../public/img/dashboard/PoweredByStripe.svg';
 import * as Admin from '../../api/admin';
 import { Status } from '../../api/server';
 import ServerAdmin, { ReduxStateAdmin } from '../../api/serverAdmin';
 import LoadingPage from '../../app/LoadingPage';
 import Loader from '../../app/utils/Loader';
+import TimeAgoI18n from '../../app/utils/TimeAgoI18n';
 import { tourSetGuideState } from '../../common/ClearFlaskTourProvider';
 import { StarterMaxPosts, TeammatePlanId } from '../../common/config/settings/UpgradeWrapper';
 import CreditCard from '../../common/CreditCard';
@@ -295,7 +295,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           if (this.props.accountBilling?.billingPeriodEnd) {
             paymentDesc = (
               <>
-                A payment will be automatically billed at the end of the trial period in&nbsp;<TimeAgo
+                A payment will be automatically billed at the end of the trial period in&nbsp;<TimeAgoI18n
                 date={this.props.accountBilling?.billingPeriodEnd} />.
               </>
             );
@@ -322,7 +322,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
             planDesc = (
               <>
                 You have full access to your {this.props.accountBilling.plan.title} plan until your
-                trial expires in&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />. Add
+                trial expires in&nbsp;<TimeAgoI18n date={this.props.accountBilling?.billingPeriodEnd} />. Add
                 a payment method to continue using our service beyond the trial period.
               </>
             );
@@ -360,7 +360,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         if (this.props.accountBilling?.billingPeriodEnd) {
           planTitle = (
             <>
-              Your plan is active until&nbsp;<TimeAgo date={this.props.accountBilling?.billingPeriodEnd} />
+              Your plan is active until&nbsp;<TimeAgoI18n date={this.props.accountBilling?.billingPeriodEnd} />
             </>
           );
         } else {

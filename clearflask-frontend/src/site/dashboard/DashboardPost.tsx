@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import React, { Component } from 'react';
+import { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
@@ -84,7 +84,7 @@ class DashboardPost extends Component<Props & ConnectProps & WithStyles<typeof s
   //           />
   //         ))}
   //         {this.props.post && this.renderPropertyBase('Created', (
-  //           <TimeAgo date={this.props.post.created} />
+  //           <TimeAgoI18n date={this.props.post.created} />
   //         ))}
 
   //         {/* <div className={this.props.classes.space} /> */}

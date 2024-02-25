@@ -1,27 +1,27 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, FormHelperText, Grid, IconButton, InputAdornment, Switch, TextField, Tooltip, Typography } from '@material-ui/core';
-import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
+import { Theme, WithStyles, createStyles, withStyles } from '@material-ui/core/styles';
 import EditIcon from '@material-ui/icons/Edit';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
 import { Alert } from '@material-ui/lab';
 import classNames from 'classnames';
-import { withSnackbar, WithSnackbarProps } from 'notistack';
+import { WithSnackbarProps, withSnackbar } from 'notistack';
 import React, { Component } from 'react';
-import { withTranslation, WithTranslation } from 'react-i18next';
+import { WithTranslation, withTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
-import TimeAgo from 'react-timeago';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { ReduxState, Server, Status } from '../../api/server';
 import AvatarDisplay from '../../common/AvatarDisplay';
+import { DisplayUserName } from '../../common/UserDisplay';
 import CreditView from '../../common/config/CreditView';
 import WebNotification, { Status as WebNotificationStatus } from '../../common/notification/webNotification';
-import { DisplayUserName } from '../../common/UserDisplay';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
 import { truncateWithElipsis } from '../../common/util/stringUtil';
 import LoadingPage from '../LoadingPage';
+import TimeAgoI18n from '../utils/TimeAgoI18n';
 import { PanelTitle } from './Panel';
 
 const styles = (theme: Theme) => createStyles({
@@ -158,7 +158,7 @@ class UserEdit extends Component<Props & ConnectProps & WithTranslation<'app'> &
           <Grid container alignItems='center' className={this.props.classes.item}>
             <Grid item xs={12} sm={6}><Typography>{this.props.t('registered')}</Typography></Grid>
             <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
-              <TimeAgo date={this.props.user?.created || 0} />
+              <TimeAgoI18n date={this.props.user?.created || 0} />
             </Grid>
           </Grid>
         </div>
@@ -501,7 +501,7 @@ class UserEdit extends Component<Props & ConnectProps & WithTranslation<'app'> &
                         }));
                       }
                     }}
-                  >Sign out</Button>
+                  >{this.props.t('sign-out')}</Button>
                 </Grid>
               </Grid>
             )}
@@ -510,7 +510,7 @@ class UserEdit extends Component<Props & ConnectProps & WithTranslation<'app'> &
               <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
                 <Button
                   onClick={() => this.setState({ deleteDialogOpen: true })}
-                >Delete</Button>
+                >{this.props.t('delete')}</Button>
                 <Dialog
                   open={!!this.state.deleteDialogOpen}
                   onClose={() => this.setState({ deleteDialogOpen: false })}

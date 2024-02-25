@@ -1,9 +1,10 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import { Button, Collapse } from '@material-ui/core';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { Theme, WithStyles, createStyles, withStyles } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { Component } from 'react';
+import { WithTranslation, withTranslation } from 'react-i18next';
 import { Server } from '../../api/server';
 import RichEditor from '../../common/RichEditor';
 import RichEditorImageUpload from '../../common/RichEditorImageUpload';
@@ -48,7 +49,7 @@ interface State {
   newCommentInput?: string;
 }
 
-class Post extends Component<Props & WithStyles<typeof styles, true>, State> {
+class Post extends Component<Props & WithTranslation<'app'> & WithStyles<typeof styles, true>, State> {
   state: State = {};
   readonly richEditorImageUploadRef = React.createRef<RichEditorImageUpload>();
   readonly inputRef: React.RefObject<HTMLInputElement> = React.createRef();
@@ -125,7 +126,7 @@ class Post extends Component<Props & WithStyles<typeof styles, true>, State> {
                 });
               }}
             >
-              Post
+              {this.props.t('submit')}
             </Button>
           </Collapse>
           {!!this.props.focusOnIn && (
@@ -137,4 +138,4 @@ class Post extends Component<Props & WithStyles<typeof styles, true>, State> {
   }
 }
 
-export default withStyles(styles, { withTheme: true })(Post);
+export default withStyles(styles, { withTheme: true })(withTranslation('app', { withRef: true })(Post));

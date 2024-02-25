@@ -1,17 +1,17 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import { Button, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import React, { Component } from 'react';
+import { Theme, WithStyles, createStyles, withStyles } from '@material-ui/core/styles';
+import { Component } from 'react';
 import { connect } from 'react-redux';
 import { Link } from 'react-router-dom';
-import TimeAgo from 'react-timeago';
 import * as Client from '../../api/client';
-import { getSearchKey, ReduxState, Server } from '../../api/server';
+import { ReduxState, Server, getSearchKey } from '../../api/server';
+import { Orientation, contentScrollApplyStyles } from '../../common/ContentScroll';
 import CreditView from '../../common/config/CreditView';
-import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import ErrorMsg from '../ErrorMsg';
+import TimeAgoI18n from '../utils/TimeAgoI18n';
 import { PanelTitle } from './Panel';
 
 const styles = (theme: Theme) => createStyles({
@@ -78,7 +78,7 @@ class TransactionList extends Component<Props & ConnectProps & WithStyles<typeof
                 return (
                   <TableRow key={transaction.transactionId}>
                     <TableCell key='date'>
-                      <Typography><TimeAgo date={transaction.created} /></Typography>
+                      <Typography><TimeAgoI18n date={transaction.created} /></Typography>
                     </TableCell>
                     <TableCell key='type'>
                       <Typography>{transaction.transactionType}</Typography>

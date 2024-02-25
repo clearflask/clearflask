@@ -10,8 +10,8 @@ import EditIcon from '@material-ui/icons/Edit';
 import MergeIcon from '@material-ui/icons/MergeType';
 import classNames from 'classnames';
 import React, { Component } from 'react';
+import { withTranslation, WithTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import TimeAgo from 'react-timeago';
 import * as Client from '../../api/client';
 import { cssBlurry, Server } from '../../api/server';
 import HelpPopper from '../../common/HelpPopper';
@@ -21,6 +21,7 @@ import UserWithAvatarDisplay from '../../common/UserWithAvatarDisplay';
 import { notEmpty } from '../../common/util/arrayUtil';
 import { preserveEmbed } from '../../common/util/historyUtil';
 import Delimited from '../utils/Delimited';
+import TimeAgoI18n from '../utils/TimeAgoI18n';
 import CommentEdit, { CommentDelete } from './CommentEdit';
 import { OutlinePostContent } from './ConnectedPost';
 import MyButton from './MyButton';
@@ -130,7 +131,7 @@ interface State {
   isSubmittingUnmerge?: boolean;
 }
 
-class Comment extends Component<Props & WithStyles<typeof styles, true>, State> {
+class Comment extends Component<Props & WithTranslation<'app'> & WithStyles<typeof styles, true>, State> {
   state: State = {};
 
   render() {
@@ -191,7 +192,7 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
     if (!this.props.comment) return null;
     if (this.props.comment.authorUserId === undefined) {
       return (
-        <Typography variant='overline' className={this.props.classes.commentDeleted}>Comment deleted</Typography>
+        <Typography variant='overline' className={this.props.classes.commentDeleted}>{this.props.t('comment-deleted')}</Typography>
       );
     } else {
       var content;
@@ -333,7 +334,7 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
         disabled={!!this.props.replyOpen}
         onClick={e => this.props.onReplyClicked && this.props.onReplyClicked()}
       >
-        Reply
+        {this.props.t('reply')}
       </MyButton>
     );
   }
@@ -353,7 +354,7 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
           Icon={DeleteIcon}
           onClick={e => this.setState({ adminDeleteExpanded: !this.state.adminDeleteExpanded })}
         >
-          Delete
+          {this.props.t('delete')}
         </MyButton>
         {this.state.adminDeleteExpanded !== undefined && (
           <CommentDelete
@@ -387,7 +388,7 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
           disabled={this.state.editing}
           onClick={e => this.setState({ editing: true })}
         >
-          Edit
+          {this.props.t('edit')}
         </MyButton>
       </React.Fragment>
     );
@@ -419,7 +420,7 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
             }
           }}
         >
-          Unmerge
+          {this.props.t('unmerge')}
         </MyButton>
       </React.Fragment>
     );
@@ -429,7 +430,7 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
     if (!this.props.comment?.mergedPostId) return null;
 
     return (
-      <HelpPopper key='merged' description='This is a merged post'>
+      <HelpPopper key='merged' description={this.props.t('this-is-a-merged-post')}>
         <MergeIcon color='inherit' fontSize='inherit' className={this.props.classes.mergeIcon} />
       </HelpPopper>
     );
@@ -440,9 +441,9 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
 
     return (
       <Typography key='merged-time' className={`${this.props.classes.barItem} ${this.props.classes.edited}`} variant='caption'>
-        Merged
+        {this.props.t('merged')}
         &nbsp;
-        <TimeAgo date={this.props.comment.mergedTime} />
+        <TimeAgoI18n date={this.props.comment.mergedTime} />
       </Typography>
     );
   }
@@ -452,9 +453,9 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
 
     return (
       <Typography key='edited' className={`${this.props.classes.barItem} ${this.props.classes.edited}`} variant='caption'>
-        {!this.props.comment.authorUserId ? 'Deleted' : 'Edited'}
+        {!this.props.comment.authorUserId ? this.props.t('deleted') : this.props.t('edited')}
         &nbsp;
-        <TimeAgo date={this.props.comment.edited} />
+        <TimeAgoI18n date={this.props.comment.edited} />
       </Typography>
     );
   }
@@ -484,10 +485,10 @@ class Comment extends Component<Props & WithStyles<typeof styles, true>, State> 
 
     return (
       <Typography key='created' className={classNames(this.props.classes.barItem, this.props.classes.created)} variant='caption'>
-        <TimeAgo date={this.props.comment.created} />
+        <TimeAgoI18n date={this.props.comment.created} />
       </Typography>
     );
   }
 }
 
-export default withStyles(styles, { withTheme: true })(Comment);
+export default withStyles(styles, { withTheme: true })(withTranslation('app', { withRef: true })(Comment));

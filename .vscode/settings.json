@@ -11,8 +11,8 @@
   "formatFiles.excludePattern": "**/node_modules,**/.vscode,**/dist/**,**/.chrome,**/src/api/admin,**/src/api/client,**/src/api/schema",
   "formatFiles.extensionsToInclude": "ts,tsx",
   "editor.codeActionsOnSave": {
-    "source.organizeImports": true,
-    "source.fixAll.eslint": true
+    "source.organizeImports": "explicit",
+    "source.fixAll.eslint": "explicit"
   },
   "editor.formatOnSave": true,
   "prettier.requireConfig": true,
