@@ -18,6 +18,7 @@
   "no": "Nei",
   "user-id": "Bruker ID",
   "sign-out-of-your-account": "Logg ut av kontoen din",
+  "sign-out": "Logg ut",
   "please-add-an-email-before": "Legg til en e-post før du logger av eller sletter kontoen i stedet.",
   "delete-account": "Slett konto",
   "delete": "Slett",
@@ -98,5 +99,6 @@
   "we-use-cookies-to": "Vi bruker informasjonskapsler for å tilpasse innhold og for å bedre forstå brukerne våre.",
   "accept-cookie": "Godta",
   "reject-cookie": "Avvis",
-  "no-voters": "Ingen velgere"
+  "no-voters": "Ingen velgere",
+  "discard": "Forkast"
 }
