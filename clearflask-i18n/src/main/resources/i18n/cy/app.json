@@ -18,6 +18,7 @@
   "no": "Na",
   "user-id": "ID Defnyddiwr",
   "sign-out-of-your-account": "Allgofnodi o'ch cyfrif",
+  "sign-out": "Allgofnodi",
   "please-add-an-email-before": "Ychwanegwch e-bost cyn allgofnodi neu dilëwch eich cyfrif yn lle hynny.",
   "delete-account": "Dileu cyfrif",
   "delete": "Dileu",
@@ -97,5 +98,6 @@
   "cookie-consent": "Caniatâd cwci",
   "we-use-cookies-to": "Rydym yn defnyddio cwcis i bersonoli cynnwys ac i ddeall ein defnyddwyr yn well.",
   "accept-cookie": "Derbyn",
-  "reject-cookie": "Gwrthod"
+  "reject-cookie": "Gwrthod",
+  "discard": "Gwaredu"
 }
