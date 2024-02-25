@@ -18,6 +18,7 @@
   "no": "いいえ",
   "user-id": "ユーザー ID",
   "sign-out-of-your-account": "アカウントからサインアウトする",
+  "sign-out": "サインアウト",
   "please-add-an-email-before": "アカウントを削除またはサインアウトする前にメールアドレスを追加してください。",
   "delete-account": "アカウントを削除",
   "delete": "削除",
@@ -106,5 +107,6 @@
   "empty": "なし",
   "details-optional": "詳細 (オプション)",
   "status": "ステータス",
-  "title": "タイトル"
+  "title": "タイトル",
+  "discard": "破棄する"
 }
