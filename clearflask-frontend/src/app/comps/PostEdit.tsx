@@ -5,6 +5,7 @@ import { createStyles, makeStyles, Theme, WithStyles, withStyles } from '@materi
 import EditIcon from '@material-ui/icons/Edit';
 import classNames from 'classnames';
 import React, { Component, useRef, useState } from 'react';
+import { useTranslation, withTranslation, WithTranslation } from 'react-i18next';
 import { shallowEqual, useSelector } from 'react-redux';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
@@ -21,7 +22,6 @@ import { useDebounceProp } from '../../site/dashboard/ProjectSettings';
 import { PostTitleMaxLength } from './PostCreateForm';
 import StatusSelect from './StatusSelect';
 import TagSelect from './TagSelect';
-import { useTranslation } from 'react-i18next';
 
 const styles = (theme: Theme) => createStyles({
   row: {
@@ -88,11 +88,10 @@ interface State {
   fundGoal?: string;
   suppressNotifications?: boolean;
 }
-class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styles, true>, State> {
+class PostEdit extends Component<Props & WithMediaQuery & WithTranslation<'app'> & WithStyles<typeof styles, true>, State> {
   state: State = {};
 
   render() {
-    const { t } = useTranslation('app');
     const isModOrAdminLoggedIn = this.props.server.isModOrAdminLoggedIn();
     const fundGoalHasError = !!this.state.fundGoal && (!parseInt(this.state.fundGoal) || !+this.state.fundGoal || +this.state.fundGoal <= 0 || parseInt(this.state.fundGoal) !== parseFloat(this.state.fundGoal));
     const canSubmit = (
@@ -226,7 +225,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                             color='primary'
                           />
                         )}
-                        label={t('notify-subscribers-of', { reasons: notifyReasons })}
+                        label={this.props.t('notify-subscribers-of', { reasons: notifyReasons })}
                       />
                     </Collapse>
                   </Grid>
@@ -322,7 +321,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
   }
 }
 export default withStyles(styles, { withTheme: true })(
-  withMediaQuery(theme => theme.breakpoints.down('xs'))(PostEdit));
+  withMediaQuery(theme => theme.breakpoints.down('xs'))(withTranslation('app', { withRef: true })(PostEdit)));
 
 export const PostEditTitleInline = (props: {
   children?: any; // If set, shown before editing, click to edit
