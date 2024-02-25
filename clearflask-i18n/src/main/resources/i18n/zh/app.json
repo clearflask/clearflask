@@ -18,6 +18,7 @@
   "no": "否",
   "user-id": "用户 ID",
   "sign-out-of-your-account": "登出您的帐户",
+  "sign-out": "登出",
   "please-add-an-email-before": "请在登出之前添加电子邮件或删除您的帐户。",
   "delete-account": "删除帐户",
   "delete": "删除",
@@ -105,5 +106,6 @@
   "empty": "空的",
   "details-optional": "详细信息 (可选)",
   "status": "状态",
-  "title": "标题"
+  "title": "标题",
+  "discard": "放弃..."
 }
