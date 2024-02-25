@@ -18,6 +18,7 @@
   "no": "Nr",
   "user-id": "ID Utilizator",
   "sign-out-of-your-account": "Deconectați-vă din contul dvs.",
+  "sign-out": "Deconectare",
   "please-add-an-email-before": "Te rugăm să adaugi un e-mail înainte de a te deloga sau șterge contul tău.",
   "delete-account": "Ștergere cont",
   "delete": "Ștergere",
@@ -106,5 +107,6 @@
   "empty": "Golire",
   "details-optional": "Detalii (opţional)",
   "status": "Status",
-  "title": "Titlu"
+  "title": "Titlu",
+  "discard": "Renunțați"
 }
