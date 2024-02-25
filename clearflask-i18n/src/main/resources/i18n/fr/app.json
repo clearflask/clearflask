@@ -18,6 +18,7 @@
   "no": "Non",
   "user-id": "Identifiant de l'utilisateur",
   "sign-out-of-your-account": "Déconnexion de votre compte",
+  "sign-out": "Se déconnecter",
   "please-add-an-email-before": "Veuillez ajouter un e-mail avant de vous déconnecter ou supprimer votre compte à la place.",
   "delete-account": "Supprimer le compte",
   "delete": "Supprimez",
@@ -106,5 +107,6 @@
   "empty": "Vide",
   "details-optional": "Détails (facultatif)",
   "status": "Statut",
-  "title": "Titre de la page"
+  "title": "Titre de la page",
+  "discard": "Abandonner"
 }
