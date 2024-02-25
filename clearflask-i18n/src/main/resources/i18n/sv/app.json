@@ -18,6 +18,7 @@
   "no": "Nej",
   "user-id": "Användar-ID",
   "sign-out-of-your-account": "Logga ut från ditt konto",
+  "sign-out": "Logga ut",
   "please-add-an-email-before": "Lägg till ett e-postmeddelande innan du loggar ut eller tar bort ditt konto istället.",
   "delete-account": "Ta bort konto",
   "delete": "Radera",
@@ -106,5 +107,6 @@
   "empty": "Tom",
   "details-optional": "Detaljer (valfritt)",
   "status": "Status",
-  "title": "Titel"
+  "title": "Titel",
+  "discard": "Ignorera"
 }
