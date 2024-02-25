@@ -18,6 +18,7 @@
   "no": "Não",
   "user-id": "ID de usuário",
   "sign-out-of-your-account": "Sair da sua conta",
+  "sign-out": "Encerrar sessão",
   "please-add-an-email-before": "Por favor, adicione um e-mail antes de sair ou exclua sua conta.",
   "delete-account": "Apagar conta",
   "delete": "excluir",
@@ -106,5 +107,6 @@
   "empty": "Vazio",
   "details-optional": "Detalhes (opcional)",
   "status": "SItuação",
-  "title": "Título"
+  "title": "Título",
+  "discard": "Descartar"
 }
