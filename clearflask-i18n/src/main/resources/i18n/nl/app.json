@@ -18,6 +18,7 @@
   "no": "Neen",
   "user-id": "Gebruiker ID",
   "sign-out-of-your-account": "Afmelden bij uw account",
+  "sign-out": "Log uit",
   "please-add-an-email-before": "Voeg een e-mail toe voordat u uitschrijft of verwijder in plaats daarvan uw account.",
   "delete-account": "Verwijder account",
   "delete": "Verwijderen",
@@ -106,5 +107,6 @@
   "empty": "Leeg",
   "details-optional": "Details (optioneel)",
   "status": "status",
-  "title": "Aanspreektitel"
+  "title": "Aanspreektitel",
+  "discard": "Weggooien"
 }
