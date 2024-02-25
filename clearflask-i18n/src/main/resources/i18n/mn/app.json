@@ -18,6 +18,7 @@
   "no": "Үгүй",
   "user-id": "Хэрэглэгчийн ID",
   "sign-out-of-your-account": "Бүртгэлээс гарах",
+  "sign-out": "Гарах",
   "please-add-an-email-before": "Гарахаасаа өмнө имэйл хаягаа нэмнэ үү эсвэл бүртгэлээ устгана уу.",
   "delete-account": "Бүртгэл устгах",
   "delete": "Цуцлах",
@@ -95,5 +96,6 @@
   "want": "Дэмжих",
   "hate": "Үзэн ядалт",
   "accept-cookie": "Хүлээн зөвшөөрөх",
-  "reject-cookie": "Татгалзах"
+  "reject-cookie": "Татгалзах",
+  "discard": "Хаях"
 }
