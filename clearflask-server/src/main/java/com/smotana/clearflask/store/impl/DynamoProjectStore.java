@@ -516,10 +516,14 @@ public class DynamoProjectStore implements ProjectStore {
                 projectUtil.getProjectName(project.getVersionedConfigAdmin().getConfig()),
                 null,
                 Instant.now().plus(config.invitationExpireAfterCreation()).getEpochSecond());
-        invitationSchema.table().putItem(new PutItemSpec()
-                .withItem(invitationSchema.toItem(invitation))
-                .withConditionExpression("attribute_not_exists(#partitionKey)")
-                .withNameMap(new NameMap().with("#partitionKey", invitationSchema.partitionKeyName())));
+        try {
+            invitationSchema.table().putItem(new PutItemSpec()
+                    .withItem(invitationSchema.toItem(invitation))
+                    .withConditionExpression("attribute_not_exists(#partitionKey)")
+                    .withNameMap(new NameMap().with("#partitionKey", invitationSchema.partitionKeyName())));
+        } catch (ConditionalCheckFailedException ex) {
+            throw new ApiException(Response.Status.CONFLICT, "Invitation already exists for this email", ex);
+        }
         return invitation;
     }
 

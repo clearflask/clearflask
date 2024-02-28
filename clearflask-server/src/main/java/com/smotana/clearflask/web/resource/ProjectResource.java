@@ -332,7 +332,20 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         Account projectAccount = projectStore.getProject(projectId, true)
                 .map(Project::getAccountId)
                 .flatMap(accountId -> accountStore.getAccount(accountId, true))
-                .get();
+                .orElseThrow();
+
+        if (projectStore.getProject(projectId, true)
+                .stream()
+                .map(Project::getModel)
+                .flatMap(project -> Stream.concat(
+                        Stream.of(project.getAccountId()),
+                        project.getAdminsAccountIds().stream()))
+                .map(accountId -> accountStore.getAccount(accountId, true).orElseThrow())
+                .map(Account::getEmail)
+                .anyMatch(email::equalsIgnoreCase)) {
+            throw new ApiException(Response.Status.CONFLICT, "An admin with the same email already exists");
+        }
+
         try {
             planStore.verifyTeammateInviteMeetsPlanRestrictions(projectAccount.getPlanid(), projectAccount.getAccountId(), true);
         } catch (RequiresUpgradeException ex) {
