@@ -80,7 +80,10 @@ docker-compose --profile with-deps up
 
 Point your browser at [http://localhost](http://localhost) and create an account using email `admin@localhost`.
 
-If you wish to host it remotely other than `localhost`, read the [DNS section](#dns).
+You also want to setup outgoing mail, read the [Email section](#email).
+
+If you wish to host it on your domain other than `localhost`, read the [DNS section](#dns) and then
+setup [SSL/TLS certificates](#certificate-management).
 
 ## Replace dependencies
 
@@ -186,6 +189,50 @@ ClearFlask consists of two components:
 3. Carefully read and modify `server/config-selfhost.cfg`.
 4. Carefully read and modify `connect/connect.config.json`.
 5. Adjust the Docker Compose service file to add/remove dependencies if you are hosting them outside of Docker
+
+#### Email
+
+By default, email is configured for AWS SES pointing to your Localstack (which doesn't do anything).
+
+You can choose to setup your own SMTP server or use AWS SES.
+
+##### Email using SMTP
+
+Change the configuration to SMTP:
+
+- `com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.useService`: `smtp`
+
+Then you need to gather your SMTP settings and fill out the following:
+
+- `com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.smtpStrategy`: `SMTP_TLS`
+  (SMTP_TLS, SMTPS, SMTP)
+- `com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.smtpHost`: `smtp.gmail.com`
+  (e.g. smtp.gmail.com)
+- `com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.smtpPort`: `587`
+  (587 for SMTP_TLS, 465 for SMTPS, 25 for SMTP)
+- `com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.smtpUser`: `my.name@gmail.com`
+  (e.g. my.name@gmail.com)
+- `com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.smtpPassword`: `asdfqwerzxcvasdf`
+  (To get this working, you need to enable IMAP if not enabled. If you use 2FA, you need to generate an app password and
+  use it here)
+- `com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.emailDisplayName`: `ClearFlask`
+  (e.g. 'ClearFlask for MyCompany')
+- `com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.fromEmailLocalPart`: `my.name`
+  (first part of your email, for my.name@gmail.com, it would be 'my.name')
+- `com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.fromEmailDomainOverride`: `gmail.com`
+  (domain part of your email, for my.name@gmail.com, it would be 'gmail.com')
+
+##### Email using AWS SES
+
+Change the configuration to SMTP:
+
+- `com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.useService`: `ses`
+
+Then fill out the SES settings:
+
+- `com.smotana.clearflask.core.email.AmazonSimpleEmailServiceProvider$Config.region`: `us-east-1`
+- `com.smotana.clearflask.core.email.AmazonSimpleEmailServiceProvider$Config.serviceEndpoint`: (Leave blank, unless you
+  need to override)
 
 #### DNS
 
