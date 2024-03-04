@@ -6,23 +6,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.smotana.clearflask.api.model.Comment;
-import com.smotana.clearflask.api.model.CommentSearchAdmin;
-import com.smotana.clearflask.api.model.CommentUpdate;
-import com.smotana.clearflask.api.model.CommentWithVote;
-import com.smotana.clearflask.api.model.HistogramResponse;
-import com.smotana.clearflask.api.model.HistogramSearchAdmin;
-import com.smotana.clearflask.api.model.VoteOption;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.web.security.Sanitizer;
 import io.dataspray.singletable.DynamoTable;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Value;
+import lombok.*;
 
 import javax.annotation.Nullable;
 import java.time.Instant;
@@ -44,7 +33,9 @@ public interface CommentStore {
         return "github-" + commentId;
     }
 
-    /** Returns optional empty if index already exists */
+    /**
+     * Returns optional empty if index already exists
+     */
     ListenableFuture<Void> createIndex(String projectId);
 
     void repopulateIndex(String projectId, boolean deleteExistingIndex, boolean repopulateElasticSearch, boolean repopulateMysql) throws Exception;
@@ -142,7 +133,7 @@ public interface CommentStore {
 
         /**
          * WARNING:Unsanitized HTML.
-         *
+         * <p>
          * If null, comment is deleted.
          */
         @Getter(AccessLevel.PRIVATE)

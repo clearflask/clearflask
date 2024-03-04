@@ -27,6 +27,7 @@ import com.smotana.clearflask.api.ProjectApi;
 import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.PlanStore;
+import com.smotana.clearflask.billing.PlanVerifyStore;
 import com.smotana.clearflask.billing.RequiresUpgradeException;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
@@ -134,6 +135,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     private VoteStore voteStore;
     @Inject
     private PlanStore planStore;
+    @Inject
+    private PlanVerifyStore planVerifyStore;
     @Inject
     private AuthCookie authCookie;
     @Inject
@@ -301,14 +304,14 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
         Account projectAccount = accountStore.getAccount(project.getAccountId(), true).get();
         try {
-            planStore.verifyConfigMeetsPlanRestrictions(projectAccount.getPlanid(), accountId, configAdmin);
+            planVerifyStore.verifyConfigMeetsPlanRestrictions(projectAccount.getPlanid(), accountId, configAdmin);
         } catch (RequiresUpgradeException ex) {
             if (!billing.tryAutoUpgradePlan(projectAccount, ex.getRequiredPlanId())) {
                 throw ex;
             }
         }
         boolean isSuperAdmin = getExtendedPrincipal().map(ExtendedPrincipal::getAuthenticatedSuperAccountIdOpt).isPresent();
-        planStore.verifyConfigChangeMeetsRestrictions(isSuperAdmin, Optional.of(project.getVersionedConfigAdmin().getConfig()), configAdmin);
+        planVerifyStore.verifyConfigChangeMeetsRestrictions(isSuperAdmin, Optional.of(project.getVersionedConfigAdmin().getConfig()), configAdmin);
 
         gitHubStore.setupConfigGitHubIntegration(
                 accountId,
@@ -347,7 +350,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         }
 
         try {
-            planStore.verifyTeammateInviteMeetsPlanRestrictions(projectAccount.getPlanid(), projectAccount.getAccountId(), true);
+            planVerifyStore.verifyTeammateInviteMeetsPlanRestrictions(projectAccount.getPlanid(), projectAccount.getAccountId(), true);
         } catch (RequiresUpgradeException ex) {
             if (!billing.tryAutoUpgradePlan(projectAccount, ex.getRequiredPlanId())) {
                 throw ex;
@@ -411,7 +414,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 .get();
 
         try {
-            planStore.verifyActionMeetsPlanRestrictions(account.getPlanid(), account.getAccountId(), PlanStore.Action.CREATE_PROJECT);
+            planVerifyStore.verifyActionMeetsPlanRestrictions(account.getPlanid(), account.getAccountId(), PlanVerifyStore.Action.CREATE_PROJECT);
         } catch (RequiresUpgradeException ex) {
             if (!billing.tryAutoUpgradePlan(account, ex.getRequiredPlanId())) {
                 throw ex;
@@ -419,13 +422,13 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         }
 
         try {
-            planStore.verifyConfigMeetsPlanRestrictions(account.getPlanid(), account.getAccountId(), configAdmin);
+            planVerifyStore.verifyConfigMeetsPlanRestrictions(account.getPlanid(), account.getAccountId(), configAdmin);
         } catch (RequiresUpgradeException ex) {
             if (!billing.tryAutoUpgradePlan(account, ex.getRequiredPlanId())) {
                 throw ex;
             }
         }
-        planStore.verifyConfigChangeMeetsRestrictions(isSuperAdmin, Optional.empty(), configAdmin);
+        planVerifyStore.verifyConfigChangeMeetsRestrictions(isSuperAdmin, Optional.empty(), configAdmin);
 
         gitHubStore.setupConfigGitHubIntegration(
                 account.getAccountId(),

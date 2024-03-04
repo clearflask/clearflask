@@ -185,6 +185,8 @@ paths:
     $ref: 'api-project.yaml#/~1project~1{projectId}~1admin~1export'
   /project/{projectId}/admin/admins:
     $ref: 'api-project.yaml#/~1project~1{projectId}~1admin~1admins'
+  /license/check:
+    $ref: 'api-account.yaml#/~1license~1check'
   # api-connect.yaml
   /connect/cert/challenge/http:
     $ref: 'api-sni.yaml#/~1connect~1cert~1challenge~1http'

@@ -87,6 +87,18 @@ public class EmailServiceImpl implements EmailService {
 
         @DefaultValue("TLSv1.2")
         String smtpTlsProtocols();
+
+        Observable<String> smtpHostObservable();
+
+        Observable<Integer> smtpPortObservable();
+
+        Observable<String> smtpUserObservable();
+
+        Observable<String> smtpPasswordObservable();
+
+        Observable<String> smtpStrategyObservable();
+
+        Observable<String> smtpTlsProtocolsObservable();
     }
 
     @Inject
@@ -99,7 +111,7 @@ public class EmailServiceImpl implements EmailService {
     private GuavaRateLimiters guavaRateLimiters;
 
     private RateLimiter rateLimiter;
-    private Optional<Mailer> smtpOpt = Optional.empty();
+    private volatile Optional<Mailer> smtpOpt = Optional.empty();
 
     @Inject
     private void setup() {
@@ -113,6 +125,13 @@ public class EmailServiceImpl implements EmailService {
                 Duration.ofMinutes(10).getSeconds());
 
         config.rateLimitPerSecondObservable().subscribe(rateLimitPerSecond -> rateLimiter.setRate(rateLimitPerSecond));
+
+        config.smtpHostObservable().subscribe(host -> smtpOpt = Optional.empty());
+        config.smtpPortObservable().subscribe(port -> smtpOpt = Optional.empty());
+        config.smtpUserObservable().subscribe(user -> smtpOpt = Optional.empty());
+        config.smtpPasswordObservable().subscribe(pass -> smtpOpt = Optional.empty());
+        config.smtpStrategyObservable().subscribe(strategy -> smtpOpt = Optional.empty());
+        config.smtpTlsProtocolsObservable().subscribe(protos -> smtpOpt = Optional.empty());
     }
 
     @Override

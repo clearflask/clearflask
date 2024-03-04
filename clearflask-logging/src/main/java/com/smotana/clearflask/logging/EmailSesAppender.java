@@ -11,19 +11,12 @@ import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClient;
 import com.amazonaws.services.simpleemail.model.RawMessage;
 import com.amazonaws.services.simpleemail.model.SendRawEmailRequest;
 
+import javax.mail.Message.RecipientType;
 import javax.mail.Multipart;
-import javax.mail.internet.AddressException;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeMultipart;
+import javax.mail.internet.*;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 public class EmailSesAppender extends SMTPAppender {
     public static final String CONFIG_AWS_SES_LOGBACK_CREDS = "awsSesLogback";
@@ -129,7 +122,7 @@ public class EmailSesAppender extends SMTPAppender {
             }
 
             InternetAddress[] toAddressArray = destinationAddresses.toArray(EMPTY_IA_ARRAY);
-            mimeMsg.setRecipients(javax.mail.Message.RecipientType.TO, toAddressArray);
+            mimeMsg.setRecipients(RecipientType.TO, toAddressArray);
 
             String contentType = layout.getContentType();
 

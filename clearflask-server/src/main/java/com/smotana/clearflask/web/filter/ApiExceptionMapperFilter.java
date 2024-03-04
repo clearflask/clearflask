@@ -13,12 +13,7 @@ import com.smotana.clearflask.core.ServiceInjector;
 import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.servlet.*;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 

@@ -4,11 +4,7 @@ package com.smotana.clearflask.testutil;
 
 import com.google.common.io.Resources;
 import com.google.common.util.concurrent.ServiceManager;
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
-import com.google.inject.Inject;
-import com.google.inject.Injector;
-import com.google.inject.Stage;
+import com.google.inject.*;
 import com.google.inject.name.Names;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigConfigurator;

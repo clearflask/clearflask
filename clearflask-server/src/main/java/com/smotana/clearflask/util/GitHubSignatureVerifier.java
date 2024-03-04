@@ -19,7 +19,7 @@ public class GitHubSignatureVerifier {
 
     /**
      * From: https://github.com/guigarage/github-hooks/blob/master/src/main/java/com/guigarage/github/hooks/SignatureCrypto.java
-     *
+     * <p>
      * Modified to use SHA256
      */
     public static void verifySignature(String payload, String signature, String secret, String eventGuid) {

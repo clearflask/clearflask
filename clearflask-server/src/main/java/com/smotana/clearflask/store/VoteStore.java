@@ -27,9 +27,9 @@ public interface VoteStore {
 
     /**
      * @param targetId refers to
-     * - ideaId for idea voting
-     * - commentId for comment voting
-     * - categoryId for subscriptions
+     *                 - ideaId for idea voting
+     *                 - commentId for comment voting
+     *                 - categoryId for subscriptions
      * @return Returns previous vote.
      */
     VoteValue vote(String projectId, String userId, String targetId, VoteValue vote);
@@ -75,7 +75,9 @@ public interface VoteStore {
 
     TransactionModel balanceAdjustTransaction(String projectId, String userId, long balanceDiff, String summary, Optional<String> idempotentKey);
 
-    /** Returns fund amount transferred */
+    /**
+     * Returns fund amount transferred
+     */
     long fundTransferBetweenTargets(String projectId, String userId, String fromTargetId, String toTargetId);
 
     TransactionAndFundPrevious fund(String projectId, String userId, String targetId, long fundDiff, String transactionType, String summary);

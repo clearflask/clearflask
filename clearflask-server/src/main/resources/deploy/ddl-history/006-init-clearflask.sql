@@ -1,6 +1,8 @@
- -- SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
- -- SPDX-License-Identifier: Apache-2.0
+-- SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
+-- SPDX-License-Identifier: Apache-2.0
 -- DATABASE & USER CREATE
 
-CREATE DATABASE clearflask CHARACTER SET utf8 COLLATE utf8_bin;
-CREATE USER 'clearflask'@'%' IDENTIFIED BY 'clearflask';
+CREATE
+DATABASE clearflask CHARACTER SET utf8 COLLATE utf8_bin;
+CREATE
+USER 'clearflask'@'%' IDENTIFIED BY 'clearflask';

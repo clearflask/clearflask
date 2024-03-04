@@ -7,11 +7,7 @@ import com.smotana.clearflask.api.model.Challenge;
 import com.smotana.clearflask.api.model.Keypair;
 import com.smotana.clearflask.store.CertStore.KeypairModel.KeypairType;
 import io.dataspray.singletable.DynamoTable;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NonNull;
-import lombok.SneakyThrows;
-import lombok.Value;
+import lombok.*;
 import org.jetbrains.annotations.NotNull;
 import org.shredzone.acme4j.util.KeyPairUtils;
 

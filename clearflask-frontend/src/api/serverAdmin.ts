@@ -343,6 +343,7 @@ export interface StatePlans {
     status?: Status;
     plans?: Admin.Plan[];
     featuresTable?: Admin.FeaturesTable;
+    featuresTableSelfhost?: Admin.FeaturesTable;
   };
   changeOptions: {
     status?: Status;
@@ -377,6 +378,7 @@ function reducerPlans(state: StatePlans = statePlansDefault, action: AllActionsA
           status: Status.FULFILLED,
           plans: action.payload.plans,
           featuresTable: action.payload.featuresTable,
+          featuresTableSelfhost: action.payload.featuresTableSelfhost,
         },
       };
     default:

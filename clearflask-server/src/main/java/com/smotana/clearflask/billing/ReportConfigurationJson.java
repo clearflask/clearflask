@@ -28,14 +28,14 @@ public class ReportConfigurationJson {
     private final Object schema;
 
     public ReportConfigurationJson(@JsonProperty("recordId") final Integer recordId,
-                                   @JsonProperty("reportName") final String reportName,
-                                   @JsonProperty("reportPrettyName") final String reportPrettyName,
-                                   @JsonProperty("reportType") final ReportType reportType,
-                                   @JsonProperty("sourceTableName") final String sourceTableName,
-                                   @JsonProperty("refreshProcedureName") final String refreshProcedureName,
-                                   @JsonProperty("refreshFrequency") final Frequency refreshFrequency,
-                                   @JsonProperty("refreshHourOfDayGmt") final Integer refreshHourOfDayGmt,
-                                   @JsonProperty("schema") final Object schema) {
+            @JsonProperty("reportName") final String reportName,
+            @JsonProperty("reportPrettyName") final String reportPrettyName,
+            @JsonProperty("reportType") final ReportType reportType,
+            @JsonProperty("sourceTableName") final String sourceTableName,
+            @JsonProperty("refreshProcedureName") final String refreshProcedureName,
+            @JsonProperty("refreshFrequency") final Frequency refreshFrequency,
+            @JsonProperty("refreshHourOfDayGmt") final Integer refreshHourOfDayGmt,
+            @JsonProperty("schema") final Object schema) {
         this.recordId = recordId;
         this.reportName = reportName;
         this.reportPrettyName = reportPrettyName;

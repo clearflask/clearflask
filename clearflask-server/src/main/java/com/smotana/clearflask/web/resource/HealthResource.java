@@ -46,7 +46,7 @@ public class HealthResource {
         }
         return "ok";
     }
-    
+
     public static Module module() {
         return new AbstractModule() {
             @Override

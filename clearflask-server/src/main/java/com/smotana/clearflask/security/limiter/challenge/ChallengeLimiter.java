@@ -9,8 +9,8 @@ public interface ChallengeLimiter {
     /**
      * Tracks attempts, issues challenges and validates responses.
      *
-     * @param challengeAfter Amount of challenge-free attempts to allow.
-     * @param target Unique target identification such as username or IP.
+     * @param challengeAfter    Amount of challenge-free attempts to allow.
+     * @param target            Unique target identification such as username or IP.
      * @param challengeResponse Challenge response string.
      * @return If present, deny this request and ask user to solve given challenge.
      */

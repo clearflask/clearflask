@@ -20,19 +20,8 @@
  */
 package com.smotana.clearflask.store.mysql;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.LineNumberReader;
-import java.io.PrintWriter;
-import java.io.Reader;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.io.*;
+import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -70,7 +59,7 @@ public class ScriptRunner {
      * Default constructor
      */
     public ScriptRunner(Connection connection, boolean autoCommit,
-                        boolean stopOnError) {
+            boolean stopOnError) {
         this(connection, autoCommit, stopOnError, false);
     }
 
@@ -78,7 +67,7 @@ public class ScriptRunner {
      * Default constructor
      */
     public ScriptRunner(Connection connection, boolean autoCommit,
-                        boolean stopOnError, boolean logToFile) {
+            boolean stopOnError, boolean logToFile) {
         this.connection = connection;
         this.autoCommit = autoCommit;
         this.stopOnError = stopOnError;
@@ -158,10 +147,10 @@ public class ScriptRunner {
      * Runs an SQL script (read in using the Reader parameter) using the
      * connection passed in
      *
-     * @param conn - the connection to use for the script
+     * @param conn   - the connection to use for the script
      * @param reader - the source of the script
      * @throws SQLException if any SQL errors occur
-     * @throws IOException if there is an error reading from the Reader
+     * @throws IOException  if there is an error reading from the Reader
      */
     private void runScript(Connection conn, Reader reader) throws IOException,
             SQLException {
@@ -214,7 +203,7 @@ public class ScriptRunner {
     }
 
     private void execCommand(Connection conn, StringBuffer command,
-                             LineNumberReader lineReader) throws IOException, SQLException {
+            LineNumberReader lineReader) throws IOException, SQLException {
 
         if (command.length() == 0) {
             return;
@@ -235,7 +224,7 @@ public class ScriptRunner {
     }
 
     private void execSqlCommand(Connection conn, StringBuffer command,
-                                LineNumberReader lineReader) throws SQLException {
+            LineNumberReader lineReader) throws SQLException {
 
         Statement statement = conn.createStatement();
 

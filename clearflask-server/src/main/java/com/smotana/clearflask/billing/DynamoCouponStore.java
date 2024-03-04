@@ -44,7 +44,9 @@ import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO
 @Singleton
 public class DynamoCouponStore extends ManagedService implements CouponStore {
 
-    /** Removed 0/O and 1/I for no confusion */
+    /**
+     * Removed 0/O and 1/I for no confusion
+     */
     private static final String COUPON_CHAR_BANK = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 
     public interface Config {

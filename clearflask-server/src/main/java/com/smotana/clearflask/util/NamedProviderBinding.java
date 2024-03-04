@@ -4,12 +4,8 @@ package com.smotana.clearflask.util;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
-import com.google.inject.Injector;
-import com.google.inject.Key;
 import com.google.inject.Module;
-import com.google.inject.Provider;
+import com.google.inject.*;
 import com.google.inject.binder.ScopedBindingBuilder;
 import com.google.inject.internal.Annotations;
 import com.google.inject.name.Named;
@@ -27,7 +23,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Allows Guice binding of instances with dynamically injected properties based on a given Named name.
- *
+ * <p>
  * Example below shows binding a Voice class to an Animal.
  * <pre><code>
  * {@literal @}Singleton
@@ -51,7 +47,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *     }
  * }
  * </code></pre>
- *
+ * <p>
  * Now to use it, let's bind an Animal as a cat:
  * <pre><code>
  * private static class House
@@ -78,7 +74,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *     }
  * }
  * </code></pre>
- *
+ * <p>
  * Additional notes:
  * <ul>
  * <li>{@literal @}InjectNamed cannot be used in conjunction with {@literal @}Inject nor {@literal @}Named</li>
@@ -98,7 +94,7 @@ public class NamedProviderBinding {
     }
 
     /**
-     * @param clazz the implementation class
+     * @param clazz       the implementation class
      * @param targetClazz the class being bound
      */
     public static <T> Module namedModule(Named name, Class<? extends T> clazz, Class<T> targetClazz) {

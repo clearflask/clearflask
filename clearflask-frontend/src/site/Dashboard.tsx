@@ -38,7 +38,7 @@ import ClearFlaskTourProvider, { tourSetGuideState } from '../common/ClearFlaskT
 import * as ConfigEditor from '../common/config/configEditor';
 import Templater from '../common/config/configTemplater';
 import ConfigView from '../common/config/settings/ConfigView';
-import { TeammatePlanId } from '../common/config/settings/UpgradeWrapper';
+import { SelfhostServicePlans, TeammatePlanId } from '../common/config/settings/UpgradeWrapper';
 import { ChangelogInstance } from '../common/config/template/changelog';
 import { FeedbackInstance } from '../common/config/template/feedback';
 import { LandingInstance } from '../common/config/template/landing';
@@ -48,7 +48,7 @@ import { tabHoverApplyStyles } from '../common/DropdownTab';
 import LogoutIcon from '../common/icon/LogoutIcon';
 import VisitIcon from '../common/icon/VisitIcon';
 import Layout, { LayoutSize, Section } from '../common/Layout';
-import { MenuItems } from '../common/menus';
+import { MenuButton, MenuItems } from '../common/menus';
 import { TourChecklist, TourDefinitionGuideState } from '../common/tour';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import { getProjectLink, getProjectName } from '../common/util/projectUtil';
@@ -111,6 +111,7 @@ export interface DashboardPageContext {
   activeProject?: AdminProject;
   sections: Array<Section>;
   isOnboarding?: boolean;
+  isSelfhostServiceOnly: boolean;
   previewOnClose?: () => void;
   showProjectLink?: boolean;
   showCreateProjectWarning?: boolean;
@@ -472,15 +473,25 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
     const context: DashboardPageContext = {
       activeProject,
       sections: [],
+      // Selfhost service is a mode that turns the dashboard into a license key store. It is triggered when:
+      // - This is the cloud (not self-hosted instance)
+      // - The account is on a self-host service plan
+      isSelfhostServiceOnly: detectEnv() !== Environment.PRODUCTION_SELF_HOST && SelfhostServicePlans.includes(this.props.account?.basePlanId),
     };
     switch (activePath) {
       case '':
         setTitle('Home - Dashboard');
-        context.showProjectLink = true;
         if (!activeProject) {
           context.showCreateProjectWarning = true;
           break;
         }
+        if (context.isSelfhostServiceOnly) {
+          context.sections.push({
+            name: 'main',
+            content: (<RedirectIso to='/dashboard/settings/account/billing' />)
+          });
+        }
+        context.showProjectLink = true;
         context.sections.push({
           name: 'main',
           size: { flexGrow: 1, scroll: Orientation.Vertical },
@@ -562,6 +573,13 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
         break;
       case 'welcome':
       case 'create':
+        if (context.isSelfhostServiceOnly) {
+          context.sections.push({
+            name: 'main',
+            content: (<RedirectIso to='/dashboard/settings/account/billing' />)
+          });
+          break;
+        }
         context.showProjectLink = true;
         const isOnboarding = activePath === 'welcome'
           && this.props.account?.basePlanId !== TeammatePlanId;
@@ -632,6 +650,12 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
     const projectLink = (!!activeProjectConf && !!context.showProjectLink)
       ? getProjectLink(activeProjectConf) : undefined;
 
+    const signOutButton: MenuButton = {
+      type: 'button', onClick: () => {
+        ServerAdmin.get().dispatchAdmin().then(d => d.accountLogoutAdmin());
+        redirectIso('/login', this.props.history);
+      }, title: this.props.t('sign-out'), icon: LogoutIcon
+    }
     var content = (
       <>
         {this.props.account && (
@@ -664,7 +688,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                     root: this.props.classes.tabRoot,
                   }}
                 />
-                {!!this.state.hasUncategorizedCategories && (
+                {!context.isSelfhostServiceOnly && !!this.state.hasUncategorizedCategories && (
                   <Tab
                     className={this.props.classes.tab}
                     component={Link}
@@ -677,7 +701,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                     }}
                   />
                 )}
-                {this.state.feedback !== null && (
+                {!context.isSelfhostServiceOnly && this.state.feedback !== null && (
                   <Tab
                     className={this.props.classes.tab}
                     component={Link}
@@ -690,7 +714,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                     }}
                   />
                 )}
-                {this.state.roadmap !== null && (
+                {!context.isSelfhostServiceOnly && this.state.roadmap !== null && (
                   <Tab
                     className={this.props.classes.tab}
                     component={Link}
@@ -703,7 +727,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                     }}
                   />
                 )}
-                {this.state.changelog !== null && (
+                {!context.isSelfhostServiceOnly && this.state.changelog !== null && (
                   <Tab
                     className={this.props.classes.tab}
                     component={Link}
@@ -716,17 +740,19 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                     }}
                   />
                 )}
-                <Tab
-                  className={this.props.classes.tab}
-                  component={Link}
-                  to='/dashboard/users'
-                  value='users'
-                  disableRipple
-                  label={this.props.t('users')}
-                  classes={{
-                    root: this.props.classes.tabRoot,
-                  }}
-                />
+                {!context.isSelfhostServiceOnly && (
+                  <Tab
+                    className={this.props.classes.tab}
+                    component={Link}
+                    to='/dashboard/users'
+                    value='users'
+                    disableRipple
+                    label={this.props.t('users')}
+                    classes={{
+                      root: this.props.classes.tabRoot,
+                    }}
+                  />
+                )}
               </Tabs>
             </div>
           )}
@@ -734,7 +760,12 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
             <>
               <LanguageSelect />
               <MenuItems
-                items={[
+                items={context.isSelfhostServiceOnly ? [
+                  {
+                    type: 'dropdown', title: this.props.account.name,
+                    color: 'primary', items: [signOutButton],
+                  }
+                ] : [
                   ...(!!projectLink ? [{
                     type: 'button' as 'button', tourAnchorProps: {
                       anchorId: 'dashboard-visit-portal', placement: 'bottom' as 'bottom',
@@ -755,22 +786,17 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                       { type: 'button', link: '/dashboard/create', title: this.props.t('add-project'), icon: AddIcon },
                       { type: 'button', link: '/dashboard/settings/project/branding', title: this.props.t('settings'), icon: SettingsIcon },
                       { type: 'button', link: '/dashboard/api', title: 'API', icon: ApiIcon },
-                      { type: 'divider' },
+                      // { type: 'divider' },
                       // { type: 'button', link: this.openFeedbackUrl('docs'), linkIsExternal: true, title: 'Documentation' },
                       // { type: 'button', link: '/dashboard/contact', title: this.props.t('contact') },
                       // { type: 'button', link: '/dashboard/e/feedback', title: this.props.t('give-feedback') },
                       // { type: 'button', link: '/dashboard/e/roadmap', title: this.props.t('our-roadmap') },
-                      // { type: 'divider' },
+                      { type: 'divider' },
                       { type: 'button', link: '/dashboard/settings/account/profile', title: this.props.t('account'), icon: AccountIcon },
                       ...(!!this.props.isSuperAdmin && detectEnv() !== Environment.PRODUCTION_SELF_HOST ? [
                         { type: 'button' as 'button', link: '/dashboard/settings/super/loginas', title: 'Super Admin', icon: SuperAccountIcon },
                       ] : []),
-                      {
-                        type: 'button', onClick: () => {
-                          ServerAdmin.get().dispatchAdmin().then(d => d.accountLogoutAdmin());
-                          redirectIso('/login', this.props.history);
-                        }, title: this.props.t('sign-out'), icon: LogoutIcon
-                      },
+                      signOutButton,
                     ]
                   }
                 ]}

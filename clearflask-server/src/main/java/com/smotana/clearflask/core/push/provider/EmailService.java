@@ -19,7 +19,6 @@ public interface EmailService {
         private final String toAddress;
         @NonNull
         private final String subject;
-        @NonNull
         private final String contentHtml;
         @NonNull
         private final String contentText;

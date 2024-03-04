@@ -16,10 +16,7 @@ import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.annotations.NoDefaultValue;
-import com.smotana.clearflask.api.AccountAdminApi;
-import com.smotana.clearflask.api.AccountSuperAdminApi;
-import com.smotana.clearflask.api.PlanAdminApi;
-import com.smotana.clearflask.api.PlanSuperAdminApi;
+import com.smotana.clearflask.api.*;
 import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.billing.*;
 import com.smotana.clearflask.billing.Billing.Gateway;
@@ -72,7 +69,7 @@ import static com.google.common.base.Preconditions.checkState;
 @Slf4j
 @Singleton
 @Path(Application.RESOURCE_VERSION)
-public class AccountResource extends AbstractResource implements AccountAdminApi, AccountSuperAdminApi, PlanAdminApi, PlanSuperAdminApi {
+public class AccountResource extends AbstractResource implements AccountApi, AccountAdminApi, AccountSuperAdminApi, PlanAdminApi, PlanSuperAdminApi {
 
     public interface Config {
         @DefaultValue("P30D")
@@ -125,6 +122,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     @Inject
     private PlanStore planStore;
     @Inject
+    private PlanVerifyStore planVerifyStore;
+    @Inject
     private LegalStore legalStore;
     @Inject
     private ProjectStore projectStore;
@@ -148,6 +147,8 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
     private ChatwootUtil chatwootUtil;
     @Inject
     private EmailValidator emailValidator;
+    @Inject
+    private LicenseStore licenseStore;
 
     @PermitAll
     @Limit(requiredPermits = 10)
@@ -501,7 +502,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 }
             }
             try {
-                planStore.verifyActionMeetsPlanRestrictions(account.getPlanid(), account.getAccountId(), PlanStore.Action.API_KEY);
+                planVerifyStore.verifyActionMeetsPlanRestrictions(account.getPlanid(), account.getAccountId(), PlanVerifyStore.Action.API_KEY);
             } catch (RequiresUpgradeException ex) {
                 if (!billing.tryAutoUpgradePlan(account, ex.getRequiredPlanId())) {
                     throw ex;
@@ -590,6 +591,23 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             }
 
             account = changePlan(account, newPlanid, ImmutableMap.of(), Optional.empty());
+        }
+        if (accountUpdateAdmin.getApplyLicenseKey() != null) {
+            if (env != Environment.PRODUCTION_SELF_HOST) {
+                throw new ApiException(Response.Status.BAD_REQUEST, "License key can only be applied in self-hosted environment");
+            }
+            if (accountUpdateAdmin.getApplyLicenseKey().isEmpty()) {
+                licenseStore.clearLicense();
+            } else {
+                licenseStore.setLicense(accountUpdateAdmin.getApplyLicenseKey());
+                Optional<Boolean> licenseValid = licenseStore.validate(false);
+                if (licenseValid.orElse(false)) {
+                    Optional<Account> accountChangedOpt = billing.tryAutoUpgradeAfterSelfhostLicenseAdded(account);
+                    if (accountChangedOpt.isPresent()) {
+                        account = accountChangedOpt.get();
+                    }
+                }
+            }
         }
         return account.toAccountAdmin(intercomUtil, chatwootUtil, planStore, cfSso, superAdminPredicate);
     }
@@ -949,6 +967,16 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
 
         Optional<AccountBillingPaymentActionRequired> actions = billing.getActions(subscription.getAccountId());
 
+        String purchasedLicenseKey = null;
+        if (KillBillPlanStore.SELFHOST_SERVICE_PLANS.contains(plan.getBasePlanId())) {
+            purchasedLicenseKey = account.getAccountId();
+        }
+
+        String appliedLicenseKey = null;
+        if (env == Environment.PRODUCTION_SELF_HOST) {
+            appliedLicenseKey = licenseStore.getLicense().orElse(null);
+        }
+
         return new AccountBilling(
                 plan,
                 status,
@@ -963,7 +991,9 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
                 accountReceivable,
                 accountPayable,
                 endOfTermChangeToPlan.orElse(null),
-                actions.orElse(null));
+                actions.orElse(null),
+                purchasedLicenseKey,
+                appliedLicenseKey);
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})
@@ -1032,13 +1062,47 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
         return planStore.getPublicPlans();
     }
 
+    @RolesAllowed({Role.SUPER_ADMIN})
     @Override
     public AllPlansGetResponse plansGetSuperAdmin() {
         return planStore.getAllPlans();
     }
 
+    @PermitAll
+    @Limit(requiredPermits = 100)
+    @Override
+    public void licenseCheck(String license) {
+        String clientIp = IpUtil.getRemoteIp(request, env);
+        Optional<Account> accountOpt = accountStore.getAccount(license, true);
+        if (accountOpt.isEmpty()) {
+            log.info("License Check: account {} not found, ip {}", license, clientIp);
+            throw new ApiException(Response.Status.UNAUTHORIZED);
+        }
+
+        if (!KillBillPlanStore.SELFHOST_SERVICE_PLANS.contains(accountOpt.get().getPlanid())) {
+            log.info("License Check: account {} found but not a selfhost service plan {}, ip {}",
+                    license, accountOpt.get().getPlanid(), clientIp);
+            throw new ApiException(Response.Status.UNAUTHORIZED);
+        }
+
+        switch (accountOpt.get().getStatus()) {
+            case ACTIVE:
+            case ACTIVETRIAL:
+            case ACTIVENORENEWAL:
+                log.info("License Check: account {} passed with status {}, ip {}",
+                        license, accountOpt.get().getStatus(), clientIp);
+                break;
+            default:
+                log.info("License Check: account {} not in good billing status {}, ip {}",
+                        license, accountOpt.get().getStatus(), clientIp);
+                throw new ApiException(Response.Status.UNAUTHORIZED);
+        }
+
+        // All good, return 2xx
+    }
+
     private Account changePlan(Account account, String newPlanid, ImmutableMap<String, String> addons, Optional<Long> recurringPriceOpt) {
-        planStore.verifyAccountMeetsPlanRestrictions(newPlanid, account.getAccountId());
+        planVerifyStore.verifyAccountMeetsPlanRestrictions(newPlanid, account.getAccountId());
 
         boolean isAddonsChangeOnly = newPlanid.equals(account.getPlanid()) && recurringPriceOpt.isEmpty();
 
@@ -1050,7 +1114,7 @@ public class AccountResource extends AbstractResource implements AccountAdminApi
             if (!newPlanid.equals(subscription.getPlanName())
                     && !newPlanid.equals((billing.getEndOfTermChangeToPlanId(subscription).orElse(null)))) {
                 if (LogUtil.rateLimitAllowLog("accountResource-planChangeMismatch")) {
-                    log.warn("Plan change to {} doesn't seem to reflect killbill, accountId {} subscriptionId {} subscription plan {}",
+                    log.warn("Plan change to {} doesn't seem to reflect billing, accountId {} subscriptionId {} subscription plan {}",
                             newPlanid, account.getAccountId(), subscription.getSubscriptionId(), subscription.getPlanName());
                 }
             }

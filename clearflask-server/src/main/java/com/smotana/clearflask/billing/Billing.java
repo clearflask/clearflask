@@ -71,6 +71,8 @@ public interface Billing {
      */
     boolean tryAutoUpgradePlan(AccountStore.Account accountInDyn, String requiredPlanId);
 
+    Optional<AccountStore.Account> tryAutoUpgradeAfterSelfhostLicenseAdded(AccountStore.Account accountInDyn);
+
     Invoices getInvoices(String accountId, Optional<String> cursorOpt);
 
     String getInvoiceHtml(UUID invoiceId, Optional<String> accountIdOpt);

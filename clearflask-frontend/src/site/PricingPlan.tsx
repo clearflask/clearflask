@@ -8,6 +8,7 @@ import React, { Component } from 'react';
 import { Link, LinkProps } from 'react-router-dom';
 import * as Admin from '../api/admin';
 import HelpPopper from '../common/HelpPopper';
+import { PostsMaxCount, TeammatesMaxCount } from '../common/config/settings/UpgradeWrapper';
 
 const styles = (theme: Theme) => createStyles({
   title: {
@@ -242,17 +243,31 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
       if (this.props.plan.pricing && (this.props.plan.pricing.unitPrice || 0) > 0) {
         extraMau = (
           <>
+            {extraMau}
             <Typography component='div' variant='subtitle2' color='textSecondary'>{`${this.props.plan.pricing.baseMau} tracked users`}</Typography>
             <Typography component='div' variant='subtitle2' color='textSecondary'>{`+ $${this.props.plan.pricing.unitPrice} / ${this.props.plan.pricing.unitMau} tracked users`}</Typography>
           </>
         );
       }
-      if (this.props.plan.pricing?.admins) {
+      const adminsAmountIncluded = this.props.plan.pricing?.admins?.amountIncluded || TeammatesMaxCount[this.props.plan.basePlanId] || '∞';
+      const adminsAdditionalPrice = this.props.plan.pricing?.admins?.additionalPrice;
+      if (adminsAmountIncluded !== undefined) {
         extraMau = (
           <>
             {extraMau}
-            <Typography component='div' variant='subtitle2' color='textSecondary'>{`${this.props.plan.pricing.admins.amountIncluded} Teammate${this.props.plan.pricing.admins.amountIncluded > 1 ? 's' : ''}`}</Typography>
-            <Typography component='div' variant='subtitle2' color='textSecondary'>{`+ $${this.props.plan.pricing.admins.additionalPrice} / Teammate`}</Typography>
+            <Typography component='div' variant='subtitle2' color='textSecondary'>{`${adminsAmountIncluded} Teammate${(!Number.isInteger(adminsAmountIncluded) || adminsAmountIncluded > 1) ? 's' : ''}`}</Typography>
+            {adminsAdditionalPrice !== undefined && (
+              <Typography component='div' variant='subtitle2' color='textSecondary'>{`+ $${adminsAdditionalPrice} / Teammate`}</Typography>
+            )}
+          </>
+        );
+      }
+      const postsMax = PostsMaxCount[this.props.plan.basePlanId];
+      if (postsMax !== undefined) {
+        extraMau = (
+          <>
+            {extraMau}
+            <Typography component='div' variant='subtitle2' color='textSecondary'>{`${postsMax} Posts`}</Typography>
           </>
         );
       }
@@ -280,8 +295,8 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
         </div>
         {(extraMau || billed) && (
           <div className={this.props.classes.cardPricingTerms}>
-            {extraMau}
             {billed}
+            {extraMau}
           </div>
         )}
       </>

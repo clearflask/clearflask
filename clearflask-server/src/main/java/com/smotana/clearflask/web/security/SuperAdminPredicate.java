@@ -20,7 +20,9 @@ import java.util.regex.Pattern;
 public class SuperAdminPredicate {
 
     public interface Config {
-        /** By default does not match anything */
+        /**
+         * By default does not match anything
+         */
         @DefaultValue(".^")
         String superAdminEmailRegex();
 

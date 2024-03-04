@@ -22,9 +22,9 @@ services:
     image: ghcr.io/clearflask/clearflask-server:latest
     ports:
       - 8080:8080
-      # JMX (Disabled by default)
-      # - 9950:9950
-      # - 9951:9951
+      # JMX
+      - 9950:9950
+      - 9951:9951
     environment:
       - CLEARFLASK_ENVIRONMENT=PRODUCTION_SELF_HOST
       - CLEARFLASK_CREATE_SERVER_CONFIG_IF_MISSING=1
@@ -38,6 +38,7 @@ services:
   # MySQL (enabled by default as an alternative to ElasticSearch)
   mysql-db:
     image: mysql:5.7@sha256:2c23f254c6b9444ecda9ba36051a9800e8934a2f5828ecc8730531db8142af83
+    platform: linux/amd64
     command:
       - 'mysqld'
       - '--port=3306'

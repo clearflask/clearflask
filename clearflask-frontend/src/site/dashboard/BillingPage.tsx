@@ -11,6 +11,7 @@ import {
   DialogTitle,
   FormControlLabel,
   FormHelperText,
+  Link as MuiLink,
   Switch,
   Table,
   TableBody,
@@ -34,7 +35,6 @@ import ReactGA from 'react-ga';
 import ReactGA4 from 'react-ga4';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
-import { Link } from 'react-router-dom';
 import PoweredByStripe from '../../../public/img/dashboard/PoweredByStripe.svg';
 import * as Admin from '../../api/admin';
 import { Status } from '../../api/server';
@@ -43,7 +43,7 @@ import LoadingPage from '../../app/LoadingPage';
 import Loader from '../../app/utils/Loader';
 import TimeAgoI18n from '../../app/utils/TimeAgoI18n';
 import { tourSetGuideState } from '../../common/ClearFlaskTourProvider';
-import { StarterMaxPosts, TeammatePlanId } from '../../common/config/settings/UpgradeWrapper';
+import { PostsMaxCount, TeammatePlanId } from '../../common/config/settings/UpgradeWrapper';
 import CreditCard from '../../common/CreditCard';
 import ImgIso from '../../common/ImgIso';
 import Message from '../../common/Message';
@@ -56,6 +56,8 @@ import windowIso from '../../common/windowIso';
 import PricingPlan from '../PricingPlan';
 import BillingChangePlanDialog from './BillingChangePlanDialog';
 import { ProjectSettingsBase, Section } from './ProjectSettings';
+import { detectEnv, Environment } from '../../common/util/detectEnv';
+import { Link } from 'react-router-dom';
 
 /** If changed, also change in KillBilling.java */
 interface PaymentStripeAction {
@@ -194,6 +196,8 @@ interface State {
   showCreditAdjustment?: boolean;
   creditAmount?: number;
   creditDescription?: string;
+  showLicenseDialog?: boolean;
+  license?: string;
 }
 
 class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps & WithWidthProps, State> {
@@ -252,6 +256,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       cardNumber = (<span className={this.props.classes.blurry}>5200&nbsp;8282&nbsp;8282&nbsp;8210</span>);
       cardExpiry = (<span className={this.props.classes.blurry}>06 / 32</span>);
     }
+    const isSelfhost = detectEnv() === Environment.PRODUCTION_SELF_HOST;
     var hasAvailablePlansToSwitch: boolean = (this.props.accountBilling?.availablePlans || [])
       .filter(p => p.basePlanId !== this.props.accountBilling?.plan.basePlanId)
       .length > 0;
@@ -273,6 +278,20 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           if (hasAvailablePlansToSwitch) {
             showPlanChange = true;
             switchPlanTitle = 'Choose plan';
+          }
+        } else if (isSelfhost) {
+          if (this.props.accountBilling?.plan.basePlanId === 'selfhost-free') {
+            planTitle = 'Your free plan is active';
+            planDesc = 'You have full access within your free plan. To get more benefits, purchase and provide a license.';
+          } else if (this.props.accountBilling?.plan.basePlanId === 'self-host') {
+            planTitle = 'Your plan is active';
+            planDesc = 'You have full access within your plan. You have been grandfathered into this plan without a license.';
+          } else {
+            planTitle = 'Your licensed plan is active';
+            planDesc = 'Your license will be validated periodically.';
+          }
+          if (hasAvailablePlansToSwitch) {
+            showPlanChange = true;
           }
         } else {
           paymentTitle = 'Automatic renewal is active';
@@ -369,17 +388,25 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         planDesc = `You have full access to your ${this.props.accountBilling.plan.title} plan until it cancels. Please resume your payments to continue using our service beyond next billing cycle.`;
         break;
       case Admin.SubscriptionStatus.Limited:
-        paymentTitle = 'Automatic renewal is active';
-        paymentDesc = 'You will be automatically billed at the next cycle and your plan will be renewed.';
-        cardState = 'active';
-        showSetPayment = true;
-        setPaymentTitle = 'Update payment method';
-        showCancelSubscription = true;
-        planTitle = 'Your plan is limited';
-        planDesc = `You have limited access to your ${this.props.accountBilling.plan.title} plan due to going over your plan limits. Please resolve all issues to continue using our service.`;
-        if (hasAvailablePlansToSwitch) {
-          planDesc += ' If you upgrade your plan, changes will reflect immediately. If you downgrade your plan, changes will take effect at the end of the term.';
-          showPlanChange = true;
+        if (isSelfhost) {
+          planTitle = 'Your activity is limited';
+          planDesc = 'Your license is invalid, you need to purchase an extension or provide another license.';
+          if (hasAvailablePlansToSwitch) {
+            showPlanChange = true;
+          }
+        } else {
+          paymentTitle = 'Automatic renewal is active';
+          paymentDesc = 'You will be automatically billed at the next cycle and your plan will be renewed.';
+          cardState = 'active';
+          showSetPayment = true;
+          setPaymentTitle = 'Update payment method';
+          showCancelSubscription = true;
+          planTitle = 'Your plan is limited';
+          planDesc = `You have limited access to your ${this.props.accountBilling.plan.title} plan due to going over your plan limits. Please resolve all issues to continue using our service.`;
+          if (hasAvailablePlansToSwitch) {
+            planDesc += ' If you upgrade your plan, changes will reflect immediately. If you downgrade your plan, changes will take effect at the end of the term.';
+            showPlanChange = true;
+          }
         }
         break;
       case Admin.SubscriptionStatus.NoPaymentMethod:
@@ -392,12 +419,20 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         planDesc = `To continue using your ${this.props.accountBilling.plan.title} plan, please add a payment method.`;
         break;
       case Admin.SubscriptionStatus.Blocked:
-        paymentTitle = 'Payments are blocked';
-        paymentDesc = 'Contact support to reinstate your account.';
-        showContactSupport = true;
-        cardState = 'error';
-        planTitle = 'Your plan is inactive';
-        planDesc = `You have limited access to your ${this.props.accountBilling.plan.title} plan due to a payment issue. Please resolve all issues to continue using our service.`;
+        if (isSelfhost) {
+          planTitle = 'Your activity is blocked';
+          planDesc = 'You need to provide a license to resume your project.';
+          if (hasAvailablePlansToSwitch) {
+            showPlanChange = true;
+          }
+        } else {
+          paymentTitle = 'Payments are blocked';
+          paymentDesc = 'Contact support to reinstate your account.';
+          showContactSupport = true;
+          cardState = 'error';
+          planTitle = 'Your plan is inactive';
+          planDesc = `You have limited access to your ${this.props.accountBilling.plan.title} plan due to a payment issue. Please resolve all issues to continue using our service.`;
+        }
         break;
       case Admin.SubscriptionStatus.Cancelled:
         paymentTitle = 'Automatic renewal is inactive';
@@ -505,6 +540,550 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
         </Dialog>
       </>
     ) : undefined;
+
+    const plan = (
+      <Section
+        title="Plan"
+        preview={(
+          <div className={this.props.classes.planContainer}>
+            <TourAnchor anchorId="settings-billing-plan" placement="bottom" disablePortal>
+              <PricingPlan
+                selected
+                className={this.props.classes.plan}
+                plan={this.props.accountBilling.plan}
+              />
+            </TourAnchor>
+            {(this.props.accountBilling?.trackedUsers !== undefined) && (
+              <Box display="grid" gridTemplateAreas='"mauLbl mauAmt"' alignItems="baseline"
+                   gridGap="10px 10px">
+                <Box gridArea="mauLbl"><Typography component="div">Tracked users:</Typography></Box>
+                <Box gridArea="mauAmt" display="flex">
+                  <Typography component="div" variant="h5">
+                    {this.props.accountBilling.trackedUsers}
+                  </Typography>
+                </Box>
+              </Box>
+            )}
+            {(this.props.accountBilling?.postCount !== undefined) && (
+              <Box display="grid" gridTemplateAreas='"postCountLbl postCountAmt"' alignItems="baseline"
+                   gridGap="10px 10px">
+                <Box gridArea="postCountLbl"><Typography component="div">Post count:</Typography></Box>
+                <Box gridArea="postCountAmt" display="flex">
+                  <Typography component="div" variant="h5" color={
+                    this.props.accountBilling.postCount > (PostsMaxCount[this.props.accountBilling.plan.basePlanId] || Infinity)
+                      ? 'error' : undefined}>
+                    {this.props.accountBilling.postCount}
+                  </Typography>
+                </Box>
+              </Box>
+            )}
+            {(this.props.accountBilling?.teammateCount !== undefined) && (
+              <Box display="grid" gridTemplateAreas='"teammateCountLbl teammateCountAmt"'
+                   alignItems="baseline" gridGap="10px 10px">
+                <Box gridArea="teammateCountLbl"><Typography component="div">Teammate
+                  count:</Typography></Box>
+                <Box gridArea="teammateCountAmt" display="flex">
+                  <Typography component="div" variant="h5">
+                    {this.props.accountBilling.teammateCount}
+                    {this.props.accountBilling.teammateMax && (
+                      <>
+                        &nbsp;/&nbsp;{this.props.accountBilling.teammateMax}
+                      </>
+                    )}
+                  </Typography>
+                </Box>
+              </Box>
+            )}
+          </div>
+        )}
+        content={(
+          <div className={this.props.classes.actionContainer}>
+            <p><Typography variant="h6" component="div" color="textPrimary">{planTitle}</Typography></p>
+            <Typography color="textSecondary">{planDesc}</Typography>
+            {(endOfTermChangeToPlanTitle || endOfTermChangeToPlanDesc) && (
+              <>
+                <p><Typography variant="h6" component="div" color="textPrimary"
+                               className={this.props.classes.sectionSpacing}>{endOfTermChangeToPlanTitle}</Typography>
+                </p>
+                <Typography color="textSecondary">{endOfTermChangeToPlanDesc}</Typography>
+              </>
+            )}
+            {!!isSelfhost && (
+              <>
+                <Dialog
+                  open={!!this.state.showLicenseDialog}
+                  onClose={() => this.setState({ showLicenseDialog: undefined })}
+                  scroll="body"
+                  maxWidth="md"
+                >
+                  <DialogTitle>License</DialogTitle>
+                  <DialogContent className={this.props.classes.addonsContainer}>
+                    <div>
+                      Purchase a Self-hosted license <MuiLink target="_blank" rel="noreferrer"
+                                                              href="https://clearflask.com/pricing">here</MuiLink> to
+                      unlock more functionality.
+                    </div>
+                    <br />
+                    <TextField
+                      label="License"
+                      variant="outlined"
+                      value={(this.state.license !== undefined ? this.state.license : this.props.accountBilling?.appliedLicenseKey) || ''}
+                      onChange={e => this.setState({ license: e.target.value })}
+                    />
+                  </DialogContent>
+                  <DialogActions>
+                    <Button onClick={() => this.setState({ showLicenseDialog: undefined })}
+                    >Cancel</Button>
+                    <SubmitButton
+                      isSubmitting={this.state.isSubmitting}
+                      disabled={!this.props.accountBilling?.appliedLicenseKey}
+                      color="secondary"
+                      onClick={() => {
+                        this.setState({ isSubmitting: true });
+                        ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
+                          accountUpdateAdmin: {
+                            applyLicenseKey: '', // Empty string removes license
+                          },
+                        }).then(() => d.accountBillingAdmin({})))
+                          .then(() => this.setState({
+                            isSubmitting: false,
+                            showLicenseDialog: undefined,
+                            license: undefined,
+                          }))
+                          .catch(er => this.setState({ isSubmitting: false }));
+                      }}
+                    >Remove</SubmitButton>
+                    <SubmitButton
+                      isSubmitting={this.state.isSubmitting}
+                      disabled={!this.state.license}
+                      color="primary"
+                      onClick={() => {
+                        if (!this.state.license) return;
+                        this.setState({ isSubmitting: true });
+                        ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
+                          accountUpdateAdmin: {
+                            applyLicenseKey: this.state.license,
+                          },
+                        }).then(() => d.accountBillingAdmin({})))
+                          .then(() => this.setState({
+                            isSubmitting: false,
+                            showLicenseDialog: undefined,
+                            license: undefined,
+                          }))
+                          .catch(er => this.setState({ isSubmitting: false }));
+                      }}
+                    >Apply</SubmitButton>
+                  </DialogActions>
+                </Dialog>
+                <div className={this.props.classes.sectionButtons}>
+                  <Button
+                    disabled={this.state.isSubmitting}
+                    onClick={() => this.setState({ showLicenseDialog: true })}
+                  >{!this.props.accountBilling?.appliedLicenseKey ? 'Add License' : 'Change License'}</Button>
+                </div>
+              </>
+            )}
+            {showPlanChange && (
+              <div className={this.props.classes.sectionButtons}>
+                <Button
+                  disabled={this.state.isSubmitting || this.state.showPlanChange}
+                  onClick={() => {
+                    trackingBlock(() => {
+                      [ReactGA4, ReactGA].forEach(ga =>
+                        ga.event({
+                          category: 'billing',
+                          action: 'click-plan-switch-open',
+                          label: this.props.accountBilling?.plan.basePlanId,
+                        }),
+                      );
+                    });
+
+                    this.setState({ showPlanChange: true });
+                  }}
+                >
+                  {switchPlanTitle || 'Switch plan'}
+                </Button>
+              </div>
+            )}
+            {showPlanChange && !isSelfhost && (
+              <div className={this.props.classes.sectionButtons}>
+                <Button
+                  disabled={this.state.isSubmitting || this.state.showPlanChange}
+                  onClick={() => this.props.history.push('/coupon')}
+                >
+                  Redeem coupon
+                </Button>
+              </div>
+            )}
+            {showAddExtraTeammate && (
+              <div className={this.props.classes.sectionButtons}>
+                <Button
+                  disabled={this.state.isSubmitting || this.state.showAddExtraTeammate}
+                  onClick={() => this.setState({ showAddExtraTeammate: true })}
+                >
+                  {switchPlanTitle || 'Add Teammate'}
+                </Button>
+                <Dialog
+                  open={!!this.state.showAddExtraTeammate}
+                  onClose={() => this.setState({ showAddExtraTeammate: undefined })}
+                  scroll="body"
+                  maxWidth="md"
+                >
+                  <DialogTitle>Add teammate</DialogTitle>
+                  <DialogContent>
+                    Add additional teammate slots to your plan.
+                    <p />
+                    <TextField
+                      variant="outlined"
+                      type="number"
+                      label="Number of extra teammates"
+                      value={this.state.addExtraTeammateCount !== undefined ? this.state.addExtraTeammateCount : 0}
+                      onChange={e => {
+                        var addExtraTeammateCount = parseInt(e.target.value);
+                        if (addExtraTeammateCount < 0) {
+                          addExtraTeammateCount = 0;
+                        } else if (addExtraTeammateCount > 10) {
+                          addExtraTeammateCount = 10;
+                        }
+                        this.setState({ addExtraTeammateCount: addExtraTeammateCount });
+                      }}
+                    />
+                    <p />
+                    You will be invoiced the following amount:
+                    <br />
+                    <Box display="flex" justifyContent="center">
+                      <Typography component="div" variant="h6" color="textSecondary"
+                                  style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
+                      <Typography component="div" variant="h4">
+                        {(this.state.addExtraTeammateCount || 0)
+                          * (this.props.accountBilling?.plan.pricing?.admins?.additionalPrice || 0)}
+                      </Typography>
+                    </Box>
+                  </DialogContent>
+                  <DialogActions>
+                    <Button onClick={() => this.setState({ showAddExtraTeammate: undefined })}
+                    >Cancel</Button>
+                    <SubmitButton
+                      isSubmitting={this.state.isSubmitting}
+                      disabled={!this.state.addExtraTeammateCount}
+                      color="primary"
+                      onClick={() => {
+                        this.setState({ isSubmitting: true });
+                        ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
+                          accountUpdateAdmin: {
+                            addExtraTeammates: this.state.addExtraTeammateCount,
+                          },
+                        }).then(() => d.accountBillingAdmin({})))
+                          .then(() => this.setState({
+                            isSubmitting: false,
+                            showAddExtraTeammate: undefined,
+                            addExtraTeammateCount: 1,
+                          }))
+                          .catch(er => this.setState({ isSubmitting: false }));
+                      }}
+                    >Purchase</SubmitButton>
+                  </DialogActions>
+                </Dialog>
+              </div>
+            )}
+            {this.props.isSuperAdmin && !isSelfhost && (
+              <>
+                <Dialog
+                  open={!!this.state.showSponsorMonthlyChange}
+                  onClose={() => this.setState({ showSponsorMonthlyChange: undefined })}
+                  scroll="body"
+                  maxWidth="md"
+                >
+                  <DialogTitle>Switch to sponsor plan</DialogTitle>
+                  <DialogContent>
+                    <TextField
+                      variant="outlined"
+                      type="number"
+                      label="Monthly price"
+                      value={this.state.sponsorMonthlyPrice !== undefined ? this.state.sponsorMonthlyPrice : ''}
+                      onChange={e => this.setState({ sponsorMonthlyPrice: parseInt(e.target.value) >= 0 ? parseInt(e.target.value) : undefined })}
+                    />
+                  </DialogContent>
+                  <DialogActions>
+                    <Button onClick={() => this.setState({ showSponsorMonthlyChange: undefined })}
+                    >Cancel</Button>
+                    <SubmitButton
+                      isSubmitting={this.state.isSubmitting}
+                      disabled={this.state.sponsorMonthlyPrice === undefined}
+                      color="primary"
+                      onClick={() => {
+                        this.setState({ isSubmitting: true });
+                        ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateSuperAdmin({
+                          accountUpdateSuperAdmin: {
+                            changeToSponsorPlanWithMonthlyPrice: this.state.sponsorMonthlyPrice,
+                          },
+                        }).then(() => d.accountBillingAdmin({})))
+                          .then(() => this.setState({
+                            isSubmitting: false,
+                            showSponsorMonthlyChange: undefined,
+                          }))
+                          .catch(er => this.setState({ isSubmitting: false }));
+                      }}
+                    >Change</SubmitButton>
+                  </DialogActions>
+                </Dialog>
+                <Dialog
+                  open={!!this.state.showFlatYearlyChange}
+                  onClose={() => this.setState({ showFlatYearlyChange: undefined })}
+                  scroll="body"
+                  maxWidth="md"
+                >
+                  <DialogTitle>Switch to yearly plan</DialogTitle>
+                  <DialogContent>
+                    <TextField
+                      variant="outlined"
+                      type="number"
+                      label="Yearly flat price"
+                      value={this.state.flatYearlyPrice !== undefined ? this.state.flatYearlyPrice : ''}
+                      onChange={e => this.setState({ flatYearlyPrice: parseInt(e.target.value) >= 0 ? parseInt(e.target.value) : undefined })}
+                    />
+                  </DialogContent>
+                  <DialogActions>
+                    <Button onClick={() => this.setState({ showFlatYearlyChange: undefined })}
+                    >Cancel</Button>
+                    <SubmitButton
+                      isSubmitting={this.state.isSubmitting}
+                      disabled={this.state.flatYearlyPrice === undefined}
+                      color="primary"
+                      onClick={() => {
+                        this.setState({ isSubmitting: true });
+                        ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateSuperAdmin({
+                          accountUpdateSuperAdmin: {
+                            changeToFlatPlanWithYearlyPrice: this.state.flatYearlyPrice || 0,
+                          },
+                        }).then(() => d.accountBillingAdmin({})))
+                          .then(() => this.setState({
+                            isSubmitting: false,
+                            showFlatYearlyChange: undefined,
+                          }))
+                          .catch(er => this.setState({ isSubmitting: false }));
+                      }}
+                    >Change</SubmitButton>
+                  </DialogActions>
+                </Dialog>
+                <div className={this.props.classes.sectionButtons}>
+                  <Button
+                    disabled={this.state.isSubmitting}
+                    onClick={() => this.setState({ showFlatYearlyChange: true })}
+                  >Flatten</Button>
+                </div>
+                <div className={this.props.classes.sectionButtons}>
+                  <Button
+                    disabled={this.state.isSubmitting}
+                    onClick={() => this.setState({ showSponsorMonthlyChange: true })}
+                  >Sponsor</Button>
+                </div>
+              </>
+            )}
+            {this.props.isSuperAdmin && !isSelfhost && (
+              <>
+                <Dialog
+                  open={!!this.state.showAddonsChange}
+                  onClose={() => this.setState({ showAddonsChange: undefined })}
+                  scroll="body"
+                  maxWidth="md"
+                >
+                  <DialogTitle>Manage addons</DialogTitle>
+                  <DialogContent className={this.props.classes.addonsContainer}>
+                    <TextField
+                      label="Extra projects"
+                      variant="outlined"
+                      type="number"
+                      value={this.state.extraProjects !== undefined ? this.state.extraProjects : (this.props.account.addons?.[AddonExtraProject] || 0)}
+                      onChange={e => this.setState({ extraProjects: parseInt(e.target.value) >= 0 ? parseInt(e.target.value) : undefined })}
+                    />
+                    <TextField
+                      label="Extra teammates"
+                      variant="outlined"
+                      type="number"
+                      value={this.state.extraTeammates !== undefined ? this.state.extraTeammates : (this.props.account.addons?.[AddonExtraTeammate] || 0)}
+                      onChange={e => this.setState({ extraTeammates: parseInt(e.target.value) >= 0 ? parseInt(e.target.value) : undefined })}
+                    />
+                    <FormControlLabel
+                      control={(
+                        <Switch
+                          checked={this.state.whitelabel !== undefined ? this.state.whitelabel : !!this.props.account.addons?.[AddonWhitelabel]}
+                          onChange={(e, checked) => this.setState({ whitelabel: !!checked })}
+                          color="default"
+                        />
+                      )}
+                      label={(<FormHelperText>Whitelabel</FormHelperText>)}
+                    />
+                    <FormControlLabel
+                      control={(
+                        <Switch
+                          checked={this.state.privateProjects !== undefined ? this.state.privateProjects : !!this.props.account.addons?.[AddonPrivateProjects]}
+                          onChange={(e, checked) => this.setState({ privateProjects: !!checked })}
+                          color="default"
+                        />
+                      )}
+                      label={(<FormHelperText>Private projects</FormHelperText>)}
+                    />
+                  </DialogContent>
+                  <DialogActions>
+                    <Button onClick={() => this.setState({ showAddonsChange: undefined })}
+                    >Cancel</Button>
+                    <SubmitButton
+                      isSubmitting={this.state.isSubmitting}
+                      disabled={this.state.whitelabel === undefined
+                        && this.state.privateProjects === undefined
+                        && this.state.extraProjects === undefined
+                        && this.state.extraTeammates === undefined}
+                      color="primary"
+                      onClick={() => {
+                        if (this.state.whitelabel === undefined
+                          && this.state.privateProjects === undefined
+                          && this.state.extraProjects === undefined
+                          && this.state.extraTeammates === undefined) return;
+
+                        this.setState({ isSubmitting: true });
+                        ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateSuperAdmin({
+                          accountUpdateSuperAdmin: {
+                            addons: {
+                              ...(this.state.whitelabel === undefined ? {} : {
+                                [AddonWhitelabel]: this.state.whitelabel ? 'true' : '',
+                              }),
+                              ...(this.state.privateProjects === undefined ? {} : {
+                                [AddonPrivateProjects]: this.state.privateProjects ? 'true' : '',
+                              }),
+                              ...(this.state.extraProjects === undefined ? {} : {
+                                [AddonExtraProject]: `${this.state.extraProjects}`,
+                              }),
+                              ...(this.state.extraTeammates === undefined ? {} : {
+                                [AddonExtraTeammate]: `${this.state.extraTeammates}`,
+                              }),
+                            },
+                          },
+                        }).then(() => d.accountBillingAdmin({})))
+                          .then(() => this.setState({
+                            isSubmitting: false,
+                            showAddonsChange: undefined,
+                          }))
+                          .catch(er => this.setState({ isSubmitting: false }));
+                      }}
+                    >Change</SubmitButton>
+                  </DialogActions>
+                </Dialog>
+                <div className={this.props.classes.sectionButtons}>
+                  <Button
+                    disabled={this.state.isSubmitting}
+                    onClick={() => this.setState({ showAddonsChange: true })}
+                  >Addons</Button>
+                </div>
+              </>
+            )}
+            {this.props.isSuperAdmin && !isSelfhost && (
+              <>
+                <Dialog
+                  open={!!this.state.showCreditAdjustment}
+                  onClose={() => this.setState({ showCreditAdjustment: undefined })}
+                  scroll="body"
+                  maxWidth="md"
+                >
+                  <DialogTitle>Credit adjustment</DialogTitle>
+                  <DialogContent className={this.props.classes.addonsContainer}>
+                    Add the following amount to the account.
+                    <br />
+                    May be negative to add a charge on the account.
+                    <br />
+                    <TextField
+                      label="Amount"
+                      variant="outlined"
+                      type="number"
+                      value={this.state.creditAmount || 0}
+                      onChange={e => this.setState({ creditAmount: parseInt(e.target.value) })}
+                    />
+                    <TextField
+                      label="Description"
+                      variant="outlined"
+                      value={this.state.creditDescription || ''}
+                      onChange={e => this.setState({ creditDescription: e.target.value })}
+                    />
+                  </DialogContent>
+                  <DialogActions>
+                    <Button onClick={() => this.setState({ showCreditAdjustment: undefined })}
+                    >Cancel</Button>
+                    <SubmitButton
+                      isSubmitting={this.state.isSubmitting}
+                      disabled={!this.props.account
+                        || !this.state.creditAmount
+                        || !this.state.creditDescription}
+                      color="primary"
+                      onClick={() => {
+                        if (!this.props.account
+                          || !this.state.creditAmount
+                          || !this.state.creditDescription) return;
+
+                        this.setState({ isSubmitting: true });
+                        ServerAdmin.get().dispatchAdmin().then(d => d.accountCreditAdjustmentSuperAdmin({
+                          accountCreditAdjustment: {
+                            accountId: this.props.account!.accountId,
+                            amount: this.state.creditAmount!,
+                            description: this.state.creditDescription!,
+                          },
+                        }).then(() => d.accountBillingAdmin({})))
+                          .then(() => this.setState({
+                            isSubmitting: false,
+                            showCreditAdjustment: undefined,
+                            creditAmount: undefined,
+                            creditDescription: undefined,
+                          }))
+                          .catch(er => this.setState({ isSubmitting: false }));
+                      }}
+                    >Change</SubmitButton>
+                  </DialogActions>
+                </Dialog>
+                <div className={this.props.classes.sectionButtons}>
+                  <Button
+                    disabled={this.state.isSubmitting}
+                    onClick={() => this.setState({ showCreditAdjustment: true })}
+                  >Credit</Button>
+                </div>
+              </>
+            )}
+            <BillingChangePlanDialog
+              open={!!this.state.showPlanChange}
+              onClose={() => this.setState({ showPlanChange: undefined })}
+              onSubmit={basePlanId => {
+                trackingBlock(() => {
+                  [ReactGA4, ReactGA].forEach(ga =>
+                    ga.event({
+                      category: 'billing',
+                      action: 'click-plan-switch-submit',
+                      label: basePlanId,
+                    }),
+                  );
+                });
+
+                this.setState({ isSubmitting: true });
+                ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
+                  accountUpdateAdmin: {
+                    basePlanId,
+                  },
+                }).then(() => d.accountBillingAdmin({})))
+                  .then(() => this.setState({ isSubmitting: false, showPlanChange: undefined }))
+                  .catch(er => this.setState({ isSubmitting: false }));
+              }}
+              isSubmitting={!!this.state.isSubmitting}
+            />
+          </div>
+        )}
+      />
+    );
+
+    // No need to payment and invoices for selfhosting
+    if (isSelfhost) {
+      return (
+        <ProjectSettingsBase title="Billing">
+          {plan}
+        </ProjectSettingsBase>
+      );
+    }
 
     const hasPayable = (this.props.accountBilling?.accountPayable || 0) > 0;
     const hasReceivable = (this.props.accountBilling?.accountReceivable || 0) > 0;
@@ -777,467 +1356,6 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
               </Button>
             )}
           </>
-        )}
-      />
-    );
-
-    const plan = (
-      <Section
-        title="Plan"
-        preview={(
-          <div className={this.props.classes.planContainer}>
-            <TourAnchor anchorId="settings-billing-plan" placement="bottom" disablePortal>
-              <PricingPlan
-                selected
-                className={this.props.classes.plan}
-                plan={this.props.accountBilling.plan}
-              />
-            </TourAnchor>
-            {(this.props.accountBilling?.trackedUsers !== undefined) && (
-              <Box display="grid" gridTemplateAreas='"mauLbl mauAmt"' alignItems="baseline"
-                   gridGap="10px 10px">
-                <Box gridArea="mauLbl"><Typography component="div">Tracked users:</Typography></Box>
-                <Box gridArea="mauAmt" display="flex">
-                  <Typography component="div" variant="h5">
-                    {this.props.accountBilling.trackedUsers}
-                  </Typography>
-                </Box>
-              </Box>
-            )}
-            {(this.props.accountBilling?.postCount !== undefined) && (
-              <Box display="grid" gridTemplateAreas='"postCountLbl postCountAmt"' alignItems="baseline"
-                   gridGap="10px 10px">
-                <Box gridArea="postCountLbl"><Typography component="div">Post count:</Typography></Box>
-                <Box gridArea="postCountAmt" display="flex">
-                  <Typography component="div" variant="h5" color={
-                    this.props.account.basePlanId === 'starter-unlimited'
-                    && this.props.accountBilling.postCount > StarterMaxPosts
-                      ? 'error' : undefined}>
-                    {this.props.accountBilling.postCount}
-                  </Typography>
-                </Box>
-              </Box>
-            )}
-            {(this.props.accountBilling?.teammateCount !== undefined) && (
-              <Box display="grid" gridTemplateAreas='"teammateCountLbl teammateCountAmt"'
-                   alignItems="baseline" gridGap="10px 10px">
-                <Box gridArea="teammateCountLbl"><Typography component="div">Teammate
-                  count:</Typography></Box>
-                <Box gridArea="teammateCountAmt" display="flex">
-                  <Typography component="div" variant="h5">
-                    {this.props.accountBilling.teammateCount}
-                    {this.props.accountBilling.teammateMax && (
-                      <>
-                        &nbsp;/&nbsp;{this.props.accountBilling.teammateMax}
-                      </>
-                    )}
-                  </Typography>
-                </Box>
-              </Box>
-            )}
-          </div>
-        )}
-        content={(
-          <div className={this.props.classes.actionContainer}>
-            <p><Typography variant="h6" component="div" color="textPrimary">{planTitle}</Typography></p>
-            <Typography color="textSecondary">{planDesc}</Typography>
-            {(endOfTermChangeToPlanTitle || endOfTermChangeToPlanDesc) && (
-              <>
-                <p><Typography variant="h6" component="div" color="textPrimary"
-                               className={this.props.classes.sectionSpacing}>{endOfTermChangeToPlanTitle}</Typography>
-                </p>
-                <Typography color="textSecondary">{endOfTermChangeToPlanDesc}</Typography>
-              </>
-            )}
-            {showPlanChange && (
-              <div className={this.props.classes.sectionButtons}>
-                <Button
-                  disabled={this.state.isSubmitting || this.state.showPlanChange}
-                  onClick={() => {
-                    trackingBlock(() => {
-                      [ReactGA4, ReactGA].forEach(ga =>
-                        ga.event({
-                          category: 'billing',
-                          action: 'click-plan-switch-open',
-                          label: this.props.accountBilling?.plan.basePlanId,
-                        }),
-                      );
-                    });
-
-                    this.setState({ showPlanChange: true });
-                  }}
-                >
-                  {switchPlanTitle || 'Switch plan'}
-                </Button>
-              </div>
-            )}
-            {showPlanChange && (
-              <div className={this.props.classes.sectionButtons}>
-                <Button
-                  disabled={this.state.isSubmitting || this.state.showPlanChange}
-                  onClick={() => this.props.history.push('/coupon')}
-                >
-                  Redeem coupon
-                </Button>
-              </div>
-            )}
-            {showAddExtraTeammate && (
-              <div className={this.props.classes.sectionButtons}>
-                <Button
-                  disabled={this.state.isSubmitting || this.state.showAddExtraTeammate}
-                  onClick={() => this.setState({ showAddExtraTeammate: true })}
-                >
-                  {switchPlanTitle || 'Add Teammate'}
-                </Button>
-                <Dialog
-                  open={!!this.state.showAddExtraTeammate}
-                  onClose={() => this.setState({ showAddExtraTeammate: undefined })}
-                  scroll="body"
-                  maxWidth="md"
-                >
-                  <DialogTitle>Add teammate</DialogTitle>
-                  <DialogContent>
-                    Add additional teammate slots to your plan.
-                    <p />
-                    <TextField
-                      variant="outlined"
-                      type="number"
-                      label="Number of extra teammates"
-                      value={this.state.addExtraTeammateCount !== undefined ? this.state.addExtraTeammateCount : 0}
-                      onChange={e => {
-                        var addExtraTeammateCount = parseInt(e.target.value);
-                        if (addExtraTeammateCount < 0) {
-                          addExtraTeammateCount = 0;
-                        } else if (addExtraTeammateCount > 10) {
-                          addExtraTeammateCount = 10;
-                        }
-                        this.setState({ addExtraTeammateCount: addExtraTeammateCount });
-                      }}
-                    />
-                    <p />
-                    You will be invoiced the following amount:
-                    <br />
-                    <Box display="flex" justifyContent="center">
-                      <Typography component="div" variant="h6" color="textSecondary"
-                                  style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
-                      <Typography component="div" variant="h4">
-                        {(this.state.addExtraTeammateCount || 0)
-                          * (this.props.accountBilling?.plan.pricing?.admins?.additionalPrice || 0)}
-                      </Typography>
-                    </Box>
-                  </DialogContent>
-                  <DialogActions>
-                    <Button onClick={() => this.setState({ showAddExtraTeammate: undefined })}
-                    >Cancel</Button>
-                    <SubmitButton
-                      isSubmitting={this.state.isSubmitting}
-                      disabled={!this.state.addExtraTeammateCount}
-                      color="primary"
-                      onClick={() => {
-                        this.setState({ isSubmitting: true });
-                        ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
-                          accountUpdateAdmin: {
-                            addExtraTeammates: this.state.addExtraTeammateCount,
-                          },
-                        }).then(() => d.accountBillingAdmin({})))
-                          .then(() => this.setState({
-                            isSubmitting: false,
-                            showAddExtraTeammate: undefined,
-                            addExtraTeammateCount: 1,
-                          }))
-                          .catch(er => this.setState({ isSubmitting: false }));
-                      }}
-                    >Purchase</SubmitButton>
-                  </DialogActions>
-                </Dialog>
-              </div>
-            )}
-            {this.props.isSuperAdmin && (
-              <>
-                <Dialog
-                  open={!!this.state.showSponsorMonthlyChange}
-                  onClose={() => this.setState({ showSponsorMonthlyChange: undefined })}
-                  scroll="body"
-                  maxWidth="md"
-                >
-                  <DialogTitle>Switch to sponsor plan</DialogTitle>
-                  <DialogContent>
-                    <TextField
-                      variant="outlined"
-                      type="number"
-                      label="Monthly price"
-                      value={this.state.sponsorMonthlyPrice !== undefined ? this.state.sponsorMonthlyPrice : ''}
-                      onChange={e => this.setState({ sponsorMonthlyPrice: parseInt(e.target.value) >= 0 ? parseInt(e.target.value) : undefined })}
-                    />
-                  </DialogContent>
-                  <DialogActions>
-                    <Button onClick={() => this.setState({ showSponsorMonthlyChange: undefined })}
-                    >Cancel</Button>
-                    <SubmitButton
-                      isSubmitting={this.state.isSubmitting}
-                      disabled={this.state.sponsorMonthlyPrice === undefined}
-                      color="primary"
-                      onClick={() => {
-                        this.setState({ isSubmitting: true });
-                        ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateSuperAdmin({
-                          accountUpdateSuperAdmin: {
-                            changeToSponsorPlanWithMonthlyPrice: this.state.sponsorMonthlyPrice,
-                          },
-                        }).then(() => d.accountBillingAdmin({})))
-                          .then(() => this.setState({
-                            isSubmitting: false,
-                            showSponsorMonthlyChange: undefined,
-                          }))
-                          .catch(er => this.setState({ isSubmitting: false }));
-                      }}
-                    >Change</SubmitButton>
-                  </DialogActions>
-                </Dialog>
-                <Dialog
-                  open={!!this.state.showFlatYearlyChange}
-                  onClose={() => this.setState({ showFlatYearlyChange: undefined })}
-                  scroll="body"
-                  maxWidth="md"
-                >
-                  <DialogTitle>Switch to yearly plan</DialogTitle>
-                  <DialogContent>
-                    <TextField
-                      variant="outlined"
-                      type="number"
-                      label="Yearly flat price"
-                      value={this.state.flatYearlyPrice !== undefined ? this.state.flatYearlyPrice : ''}
-                      onChange={e => this.setState({ flatYearlyPrice: parseInt(e.target.value) >= 0 ? parseInt(e.target.value) : undefined })}
-                    />
-                  </DialogContent>
-                  <DialogActions>
-                    <Button onClick={() => this.setState({ showFlatYearlyChange: undefined })}
-                    >Cancel</Button>
-                    <SubmitButton
-                      isSubmitting={this.state.isSubmitting}
-                      disabled={this.state.flatYearlyPrice === undefined}
-                      color="primary"
-                      onClick={() => {
-                        this.setState({ isSubmitting: true });
-                        ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateSuperAdmin({
-                          accountUpdateSuperAdmin: {
-                            changeToFlatPlanWithYearlyPrice: this.state.flatYearlyPrice || 0,
-                          },
-                        }).then(() => d.accountBillingAdmin({})))
-                          .then(() => this.setState({
-                            isSubmitting: false,
-                            showFlatYearlyChange: undefined,
-                          }))
-                          .catch(er => this.setState({ isSubmitting: false }));
-                      }}
-                    >Change</SubmitButton>
-                  </DialogActions>
-                </Dialog>
-                <div className={this.props.classes.sectionButtons}>
-                  <Button
-                    disabled={this.state.isSubmitting}
-                    onClick={() => this.setState({ showFlatYearlyChange: true })}
-                  >Flatten</Button>
-                </div>
-                <div className={this.props.classes.sectionButtons}>
-                  <Button
-                    disabled={this.state.isSubmitting}
-                    onClick={() => this.setState({ showSponsorMonthlyChange: true })}
-                  >Sponsor</Button>
-                </div>
-              </>
-            )}
-            {this.props.isSuperAdmin && (
-              <>
-                <Dialog
-                  open={!!this.state.showAddonsChange}
-                  onClose={() => this.setState({ showAddonsChange: undefined })}
-                  scroll="body"
-                  maxWidth="md"
-                >
-                  <DialogTitle>Manage addons</DialogTitle>
-                  <DialogContent className={this.props.classes.addonsContainer}>
-                    <TextField
-                      label="Extra projects"
-                      variant="outlined"
-                      type="number"
-                      value={this.state.extraProjects !== undefined ? this.state.extraProjects : (this.props.account.addons?.[AddonExtraProject] || 0)}
-                      onChange={e => this.setState({ extraProjects: parseInt(e.target.value) >= 0 ? parseInt(e.target.value) : undefined })}
-                    />
-                    <TextField
-                      label="Extra teammates"
-                      variant="outlined"
-                      type="number"
-                      value={this.state.extraTeammates !== undefined ? this.state.extraTeammates : (this.props.account.addons?.[AddonExtraTeammate] || 0)}
-                      onChange={e => this.setState({ extraTeammates: parseInt(e.target.value) >= 0 ? parseInt(e.target.value) : undefined })}
-                    />
-                    <FormControlLabel
-                      control={(
-                        <Switch
-                          checked={this.state.whitelabel !== undefined ? this.state.whitelabel : !!this.props.account.addons?.[AddonWhitelabel]}
-                          onChange={(e, checked) => this.setState({ whitelabel: !!checked })}
-                          color="default"
-                        />
-                      )}
-                      label={(<FormHelperText>Whitelabel</FormHelperText>)}
-                    />
-                    <FormControlLabel
-                      control={(
-                        <Switch
-                          checked={this.state.privateProjects !== undefined ? this.state.privateProjects : !!this.props.account.addons?.[AddonPrivateProjects]}
-                          onChange={(e, checked) => this.setState({ privateProjects: !!checked })}
-                          color="default"
-                        />
-                      )}
-                      label={(<FormHelperText>Private projects</FormHelperText>)}
-                    />
-                  </DialogContent>
-                  <DialogActions>
-                    <Button onClick={() => this.setState({ showAddonsChange: undefined })}
-                    >Cancel</Button>
-                    <SubmitButton
-                      isSubmitting={this.state.isSubmitting}
-                      disabled={this.state.whitelabel === undefined
-                        && this.state.privateProjects === undefined
-                        && this.state.extraProjects === undefined
-                        && this.state.extraTeammates === undefined}
-                      color="primary"
-                      onClick={() => {
-                        if (this.state.whitelabel === undefined
-                          && this.state.privateProjects === undefined
-                          && this.state.extraProjects === undefined
-                          && this.state.extraTeammates === undefined) return;
-
-                        this.setState({ isSubmitting: true });
-                        ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateSuperAdmin({
-                          accountUpdateSuperAdmin: {
-                            addons: {
-                              ...(this.state.whitelabel === undefined ? {} : {
-                                [AddonWhitelabel]: this.state.whitelabel ? 'true' : '',
-                              }),
-                              ...(this.state.privateProjects === undefined ? {} : {
-                                [AddonPrivateProjects]: this.state.privateProjects ? 'true' : '',
-                              }),
-                              ...(this.state.extraProjects === undefined ? {} : {
-                                [AddonExtraProject]: `${this.state.extraProjects}`,
-                              }),
-                              ...(this.state.extraTeammates === undefined ? {} : {
-                                [AddonExtraTeammate]: `${this.state.extraTeammates}`,
-                              }),
-                            },
-                          },
-                        }).then(() => d.accountBillingAdmin({})))
-                          .then(() => this.setState({
-                            isSubmitting: false,
-                            showAddonsChange: undefined,
-                          }))
-                          .catch(er => this.setState({ isSubmitting: false }));
-                      }}
-                    >Change</SubmitButton>
-                  </DialogActions>
-                </Dialog>
-                <div className={this.props.classes.sectionButtons}>
-                  <Button
-                    disabled={this.state.isSubmitting}
-                    onClick={() => this.setState({ showAddonsChange: true })}
-                  >Addons</Button>
-                </div>
-              </>
-            )}
-            {this.props.isSuperAdmin && (
-              <>
-                <Dialog
-                  open={!!this.state.showCreditAdjustment}
-                  onClose={() => this.setState({ showCreditAdjustment: undefined })}
-                  scroll="body"
-                  maxWidth="md"
-                >
-                  <DialogTitle>Credit adjustment</DialogTitle>
-                  <DialogContent className={this.props.classes.addonsContainer}>
-                    Add the following amount to the account.
-                    <br />
-                    May be negative to add a charge on the account.
-                    <br />
-                    <TextField
-                      label="Amount"
-                      variant="outlined"
-                      type="number"
-                      value={this.state.creditAmount || 0}
-                      onChange={e => this.setState({ creditAmount: parseInt(e.target.value) })}
-                    />
-                    <TextField
-                      label="Description"
-                      variant="outlined"
-                      value={this.state.creditDescription || ''}
-                      onChange={e => this.setState({ creditDescription: e.target.value })}
-                    />
-                  </DialogContent>
-                  <DialogActions>
-                    <Button onClick={() => this.setState({ showCreditAdjustment: undefined })}
-                    >Cancel</Button>
-                    <SubmitButton
-                      isSubmitting={this.state.isSubmitting}
-                      disabled={!this.props.account
-                        || !this.state.creditAmount
-                        || !this.state.creditDescription}
-                      color="primary"
-                      onClick={() => {
-                        if (!this.props.account
-                          || !this.state.creditAmount
-                          || !this.state.creditDescription) return;
-
-                        this.setState({ isSubmitting: true });
-                        ServerAdmin.get().dispatchAdmin().then(d => d.accountCreditAdjustmentSuperAdmin({
-                          accountCreditAdjustment: {
-                            accountId: this.props.account!.accountId,
-                            amount: this.state.creditAmount!,
-                            description: this.state.creditDescription!,
-                          },
-                        }).then(() => d.accountBillingAdmin({})))
-                          .then(() => this.setState({
-                            isSubmitting: false,
-                            showCreditAdjustment: undefined,
-                            creditAmount: undefined,
-                            creditDescription: undefined,
-                          }))
-                          .catch(er => this.setState({ isSubmitting: false }));
-                      }}
-                    >Change</SubmitButton>
-                  </DialogActions>
-                </Dialog>
-                <div className={this.props.classes.sectionButtons}>
-                  <Button
-                    disabled={this.state.isSubmitting}
-                    onClick={() => this.setState({ showCreditAdjustment: true })}
-                  >Credit</Button>
-                </div>
-              </>
-            )}
-            <BillingChangePlanDialog
-              open={!!this.state.showPlanChange}
-              onClose={() => this.setState({ showPlanChange: undefined })}
-              onSubmit={basePlanId => {
-                trackingBlock(() => {
-                  [ReactGA4, ReactGA].forEach(ga =>
-                    ga.event({
-                      category: 'billing',
-                      action: 'click-plan-switch-submit',
-                      label: basePlanId,
-                    }),
-                  );
-                });
-
-                this.setState({ isSubmitting: true });
-                ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
-                  accountUpdateAdmin: {
-                    basePlanId,
-                  },
-                }).then(() => d.accountBillingAdmin({})))
-                  .then(() => this.setState({ isSubmitting: false, showPlanChange: undefined }))
-                  .catch(er => this.setState({ isSubmitting: false }));
-              }}
-              isSubmitting={!!this.state.isSubmitting}
-            />
-          </div>
         )}
       />
     );

@@ -159,6 +159,8 @@ public class KillBilling extends ManagedService implements Billing {
     @Inject
     private PlanStore planStore;
     @Inject
+    private PlanVerifyStore planVerifyStore;
+    @Inject
     private UserStore userStore;
     @Inject
     private NotificationService notificationService;
@@ -580,7 +582,7 @@ public class KillBilling extends ManagedService implements Billing {
 
     private boolean isAccountLimited(String accountId, String planId) {
         try {
-            planStore.verifyAccountMeetsLimits(planId, accountId);
+            planVerifyStore.verifyAccountMeetsLimits(planId, accountId);
         } catch (ApiException ex) {
             return true;
         }
@@ -965,6 +967,11 @@ public class KillBilling extends ManagedService implements Billing {
         }
 
         return allowUpgrade;
+    }
+
+    @Override
+    public Optional<AccountStore.Account> tryAutoUpgradeAfterSelfhostLicenseAdded(AccountStore.Account accountInDyn) {
+        return Optional.empty(); // Not for Killbill, only for selfhosted
     }
 
     /**

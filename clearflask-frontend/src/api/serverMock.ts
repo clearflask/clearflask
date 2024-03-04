@@ -19,7 +19,6 @@ import ServerAdmin from './serverAdmin';
 export const SSO_SECRET_KEY = '63195fc1-d8c0-4909-9039-e15ce3c96dce';
 
 export const SuperAdminEmail = `admin@${windowIso.parentDomain}`;
-const termsProjects = 'You can create separate projects each having their own set of users and content';
 const TeammatePlan: Admin.Plan = {
     basePlanId: TeammatePlanId, title: 'Teammate',
     perks: [
@@ -27,28 +26,171 @@ const TeammatePlan: Admin.Plan = {
         {desc: 'No billing'},
     ],
 };
-const AvailablePlans: { [planId: string]: Admin.Plan } = {
-    'standard3-monthly': {
-        basePlanId: 'standard3-monthly', title: 'Standard',
-        pricing: {
-            basePrice: 8, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Monthly,
-            admins: {amountIncluded: 1, additionalPrice: 4}
+
+// Raw body result of calling https://clearflask.com/api/v1/admin/plan
+const adminPlanResult = {
+    "plans": [{
+        "basePlanId": "cloud-free",
+        "title": "Starter",
+        "perks": [{"desc": "Unlimited admins/posts"}, {
+            "desc": "Private projects",
+            "terms": "Create a private project so only authorized users can view and provide feedback"
+        }, {"desc": "Whitelabel & API"}]
+    }, {
+        "basePlanId": "cloud-monthly",
+        "title": "Growth",
+        "pricing": {
+            "basePrice": 49,
+            "baseMau": 0,
+            "unitMau": 0,
+            "unitPrice": 0,
+            "admins": {"amountIncluded": 3, "additionalPrice": 12},
+            "period": "Monthly"
         },
-        perks: [
-            {desc: 'All features', terms: termsProjects},
-        ],
-    },
-    'lifetime2-lifetime': {
-        basePlanId: 'lifetime2-lifetime', title: 'Lifetime',
-        pricing: {
-            basePrice: 150, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Lifetime,
-            admins: { amountIncluded: 1, additionalPrice: 75 },
-        },
-        perks: [
-            {desc: 'All features'},
-        ],
-    },
-};
+        "perks": [{"desc": "Unlimited admins/posts"}, {
+            "desc": "Private projects",
+            "terms": "Create a private project so only authorized users can view and provide feedback"
+        }, {"desc": "Whitelabel & API"}]
+    }, {
+        "basePlanId": "cloud-yearly",
+        "title": "Pro",
+        "pricing": {"basePrice": 490, "baseMau": 0, "unitMau": 0, "unitPrice": 0, "period": "Yearly"},
+        "perks": [{"desc": "No limits"}, {"desc": "2-Month Discount"}]
+    }, {
+        "basePlanId": "selfhost-monthly",
+        "title": "Monthly",
+        "pricing": {"basePrice": 18, "baseMau": 0, "unitMau": 0, "unitPrice": 0, "period": "Monthly"},
+        "perks": [{"desc": "Unlimited admins/posts"}, {
+            "desc": "Private projects",
+            "terms": "Create a private project so only authorized users can view and provide feedback"
+        }, {"desc": "Whitelabel & API"}]
+    }, {
+        "basePlanId": "selfhost-yearly",
+        "title": "Yearly",
+        "pricing": {"basePrice": 180, "baseMau": 0, "unitMau": 0, "unitPrice": 0, "period": "Yearly"},
+        "perks": [{"desc": "No limits"}, {"desc": "2-Month Discount"}]
+    }], "featuresTable": {
+        "plans": ["Starter", "Growth", "Pro"],
+        "features": [{
+            "feature": "Projects",
+            "values": ["No limit", "No limit", "No limit"],
+            "terms": "You can create separate projects each having their own set of users and content"
+        }, {"feature": "Users", "values": ["No limit", "No limit", "No limit"]}, {
+            "feature": "Posts",
+            "values": ["100", "No limit", "No limit"],
+            "terms": "Keep your project tidy and delete old posts to stay within the limits."
+        }, {
+            "feature": "Teammates",
+            "values": ["1", "3 +$", "No limit"],
+            "terms": "Amount of administrators, product managers or support team members you can have on each project including yourself."
+        }, {
+            "feature": "Credit System",
+            "values": ["Yes", "Yes", "Yes"],
+            "terms": "Credit System allows fine-grained prioritization of value for each idea."
+        }, {"feature": "Roadmap", "values": ["Yes", "Yes", "Yes"]}, {
+            "feature": "Content customization",
+            "values": ["Yes", "Yes", "Yes"]
+        }, {"feature": "Custom domain", "values": ["No", "Yes", "Yes"]}, {
+            "feature": "Private projects",
+            "values": ["No", "Yes", "Yes"],
+            "terms": "Create a private project so only authorized users can view and provide feedback"
+        }, {
+            "feature": "SSO and OAuth",
+            "values": ["No", "Yes", "Yes"],
+            "terms": "Use your existing user accounts to log into ClearFlask with Single Sign-On or external OAuth provider such as Google, Github or Facebook"
+        }, {
+            "feature": "API",
+            "values": ["No", "Yes", "Yes"],
+            "terms": "Integrate with any external service via our API and webhooks"
+        }, {
+            "feature": "GitHub integration",
+            "values": ["No", "Yes", "Yes"],
+            "terms": "Synchronize GitHub issues with ClearFlask"
+        }, {
+            "feature": "Intercom integration",
+            "values": ["No", "Yes", "Yes"],
+            "terms": "Add Intercom widget on every page"
+        }, {
+            "feature": "Tracking integrations",
+            "values": ["No", "Yes", "Yes"],
+            "terms": "Include Google Analytics or Hotjar on every page"
+        }, {
+            "feature": "Site template",
+            "values": ["No", "Yes", "Yes"],
+            "terms": "Use your own HTML template to display parts of the site"
+        }, {
+            "feature": "Whitelabel",
+            "values": ["No", "Yes", "Yes"],
+            "terms": "Remove ClearFlask branding"
+        }, {"feature": "Priority support", "values": ["No", "No", "Yes"]}]
+    }, "featuresTableSelfhost": {
+        "plans": ["Free", "Month", "Year"],
+        "features": [{
+            "feature": "Projects",
+            "values": ["No limit", "No limit", "No limit"],
+            "terms": "You can create separate projects each having their own set of users and content"
+        }, {"feature": "Users", "values": ["No limit", "No limit", "No limit"]}, {
+            "feature": "Posts",
+            "values": ["100", "No limit", "No limit"],
+            "terms": "Keep your project tidy and delete old posts to stay within the limits."
+        }, {
+            "feature": "Teammates",
+            "values": ["3", "No limit", "No limit"],
+            "terms": "Amount of administrators, product managers or support team members you can have on each project including yourself."
+        }, {
+            "feature": "Credit System",
+            "values": ["Yes", "Yes", "Yes"],
+            "terms": "Credit System allows fine-grained prioritization of value for each idea."
+        }, {"feature": "Roadmap", "values": ["Yes", "Yes", "Yes"]}, {
+            "feature": "Content customization",
+            "values": ["Yes", "Yes", "Yes"]
+        }, {"feature": "Custom domain", "values": ["Yes", "Yes", "Yes"]}, {
+            "feature": "Private projects",
+            "values": ["No", "Yes", "Yes"],
+            "terms": "Create a private project so only authorized users can view and provide feedback"
+        }, {
+            "feature": "SSO and OAuth",
+            "values": ["No", "Yes", "Yes"],
+            "terms": "Use your existing user accounts to log into ClearFlask with Single Sign-On or external OAuth provider such as Google, Github or Facebook"
+        }, {
+            "feature": "API",
+            "values": ["No", "Yes", "Yes"],
+            "terms": "Integrate with any external service via our API and webhooks"
+        }, {
+            "feature": "GitHub integration",
+            "values": ["No", "Yes", "Yes"],
+            "terms": "Synchronize GitHub issues with ClearFlask"
+        }, {
+            "feature": "Intercom integration",
+            "values": ["No", "Yes", "Yes"],
+            "terms": "Add Intercom widget on every page"
+        }, {
+            "feature": "Tracking integrations",
+            "values": ["No", "Yes", "Yes"],
+            "terms": "Include Google Analytics or Hotjar on every page"
+        }, {
+            "feature": "Site template",
+            "values": ["No", "Yes", "Yes"],
+            "terms": "Use your own HTML template to display parts of the site"
+        }, {
+            "feature": "Whitelabel",
+            "values": ["No", "Yes", "Yes"],
+            "terms": "Remove ClearFlask branding"
+        }, {
+            "feature": "Search engine",
+            "values": ["Yes", "Yes", "Yes"],
+            "terms": "Search powered by ElasticSearch for fast and accurate search capability"
+        }, {"feature": "Priority support", "values": ["No", "Yes", "Yes"]}]
+    }
+}
+
+const AvailablePlans: { [planId: string]: Admin.Plan } = adminPlanResult.plans.reduce((plans, plan) => {
+    plans[plan.basePlanId] = plan;
+    return plans;
+}, {});
+const FeaturesTable: Admin.FeaturesTable | undefined = adminPlanResult.featuresTable;
+const FeaturesTableSelfhost: Admin.FeaturesTable | undefined = adminPlanResult.featuresTableSelfhost;
+
 export const DefaultMockUserPlanId = Object.keys(AvailablePlans)[0];
 const AllPlans: { [planId: string]: Admin.Plan } = {
     ...AvailablePlans,
@@ -60,28 +202,6 @@ const AllPlans: { [planId: string]: Admin.Plan } = {
             {desc: '1 Project'},
         ],
     },
-};
-const FeaturesTable: Admin.FeaturesTable | undefined = {
-    plans: ['Standard'],
-    features: [
-        {feature: "Projects", values: ["No limit"]},
-        {feature: "Users", values: ["No limit"]},
-        {feature: "Posts", values: ["No limit"]},
-        {feature: "Teammates", values: ["No limit"]},
-        {feature: "Credit System", values: ["Yes"]},
-        {feature: "Roadmap", values: ["Yes"]},
-        {feature: "Content customization", values: ["Yes"]},
-        {feature: "Custom domain", values: ["Yes"]},
-        {feature: "Private projects", values: ["Yes"]},
-        {feature: "SSO and OAuth", values: ["Yes"]},
-        {feature: "API", values: ["Yes"]},
-        {feature: "GitHub integration", values: ["Yes"]},
-        {feature: "Intercom integration", values: ["Yes"]},
-        {feature: "Tracking integrations", values: ["Yes"]},
-        {feature: "Site template", values: ["Yes"]},
-        {feature: "Whitelabel", values: ["No"]},
-        {feature: "Search engine", values: ["No"]},
-    ],
 };
 
 interface CommentWithAuthorWithParentPath extends Client.CommentWithVote {
@@ -160,6 +280,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         return this.returnLater({
             plans: Object.values(AvailablePlans),
             featuresTable: FeaturesTable,
+            featuresTableSelfhost: FeaturesTableSelfhost,
         });
     }
 
@@ -507,6 +628,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
                     'paymentIntentClientSecret': 'client-secret',
                 }
             },
+            purchasedLicenseKey: 'b216a348-7c77-448a-b031-9ec2fb18337d',
         });
     }
 

@@ -10,14 +10,10 @@ import com.kik.config.ice.annotations.NoDefaultValue;
 import com.smotana.clearflask.api.model.Onboarding;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
-import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.*;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
-import com.smotana.clearflask.store.CommentStore;
-import com.smotana.clearflask.store.IdeaStore;
-import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
-import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.util.IpUtil;
 import com.smotana.clearflask.web.resource.AccountResource;
@@ -130,7 +126,9 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                 requestContext.getCookies().get(UserResource.USER_AUTH_COOKIE_NAME_PREFIX + projectId));
     }
 
-    /** TODO Kind of a hack, authenticate* methods should be refactored out to a separate singleton class */
+    /**
+     * TODO Kind of a hack, authenticate* methods should be refactored out to a separate singleton class
+     */
     public static Optional<UserSession> authenticateUserCookie(UserStore userStore, Cookie cookie) {
         if (cookie == null) {
             return Optional.empty();

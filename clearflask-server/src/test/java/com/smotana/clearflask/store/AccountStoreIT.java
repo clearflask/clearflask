@@ -2,11 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.smotana.clearflask.store;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import com.google.common.collect.*;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
@@ -21,29 +17,15 @@ import com.smotana.clearflask.store.ProjectStore.SearchEngine;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
-import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
-import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
-import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
-import com.smotana.clearflask.store.impl.DynamoProjectStore;
-import com.smotana.clearflask.store.impl.DynamoVoteStore;
+import com.smotana.clearflask.store.impl.*;
 import com.smotana.clearflask.store.mysql.MysqlCustomFunction;
 import com.smotana.clearflask.store.mysql.MysqlUtil;
 import com.smotana.clearflask.store.mysql.model.tables.JooqIdea;
 import com.smotana.clearflask.testutil.AbstractIT;
-import com.smotana.clearflask.util.ChatwootUtil;
-import com.smotana.clearflask.util.DefaultServerSecret;
-import com.smotana.clearflask.util.IdUtil;
-import com.smotana.clearflask.util.IntercomUtil;
-import com.smotana.clearflask.util.ProjectUpgraderImpl;
-import com.smotana.clearflask.util.ServerSecretTest;
+import com.smotana.clearflask.util.*;
 import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
-import io.dataspray.singletable.DynamoTable;
-import io.dataspray.singletable.IndexSchema;
-import io.dataspray.singletable.ShardPageResult;
-import io.dataspray.singletable.SingleTable;
-import io.dataspray.singletable.SingleTableTestUtil;
-import io.dataspray.singletable.TableSchema;
+import io.dataspray.singletable.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -65,9 +47,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static io.dataspray.singletable.TableType.Primary;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 @Slf4j
 @RunWith(Parameterized.class)
@@ -511,7 +491,9 @@ public class AccountStoreIT extends AbstractIT {
         }
     }
 
-    /** Excludes GSI 2 for testing upgrade */
+    /**
+     * Excludes GSI 2 for testing upgrade
+     */
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
@@ -524,7 +506,9 @@ public class AccountStoreIT extends AbstractIT {
         String accountId;
     }
 
-    /** Upgrade completed, ignoring test */
+    /**
+     * Upgrade completed, ignoring test
+     */
     @Ignore
     @Test(timeout = 30_000L)
     public void testUpgradeAddGsi2ToAccountEmail() throws Exception {

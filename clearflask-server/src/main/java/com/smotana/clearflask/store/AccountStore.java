@@ -11,17 +11,14 @@ import com.smotana.clearflask.api.model.AccountSearchSuperAdmin;
 import com.smotana.clearflask.api.model.ProjectAdmin;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.billing.PlanStore;
+import com.smotana.clearflask.core.ServiceInjector;
 import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.util.ChatwootUtil;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.web.security.SuperAdminPredicate;
 import io.dataspray.singletable.DynamoTable;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NonNull;
-import lombok.ToString;
-import lombok.Value;
+import lombok.*;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -189,7 +186,9 @@ public interface AccountStore {
         @NonNull
         String name;
 
-        /** Empty if only using OAuth guid */
+        /**
+         * Empty if only using OAuth guid
+         */
         @ToString.Exclude
         String password;
 
@@ -210,6 +209,17 @@ public interface AccountStore {
          * signup and needs to be created on-demand and need to know what price to use.
          */
         Long requestedRecurringPrice;
+
+        /**
+         * Workaround for Self-Hosted ClearFlask to get the status of the subscription on-deman
+         */
+        public SubscriptionStatus getStatus() {
+            if (ServiceInjector.detectEnvironment() == ServiceInjector.Environment.PRODUCTION_SELF_HOST) {
+                return ServiceInjector.INSTANCE.get().getInstance(LicenseStore.class)
+                        .getSelfhostEntitlementStatus(planid);
+            }
+            return status;
+        }
 
         /**
          * ClearFlask Feedback page guid

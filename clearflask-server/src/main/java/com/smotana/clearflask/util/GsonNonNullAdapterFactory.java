@@ -21,12 +21,12 @@ import java.util.Arrays;
 public class GsonNonNullAdapterFactory implements TypeAdapterFactory {
     public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> type) {
         final TypeAdapter<T> delegate = gson.getDelegateAdapter(this, type);
-//        if (type.getRawType().isPrimitive()) {
-//            return delegate;
-//        }
+        //        if (type.getRawType().isPrimitive()) {
+        //            return delegate;
+        //        }
         boolean parentHasNonNull = type.getRawType().isAnnotationPresent(GsonNonNull.class);
         ImmutableList<Field> nonNullFields = Arrays.stream(type.getRawType().getDeclaredFields())
-//                .filter(field -> !field.getType().isPrimitive())
+                //                .filter(field -> !field.getType().isPrimitive())
                 .filter(field -> field.isAnnotationPresent(GsonNonNull.class))
                 .collect(ImmutableList.toImmutableList());
         if (nonNullFields.isEmpty()) {

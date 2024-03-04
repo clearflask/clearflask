@@ -24,7 +24,9 @@ public abstract class ManagedService extends AbstractIdleService {
     @Inject
     private Provider<Set<Service>> servicesProvider;
 
-    /** Override to supply set of dependencies */
+    /**
+     * Override to supply set of dependencies
+     */
     protected ImmutableSet<Class> serviceDependencies() {
         // Default no dependencies
         return ImmutableSet.of();
@@ -38,12 +40,16 @@ public abstract class ManagedService extends AbstractIdleService {
         return false;
     }
 
-    /** Override to start service */
+    /**
+     * Override to start service
+     */
     protected void serviceStart() throws Exception {
         // Default noop
     }
 
-    /** Override to stop service */
+    /**
+     * Override to stop service
+     */
     protected void serviceStop() throws Exception {
         // Default noop
     }

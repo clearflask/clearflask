@@ -5,11 +5,9 @@ package com.smotana.clearflask.billing;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.smotana.clearflask.api.model.AllPlansGetResponse;
-import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.Plan;
 import com.smotana.clearflask.api.model.PlansGetResponse;
 import com.smotana.clearflask.billing.CouponStore.CouponModel;
-import com.smotana.clearflask.web.ApiException;
 import lombok.NonNull;
 import lombok.Value;
 
@@ -67,7 +65,10 @@ public interface PlanStore {
             "pitchground-b-lifetime",
             "pitchground-c-lifetime",
             "pitchground-d-lifetime",
-            "pitchground-e-lifetime");
+            "pitchground-e-lifetime",
+            "cloud-free",
+            "selfhost-monthly",
+            "selfhost-yearly");
 
     PlansGetResponse getPublicPlans();
 
@@ -90,27 +91,15 @@ public interface PlanStore {
      */
     String getBasePlanId(String planId);
 
-    String prettifyPlanName(String planIdOrPrettyPlanName);
-
-    void verifyAccountMeetsPlanRestrictions(String planId, String accountId) throws ApiException;
-
-    void verifyAccountMeetsLimits(String planId, String accountId) throws ApiException;
-
-    boolean isAccountExceedsPostLimit(String planId, String accountId);
-
-    void verifyActionMeetsPlanRestrictions(String planId, String accountId, Action action) throws ApiException;
-
-    void verifyConfigMeetsPlanRestrictions(String planId, String accountId, ConfigAdmin config) throws ApiException;
-
-    void verifyConfigChangeMeetsRestrictions(boolean isSuperAdmin, Optional<ConfigAdmin> configAdminPreviousOpt, ConfigAdmin config) throws ApiException;
-
-    void verifyTeammateInviteMeetsPlanRestrictions(String planId, String accountId, boolean addOne) throws ApiException;
-
-    void verifyProjectCountMeetsPlanRestrictions(String planId, String accountId, boolean addOne) throws ApiException;
-
-    enum Action {
-        API_KEY,
-        CREATE_PROJECT
+    default String prettifyPlanName(String planIdOrPrettyPlanName) {
+        if (planIdOrPrettyPlanName.contains("-")) {
+            // Most likely this is not a pretty plan name, just a plan id
+            return getPlan(planIdOrPrettyPlanName, Optional.empty())
+                    .map(Plan::getTitle)
+                    .map(name -> name + " Plan")
+                    .orElse(planIdOrPrettyPlanName);
+        }
+        return planIdOrPrettyPlanName;
     }
 
     @Value

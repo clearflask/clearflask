@@ -279,6 +279,9 @@ components:
           type: object
           additionalProperties:
             type: string
+        # Provide a license key, an empty string removes it
+        applyLicenseKey:
+          type: string
     AccountUpdateSuperAdmin:
       type: object
       properties:
@@ -361,6 +364,12 @@ components:
               type: object
               additionalProperties:
                 type: string
+        # In Cloud env, the license key that you purchased
+        purchasedLicenseKey:
+          type: string
+        # In Selfhost env, the license key that you set in your instance
+        appliedLicenseKey:
+          type: string
     Invoices:
       title: InvoicesSearchAdminResponse
       type: object
@@ -461,6 +470,8 @@ components:
                   items:
                     $ref: 'api-account.yaml#/components/schemas/Plan'
                 featuresTable:
+                  $ref: 'api-account.yaml#/components/schemas/FeaturesTable'
+                featuresTableSelfhost:
                   $ref: 'api-account.yaml#/components/schemas/FeaturesTable'
 /superadmin/plan:
   get:
@@ -907,3 +918,18 @@ components:
     responses:
       '200':
         $ref: 'api-client.yaml#/components/responses/Ok'
+/license/check:
+  post:
+    operationId: licenseCheck
+    tags: [ Account ]
+    parameters:
+      - name: license
+        in: query
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
+      '401':
+        $ref: 'api-client.yaml#/components/responses/Unauthorized'

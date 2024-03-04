@@ -14,6 +14,8 @@ import { Dashboard, DashboardPageContext, ProjectSettingsMainSize } from "../Das
 import BillingPage from './BillingPage';
 import { ProjectSettingsAdvancedEnter, ProjectSettingsApi, ProjectSettingsBase, ProjectSettingsBranding, ProjectSettingsChangelog, ProjectSettingsCookies, ProjectSettingsCoupons, ProjectSettingsData, ProjectSettingsDomain, ProjectSettingsFeedback, ProjectSettingsGitHub, ProjectSettingsGoogleAnalytics, ProjectSettingsHotjar, ProjectSettingsInstall, ProjectSettingsIntercom, ProjectSettingsLanding, ProjectSettingsLoginAs, ProjectSettingsRoadmap, ProjectSettingsTeammates, ProjectSettingsUsers, ProjectSettingsUsersOauth, ProjectSettingsUsersSso } from './ProjectSettings';
 import SettingsPage from './SettingsPage';
+import { SelfhostLicensePage } from './SelfhostLicensePage';
+import { SelfhostInstallPage } from './SelfhostInstallPage';
 
 export async function renderSettings(this: Dashboard, context: DashboardPageContext) {
   if (!this.props.account) {
@@ -176,7 +178,13 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
               { type: 'heading', text: this.props.t('account') } as MenuHeading,
               { type: 'item', slug: 'settings/account/profile', name: this.props.t('profile'), offset: 1 } as MenuItem,
               { type: 'item', slug: 'settings/account/billing', name: this.props.t('billing'), offset: 1 } as MenuItem,
-              { type: 'item', slug: 'settings/account/api', name: 'API', offset: 1 } as MenuItem,
+              ...(!context.isSelfhostServiceOnly ? [
+                { type: 'item', slug: 'settings/account/api', name: 'API', offset: 1 } as MenuItem,
+              ] : [
+                { type: 'heading', text: this.props.t('self-hosting') } as MenuHeading,
+                { type: 'item', slug: 'settings/account/selfhost-install', name: this.props.t('install'), offset: 1 } as MenuItem,
+                { type: 'item', slug: 'settings/account/selfhost-service', name: 'License', offset: 1 } as MenuItem,
+              ]),
             ]}
             activePath={activePath}
             activeSubPath={activeSubPath}
@@ -197,6 +205,14 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
       case 'api':
         setTitle('API - ' + this.props.t('dashboard'));
         mainContent = (<ProjectSettingsApi />);
+        break;
+      case 'selfhost-install':
+        setTitle('Self-host License - ' + this.props.t('dashboard'));
+        mainContent = (<SelfhostInstallPage />);
+        break;
+      case 'selfhost-service':
+        setTitle('Self-host License - ' + this.props.t('dashboard'));
+        mainContent = (<SelfhostLicensePage />);
         break;
     }
   } else if (activeSubPath[0] === 'super') {

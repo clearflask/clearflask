@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 /** Intentional comment to prevent licence-maven-plugin from deleting the below line */
 /// <reference path="../@types/transform-media-imports.d.ts"/>
-import { Box, Grid, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
+import { Box, Grid, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, Typography } from '@material-ui/core';
 import { createStyles, Theme, useTheme, WithStyles, withStyles } from '@material-ui/core/styles';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
 import CheckIcon from '@material-ui/icons/CheckRounded';
@@ -26,6 +26,7 @@ import { PRE_SELECTED_BASE_PLAN_ID, SIGNUP_PROD_ENABLED } from './AccountEnterPa
 import PricingPlan from './PricingPlan';
 import PricingSlider from './PricingSlider';
 import Background from './landing/Background';
+import { SelfhostServicePlans } from '../common/config/settings/UpgradeWrapper';
 
 /** If changed, also update PlanStore.java */
 export const StopTrialAfterActiveUsersReaches = 10;
@@ -159,14 +160,18 @@ interface ConnectProps {
   callOnMount?: () => void,
   plans?: Admin.Plan[];
   featuresTable?: Admin.FeaturesTable;
+  featuresTableSelfhost?: Admin.FeaturesTable;
 }
 
 interface State {
   highlightedBasePlanid?: string;
+  tab: 'selfhost' | 'cloud',
 }
 
 class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site'> & RouteComponentProps & WithStyles<typeof styles, true>, State> {
-  state: State = {};
+  state: State = {
+    tab: 'cloud',
+  };
 
   constructor(props) {
     super(props);
@@ -178,13 +183,12 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
 
     // Community self-hosted plan
     const communityPlan: Admin.Plan = {
-      basePlanId: 'community',
-      title: 'Self-host',
+      basePlanId: 'selfhost-free',
+      title: 'Free & Open-source',
       pricing: { basePrice: 0, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Monthly },
       perks: [
-        { desc: 'All features' },
+        { desc: 'Open-source Apache 2.0' },
         { desc: 'Deploy via Docker' },
-        { desc: 'Apache 2.0 licensed' },
       ],
     };
     const communityPlanCmpt = (
@@ -195,7 +199,6 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
         actionIcon={(<GithubIcon />)}
         actionTitle="Deploy"
         remark="Community supported"
-        overrideMauTerms={[]}
         actionOnClick={() => {
           trackingBlock(() => {
             [ReactGA4, ReactGA].forEach(ga =>
@@ -247,7 +250,8 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
     //   />
     // );
 
-    const plansAll: JSX.Element[] = [];
+    const plansSelfHost: JSX.Element[] = [];
+    const plansCloud: JSX.Element[] = [];
     for (const plan of this.props.plans || []) {
       const pricingPlan = AllowUserChoosePricingForPlans.has(plan.basePlanId) ? (
         <PricingSlider
@@ -265,12 +269,12 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
           ] : undefined}
           plan={plan}
           selected={this.state.highlightedBasePlanid === plan.basePlanId}
-          actionTitle={plan.basePlanId !== 'flat-yearly' && (SIGNUP_PROD_ENABLED || !isProd()) ? 'Get started' : 'Talk to us'}
-          remark={plan.basePlanId === 'standard2-unlimited'
-            ? this.props.t('free-forever')
+            actionTitle={SelfhostServicePlans.includes(plan.basePlanId) ? 'Buy license' : 'Get started'}
+            remark={SelfhostServicePlans.includes(plan.basePlanId)
+              ? 'Automatic renewal'
             : (plan.pricing
               ? this.props.t('free-14-day-trial')
-              : this.props.t('let-us-help-you'))}
+              : this.props.t('free-forever'))}
           actionOnClick={() => {
             trackingBlock(() => {
               [ReactGA4, ReactGA].forEach(ga =>
@@ -290,14 +294,23 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
             : '/contact/sales'}
         />
       );
-      plansAll.push(pricingPlan);
+      if (SelfhostServicePlans.includes(plan.basePlanId)) {
+        plansSelfHost.push(pricingPlan);
+      } else {
+        plansCloud.push(pricingPlan);
+      }
     }
 
-    const plansGrouped = this.groupPlans([
+    const plansGroupedSelfhost = this.groupPlans([
       communityPlanCmpt,
-      ...plansAll,
+      ...plansSelfHost,
+    ])
+    const plansGroupedCloud = this.groupPlans([
+      ...plansCloud,
       // talkPlanCmpt,
     ]);
+
+    const featuresTable = this.state.tab === 'cloud' ? this.props.featuresTable : this.props.featuresTableSelfhost;
 
     return (
       <>
@@ -310,7 +323,7 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
             <div className={this.props.classes.header}>
               <div>
                 <Typography component="h2" variant="h2"
-                            color="textPrimary">{this.props.t('pricing')}</Typography>
+                  color="textPrimary">{this.props.t('pricing')}</Typography>
               </div>
               <ImgIso
                 alt=""
@@ -325,17 +338,28 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
           <br />
           <br />
           <Loader loaded={!!this.props.plans} skipFade>
+            <Tabs
+              centered
+              variant='standard'
+              scrollButtons='off'
+              value={this.state.tab}
+              onChange={(e, newTab) => this.setState({ tab: newTab as any })}
+            >
+              <Tab value='selfhost' label='Self-hosted' className={this.props.classes.tab} />
+              <Tab value='cloud' label='Cloud' className={this.props.classes.tab} />
+            </Tabs>
             <div className={classNames(this.props.classes.section, this.props.classes.sectionPlans)}>
-              {plansGrouped}
+              {this.state.tab === 'selfhost' && plansGroupedSelfhost}
+              {this.state.tab === 'cloud' && plansGroupedCloud}
             </div>
           </Loader>
           {/* <LandingCustomers /> */}
           <br />
           <br />
-          {this.props.featuresTable && (
+          {featuresTable && (
             <div className={this.props.classes.section}>
-              <FeatureList name="Features" planNames={this.props.featuresTable.plans}>
-                {this.props.featuresTable.features.map((feature, index) => (
+              <FeatureList name="Features" planNames={featuresTable.plans}>
+                {featuresTable.features.map((feature, index) => (
                   <FeatureListItem
                     key={feature.feature}
                     planContents={this.mapFeaturesTableValues(feature.values)}
@@ -344,10 +368,10 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
                   />
                 ))}
               </FeatureList>
-              {this.props.featuresTable.extraTerms && (
+              {featuresTable.extraTerms && (
                 <Box display="flex" justifyContent="center">
                   <Typography variant="caption"
-                              component="div">{this.props.featuresTable.extraTerms}</Typography>
+                    component="div">{featuresTable.extraTerms}</Typography>
                 </Box>
               )}
             </div>
@@ -465,6 +489,7 @@ export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProp
   const newProps: ConnectProps = {
     plans: state.plans.plans.plans,
     featuresTable: state.plans.plans.featuresTable,
+    featuresTableSelfhost: state.plans.plans.featuresTableSelfhost,
   };
   if (state.plans.plans.status === undefined) {
     newProps.callOnMount = () => {
