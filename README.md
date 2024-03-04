@@ -82,13 +82,11 @@ Point your browser at [http://localhost](http://localhost) and create an account
 
 If you wish to host it remotely other than `localhost`, read the [DNS section](#dns).
 
-Otherwise read on to deploy a long-term installation.
+## Replace dependencies
 
-## Deploy dependencies
+There are several dependencies that you can swap out for ClearFlask:
 
-There are several dependencies you need for running ClearFlask:
-
-- **AWS DynamoDB** or API-compatible alternative (ScyllaDB is not fully compatible)
+- **AWS DynamoDB** or **Localstack** or API-compatible alternative (ScyllaDB is not fully compatible)
 - **MinIO** or **AWS S3** or API-compatible alternative
 - One of:
     - **MySQL** or **Aurora**
@@ -103,7 +101,7 @@ And a few optional:
 
 ### Via Docker
 
-Although not intended for production, you can spin up all dependencies via Docker.
+You can spin up all dependencies via Docker.
 
 Simply add the `--profile with-deps` to your `docker-compose` command when starting ClearFlask.
 
