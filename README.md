@@ -88,7 +88,7 @@ Otherwise read on to deploy a long-term installation.
 
 There are several dependencies you need for running ClearFlask:
 
-- **ScyllaDB** or **AWS DynamoDB** or API-compatible alternative
+- **AWS DynamoDB** or API-compatible alternative (ScyllaDB is not fully compatible)
 - **MinIO** or **AWS S3** or API-compatible alternative
 - One of:
     - **MySQL** or **Aurora**
