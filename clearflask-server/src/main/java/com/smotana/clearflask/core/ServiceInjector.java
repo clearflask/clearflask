@@ -3,6 +3,7 @@
 package com.smotana.clearflask.core;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Enums;
 import com.google.common.util.concurrent.GuavaRateLimiters;
 import com.google.common.util.concurrent.ServiceManager;
 import com.google.inject.Module;
@@ -56,6 +57,7 @@ import lombok.extern.slf4j.Slf4j;
 import javax.management.MBeanServer;
 import java.lang.management.ManagementFactory;
 import java.time.Duration;
+import java.util.Optional;
 
 @Slf4j
 @NoArgsConstructor
@@ -85,7 +87,8 @@ public enum ServiceInjector {
         if (injector == null) {
             synchronized (ServiceInjector.class) {
                 if (injector == null) {
-                    Environment env = detectEnvironment();
+                    Environment env = detectEnvironment()
+                            .orElseThrow(() -> new RuntimeException("Could not determine environment. Did you forget to set env var CLEARFLASK_ENVIRONMENT?"));
                     log.info("Detected environment {}", env.name());
                     log.info("Creating injector");
                     Injector newInjector = create(env, Stage.DEVELOPMENT);
@@ -274,15 +277,17 @@ public enum ServiceInjector {
         };
     }
 
-    private static volatile Environment envCache;
+    private static volatile Optional<Environment> envCache;
 
-    public static Environment detectEnvironment() {
+    @SuppressWarnings("OptionalAssignedToNull")
+    public static Optional<Environment> detectEnvironment() {
         if (envCache == null) {
-            String envEnvironment = System.getenv("CLEARFLASK_ENVIRONMENT");
-            if (envEnvironment == null) {
-                throw new RuntimeException("Could not determine environment. Did you forget to set env var CLEARFLASK_ENVIRONMENT?");
+            synchronized (Environment.class) {
+                if (envCache == null) {
+                    envCache = Optional.ofNullable(System.getenv("CLEARFLASK_ENVIRONMENT"))
+                            .flatMap(envStr -> Enums.getIfPresent(Environment.class, envStr).toJavaUtil());
+                }
             }
-            envCache = Environment.valueOf(envEnvironment);
         }
         return envCache;
     }

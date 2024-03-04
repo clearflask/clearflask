@@ -214,7 +214,11 @@ public interface AccountStore {
          * Workaround for Self-Hosted ClearFlask to get the status of the subscription on-deman
          */
         public SubscriptionStatus getStatus() {
-            if (ServiceInjector.detectEnvironment() == ServiceInjector.Environment.PRODUCTION_SELF_HOST) {
+            // Ideally we would be using the injected Environment, but:
+            // - This is not a Guice managed class so we can't @Inject anything here
+            // - In tests: we can't use ServiceInjector.INSTANCE here, since each test has its own injector
+            // - In tests: there is no env var for Environment, so we compare the optionals here as we expect it to be empty
+            if (ServiceInjector.detectEnvironment().equals(Optional.of(ServiceInjector.Environment.PRODUCTION_SELF_HOST))) {
                 return ServiceInjector.INSTANCE.get().getInstance(LicenseStore.class)
                         .getSelfhostEntitlementStatus(planid);
             }
