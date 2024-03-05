@@ -11,7 +11,7 @@ import lombok.Value;
 import java.util.Optional;
 
 public interface CertFetcher {
-    Optional<CertAndKeypair> getOrCreateCertAndKeypair(String domain);
+    Optional<CertGetOrCreateResponse> getOrCreateCertAndKeypair(String domain);
 
     @Value
     class CertAndKeypair {

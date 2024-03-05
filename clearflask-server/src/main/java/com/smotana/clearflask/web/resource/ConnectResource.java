@@ -12,7 +12,6 @@ import com.smotana.clearflask.api.model.CertGetOrCreateResponse;
 import com.smotana.clearflask.api.model.Challenge;
 import com.smotana.clearflask.api.model.RobotsResult;
 import com.smotana.clearflask.security.CertFetcher;
-import com.smotana.clearflask.security.CertFetcher.CertAndKeypair;
 import com.smotana.clearflask.store.CertStore;
 import com.smotana.clearflask.store.CertStore.ChallengeModel;
 import com.smotana.clearflask.store.ProjectStore;
@@ -54,7 +53,6 @@ public class ConnectResource extends AbstractResource implements SniConnectApi, 
     @Override
     public CertGetOrCreateResponse certGetOrCreateConnect(String domain) {
         return certFetcher.getOrCreateCertAndKeypair(domain)
-                .map(CertAndKeypair::toCertGetOrCreateResponse)
                 .orElseThrow(NotFoundException::new);
     }
 

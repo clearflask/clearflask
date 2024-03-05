@@ -148,7 +148,9 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
     @Inject
     private EmailValidator emailValidator;
     @Inject
-    private LicenseStore licenseStore;
+    private RemoteLicenseStore remoteLicenseStore;
+    @Inject
+    private LocalLicenseStore localLicenseStore;
 
     @PermitAll
     @Limit(requiredPermits = 10)
@@ -597,10 +599,10 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
                 throw new ApiException(Response.Status.BAD_REQUEST, "License key can only be applied in self-hosted environment");
             }
             if (accountUpdateAdmin.getApplyLicenseKey().isEmpty()) {
-                licenseStore.clearLicense();
+                remoteLicenseStore.clearLicense();
             } else {
-                licenseStore.setLicense(accountUpdateAdmin.getApplyLicenseKey());
-                Optional<Boolean> licenseValid = licenseStore.validate(false);
+                remoteLicenseStore.setLicense(accountUpdateAdmin.getApplyLicenseKey());
+                Optional<Boolean> licenseValid = remoteLicenseStore.validateLicenseRemotely(false);
                 if (licenseValid.orElse(false)) {
                     Optional<Account> accountChangedOpt = billing.tryAutoUpgradeAfterSelfhostLicenseAdded(account);
                     if (accountChangedOpt.isPresent()) {
@@ -968,13 +970,18 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
         Optional<AccountBillingPaymentActionRequired> actions = billing.getActions(subscription.getAccountId());
 
         String purchasedLicenseKey = null;
-        if (KillBillPlanStore.SELFHOST_SERVICE_PLANS.contains(plan.getBasePlanId())) {
-            purchasedLicenseKey = account.getAccountId();
+        if (KillBillPlanStore.SELFHOST_SERVICE_PLANS.contains(plan.getBasePlanId())
+                // Only show license if account is in good standing
+                && localLicenseStore.validateLicenseLocally(
+                localLicenseStore.getLicense(accountId),
+                IpUtil.getRemoteIp(request, env),
+                Optional.of(kbAccount))) {
+            purchasedLicenseKey = localLicenseStore.getLicense(accountId);
         }
 
         String appliedLicenseKey = null;
         if (env == Environment.PRODUCTION_SELF_HOST) {
-            appliedLicenseKey = licenseStore.getLicense().orElse(null);
+            appliedLicenseKey = remoteLicenseStore.getLicense().orElse(null);
         }
 
         return new AccountBilling(
@@ -1072,32 +1079,13 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
     @Limit(requiredPermits = 100)
     @Override
     public void licenseCheck(String license) {
-        String clientIp = IpUtil.getRemoteIp(request, env);
-        Optional<Account> accountOpt = accountStore.getAccount(license, true);
-        if (accountOpt.isEmpty()) {
-            log.info("License Check: account {} not found, ip {}", license, clientIp);
+
+        if (!localLicenseStore.validateLicenseLocally(
+                license,
+                IpUtil.getRemoteIp(request, env),
+                Optional.empty())) {
             throw new ApiException(Response.Status.UNAUTHORIZED);
         }
-
-        if (!KillBillPlanStore.SELFHOST_SERVICE_PLANS.contains(accountOpt.get().getPlanid())) {
-            log.info("License Check: account {} found but not a selfhost service plan {}, ip {}",
-                    license, accountOpt.get().getPlanid(), clientIp);
-            throw new ApiException(Response.Status.UNAUTHORIZED);
-        }
-
-        switch (accountOpt.get().getStatus()) {
-            case ACTIVE:
-            case ACTIVETRIAL:
-            case ACTIVENORENEWAL:
-                log.info("License Check: account {} passed with status {}, ip {}",
-                        license, accountOpt.get().getStatus(), clientIp);
-                break;
-            default:
-                log.info("License Check: account {} not in good billing status {}, ip {}",
-                        license, accountOpt.get().getStatus(), clientIp);
-                throw new ApiException(Response.Status.UNAUTHORIZED);
-        }
-
         // All good, return 2xx
     }
 

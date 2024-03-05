@@ -32,10 +32,7 @@ import com.smotana.clearflask.security.CertFetcherImpl;
 import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.security.SimpleEmailValidator;
 import com.smotana.clearflask.security.limiter.rate.LocalRateLimiter;
-import com.smotana.clearflask.store.AccountStore;
-import com.smotana.clearflask.store.IdeaStore;
-import com.smotana.clearflask.store.ProjectStore;
-import com.smotana.clearflask.store.UserStore;
+import com.smotana.clearflask.store.*;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
@@ -200,7 +197,8 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 DynamoTokenVerifyStore.module(),
                 DynamoVoteStore.module(),
                 DynamoCertStore.module(),
-                DynamoLicenseStore.module(),
+                DynamoRemoteLicenseStore.module(),
+                CloudLocalLicenseStore.module(),
                 S3ContentStore.module(),
                 DefaultS3ClientProvider.module(),
                 ImageNormalizationImpl.module(),

@@ -29,9 +29,9 @@ export const SelfhostInstallPage = () => {
         title="Custom domain"
         content={(
           <>
-            To setup a custom domain instead of <code>localhost</code>, <MuiLink rel="noopener nofollow"
-                                                                                 href="https://github.com/clearflask/clearflask#dns">follow
-            the instructions</MuiLink>.
+            To setup a custom domain instead of <code>localhost</code>, follow the instructions
+            <MuiLink rel="noopener nofollow" href="https://github.com/clearflask/clearflask#dns">to setup DNS</MuiLink>,
+            and then setup <MuiLink rel="noopener nofollow" href="https://github.com/clearflask/clearflask#certificate-management">SSL/TLS Certificate</MuiLink>.
           </>
         )}
       />
@@ -39,7 +39,7 @@ export const SelfhostInstallPage = () => {
         title="Outgoing Email"
         content={(
           <>
-            For ClearFlask to send notifications and invitations, you need to setup an SMTP endpoint for sending emails.
+            For ClearFlask to send notifications and invitations, you need to <MuiLink rel="noopener nofollow" href="https://github.com/clearflask/clearflask#email">setup SMTP/AWS SES for sending emails</MuiLink>.
           </>
         )}
       />

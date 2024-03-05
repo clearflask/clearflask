@@ -13,7 +13,7 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.core.ManagedService;
-import com.smotana.clearflask.store.LicenseStore;
+import com.smotana.clearflask.store.RemoteLicenseStore;
 import com.smotana.clearflask.util.Extern;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
@@ -34,7 +34,7 @@ import static com.smotana.clearflask.api.model.SubscriptionStatus.*;
 
 @Slf4j
 @Singleton
-public class DynamoLicenseStore extends ManagedService implements LicenseStore {
+public class DynamoRemoteLicenseStore extends ManagedService implements RemoteLicenseStore {
 
     @Inject
     private SingleTable singleTable;
@@ -92,7 +92,7 @@ public class DynamoLicenseStore extends ManagedService implements LicenseStore {
 
     @Override
     @SneakyThrows
-    public Optional<Boolean> validate(boolean useCache) {
+    public Optional<Boolean> validateLicenseRemotely(boolean useCache) {
         if (!useCache) {
             isValidCache.invalidateAll();
         }
@@ -121,7 +121,7 @@ public class DynamoLicenseStore extends ManagedService implements LicenseStore {
 
     @Override
     public SubscriptionStatus getSelfhostEntitlementStatus(String planId) {
-        return getSelfhostEntitlementStatus(planId, validate(true));
+        return getSelfhostEntitlementStatus(planId, validateLicenseRemotely(true));
     }
 
     private SubscriptionStatus getSelfhostEntitlementStatus(String planId, Optional<Boolean> licenseValidation) {
@@ -146,8 +146,8 @@ public class DynamoLicenseStore extends ManagedService implements LicenseStore {
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(LicenseStore.class).to(DynamoLicenseStore.class).asEagerSingleton();
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoLicenseStore.class).asEagerSingleton();
+                bind(RemoteLicenseStore.class).to(DynamoRemoteLicenseStore.class).asEagerSingleton();
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoRemoteLicenseStore.class).asEagerSingleton();
             }
         };
     }

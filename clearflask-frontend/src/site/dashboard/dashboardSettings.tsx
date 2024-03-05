@@ -175,16 +175,17 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
         <>
           <Menu key='account'
             items={[
+              ...(context.isSelfhostServiceOnly ? [
+                { type: 'heading', text: this.props.t('self-hosting') } as MenuHeading,
+                { type: 'item', slug: 'settings/account/selfhost-install', name: this.props.t('install'), offset: 1 } as MenuItem,
+                { type: 'item', slug: 'settings/account/selfhost-service', name: 'License', offset: 1 } as MenuItem,
+              ] : []),
               { type: 'heading', text: this.props.t('account') } as MenuHeading,
               { type: 'item', slug: 'settings/account/profile', name: this.props.t('profile'), offset: 1 } as MenuItem,
               { type: 'item', slug: 'settings/account/billing', name: this.props.t('billing'), offset: 1 } as MenuItem,
               ...(!context.isSelfhostServiceOnly ? [
                 { type: 'item', slug: 'settings/account/api', name: 'API', offset: 1 } as MenuItem,
-              ] : [
-                { type: 'heading', text: this.props.t('self-hosting') } as MenuHeading,
-                { type: 'item', slug: 'settings/account/selfhost-install', name: this.props.t('install'), offset: 1 } as MenuItem,
-                { type: 'item', slug: 'settings/account/selfhost-service', name: 'License', offset: 1 } as MenuItem,
-              ]),
+              ] : []),
             ]}
             activePath={activePath}
             activeSubPath={activeSubPath}

@@ -13,7 +13,7 @@ import com.smotana.clearflask.api.model.AccountBillingPaymentActionRequired;
 import com.smotana.clearflask.api.model.Invoices;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.store.AccountStore;
-import com.smotana.clearflask.store.LicenseStore;
+import com.smotana.clearflask.store.RemoteLicenseStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
@@ -49,7 +49,7 @@ public class SelfHostBilling implements Billing {
     @Inject
     private AccountStore accountStore;
     @Inject
-    private LicenseStore licenseStore;
+    private RemoteLicenseStore remoteLicenseStore;
 
     @Override
     public void createAccountWithSubscriptionAsync(AccountStore.Account accountInDyn) {
@@ -133,7 +133,7 @@ public class SelfHostBilling implements Billing {
 
     @Override
     public SubscriptionStatus getEntitlementStatus(Account account, Subscription subscription) {
-        return licenseStore.getSelfhostEntitlementStatus(subscription.getPlanName());
+        return remoteLicenseStore.getSelfhostEntitlementStatus(subscription.getPlanName());
     }
 
     @Override

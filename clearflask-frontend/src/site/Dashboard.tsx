@@ -488,7 +488,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
         if (context.isSelfhostServiceOnly) {
           context.sections.push({
             name: 'main',
-            content: (<RedirectIso to='/dashboard/settings/account/billing' />)
+            content: (<RedirectIso to='/dashboard/settings/account/selfhost-install' />)
           });
         }
         context.showProjectLink = true;

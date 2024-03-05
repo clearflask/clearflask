@@ -79,6 +79,7 @@ import { Project, getProject } from '../DemoApp';
 import Demo from '../landing/Demo';
 import OnboardingDemo from '../landing/OnboardingDemo';
 import PostSelection from './PostSelection';
+import { preserveEmbed } from '../../common/util/historyUtil';
 
 const propertyWidth = 250;
 

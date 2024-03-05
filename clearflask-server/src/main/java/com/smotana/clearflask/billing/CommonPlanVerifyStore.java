@@ -18,8 +18,8 @@ import com.smotana.clearflask.core.ServiceInjector;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
-import com.smotana.clearflask.store.LicenseStore;
 import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.store.RemoteLicenseStore;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
@@ -71,8 +71,8 @@ public class CommonPlanVerifyStore implements PlanVerifyStore {
     @Override
     public void verifyPlanMeetsLicense(String planId, String accountId) {
         if ("selfhost-licensed".equals(planId) && Environment.PRODUCTION_SELF_HOST.equals(env)) {
-            Optional<Boolean> licenseValidation = ServiceInjector.INSTANCE.get().getInstance(LicenseStore.class)
-                    .validate(true);
+            Optional<Boolean> licenseValidation = ServiceInjector.INSTANCE.get().getInstance(RemoteLicenseStore.class)
+                    .validateLicenseRemotely(true);
             if (licenseValidation.isEmpty()) {
                 throw new RequiresUpgradeException("Please add a purchased license on your account first");
             }

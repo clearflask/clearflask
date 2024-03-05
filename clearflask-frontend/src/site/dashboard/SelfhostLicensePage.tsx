@@ -1,6 +1,6 @@
 import {ProjectSettingsBase} from './ProjectSettings';
 import ServerAdmin, {ReduxStateAdmin} from '../../api/serverAdmin';
-import {Grid, Typography} from '@material-ui/core';
+import { Button, Grid, Typography } from '@material-ui/core';
 import {createStyles, makeStyles, Theme} from '@material-ui/core/styles';
 import {shallowEqual, useSelector} from 'react-redux';
 import * as Admin from '../../api/admin';
@@ -8,6 +8,7 @@ import React, {useEffect} from 'react';
 import {Status} from '../../api/server';
 import Loader from '../../app/utils/Loader';
 import Message from '../../common/Message';
+import { Link } from 'react-router-dom';
 
 const styles = (theme: Theme) => createStyles({
     item: {
@@ -54,7 +55,14 @@ export const SelfhostLicensePage = () => {
                 <Grid item xs={12} sm={4}><Typography>License key</Typography></Grid>
                 <Grid item xs={12}
                       sm={8}>{billing.purchasedLicenseKey ||
-                    <Message severity='warning' message='Check billing'/>}</Grid>
+                    <Message severity='warning' message='Check billing first' action={(
+                      <Button
+                        component={Link}
+                        to='/dashboard/settings/account/billing'
+                      >
+                        View
+                      </Button>
+                    )} />}</Grid>
             </Grid>
             {/* <Grid container spacing={5} alignItems="stretch" justify="center">
                 <Grid item xs={6}>

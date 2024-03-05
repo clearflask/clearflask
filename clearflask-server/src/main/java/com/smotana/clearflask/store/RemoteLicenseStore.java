@@ -13,7 +13,7 @@ import java.util.Optional;
 
 import static io.dataspray.singletable.TableType.Primary;
 
-public interface LicenseStore {
+public interface RemoteLicenseStore {
 
     Optional<String> getLicense();
 
@@ -21,7 +21,7 @@ public interface LicenseStore {
 
     void clearLicense();
 
-    Optional<Boolean> validate(boolean useCache);
+    Optional<Boolean> validateLicenseRemotely(boolean useCache);
 
     SubscriptionStatus getSelfhostEntitlementStatus(String planId);
 

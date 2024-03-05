@@ -4,11 +4,16 @@ package com.smotana.clearflask.security;
 
 import com.amazonaws.util.StringInputStream;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -16,6 +21,7 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.smotana.clearflask.api.model.CertGetOrCreateResponse;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.CertStore;
 import com.smotana.clearflask.store.CertStore.CertModel;
@@ -27,6 +33,7 @@ import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.Application;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.shredzone.acme4j.*;
 import org.shredzone.acme4j.challenge.Challenge;
 import org.shredzone.acme4j.challenge.Dns01Challenge;
@@ -49,6 +56,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -70,6 +78,9 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
 
         @DefaultValue("P60D")
         Duration renewWithExpiryRangeMax();
+
+        @DefaultValue("")
+        String staticCert();
     }
 
     @Inject
@@ -77,10 +88,23 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
     @Inject
     private Application.Config configApp;
     @Inject
+    private Gson gson;
+    @Inject
     private CertStore certStore;
     @Inject
     private ProjectStore projectStore;
 
+    private final LoadingCache<String, CertGetOrCreateResponse> staticCertCache = CacheBuilder.newBuilder()
+            .maximumSize(1)
+            .build(new CacheLoader<>() {
+                @Override
+                public CertGetOrCreateResponse load(@NotNull String certStr) throws Exception {
+                    // Replace literal '\n' into new line
+                    certStr = certStr.replaceAll("\\\\n", "\n");
+                    // Parse from JSON
+                    return gson.fromJson(certStr, CertGetOrCreateResponse.class);
+                }
+            });
     private ListeningExecutorService executor;
     private Duration renewWithExpiry;
 
@@ -103,11 +127,22 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
     }
 
     @Override
-    public Optional<CertAndKeypair> getOrCreateCertAndKeypair(String domain) {
+    public Optional<CertGetOrCreateResponse> getOrCreateCertAndKeypair(String domain) {
         if (!config.enabled()) {
             return Optional.empty();
         }
 
+        // Static cert handling
+        String staticCert = config.staticCert();
+        if (!Strings.isNullOrEmpty(staticCert)) {
+            try {
+                return Optional.of(staticCertCache.get(staticCert));
+            } catch (ExecutionException ex) {
+                throw new RuntimeException("Failed to parse static from configuration, check for 'staticCert' property", ex);
+            }
+        }
+
+        // Dynamic cert handling
         try {
             String domainToRequest;
             if (configApp.domain().equals(domain)
@@ -131,7 +166,8 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
             }
             if (certModelOpt.isEmpty()) {
                 try {
-                    return Optional.of(createCert(domainToRequest));
+                    return Optional.of(createCert(domainToRequest))
+                            .map(CertAndKeypair::toCertGetOrCreateResponse);
                 } catch (Exception ex) {
                     log.warn("Failed to create cert for domain {}", domain, ex);
                     return Optional.empty();
@@ -141,7 +177,8 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
                 if (keypairModelOpt.isEmpty()) {
                     log.warn("No keypair found matching cert for domain {}, re-creating both", domainToRequest);
                     certStore.deleteCert(domainToRequest);
-                    return Optional.of(createCert(domainToRequest));
+                    return Optional.of(createCert(domainToRequest))
+                            .map(CertAndKeypair::toCertGetOrCreateResponse);
                 }
 
                 // Because there were a few certs we created with the wrong private key,
@@ -152,13 +189,15 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
                         log.warn("Keypair doesn't match cert for domain {}, re-creating both", domainToRequest);
                         certStore.deleteKeypair(KeypairType.CERT, domainToRequest);
                         certStore.deleteCert(domainToRequest);
-                        return Optional.of(createCert(domainToRequest));
+                        return Optional.of(createCert(domainToRequest))
+                                .map(CertAndKeypair::toCertGetOrCreateResponse);
                     }
                 }
 
                 return Optional.of(new CertAndKeypair(
-                        certModelOpt.get(),
-                        keypairModelOpt.get()));
+                                certModelOpt.get(),
+                                keypairModelOpt.get()))
+                        .map(CertAndKeypair::toCertGetOrCreateResponse);
             }
         } catch (Exception ex) {
             if (LogUtil.rateLimitAllowLog("WildCertFetcherImpl-failed-get-create-wildcart-cert")) {

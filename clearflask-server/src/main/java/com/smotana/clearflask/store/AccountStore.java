@@ -219,7 +219,7 @@ public interface AccountStore {
             // - In tests: we can't use ServiceInjector.INSTANCE here, since each test has its own injector
             // - In tests: there is no env var for Environment, so we compare the optionals here as we expect it to be empty
             if (ServiceInjector.detectEnvironment().equals(Optional.of(ServiceInjector.Environment.PRODUCTION_SELF_HOST))) {
-                return ServiceInjector.INSTANCE.get().getInstance(LicenseStore.class)
+                return ServiceInjector.INSTANCE.get().getInstance(RemoteLicenseStore.class)
                         .getSelfhostEntitlementStatus(planid);
             }
             return status;

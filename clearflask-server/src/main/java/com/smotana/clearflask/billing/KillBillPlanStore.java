@@ -259,7 +259,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     null, null))
             .put("cloud-yearly", pp -> new Plan("cloud-yearly", "Pro",
                     pp, ImmutableList.of(
-                    new PlanPerk("No limits", null),
+                    new PlanPerk("Teammates Free", null),
                     new PlanPerk("2-Month Discount", null)),
                     null, null))
             .put("selfhost-monthly", pp -> new Plan("selfhost-monthly", "Monthly License",

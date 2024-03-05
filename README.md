@@ -255,6 +255,41 @@ correctly pointing to your server, it is publicly accessible, and set the follow
 
 Once you load your site for the first time, a Certificate is auto-magically fetched for you.
 
+##### Static certificate
+
+If you wish to use your own certificate, set the following properties:
+
+- `connect.config.json:disableAutoFetchCertificate`: `false`
+- `connect.config.json:forceRedirectHttpToHttps`: `true`
+- `config-selfhost.cfg:com.smotana.clearflask.web.security.AuthCookieImpl$Config.authCookieSecure`: `true`
+- `config-selfhost.cfg:com.smotana.clearflask.security.CertFetcherImpl$Config.staticCert`: `<SEE BELOW>`
+
+For the `staticCert` property value, this has to be a JSON object with the following structure, but you need to put it
+in a single line:
+
+```json
+{
+    cert: {
+        cert: "-----BEGIN CERTIFICATE-----\nMIIFFjCC...",
+        chain: "-----BEGIN CERTIFICATE-----\nMIIE/jCC",
+        subject: "feedback.example.com",
+        altnames: [
+            "feedback.example.com"
+        ],
+        issuedAt: 1709572939000,
+        expiresAt: 1741108939000
+    },
+    keypair: {
+        privateKeyPem: "-----BEGIN PRIVATE KEY-----\nMIIEvwIB..."
+    }
+}
+```
+
+Note that you have to put this into a single line. The cert, chain and keypair will replace any literal `\n` into a
+newline.
+
+This approach is not recommended as you will have to update this certificate manually.
+
 ##### Self-managed behind reverse proxy
 
 If you are managing TLS certificates behind a reverse proxy, redirect all `http` requests to `https`, set the following

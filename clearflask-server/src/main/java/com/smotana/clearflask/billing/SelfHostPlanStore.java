@@ -12,7 +12,7 @@ import com.smotana.clearflask.api.model.AllPlansGetResponse;
 import com.smotana.clearflask.api.model.FeaturesTable;
 import com.smotana.clearflask.api.model.Plan;
 import com.smotana.clearflask.api.model.PlansGetResponse;
-import com.smotana.clearflask.store.LicenseStore;
+import com.smotana.clearflask.store.RemoteLicenseStore;
 import com.smotana.clearflask.web.Application;
 
 import java.util.Optional;
@@ -44,13 +44,13 @@ public class SelfHostPlanStore implements PlanStore {
     @Inject
     private Application.Config configApp;
     @Inject
-    private LicenseStore licenseStore;
+    private RemoteLicenseStore remoteLicenseStore;
 
     @Override
     public PlansGetResponse getPublicPlans() {
 
         return new PlansGetResponse(
-                licenseStore.validate(true).isPresent()
+                remoteLicenseStore.validateLicenseRemotely(true).isPresent()
                         ? ImmutableList.of(SELF_HOST_FREE_PLAN, SELF_HOST_LICENSED_PLAN)
                         : ImmutableList.of(SELF_HOST_FREE_PLAN),
                 new FeaturesTable(

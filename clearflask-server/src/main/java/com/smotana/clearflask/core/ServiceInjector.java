@@ -33,6 +33,7 @@ import com.smotana.clearflask.security.limiter.TieredWebLimiter;
 import com.smotana.clearflask.security.limiter.challenge.CaptchaChallenger;
 import com.smotana.clearflask.security.limiter.challenge.LocalChallengeLimiter;
 import com.smotana.clearflask.security.limiter.rate.LocalRateLimiter;
+import com.smotana.clearflask.store.CloudLocalLicenseStore;
 import com.smotana.clearflask.store.ConfigAwsCredentialsProvider;
 import com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
@@ -141,7 +142,8 @@ public enum ServiceInjector {
                 install(DynamoElasticCommentStore.module());
                 install(DynamoVoteStore.module());
                 install(DynamoCertStore.module());
-                install(DynamoLicenseStore.module());
+                install(DynamoRemoteLicenseStore.module());
+                install(CloudLocalLicenseStore.module());
                 if (env != Environment.PRODUCTION_SELF_HOST) {
                     install(DefaultRoute53Provider.module());
                 }
