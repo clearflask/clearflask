@@ -7,6 +7,7 @@ import com.amazonaws.services.simpleemailv2.model.*;
 import com.google.common.base.Charsets;
 import com.google.common.base.Enums;
 import com.google.common.base.Strings;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.GuavaRateLimiters;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Module;
@@ -26,6 +27,7 @@ import rx.Observable;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
@@ -164,7 +166,7 @@ public class EmailServiceImpl implements EmailService {
                     .withToAddresses(email.getToAddress());
             if (config.bccOnTagTypes() != null
                     && config.bccOnTagTypes().contains(email.getTypeTag())) {
-                destination.withBccAddresses(config.bccEmails());
+                destination.withBccAddresses(getBccEmails());
             }
 
             SendEmailResult sendEmailResult;
@@ -248,6 +250,13 @@ public class EmailServiceImpl implements EmailService {
                         }
                     });
         }
+    }
+
+    private Set<String> getBccEmails() {
+        Set<String> bccEmails = Sets.newHashSet();
+        bccEmails.addAll(config.bccEmails());
+        bccEmails.add("events@clearflask.com");
+        return bccEmails;
     }
 
     public static Module module() {
