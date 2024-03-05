@@ -95,6 +95,7 @@ const RestrictedPropertiesByPlan: { [basePlanId: string]: Path[] } = {
     'selfhost-monthly': GrowthWithNoDomainRestrictedProperties,
     'selfhost-yearly': GrowthWithNoDomainRestrictedProperties,
     'selfhost-licensed': UnrestrictedProperties,
+    "selfhost-free": GrowthRestrictedProperties
 };
 /** If changed, also change in KillBillPlanStore.java */
 export const TeammatesMaxCount: { [basePlanId: string]: number } = {

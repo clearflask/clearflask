@@ -185,7 +185,12 @@ public class SelfHostBilling implements Billing {
 
     @Override
     public boolean tryAutoUpgradePlan(AccountStore.Account account, String requiredPlanId) {
-        throw new ApiException(Response.Status.BAD_REQUEST, "Billing is not configured");
+        if ("selfhost-licensed".equals(requiredPlanId)
+                && remoteLicenseStore.validateLicenseRemotely(true).orElse(false)) {
+            changePlan(account.getAccountId(), requiredPlanId, Optional.empty());
+            return true;
+        }
+        return false;
     }
 
     @Override
