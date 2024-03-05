@@ -917,7 +917,7 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
         }
 
         Long postCount = null;
-        if ("starter-unlimited".equals(plan.getBasePlanId())) {
+        if (KillBillPlanStore.PLAN_MAX_POSTS.containsKey(plan.getBasePlanId())) {
             postCount = accountStore.getPostCountForAccount(account.getAccountId());
         }
 
