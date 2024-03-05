@@ -269,18 +269,18 @@ in a single line:
 
 ```json
 {
-    cert: {
-        cert: "-----BEGIN CERTIFICATE-----\nMIIFFjCC...",
-        chain: "-----BEGIN CERTIFICATE-----\nMIIE/jCC",
-        subject: "feedback.example.com",
-        altnames: [
+    "cert": {
+        "cert": "-----BEGIN CERTIFICATE-----\nMIIFFjCC...",
+        "chain": "-----BEGIN CERTIFICATE-----\nMIIE/jCC",
+        "subject": "feedback.example.com",
+        "altnames": [
             "feedback.example.com"
         ],
-        issuedAt: 1709572939000,
-        expiresAt: 1741108939000
+        "issuedAt": 1709572939000,
+        "expiresAt": 1741108939000
     },
-    keypair: {
-        privateKeyPem: "-----BEGIN PRIVATE KEY-----\nMIIEvwIB..."
+    "keypair": {
+        "privateKeyPem": "-----BEGIN PRIVATE KEY-----\nMIIEvwIB..."
     }
 }
 ```
