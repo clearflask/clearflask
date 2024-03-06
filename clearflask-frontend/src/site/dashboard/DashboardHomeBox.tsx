@@ -67,7 +67,7 @@ interface Props {
     height: number | string,
   };
 }
-class GraphBox extends Component<Props & WithStyles<typeof styles, true>> {
+class DashboardHomeBox extends Component<Props & WithStyles<typeof styles, true>> {
 
   render() {
     const Icon = this.props.icon || null;
@@ -119,4 +119,4 @@ class GraphBox extends Component<Props & WithStyles<typeof styles, true>> {
   }
 }
 
-export default withStyles(styles, { withTheme: true })(GraphBox);
+export default withStyles(styles, { withTheme: true })(DashboardHomeBox);
