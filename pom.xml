@@ -5,7 +5,7 @@
 
     <groupId>com.smotana.clearflask</groupId>
     <artifactId>clearflask-parent</artifactId>
-    <version>1.6.15-SNAPSHOT</version>
+    <version>1.6.16-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>clearflask-parent</name>
