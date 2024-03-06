@@ -11,7 +11,7 @@ import { importFailed, importSuccess } from '../../Main';
 import * as Admin from '../../api/admin';
 import { Server } from '../../api/server';
 import Loading from '../../app/utils/Loading';
-import GraphBox from './GraphBox';
+import DashboardHomeBox from './DashboardHomeBox';
 
 const ReactApexChart = loadable(() => import(/* webpackChunkName: "ReactApexChart", webpackPreload: true */'react-apexcharts').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
@@ -178,7 +178,7 @@ class Histogram extends Component<Props & WithStyles<typeof styles, true>, State
     }
 
     return (
-      <GraphBox
+      <DashboardHomeBox
         className={this.props.className}
         icon={this.props.icon}
         title={this.props.title}

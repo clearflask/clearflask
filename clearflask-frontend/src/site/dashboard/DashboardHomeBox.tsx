@@ -6,6 +6,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import { BoxLayoutBoxApplyStyles } from '../../common/Layout';
+import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
 
 const styles = (theme: Theme) => createStyles({
   containerBox: {
@@ -13,15 +14,18 @@ const styles = (theme: Theme) => createStyles({
   },
   container: {
     display: 'inline-grid',
-    gridTemplateColumns: '1fr auto',
-    gridTemplateRows: '1fr auto',
+    gridTemplateColumns: 'auto 1fr',
+    gridTemplateRows: 'auto 1fr',
     gridTemplateAreas:
-      "'t t'"
-      + " 'v c'",
+      '\'t t\''
+      + ' \'v c\'',
     gap: theme.spacing(2, 2),
     padding: theme.spacing(2),
     margin: theme.spacing(2),
-    position: 'relative' // for chartAsBackground
+    position: 'relative', // for chartAsBackground
+  },
+  scroll: {
+    ...contentScrollApplyStyles({ theme, orientation: Orientation.Vertical }),
   },
   chart: {
     gridArea: 'c',
@@ -56,10 +60,12 @@ const styles = (theme: Theme) => createStyles({
     marginRight: theme.spacing(2),
   },
 });
+
 interface Props {
   className?: string;
+  scroll?: boolean;
   icon?: OverridableComponent<SvgIconTypeMap>;
-  title: React.ReactNode;
+  title?: React.ReactNode;
   value?: React.ReactNode;
   chart?: React.ReactNode;
   chartAsBackground?: {
@@ -67,6 +73,7 @@ interface Props {
     height: number | string,
   };
 }
+
 class DashboardHomeBox extends Component<Props & WithStyles<typeof styles, true>> {
 
   render() {
@@ -74,6 +81,7 @@ class DashboardHomeBox extends Component<Props & WithStyles<typeof styles, true>
     return (
       <div
         className={classNames(
+          !!this.props.scroll && this.props.classes.scroll,
           this.props.classes.container,
           !this.props.chartAsBackground && this.props.classes.containerBox,
           this.props.className,
@@ -83,22 +91,24 @@ class DashboardHomeBox extends Component<Props & WithStyles<typeof styles, true>
           height: this.props.chartAsBackground.height,
         } : undefined}
       >
-        <Typography
-          className={this.props.classes.title}
-          component='div'>
-          {!!Icon && (
-            <Icon
-              className={this.props.classes.icon}
-              fontSize='inherit'
-              color='inherit'
-            />
-          )}
-          {this.props.title}
-        </Typography>
+        {this.props.title !== undefined && (
+          <Typography
+            className={this.props.classes.title}
+            component="div">
+            {!!Icon && (
+              <Icon
+                className={this.props.classes.icon}
+                fontSize="inherit"
+                color="inherit"
+              />
+            )}
+            {this.props.title}
+          </Typography>
+        )}
         {this.props.value !== undefined && (
           <Typography
             className={this.props.classes.value}
-            component='div'>
+            component="div">
             {this.props.value}
           </Typography>
         )}

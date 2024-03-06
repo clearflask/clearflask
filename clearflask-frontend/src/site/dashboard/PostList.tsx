@@ -117,6 +117,7 @@ class PostList extends Component<Props & ConnectProps & WithStyles<typeof styles
         searchOverrideAdmin={this.props.search}
         server={this.props.server}
         onClickPost={this.props.onClickPost}
+        onUserClick={this.props.onUserClick}
         {...this.props.PanelPostProps}
       />
     );

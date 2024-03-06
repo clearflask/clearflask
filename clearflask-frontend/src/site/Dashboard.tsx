@@ -503,13 +503,11 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                 <DashboardHome
                   server={activeProject.server}
                   editor={activeProject.editor}
+                  onPageClick={(path, subPath) => this.pageClicked(path, subPath)}
                   feedback={this.state.feedback || undefined}
                   roadmap={this.state.roadmap || undefined}
                   changelog={this.state.changelog || undefined}
                 />
-              </Provider>
-              <Provider store={ServerAdmin.get().getStore()}>
-                <TourChecklist />
               </Provider>
               {/* <Hidden smDown>
                 <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
