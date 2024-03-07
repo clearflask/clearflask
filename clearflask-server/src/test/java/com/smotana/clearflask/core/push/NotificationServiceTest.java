@@ -13,6 +13,10 @@ import com.google.common.util.concurrent.GuavaRateLimiters;
 import com.google.inject.Inject;
 import com.smotana.clearflask.api.model.TransactionType;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
+import com.smotana.clearflask.core.push.NotificationService.Digest;
+import com.smotana.clearflask.core.push.NotificationService.DigestItem;
+import com.smotana.clearflask.core.push.NotificationService.DigestProject;
+import com.smotana.clearflask.core.push.NotificationService.DigestSection;
 import com.smotana.clearflask.core.push.message.*;
 import com.smotana.clearflask.core.push.provider.BrowserPushService.BrowserPush;
 import com.smotana.clearflask.core.push.provider.EmailService.Email;
@@ -20,6 +24,7 @@ import com.smotana.clearflask.core.push.provider.MockBrowserPushService;
 import com.smotana.clearflask.core.push.provider.MockEmailService;
 import com.smotana.clearflask.core.push.provider.MockNotificationStore;
 import com.smotana.clearflask.security.limiter.rate.LocalRateLimiter;
+import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.*;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.NotificationStore.NotificationModel;
@@ -70,6 +75,8 @@ public class NotificationServiceTest extends AbstractTest {
     @Inject
     private UserStore mockUserStore;
     @Inject
+    private IdeaStore mockIdeaStore;
+    @Inject
     private MockNotificationStore mockNotificationStore;
 
     @Override
@@ -81,6 +88,7 @@ public class NotificationServiceTest extends AbstractTest {
         bindMock(VoteStore.class);
         bindMock(UserStore.class);
         bindMock(ContentStore.class);
+        bindMock(IdeaStore.class);
 
         install(NotificationServiceImpl.module());
         install(EmailTemplates.module());
@@ -95,6 +103,7 @@ public class NotificationServiceTest extends AbstractTest {
         install(OnTeammateInvite.module());
         install(OnModInvite.module());
         install(OnEmailChanged.module());
+        install(OnDigest.module());
         install(EmailVerify.module());
         install(EmailLogin.module());
         install(Sanitizer.module());
@@ -385,6 +394,77 @@ public class NotificationServiceTest extends AbstractTest {
         assertFalse(email.getSubject().contains("__"));
         assertFalse(email.getContentHtml().contains("__"));
         assertFalse(email.getContentText().contains("__"));
+    }
+
+    @Test(timeout = 10_000L)
+    public void testOnDigest() throws Exception {
+        String projectId = "myProject";
+        Account account = MockModelUtil.getRandomAccount().toBuilder()
+                .email("user@email.com")
+                .build();
+        when(this.mockUserStore.createToken(any(), any(), any())).thenReturn("myAuthToken");
+
+        service.onDigest(
+                account,
+                Digest.builder().projects(ImmutableList.of(
+                        DigestProject.builder()
+                                .author(MockModelUtil.getRandomUser())
+                                .projectName("My Project")
+                                .sections(ImmutableList.of(
+                                        DigestSection.builder()
+                                                .sectionName("Missed notifications")
+                                                .items(ImmutableList.of(
+                                                        DigestItem.builder()
+                                                                .text("Someone commented")
+                                                                .link("https://example.com")
+                                                                .build(),
+                                                        DigestItem.builder()
+                                                                .text("Someone replied")
+                                                                .link("https://example.com")
+                                                                .build(),
+                                                        DigestItem.builder()
+                                                                .text("There is a new announcement")
+                                                                .link("https://example.com")
+                                                                .build()
+                                                )).build(),
+                                        DigestSection.builder()
+                                                .sectionName("New feedback")
+                                                .items(ImmutableList.of(
+                                                        DigestItem.builder()
+                                                                .text("I would like dark mode please")
+                                                                .link("https://example.com")
+                                                                .build(),
+                                                        DigestItem.builder()
+                                                                .text("How about you implement this other thing")
+                                                                .link("https://example.com")
+                                                                .build(),
+                                                        DigestItem.builder()
+                                                                .text("What if this button did everything")
+                                                                .link("https://example.com")
+                                                                .build()
+                                                )).build(),
+                                        DigestSection.builder()
+                                                .sectionName("New users")
+                                                .items(ImmutableList.of(
+                                                        DigestItem.builder()
+                                                                .text("Power House")
+                                                                .link("https://example.com")
+                                                                .build(),
+                                                        DigestItem.builder()
+                                                                .text("Gregory Gregoryson")
+                                                                .link("https://example.com")
+                                                                .build(),
+                                                        DigestItem.builder()
+                                                                .text("Sandy Sanderson")
+                                                                .link("https://example.com")
+                                                                .build()
+                                                )).build()
+                                )).build()
+                )).build());
+
+        Email email = mockEmailService.sent.take();
+        log.info("email {}", email);
+        assertNotNull(email);
     }
 
     private KeyPair generateKeyPair() {

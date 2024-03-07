@@ -199,6 +199,7 @@
   "devDependencies": {
     "@types/express": "4.17.9",
     "@types/node": "14.14.12",
+    "@types/swagger-ui-react": "^4.1.1",
     "babel-plugin-transform-class-properties": "6.24.1",
     "copy-webpack-plugin": "6.4.1",
     "css-loader": "5.2.7",

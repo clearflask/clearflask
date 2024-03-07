@@ -33,6 +33,23 @@ import java.util.function.Predicate;
 @Singleton
 public class CommonPlanVerifyStore implements PlanVerifyStore {
 
+    public static final ImmutableSet<String> PLANS_WITHOUT_DIGEST = ImmutableSet.<String>builder()
+            // License only plans don't need digest
+            .addAll(KillBillPlanStore.SELFHOST_SERVICE_PLANS)
+            // These are not allowed
+            // Mostly legacy lifetime plans
+            .add("starter-unlimited")
+            .add("standard-unlimited")
+            .add("standard2-unlimited")
+            .add("pitchground-a-lifetime")
+            .add("pitchground-b-lifetime")
+            .add("pitchground-c-lifetime")
+            .add("pitchground-d-lifetime")
+            .add("pitchground-e-lifetime")
+            .add("pro-lifetime")
+            .add("lifetime-lifetime")
+            .build();
+
     @Inject
     private Billing billing;
     @Inject
@@ -43,6 +60,17 @@ public class CommonPlanVerifyStore implements PlanVerifyStore {
     private PlanStore planStore;
     @Inject
     private Environment env;
+
+    @Override
+    public boolean verifyAccountAllowedDigest(Account account, String projectId) throws ApiException {
+        if (PLANS_WITHOUT_DIGEST.contains(account.getPlanid())) {
+            return false;
+        }
+        if (account.getDigestOptOutForProjectIds().contains(projectId)) {
+            return false;
+        }
+        return true;
+    }
 
     @Override
     public void verifyAccountMeetsPlanRestrictions(String planId, String accountId) throws ApiException {

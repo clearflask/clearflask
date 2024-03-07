@@ -454,7 +454,8 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
                 guidOpt.orElse(null),
                 ImmutableMap.of(),
                 ImmutableMap.of(),
-                preferredPriceOpt.orElse(null));
+                preferredPriceOpt.orElse(null),
+                ImmutableSet.of());
         account = accountStore.createAccount(account).getAccount();
 
         // Create customer in KillBill asynchronously because:
@@ -610,6 +611,9 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
                     }
                 }
             }
+        }
+        if (accountUpdateAdmin.getDigestOptOutForProjectIds() != null) {
+            account = accountStore.setWeeklyDigestOptOut(account.getAccountId(), ImmutableSet.copyOf(accountUpdateAdmin.getDigestOptOutForProjectIds()));
         }
         return account.toAccountAdmin(intercomUtil, chatwootUtil, planStore, cfSso, superAdminPredicate);
     }

@@ -127,7 +127,8 @@ public class AccountStoreIT extends AbstractIT {
                 null,
                 ImmutableMap.of(),
                 null,
-                null);
+                null,
+                ImmutableSet.of());
         store.createAccount(account).getIndexingFuture().get();
         assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
 
@@ -248,7 +249,8 @@ public class AccountStoreIT extends AbstractIT {
                 null,
                 ImmutableMap.of(),
                 null,
-                null);
+                null,
+                ImmutableSet.of());
         store.createAccount(account).getIndexingFuture().get();
 
         AccountStore.AccountSession accountSession1 = store.createSession(account, Instant.ofEpochMilli(System.currentTimeMillis()).plus(1, ChronoUnit.DAYS).getEpochSecond());
@@ -303,7 +305,8 @@ public class AccountStoreIT extends AbstractIT {
                 // test the creation of this map
                 null,
                 null,
-                null);
+                null,
+                ImmutableSet.of());
 
         HashMap<String, String> attrsExpected = null;
         account = store.createAccount(account).getAccount();
@@ -383,7 +386,8 @@ public class AccountStoreIT extends AbstractIT {
                 null,
                 ImmutableMap.of(),
                 null,
-                null);
+                null,
+                ImmutableSet.of());
         String accountId2 = store.genAccountId();
         Account account2 = new Account(
                 accountId2,
@@ -399,7 +403,8 @@ public class AccountStoreIT extends AbstractIT {
                 null,
                 ImmutableMap.of(),
                 null,
-                null);
+                null,
+                ImmutableSet.of());
 
         store.createAccount(account1).getIndexingFuture().get();
         assertAccountSearch(1, accountId1);
@@ -461,7 +466,8 @@ public class AccountStoreIT extends AbstractIT {
                 // test the creation of this map
                 null,
                 null,
-                null);
+                null,
+                ImmutableSet.of());
         account = store.createAccount(account).getAccount();
 
         assertTrue(store.shouldSendTrialEndedNotification(account.getAccountId(), "plan1"));

@@ -44,6 +44,7 @@ ${OPENAPI_GENERATOR} generate \
 PIDS[${#PIDS[@]}]=$!
 
 # Bundle Docs for use with Redoc
+# Docs https://github.com/OpenAPITools/openapi-generator/blob/master/docs/generators/openapi-yaml.md
 ${OPENAPI_GENERATOR} generate \
     -i ${OPENAPI_SOURCE_DIR}/api-docs.yaml \
     -g openapi-yaml \

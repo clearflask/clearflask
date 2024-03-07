@@ -5,19 +5,43 @@ package com.smotana.clearflask.store;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.api.model.TransactionType;
+import com.smotana.clearflask.billing.KillBillPlanStore;
+import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore.TransactionModel;
 import com.smotana.clearflask.util.IdUtil;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
 import static com.smotana.clearflask.testutil.HtmlUtil.textToSimpleHtml;
 
 public class MockModelUtil {
+
+    public static Account getRandomAccount() {
+        return new Account(
+                IdUtil.randomId(),
+                IdUtil.randomId() + "@example.com",
+                SubscriptionStatus.ACTIVE,
+                IdUtil.randomId(),
+                KillBillPlanStore.DEFAULT_UPGRADE_REQUIRED_PLAN,
+                Instant.now().minus(Duration.ofDays(4)),
+                IdUtil.randomId(),
+                IdUtil.randomId(),
+                ImmutableSet.of(),
+                ImmutableSet.of(),
+                IdUtil.randomId(),
+                ImmutableMap.of(),
+                ImmutableMap.of(),
+                null,
+                ImmutableSet.of());
+    }
+
     public static UserModel getRandomUser() {
         return new UserModel(
                 IdUtil.randomId(),

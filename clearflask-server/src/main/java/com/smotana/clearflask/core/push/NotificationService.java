@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.smotana.clearflask.core.push;
 
+import com.google.common.collect.ImmutableList;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.NotifySubscribers;
 import com.smotana.clearflask.store.AccountStore;
@@ -11,6 +12,9 @@ import com.smotana.clearflask.store.ProjectStore.InvitationModel;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore.TransactionModel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Value;
 
 import java.util.Optional;
 
@@ -43,4 +47,38 @@ public interface NotificationService {
     void onEmailLogin(ConfigAdmin configAdmin, UserModel user, String token);
 
     void onPostCreated(Project project, IdeaModel idea, NotifySubscribers notifySubscribers, UserModel author);
+
+    void onDigest(AccountStore.Account account, Digest projects);
+
+    @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    class Digest {
+        ImmutableList<DigestProject> projects;
+    }
+
+    @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    class DigestProject {
+        UserModel author;
+        String projectName;
+        ImmutableList<DigestSection> sections;
+    }
+
+    @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    class DigestSection {
+        String sectionName;
+        ImmutableList<DigestItem> items;
+    }
+
+    @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    class DigestItem {
+        String text;
+        String link;
+    }
 }

@@ -7,7 +7,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.util.concurrent.GuavaRateLimiters;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -66,8 +65,6 @@ public class GitHubClientProviderImpl implements GitHubClientProvider {
 
     @Inject
     private Config config;
-    @Inject
-    private GuavaRateLimiters guavaRateLimiters;
     @Inject
     private RateLimiter rateLimiter;
 

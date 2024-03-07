@@ -176,6 +176,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 ChatwootUtil.module(),
                 OnModInvite.module(),
                 OnEmailChanged.module(),
+                OnDigest.module(),
                 EmailVerify.module(),
                 EmailLogin.module(),
                 MockBrowserPushService.module(),

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.smotana.clearflask.store;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.smotana.clearflask.api.model.Notification;
 import com.smotana.clearflask.util.IdUtil;
@@ -77,6 +78,18 @@ public interface NotificationStore {
                     getRelatedCommentId(),
                     getCreated(),
                     getDescription());
+        }
+
+        public String getLinkPath() {
+            if (!Strings.isNullOrEmpty(relatedIdeaId)) {
+                if (!Strings.isNullOrEmpty(relatedCommentId)) {
+                    return "/post/" + relatedIdeaId + "/comment/" + relatedCommentId;
+                } else {
+                    return "/post/" + relatedIdeaId;
+                }
+            } else {
+                return "/account";
+            }
         }
     }
 }

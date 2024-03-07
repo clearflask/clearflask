@@ -1,11 +1,24 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid, Typography } from '@material-ui/core';
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  FormControlLabel,
+  FormHelperText,
+  Grid,
+  Switch,
+  Typography,
+} from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Admin from '../../api/admin';
+import * as AdminClient from '../../api/admin';
 import ServerAdmin, { ReduxStateAdmin } from '../../api/serverAdmin';
 import SubmitButton from '../../common/SubmitButton';
 import UpdatableField from '../../common/UpdatableField';
@@ -17,30 +30,34 @@ const styles = (theme: Theme) => createStyles({
     margin: theme.spacing(4),
   },
 });
+
 interface Props {
 }
+
 interface ConnectProps {
   account?: Admin.AccountAdmin;
 }
+
 interface State {
   name?: string;
   isSubmitting?: boolean;
   showDeleteDialog?: boolean;
 }
+
 class SettingsPage extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & RouteComponentProps, State> {
   state: State = {};
 
   render() {
-    if (!this.props.account) {
+    if (!this.props.account || !this.props.bindByProjectId) {
       return 'Need to login to see this page';
     }
     return (
-      <ProjectSettingsBase title='Profile'>
+      <ProjectSettingsBase title="Profile">
         <Section
           contentWidth={500}
           content={(
             <>
-              <Grid container alignItems='baseline' className={this.props.classes.item}>
+              <Grid container alignItems="baseline" className={this.props.classes.item}>
                 <Grid item xs={12} sm={4}><Typography>Email</Typography></Grid>
                 <Grid item xs={12} sm={8}>
                   <Typography>{this.props.account.email}</Typography>
@@ -53,26 +70,26 @@ class SettingsPage extends Component<Props & ConnectProps & WithStyles<typeof st
               /> */}
                 </Grid>
               </Grid>
-              <Grid container alignItems='baseline' className={this.props.classes.item}>
+              <Grid container alignItems="baseline" className={this.props.classes.item}>
                 <Grid item xs={12} sm={4}><Typography>Name</Typography></Grid>
                 <Grid item xs={12} sm={8}><UpdatableField
                   value={this.props.account.name}
                   onSave={newName => ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
-                    accountUpdateAdmin: { name: newName }
+                    accountUpdateAdmin: { name: newName },
                   }))}
                 /></Grid>
               </Grid>
-              <Grid container alignItems='baseline' className={this.props.classes.item}>
+              <Grid container alignItems="baseline" className={this.props.classes.item}>
                 <Grid item xs={12} sm={4}><Typography>Password</Typography></Grid>
                 <Grid item xs={12} sm={8}><UpdatableField
                   isPassword
-                  value=''
+                  value=""
                   onSave={newPassword => ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
-                    accountUpdateAdmin: { password: saltHashPassword(newPassword) }
+                    accountUpdateAdmin: { password: saltHashPassword(newPassword) },
                   }))}
                 /></Grid>
               </Grid>
-              <Grid container alignItems='baseline' className={this.props.classes.item}>
+              <Grid container alignItems="baseline" className={this.props.classes.item}>
                 <Grid item xs={12} sm={4}><Typography>Account deletion</Typography></Grid>
                 <Grid item xs={12} sm={8}>
                   <Button
@@ -86,7 +103,8 @@ class SettingsPage extends Component<Props & ConnectProps & WithStyles<typeof st
                   >
                     <DialogTitle>Delete account</DialogTitle>
                     <DialogContent>
-                      <DialogContentText>Are you sure you want to permanently delete your account, all projects, all associated data, and unsubscribe from your plan?</DialogContentText>
+                      <DialogContentText>Are you sure you want to permanently delete your account, all projects, all
+                        associated data, and unsubscribe from your plan?</DialogContentText>
                     </DialogContent>
                     <DialogActions>
                       <Button onClick={() => this.setState({ showDeleteDialog: false })}>Cancel</Button>

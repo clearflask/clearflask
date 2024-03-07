@@ -132,6 +132,8 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     private EmailLogin emailLogin;
     @Inject
     private Sanitizer sanitizer;
+    @Inject
+    private OnDigest onDigest;
 
     private ListeningExecutorService executor;
 
@@ -621,6 +623,21 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
                 emailService.send(accountSignup.email(account, link));
             } catch (Exception ex) {
                 log.warn("Failed to send email signup", ex);
+            }
+        });
+    }
+
+    @Override
+    public void onDigest(Account account, Digest projects) {
+        if (!config.enabled()) {
+            log.debug("Not enabled, skipping");
+            return;
+        }
+        submit(() -> {
+            try {
+                emailService.send(onDigest.email(account, projects));
+            } catch (Exception ex) {
+                log.warn("Failed to send email digest", ex);
             }
         });
     }

@@ -3,11 +3,14 @@
 package com.smotana.clearflask.billing;
 
 import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.web.ApiException;
 
 import java.util.Optional;
 
 public interface PlanVerifyStore {
+
+    boolean verifyAccountAllowedDigest(Account account, String projectId) throws ApiException;
 
     void verifyAccountMeetsPlanRestrictions(String planId, String accountId) throws ApiException;
 

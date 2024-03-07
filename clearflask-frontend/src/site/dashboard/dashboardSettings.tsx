@@ -12,7 +12,31 @@ import { TourAnchor } from '../../common/tour';
 import setTitle from "../../common/util/titleUtil";
 import { Dashboard, DashboardPageContext, ProjectSettingsMainSize } from "../Dashboard";
 import BillingPage from './BillingPage';
-import { ProjectSettingsAdvancedEnter, ProjectSettingsApi, ProjectSettingsBase, ProjectSettingsBranding, ProjectSettingsChangelog, ProjectSettingsCookies, ProjectSettingsCoupons, ProjectSettingsData, ProjectSettingsDomain, ProjectSettingsFeedback, ProjectSettingsGitHub, ProjectSettingsGoogleAnalytics, ProjectSettingsHotjar, ProjectSettingsInstall, ProjectSettingsIntercom, ProjectSettingsLanding, ProjectSettingsLoginAs, ProjectSettingsRoadmap, ProjectSettingsTeammates, ProjectSettingsUsers, ProjectSettingsUsersOauth, ProjectSettingsUsersSso } from './ProjectSettings';
+import {
+  AccountSettingsNotifications,
+  ProjectSettingsAdvancedEnter,
+  ProjectSettingsApi,
+  ProjectSettingsBase,
+  ProjectSettingsBranding,
+  ProjectSettingsChangelog,
+  ProjectSettingsCookies,
+  ProjectSettingsCoupons,
+  ProjectSettingsData,
+  ProjectSettingsDomain,
+  ProjectSettingsFeedback,
+  ProjectSettingsGitHub,
+  ProjectSettingsGoogleAnalytics,
+  ProjectSettingsHotjar,
+  ProjectSettingsInstall,
+  ProjectSettingsIntercom,
+  ProjectSettingsLanding,
+  ProjectSettingsLoginAs,
+  ProjectSettingsRoadmap,
+  ProjectSettingsTeammates,
+  ProjectSettingsUsers,
+  ProjectSettingsUsersOauth,
+  ProjectSettingsUsersSso,
+} from './ProjectSettings';
 import SettingsPage from './SettingsPage';
 import { SelfhostLicensePage } from './SelfhostLicensePage';
 import { SelfhostInstallPage } from './SelfhostInstallPage';
@@ -182,6 +206,7 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
               ] : []),
               { type: 'heading', text: this.props.t('account') } as MenuHeading,
               { type: 'item', slug: 'settings/account/profile', name: this.props.t('profile'), offset: 1 } as MenuItem,
+              { type: 'item', slug: 'settings/account/notifications', name: this.props.t('notifications'), offset: 1 } as MenuItem,
               { type: 'item', slug: 'settings/account/billing', name: this.props.t('billing'), offset: 1 } as MenuItem,
               ...(!context.isSelfhostServiceOnly ? [
                 { type: 'item', slug: 'settings/account/api', name: 'API', offset: 1 } as MenuItem,
@@ -198,6 +223,10 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
       case 'profile':
         setTitle(this.props.t('account') + ' - ' + this.props.t('dashboard'));
         mainContent = (<SettingsPage />);
+        break;
+      case 'notifications':
+        setTitle(this.props.t('notifications') + ' - ' + this.props.t('dashboard'));
+        mainContent = (<AccountSettingsNotifications />);
         break;
       case 'billing':
         setTitle(this.props.t('billing') + ' - ' + this.props.t('dashboard'));

@@ -25,6 +25,14 @@ public class EmailTemplates {
     private final String verificationTemplateText;
     private final String loginTemplateHtml;
     private final String loginTemplateText;
+    private final String digestTemplateHtml;
+    private final String digestProjectTemplateHtml;
+    private final String digestProjectSectionTemplateHtml;
+    private final String digestProjectSectionItemTemplateHtml;
+    private final String digestTemplateText;
+    private final String digestProjectTemplateText;
+    private final String digestProjectSectionTemplateText;
+    private final String digestProjectSectionItemTemplateText;
 
     public EmailTemplates() throws IOException {
         this.notificationNoUnsubTemplateHtml = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/notificationNoUnsub.html"), Charsets.UTF_8);
@@ -35,6 +43,14 @@ public class EmailTemplates {
         this.verificationTemplateText = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/emailVerify.txt"), Charsets.UTF_8);
         this.loginTemplateHtml = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/emailLogin.html"), Charsets.UTF_8);
         this.loginTemplateText = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/emailLogin.txt"), Charsets.UTF_8);
+        this.digestTemplateHtml = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/digest.html"), Charsets.UTF_8);
+        this.digestProjectTemplateHtml = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/digest-project.html"), Charsets.UTF_8);
+        this.digestProjectSectionTemplateHtml = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/digest-project-section.html"), Charsets.UTF_8);
+        this.digestProjectSectionItemTemplateHtml = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/digest-project-section-item.html"), Charsets.UTF_8);
+        this.digestTemplateText = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/digest.txt"), Charsets.UTF_8);
+        this.digestProjectTemplateText = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/digest-project.txt"), Charsets.UTF_8);
+        this.digestProjectSectionTemplateText = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/digest-project-section.txt"), Charsets.UTF_8);
+        this.digestProjectSectionItemTemplateText = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/digest-project-section-item.txt"), Charsets.UTF_8);
     }
 
     public String sanitize(String input) {

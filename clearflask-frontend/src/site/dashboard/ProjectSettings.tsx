@@ -79,6 +79,7 @@ import { Project, getProject } from '../DemoApp';
 import Demo from '../landing/Demo';
 import OnboardingDemo from '../landing/OnboardingDemo';
 import PostSelection from './PostSelection';
+import * as AdminClient from '../../api/admin';
 
 const propertyWidth = 250;
 
@@ -3518,6 +3519,65 @@ export const ProjectSettingsApi = () => {
           <Grid item xs={12} sm={8}>{account?.accountId}</Grid>
         </Grid>
       </UpgradeWrapper>
+    </ProjectSettingsBase>
+  );
+}
+
+export const AccountSettingsNotifications = () => {
+  const classes = useStyles();
+  const digestOptOutForProjectIds = useSelector<ReduxStateAdmin, string[] | undefined>(state => state.account.account.account?.digestOptOutForProjectIds, shallowEqual);
+  const bindByProjectId = useSelector<ReduxStateAdmin, { [projectId: string]: AdminClient.ConfigAndBindAllResultByProjectId } | undefined>(state => state.configs.configs.byProjectId, shallowEqual);
+  const projectIdsOptedOut = new Set(digestOptOutForProjectIds);
+  const projectIds = Object.keys(bindByProjectId || {});
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  return (
+    <ProjectSettingsBase title='Notifications'
+                         description={(
+                           <>
+                             Enable or disable Weekly Digest notifications for each project.
+                           </>
+                         )}>
+      {projectIds.map(projectId => (
+        <Grid key={projectId} container alignItems="baseline" className={classes.item}>
+          <Grid item xs={12} sm={7}><Typography>
+            Digest for&nbsp;
+            {bindByProjectId?.[projectId]?.config.config.name}
+          </Typography></Grid>
+          <Grid item xs={12} sm={5}>
+            <FormControlLabel
+              control={(
+                <Switch
+                  disabled={isSubmitting}
+                  checked={!projectIdsOptedOut.has(projectId)}
+                  onChange={async (e, checked) => {
+                    setIsSubmitting(true);
+                    const d = await ServerAdmin.get().dispatchAdmin();
+                    try {
+                      await d.accountUpdateAdmin({
+                        accountUpdateAdmin: {
+                          digestOptOutForProjectIds: checked
+                            ? [...projectIdsOptedOut].filter(id => id !== projectId)
+                            : [...projectIdsOptedOut, projectId],
+                        },
+                      });
+                    } finally {
+                      setIsSubmitting(false);
+                    }
+                  }}
+                  color="default"
+                />
+              )}
+              label={(
+                <FormHelperText component="span">
+                  {projectIdsOptedOut.has(projectId)
+                    ? 'Disabled'
+                    : 'Enabled'}
+                </FormHelperText>
+              )}
+            />
+          </Grid>
+        </Grid>
+      ))}
     </ProjectSettingsBase>
   );
 }

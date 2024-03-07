@@ -120,8 +120,22 @@ components:
       type: object
       properties:
         searchText:
-          type: string
           description: Search by name and email.
+          type: string
+        filterStatus:
+          description: Filter by statuses.
+          type: array
+          items:
+            $ref: 'api-account.yaml#/components/schemas/SubscriptionStatus'
+        invertStatus:
+          type: boolean
+        filterPlanid:
+          description: Filter by plan IDs.
+          type: array
+          items:
+            type: string
+        invertPlanid:
+          type: boolean
     ProjectOwnerSwapSuperAdmin:
       type: object
       properties:
@@ -224,6 +238,10 @@ components:
           type: object
           additionalProperties:
             type: string
+        digestOptOutForProjectIds:
+          type: array
+          items:
+            type: string
     SubscriptionStatus:
       type: string
       enum:
@@ -282,6 +300,10 @@ components:
         # Provide a license key, an empty string removes it
         applyLicenseKey:
           type: string
+        digestOptOutForProjectIds:
+          type: array
+          items:
+            type: string
     AccountUpdateSuperAdmin:
       type: object
       properties:

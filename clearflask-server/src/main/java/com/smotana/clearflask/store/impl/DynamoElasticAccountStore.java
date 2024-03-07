@@ -69,7 +69,6 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.jooq.DSLContext;
 import org.jooq.Query;
-import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 
 import javax.ws.rs.core.Response;
@@ -79,6 +78,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -415,11 +415,6 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     }
 
     @Override
-    public SearchAccountsResponse listAccounts(boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt) {
-        return searchAccounts(Optional.empty(), useAccurateCursor, cursorOpt, pageSizeOpt);
-    }
-
-    @Override
     public void listAllAccounts(Consumer<Account> consumer) {
         Optional<String> cursorOpt = Optional.empty();
         do {
@@ -452,13 +447,18 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
 
     @Override
     public SearchAccountsResponse searchAccounts(AccountSearchSuperAdmin accountSearchSuperAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt) {
-        return searchAccounts(Optional.ofNullable(Strings.emptyToNull(accountSearchSuperAdmin.getSearchText())), useAccurateCursor, cursorOpt, pageSizeOpt);
-    }
 
-    private SearchAccountsResponse searchAccounts(Optional<String> searchTextOpt, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt) {
+        final Optional<String> searchTextOpt = Optional.ofNullable(Strings.emptyToNull(accountSearchSuperAdmin.getSearchText()));
+
         final Stream<String> accountIdsStream;
         final Optional<String> cursorOptNext;
         if (configApp.defaultSearchEngine().isReadElastic()) {
+            if (!accountSearchSuperAdmin.getFilterPlanid().isEmpty()) {
+                log.error("searchAccounts filtering by planid is not supported in elastic search");
+            }
+            if (!accountSearchSuperAdmin.getFilterStatus().isEmpty()) {
+                log.error("searchAccounts filtering by status is not supported in elastic search");
+            }
             QueryBuilder queryBuilder;
             if (searchTextOpt.isPresent()) {
                 queryBuilder = QueryBuilders.multiMatchQuery(searchTextOpt.get(),
@@ -488,11 +488,21 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
             int pageSize = mysqlUtil.pageSizeMax(configSearch, pageSizeOpt);
             List<String> accountIds = mysql.get().select(JooqAccount.ACCOUNT.ACCOUNTID)
                     .from(JooqAccount.ACCOUNT)
-                    .where(searchTextOpt.map(searchText ->
+                    .where(mysqlUtil.and(
+                            searchTextOpt.map(searchText ->
                                     JooqAccount.ACCOUNT.EMAIL.likeIgnoreCase("%" + searchTextOpt.get() + "%")
                                             .or(JooqAccount.ACCOUNT.NAME.likeIgnoreCase("%" + searchTextOpt.get() + "%"))
-                                            .or(JooqAccount.ACCOUNT.PLANID.likeIgnoreCase("%" + searchTextOpt.get() + "%")))
-                            .orElseGet(DSL::noCondition))
+                                            .or(JooqAccount.ACCOUNT.PLANID.likeIgnoreCase("%" + searchTextOpt.get() + "%"))),
+                            Optional.of(accountSearchSuperAdmin.getFilterPlanid())
+                                    .filter(Predicate.not(List::isEmpty))
+                                    .map(Boolean.TRUE.equals(accountSearchSuperAdmin.getInvertPlanid())
+                                            ? JooqAccount.ACCOUNT.PLANID::notIn
+                                            : JooqAccount.ACCOUNT.PLANID::in),
+                            Optional.of(accountSearchSuperAdmin.getFilterStatus())
+                                    .filter(Predicate.not(List::isEmpty))
+                                    .map(Boolean.TRUE.equals(accountSearchSuperAdmin.getInvertStatus())
+                                            ? JooqAccount.ACCOUNT.STATUS::notIn
+                                            : JooqAccount.ACCOUNT.STATUS::in)))
                     .offset(offset)
                     .limit(pageSize)
                     .fetch(JooqAccount.ACCOUNT.ACCOUNTID);
@@ -1024,6 +1034,22 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
             accountCache.put(accountId, Optional.of(account));
             return account;
         }
+    }
+
+    @Override
+    public Account setWeeklyDigestOptOut(String accountId, ImmutableSet<String> digestOptOutForProjectIds) {
+        Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+                        .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
+                        .withConditionExpression("attribute_exists(#partitionKey)")
+                        .withUpdateExpression("SET #digestOptOutForProjectIds = :digestOptOutForProjectIds")
+                        .withNameMap(new NameMap()
+                                .with("#digestOptOutForProjectIds", "digestOptOutForProjectIds")
+                                .with("#partitionKey", accountSchema.partitionKeyName()))
+                        .withValueMap(new ValueMap().withStringSet(":digestOptOutForProjectIds", digestOptOutForProjectIds))
+                        .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem());
+        accountCache.put(accountId, Optional.of(account));
+        return account;
     }
 
     @Extern

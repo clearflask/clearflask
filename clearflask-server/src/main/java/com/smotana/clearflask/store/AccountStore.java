@@ -51,8 +51,6 @@ public interface AccountStore {
 
     boolean isEmailAvailable(String email);
 
-    SearchAccountsResponse listAccounts(boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt);
-
     void listAllAccounts(Consumer<Account> consumer);
 
     SearchAccountsResponse listAccounts(Optional<String> cursorOpt, int pageSize, boolean populateCache);
@@ -92,6 +90,8 @@ public interface AccountStore {
     AccountAndIndexingFuture updateStatus(String accountId, SubscriptionStatus status);
 
     Account updateAttrs(String accountId, Map<String, String> attrs, boolean overwriteMap);
+
+    Account setWeeklyDigestOptOut(String accountId, ImmutableSet<String> digestOptOutForProjectIds);
 
     ListenableFuture<Void> deleteAccount(String accountId);
 
@@ -210,6 +210,9 @@ public interface AccountStore {
          */
         Long requestedRecurringPrice;
 
+        @NonNull
+        ImmutableSet<String> digestOptOutForProjectIds;
+
         /**
          * Workaround for Self-Hosted ClearFlask to get the status of the subscription on-deman
          */
@@ -252,7 +255,8 @@ public interface AccountStore {
                     getApiKey(),
                     superAdminPredicate.isEmailSuperAdmin(getEmail()),
                     getAttrs(),
-                    getAddons());
+                    getAddons(),
+                    getDigestOptOutForProjectIds().asList());
         }
 
         public ProjectAdmin toProjectAdmin(ProjectAdmin.RoleEnum role) {

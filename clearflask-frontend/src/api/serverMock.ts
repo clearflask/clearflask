@@ -483,7 +483,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
             this.account.planId = request.accountUpdateAdmin.basePlanId;
             this.account.basePlanId = request.accountUpdateAdmin.basePlanId;
         }
-        ;
         if (request.accountUpdateAdmin.apiKey) {
             this.account.apiKey = request.accountUpdateAdmin.apiKey;
             if (RestrictedActions[this.account.basePlanId]?.has(Action.API_KEY)) {
@@ -502,6 +501,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
                 ...request.accountUpdateAdmin.attrs,
             };
         }
+        if (request.accountUpdateAdmin.digestOptOutForProjectIds !== undefined) this.account.digestOptOutForProjectIds = request.accountUpdateAdmin.digestOptOutForProjectIds;
         return this.returnLater(this.account);
     }
 
