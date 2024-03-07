@@ -3,7 +3,6 @@
 import React from 'react';
 import DashboardHomeBox from './DashboardHomeBox';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
-import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
 import UserList from './UserList';
 import * as Admin from '../../api/admin';
 

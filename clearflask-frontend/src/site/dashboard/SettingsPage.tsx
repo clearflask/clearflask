@@ -7,10 +7,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
-  FormControlLabel,
-  FormHelperText,
   Grid,
-  Switch,
   Typography,
 } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
@@ -18,7 +15,6 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Admin from '../../api/admin';
-import * as AdminClient from '../../api/admin';
 import ServerAdmin, { ReduxStateAdmin } from '../../api/serverAdmin';
 import SubmitButton from '../../common/SubmitButton';
 import UpdatableField from '../../common/UpdatableField';
@@ -48,7 +44,7 @@ class SettingsPage extends Component<Props & ConnectProps & WithStyles<typeof st
   state: State = {};
 
   render() {
-    if (!this.props.account || !this.props.bindByProjectId) {
+    if (!this.props.account) {
       return 'Need to login to see this page';
     }
     return (

@@ -1,6 +1,17 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
-import { Button, Divider, Fade, IconButton, SvgIconTypeMap, Tab, Tabs, Typography, withWidth, WithWidthProps } from '@material-ui/core';
+import {
+  Button,
+  Divider,
+  Fade,
+  IconButton,
+  SvgIconTypeMap,
+  Tab,
+  Tabs,
+  Typography,
+  withWidth,
+  WithWidthProps,
+} from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import AccountIcon from '@material-ui/icons/AccountCircle';
@@ -49,7 +60,7 @@ import LogoutIcon from '../common/icon/LogoutIcon';
 import VisitIcon from '../common/icon/VisitIcon';
 import Layout, { LayoutSize, Section } from '../common/Layout';
 import { MenuButton, MenuItems } from '../common/menus';
-import { TourChecklist, TourDefinitionGuideState } from '../common/tour';
+import { TourDefinitionGuideState } from '../common/tour';
 import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import { getProjectLink, getProjectName } from '../common/util/projectUtil';
 import { createMutableRef, MutableRef } from '../common/util/refUtil';
@@ -86,6 +97,7 @@ export interface ShowSnackbarProps {
     onClick: (close) => void;
   }>,
 }
+
 export type ShowSnackbar = (props: ShowSnackbarProps) => void;
 
 export type OpenPost = (postId?: string, redirectPage?: string) => void;
@@ -122,10 +134,25 @@ export interface DashboardPageContext {
 
 const SELECTED_PROJECT_ID_LOCALSTORAGE_KEY = 'dashboard-selected-project-id';
 const SELECTED_PROJECT_ID_PARAM_NAME = 'projectId';
-export const PostPreviewSize: LayoutSize = { breakWidth: 600, flexGrow: 100, maxWidth: 876, scroll: Orientation.Vertical };
-export const UserPreviewSize: LayoutSize = { breakWidth: 350, flexGrow: 100, maxWidth: 1024, scroll: Orientation.Vertical };
+export const PostPreviewSize: LayoutSize = {
+  breakWidth: 600,
+  flexGrow: 100,
+  maxWidth: 876,
+  scroll: Orientation.Vertical,
+};
+export const UserPreviewSize: LayoutSize = {
+  breakWidth: 350,
+  flexGrow: 100,
+  maxWidth: 1024,
+  scroll: Orientation.Vertical,
+};
 const ProjectPreviewSize: LayoutSize = { breakWidth: 500, flexGrow: 100, maxWidth: 1024, scroll: Orientation.Vertical };
-export const ProjectSettingsMainSize: LayoutSize = { breakWidth: 500, flexGrow: 100, maxWidth: 'max-content', scroll: Orientation.Both };
+export const ProjectSettingsMainSize: LayoutSize = {
+  breakWidth: 500,
+  flexGrow: 100,
+  maxWidth: 'max-content',
+  scroll: Orientation.Both,
+};
 
 const styles = (theme: Theme) => createStyles({
   grow: {
@@ -149,8 +176,7 @@ const styles = (theme: Theme) => createStyles({
   projectUserSelectorMenu: {
     margin: theme.spacing(2),
   },
-  projectUserSelectorInline: {
-  },
+  projectUserSelectorInline: {},
   projectUserSelectorInlineInputRoot: {
     fontSize: 'inherit',
   },
@@ -276,8 +302,10 @@ const styles = (theme: Theme) => createStyles({
     marginRight: theme.spacing(4),
   },
 });
+
 interface Props {
 }
+
 interface ConnectProps {
   accountStatus?: Status;
   account?: AdminClient.AccountAdmin;
@@ -285,6 +313,7 @@ interface ConnectProps {
   configsStatus?: Status;
   bindByProjectId?: { [projectId: string]: AdminClient.ConfigAndBindAllResultByProjectId };
 }
+
 interface State {
   selectedProjectId?: string;
   previewShowOnPage?: string;
@@ -317,6 +346,7 @@ interface State {
   changelog?: ChangelogInstance | null;
   hasUncategorizedCategories?: boolean;
 }
+
 export class Dashboard extends Component<Props & ConnectProps & WithTranslation<'site'> & RouteComponentProps & WithStyles<typeof styles, true> & WithWidthProps & WithSnackbarProps, State> {
   static stripePromise: Promise<Stripe | null> | undefined;
   unsubscribes: { [projectId: string]: () => void } = {};
@@ -354,7 +384,8 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
         if (detectEnv() !== Environment.DEVELOPMENT_FRONTEND) {
           throw e;
         }
-      };
+      }
+      ;
       Dashboard.stripePromise = loadStripe(isProd()
         ? 'pk_live_6HJ7aPzGuVyPwTX5ngwAw0Gh'
         : 'pk_test_51Dfi5vAl0n0hFnHPXRnnJdMKRKF6MMOWLQBwLl1ifwPZysg1wJNtYcumjgO8oPHlqITK2dXWlbwLEsPYas6jpUkY00Ryy3AtGP');
@@ -365,7 +396,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
   async bind() {
     try {
       if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
-        const mocker = await import(/* webpackChunkName: "mocker" */'../mocker')
+        const mocker = await import(/* webpackChunkName: "mocker" */'../mocker');
         await mocker.mock();
       }
       const dispatcher = await ServerAdmin.get().dispatchAdmin();
@@ -388,7 +419,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
     if (this.props.accountStatus === Status.FULFILLED && !this.props.account) {
       return (<Redirect to={{
         pathname: '/login',
-        state: { [ADMIN_LOGIN_REDIRECT_TO]: this.props.location.pathname }
+        state: { [ADMIN_LOGIN_REDIRECT_TO]: this.props.location.pathname },
       }} />);
     } else if (this.props.configsStatus !== Status.FULFILLED || !this.props.bindByProjectId || !this.props.account) {
       return (<LoadingPage />);
@@ -413,7 +444,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
     const projectOptions: Label[] = projects.map(p => ({
       label: getProjectName(p.editor.getConfig()),
       filterString: p.editor.getConfig().name,
-      value: p.projectId
+      value: p.projectId,
     }));
     var selectedLabel: Label | undefined = this.state.selectedProjectId ? projectOptions.find(o => o.value === this.state.selectedProjectId) : undefined;
     if (!selectedLabel) {
@@ -463,7 +494,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
           const hasUncategorizedCategories = !activeProject.editor.getConfig().content.categories.every(category =>
             category.categoryId === all[0]?.categoryAndIndex.category.categoryId
             || category.categoryId === all[1]?.categoryAndIndex.category.categoryId
-            || category.categoryId === all[2]?.categoryAndIndex.category.categoryId
+            || category.categoryId === all[2]?.categoryAndIndex.category.categoryId,
           );
           this.setState({ hasUncategorizedCategories });
         })
@@ -488,7 +519,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
         if (context.isSelfhostServiceOnly) {
           context.sections.push({
             name: 'main',
-            content: (<RedirectIso to='/dashboard/settings/account/selfhost-install' />)
+            content: (<RedirectIso to="/dashboard/settings/account/selfhost-install" />),
           });
         }
         context.showProjectLink = true;
@@ -560,13 +591,13 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
       case 'billing':
         context.sections.push({
           name: 'main',
-          content: (<RedirectIso to='/dashboard/settings/account/billing' />)
+          content: (<RedirectIso to="/dashboard/settings/account/billing" />),
         });
         break;
       case 'account':
         context.sections.push({
           name: 'main',
-          content: (<RedirectIso to='/dashboard/settings/account/profile' />)
+          content: (<RedirectIso to="/dashboard/settings/account/profile" />),
         });
         break;
       case 'welcome':
@@ -574,7 +605,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
         if (context.isSelfhostServiceOnly) {
           context.sections.push({
             name: 'main',
-            content: (<RedirectIso to='/dashboard/settings/account/billing' />)
+            content: (<RedirectIso to="/dashboard/settings/account/billing" />),
           });
           break;
         }
@@ -610,7 +641,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
           noPaper: true,
           collapseTopBottom: true, collapseLeft: true, collapseRight: true,
           size: { flexGrow: 1, breakWidth: 300, scroll: Orientation.Vertical },
-          content: (<ApiDocs projectId={activeProjectId} />)
+          content: (<ApiDocs projectId={activeProjectId} />),
         });
         break;
       case 'contact':
@@ -619,7 +650,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
           noPaper: true,
           collapseTopBottom: true, collapseLeft: true, collapseRight: true,
           size: { flexGrow: 1, breakWidth: 300, scroll: Orientation.Vertical },
-          content: (<ContactPage />)
+          content: (<ContactPage />),
         });
         break;
       case 'e':
@@ -628,7 +659,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
           noPaper: true,
           collapseTopBottom: true, collapseLeft: true, collapseRight: true,
           size: { flexGrow: 1, breakWidth: 300, scroll: Orientation.Vertical },
-          content: (<LandingEmbedFeedbackPage browserPathPrefix='/dashboard/e' embed />)
+          content: (<LandingEmbedFeedbackPage browserPathPrefix="/dashboard/e" embed />),
         });
         break;
       default:
@@ -652,8 +683,8 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
       type: 'button', onClick: () => {
         ServerAdmin.get().dispatchAdmin().then(d => d.accountLogoutAdmin());
         redirectIso('/login', this.props.history);
-      }, title: this.props.t('sign-out'), icon: LogoutIcon
-    }
+      }, title: this.props.t('sign-out'), icon: LogoutIcon,
+    };
     var content = (
       <>
         {this.props.account && (
@@ -665,8 +696,8 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
             <div className={this.props.classes.toolbarLeft}>
               <Tabs
                 className={this.props.classes.tabs}
-                variant='standard'
-                scrollButtons='off'
+                variant="standard"
+                scrollButtons="off"
                 classes={{
                   indicator: this.props.classes.tabsIndicator,
                   flexContainer: this.props.classes.tabsFlexContainer,
@@ -678,8 +709,8 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                 <Tab
                   className={this.props.classes.tab}
                   component={Link}
-                  to='/dashboard'
-                  value='home'
+                  to="/dashboard"
+                  value="home"
                   disableRipple
                   label={(<Logo suppressMargins />)}
                   classes={{
@@ -690,8 +721,8 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                   <Tab
                     className={this.props.classes.tab}
                     component={Link}
-                    to='/dashboard/explore'
-                    value='explore'
+                    to="/dashboard/explore"
+                    value="explore"
                     disableRipple
                     label={this.props.t('explore')}
                     classes={{
@@ -703,8 +734,8 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                   <Tab
                     className={this.props.classes.tab}
                     component={Link}
-                    to='/dashboard/feedback'
-                    value='feedback'
+                    to="/dashboard/feedback"
+                    value="feedback"
                     disableRipple
                     label={this.props.t('feedback')}
                     classes={{
@@ -716,8 +747,8 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                   <Tab
                     className={this.props.classes.tab}
                     component={Link}
-                    to='/dashboard/roadmap'
-                    value='roadmap'
+                    to="/dashboard/roadmap"
+                    value="roadmap"
                     disableRipple
                     label={this.props.t('roadmap')}
                     classes={{
@@ -729,8 +760,8 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                   <Tab
                     className={this.props.classes.tab}
                     component={Link}
-                    to='/dashboard/changelog'
-                    value='changelog'
+                    to="/dashboard/changelog"
+                    value="changelog"
                     disableRipple
                     label={this.props.t('announcements')}
                     classes={{
@@ -742,8 +773,8 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                   <Tab
                     className={this.props.classes.tab}
                     component={Link}
-                    to='/dashboard/users'
-                    value='users'
+                    to="/dashboard/users"
+                    value="users"
                     disableRipple
                     label={this.props.t('users')}
                     classes={{
@@ -762,7 +793,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                   {
                     type: 'dropdown', title: this.props.account.name,
                     color: 'primary', items: [signOutButton],
-                  }
+                  },
                 ] : [
                   ...(!!projectLink ? [{
                     type: 'button' as 'button', tourAnchorProps: {
@@ -770,19 +801,28 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                     }, onClick: () => {
                       !windowIso.isSsr && windowIso.open(projectLink, '_blank');
                       tourSetGuideState('visit-project', TourDefinitionGuideState.Completed);
-                    }, title: this.props.t('visit'), icon: VisitIcon
+                    }, title: this.props.t('visit'), icon: VisitIcon,
                   }] : []),
                   {
-                    type: 'dropdown', title: (!!activeProject && projects.length > 1) ? getProjectName(activeProject.editor.getConfig()) : this.props.account.name,
-                    color: 'primary', items: [
+                    type: 'dropdown',
+                    title: (!!activeProject && projects.length > 1) ? getProjectName(activeProject.editor.getConfig()) : this.props.account.name,
+                    color: 'primary',
+                    items: [
                       ...(projects.map(p => ({
-                        type: 'button' as 'button', onClick: () => this.setSelectedProjectId(p.projectId), title: getProjectName(p.editor.getConfig()),
+                        type: 'button' as 'button',
+                        onClick: () => this.setSelectedProjectId(p.projectId),
+                        title: getProjectName(p.editor.getConfig()),
 
-                        icon: p.projectId === activeProjectId ? CheckIcon : undefined
+                        icon: p.projectId === activeProjectId ? CheckIcon : undefined,
                       }))),
                       { type: 'divider' },
                       { type: 'button', link: '/dashboard/create', title: this.props.t('add-project'), icon: AddIcon },
-                      { type: 'button', link: '/dashboard/settings/project/branding', title: this.props.t('settings'), icon: SettingsIcon },
+                      {
+                        type: 'button',
+                        link: '/dashboard/settings/project/branding',
+                        title: this.props.t('settings'),
+                        icon: SettingsIcon,
+                      },
                       { type: 'button', link: '/dashboard/api', title: 'API', icon: ApiIcon },
                       // { type: 'divider' },
                       // { type: 'button', link: this.openFeedbackUrl('docs'), linkIsExternal: true, title: 'Documentation' },
@@ -790,13 +830,23 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                       // { type: 'button', link: '/dashboard/e/feedback', title: this.props.t('give-feedback') },
                       // { type: 'button', link: '/dashboard/e/roadmap', title: this.props.t('our-roadmap') },
                       { type: 'divider' },
-                      { type: 'button', link: '/dashboard/settings/account/profile', title: this.props.t('account'), icon: AccountIcon },
+                      {
+                        type: 'button',
+                        link: '/dashboard/settings/account/profile',
+                        title: this.props.t('account'),
+                        icon: AccountIcon,
+                      },
                       ...(!!this.props.isSuperAdmin && detectEnv() !== Environment.PRODUCTION_SELF_HOST ? [
-                        { type: 'button' as 'button', link: '/dashboard/settings/super/loginas', title: 'Super Admin', icon: SuperAccountIcon },
+                        {
+                          type: 'button' as 'button',
+                          link: '/dashboard/settings/super/loginas',
+                          title: 'Super Admin',
+                          icon: SuperAccountIcon,
+                        },
                       ] : []),
                       signOutButton,
-                    ]
-                  }
+                    ],
+                  },
                 ]}
               />
             </>
@@ -994,14 +1044,14 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
       size: PostPreviewSize,
       content: (
         <Provider key={project.projectId} store={project.server.getStore()}>
-          <Fade key='post-create' in appear>
+          <Fade key="post-create" in appear>
             <div>
               <PostCreateForm
                 key={draftId || 'new'}
                 server={project.server}
-                type='post'
+                type="post"
                 mandatoryCategoryIds={mandatoryCategoryIds}
-                adminControlsDefaultVisibility='expanded'
+                adminControlsDefaultVisibility="expanded"
                 logInAndGetUserId={() => new Promise<string>(resolve => this.setState({ postCreateOnLoggedIn: resolve }))}
                 draftId={draftId}
                 defaultStatusId={defaultStatusId}
@@ -1021,7 +1071,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                 externalControlRef={externalControlRef}
               />
               <LogIn
-                actionTitle='Get notified of replies'
+                actionTitle="Get notified of replies"
                 server={project.server}
                 open={!!this.state.postCreateOnLoggedIn}
                 onClose={() => this.setState({ postCreateOnLoggedIn: undefined })}
@@ -1049,7 +1099,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
       size: UserPreviewSize,
       content: (
         <Provider key={project.projectId} store={project.server.getStore()}>
-          <Fade key='user-create' in appear>
+          <Fade key="user-create" in appear>
             <div>
               <UserPage
                 server={project.server}
@@ -1073,7 +1123,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
       size: ProjectPreviewSize,
       content: (
         <>
-          <div style={{ display: 'flex', alignItems: 'center', margin: 4, }}>
+          <div style={{ display: 'flex', alignItems: 'center', margin: 4 }}>
             <IconButton onClick={() => this.setState({
               settingsPreviewChanges: !!showCodeForProject ? 'live' : 'code',
             })}>
@@ -1109,11 +1159,11 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
       content: (
         <Fade key={msg} in appear>
           <div className={this.props.classes.previewEmptyMessage}>
-            <Typography component='div' variant='h5'>
+            <Typography component="div" variant="h5">
               {msg}
             </Typography>
             <EmptyIcon
-              fontSize='inherit'
+              fontSize="inherit"
               className={this.props.classes.previewEmptyIcon}
             />
           </div>
@@ -1196,7 +1246,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
         <>
           {props.actions?.map(action => (
             <Button
-              color='inherit'
+              color="inherit"
               onClick={() => action.onClick(() => this.props.closeSnackbar(key))}
             >{action.title}</Button>
           ))}

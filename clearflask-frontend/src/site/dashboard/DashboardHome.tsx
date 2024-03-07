@@ -28,7 +28,6 @@ import DashboardHomePostList from './DashboardHomePostList';
 import DashboardHomeUserList from './DashboardHomeUserList';
 import ServerAdmin from '../../api/serverAdmin';
 import { TourChecklist } from '../../common/tour';
-import UserList from './UserList';
 
 const statePrefixAggregate = 'aggr-';
 

@@ -5,7 +5,6 @@ import PostList from './PostList';
 import DashboardHomeBox from './DashboardHomeBox';
 import { createStyles, makeStyles, Theme, useTheme } from '@material-ui/core/styles';
 import { MinContentWidth } from '../../app/comps/Post';
-import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
 
 const styles = (theme: Theme) => createStyles({
   box: {
