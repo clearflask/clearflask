@@ -263,7 +263,9 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
-        ImmutableCollection<IdeaModel> ideaModels = ideaStore.getIdeas(projectId, ImmutableList.copyOf(ideaGetAll.getPostIds())).values();
+        ImmutableCollection<IdeaModel> ideaModels = ideaStore.getIdeas(projectId, ideaGetAll.getPostIds().stream()
+                .filter(Objects::nonNull)
+                .collect(ImmutableList.toImmutableList())).values();
         return new IdeaGetAllResponse(userOpt.map(user -> toIdeasWithVotes(user, ideaModels))
                 .orElseGet(() -> ideaModels.stream()
                         .map(ideaModel -> ideaModel.toIdeaWithVote(
