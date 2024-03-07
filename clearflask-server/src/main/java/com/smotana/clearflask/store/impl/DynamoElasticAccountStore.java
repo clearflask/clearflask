@@ -453,10 +453,10 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         final Stream<String> accountIdsStream;
         final Optional<String> cursorOptNext;
         if (configApp.defaultSearchEngine().isReadElastic()) {
-            if (!accountSearchSuperAdmin.getFilterPlanid().isEmpty()) {
+            if (accountSearchSuperAdmin.getFilterPlanid() != null && !accountSearchSuperAdmin.getFilterPlanid().isEmpty()) {
                 log.error("searchAccounts filtering by planid is not supported in elastic search");
             }
-            if (!accountSearchSuperAdmin.getFilterStatus().isEmpty()) {
+            if (accountSearchSuperAdmin.getFilterStatus() != null && !accountSearchSuperAdmin.getFilterStatus().isEmpty()) {
                 log.error("searchAccounts filtering by status is not supported in elastic search");
             }
             QueryBuilder queryBuilder;
@@ -493,12 +493,12 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                                     JooqAccount.ACCOUNT.EMAIL.likeIgnoreCase("%" + searchTextOpt.get() + "%")
                                             .or(JooqAccount.ACCOUNT.NAME.likeIgnoreCase("%" + searchTextOpt.get() + "%"))
                                             .or(JooqAccount.ACCOUNT.PLANID.likeIgnoreCase("%" + searchTextOpt.get() + "%"))),
-                            Optional.of(accountSearchSuperAdmin.getFilterPlanid())
+                            Optional.ofNullable(accountSearchSuperAdmin.getFilterPlanid())
                                     .filter(Predicate.not(List::isEmpty))
                                     .map(Boolean.TRUE.equals(accountSearchSuperAdmin.getInvertPlanid())
                                             ? JooqAccount.ACCOUNT.PLANID::notIn
                                             : JooqAccount.ACCOUNT.PLANID::in),
-                            Optional.of(accountSearchSuperAdmin.getFilterStatus())
+                            Optional.ofNullable(accountSearchSuperAdmin.getFilterStatus())
                                     .filter(Predicate.not(List::isEmpty))
                                     .map(Boolean.TRUE.equals(accountSearchSuperAdmin.getInvertStatus())
                                             ? JooqAccount.ACCOUNT.STATUS::notIn
