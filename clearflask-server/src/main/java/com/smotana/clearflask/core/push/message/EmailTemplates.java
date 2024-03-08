@@ -3,10 +3,14 @@
 package com.smotana.clearflask.core.push.message;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Strings;
 import com.google.common.io.Resources;
 import com.google.inject.AbstractModule;
+import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
+import com.kik.config.ice.ConfigSystem;
+import com.kik.config.ice.annotations.DefaultValue;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -16,6 +20,14 @@ import java.io.IOException;
 @Singleton
 @Getter
 public class EmailTemplates {
+
+    public interface Config {
+        @DefaultValue("\\p{C}")
+        String sanitizeRegex();
+    }
+
+    @Inject
+    private Config config;
 
     private final String notificationNoUnsubTemplateHtml;
     private final String notificationNoUnsubTemplateText;
@@ -54,7 +66,7 @@ public class EmailTemplates {
     }
 
     public String sanitize(String input) {
-        return input.replaceAll("[^A-Za-z0-9 ]+", "");
+        return Strings.nullToEmpty(input).replaceAll(config.sanitizeRegex(), "");
     }
 
     public static Module module() {
@@ -62,6 +74,7 @@ public class EmailTemplates {
             @Override
             protected void configure() {
                 bind(EmailTemplates.class).asEagerSingleton();
+                install(ConfigSystem.configModule(Config.class));
             }
         };
     }
