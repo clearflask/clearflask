@@ -17,18 +17,17 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
-import org.simplejavamail.api.email.EmailPopulatingBuilder;
-import org.simplejavamail.api.mailer.Mailer;
-import org.simplejavamail.api.mailer.config.TransportStrategy;
 import org.simplejavamail.email.EmailBuilder;
+import org.simplejavamail.email.EmailPopulatingBuilder;
+import org.simplejavamail.mailer.Mailer;
 import org.simplejavamail.mailer.MailerBuilder;
+import org.simplejavamail.mailer.config.TransportStrategy;
 import rx.Observable;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Singleton
@@ -223,7 +222,6 @@ public class EmailServiceImpl implements EmailService {
                                 config.smtpPassword())
                         .withTransportStrategy(Enums.getIfPresent(TransportStrategy.class, config.smtpStrategy())
                                 .or(TransportStrategy.SMTP_TLS))
-                        .async()
                         .buildMailer());
             }
             EmailPopulatingBuilder emailBuilder = EmailBuilder.startingBlank()
@@ -236,19 +234,9 @@ public class EmailServiceImpl implements EmailService {
                     && config.bccOnTagTypes().contains(email.getTypeTag())) {
                 emailBuilder.bcc(String.join(",", config.bccEmails()));
             }
-            CompletableFuture<Void> asyncResponse = this.smtpOpt.get()
-                    .sendMail(emailBuilder.buildEmail(), true)
-                    .whenCompleteAsync((result, ex) -> {
-                        if (ex != null) {
-                            if (LogUtil.rateLimitAllowLog("emailpush-smtp-exception")) {
-                                log.warn("SMTP Email cannot be delivered, strategy {} host {}",
-                                        config.smtpStrategy(), config.smtpHost(), ex);
-                            }
-                        } else {
-                            log.trace("Email sent to {} project/account id {} to {} subject {}",
-                                    email.getToAddress(), email.getProjectOrAccountId(), email.getToAddress(), email.getSubject());
-                        }
-                    });
+            this.smtpOpt.get().sendMail(emailBuilder.buildEmail(), true);
+            log.info("Sending email to {} subject '{}' project/account id {} ",
+                    email.getToAddress(), email.getProjectOrAccountId(), email.getSubject());
         }
     }
 

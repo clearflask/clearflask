@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.smotana.clearflask.web.filter;
 
+import com.google.common.base.Predicates;
 import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
+import com.google.common.collect.FluentIterable;
 import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -16,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 import javax.servlet.*;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.util.Optional;
 
 @Slf4j
 public class ApiExceptionMapperFilter implements Filter {
@@ -44,8 +48,13 @@ public class ApiExceptionMapperFilter implements Filter {
             filterChain.doFilter(request, response);
         } catch (ServletException ex) {
             String ignoreMessageRegex = config.ignoreMessageRegex();
-            if (ex.getRootCause() instanceof ApiException) {
-                Response.Status status = ((ApiException) ex.getRootCause()).getStatus();
+            Optional<ApiException> apiExceptionOpt = FluentIterable.from(Throwables.getCausalChain(ex))
+                    .filter(Predicates.instanceOf(ApiException.class))
+                    .first()
+                    .toJavaUtil()
+                    .map(ApiException.class::cast);
+            if (apiExceptionOpt.isPresent()) {
+                Response.Status status = apiExceptionOpt.get().getStatus();
                 switch (status.getFamily()) {
                     case INFORMATIONAL:
                     case SUCCESSFUL:
@@ -70,10 +79,6 @@ public class ApiExceptionMapperFilter implements Filter {
         } catch (IOException ex) {
             log.trace("Uncaught IO Exception", ex);
         }
-    }
-
-    @Override
-    public void destroy() {
     }
 
     public static Module module() {

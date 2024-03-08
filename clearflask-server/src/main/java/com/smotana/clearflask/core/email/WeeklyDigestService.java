@@ -64,7 +64,7 @@ public class WeeklyDigestService extends ManagedService {
         /**
          * Will consider this timezone during all operations
          */
-        @DefaultValue("EST")
+        @DefaultValue("America/New_York")
         String zoneId();
 
         /**
@@ -184,7 +184,8 @@ public class WeeklyDigestService extends ManagedService {
                 try {
                     processAccount(digestRun, account);
                 } catch (Exception ex) {
-                    log.warn("Failed to process account {}", account.getAccountId(), ex);
+                    log.warn("Weekly digest: Failed to process account {} {}",
+                            account.getEmail(), account.getAccountId(), ex);
                 }
             }
         } while (cursorOpt.isPresent());
@@ -213,17 +214,19 @@ public class WeeklyDigestService extends ManagedService {
                 .flatMap(project -> processAccountProject(digestRun, account, project).stream())
                 .collect(ImmutableList.toImmutableList());
         if (projects.isEmpty()) {
+            log.info("Weekly digest: skipping account {} {}",
+                    account.getEmail(), account.getAccountId());
             return;
         }
 
+        log.info("Weekly digest: sending to account {} {} projects {}",
+                account.getEmail(), account.getAccountId(),
+                projects.stream().map(DigestProject::getProjectName).toArray());
         digestRun.rateLimiter.acquire();
         notificationService.onDigest(account, new Digest(projects));
     }
 
     private Optional<DigestProject> processAccountProject(DigestRun digestRun, Account account, Project project) {
-        if (account.getDigestOptOutForProjectIds().contains(project.getProjectId())) {
-            return Optional.empty();
-        }
         UserModel adminUser = userStore.accountCreateOrGet(project.getProjectId(), account);
 
         Optional<DigestSection> newPostsSectionOpt = project.getVersionedConfigAdmin().getConfig().getContent().getCategories().stream()
@@ -257,6 +260,7 @@ public class WeeklyDigestService extends ManagedService {
                 .map(Optional::get)
                 .collect(ImmutableList.toImmutableList());
         if (sections.isEmpty()) {
+            log.debug("No sections for account {} project {}", account.getAccountId(), project.getProjectId());
             return Optional.empty();
         }
 
