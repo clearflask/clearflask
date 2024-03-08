@@ -101,10 +101,11 @@ public class WeeklyDigestService extends ManagedService {
     }
 
     @Value
+    @AllArgsConstructor
     private class DigestRun {
         ZonedDateTime now = now();
-        Instant start = getDigestStart(now);
-        Instant end = getDigestEnd(now);
+        Instant start;
+        Instant end;
         RateLimiter rateLimiter = guavaRateLimiters.create(config.rateLimiterPermitsPerSecond(), 1, 1);
         LoadingCache<String, Optional<Project>> projectCache = CacheBuilder.newBuilder()
                 .build(new CacheLoader<>() {
@@ -113,6 +114,11 @@ public class WeeklyDigestService extends ManagedService {
                         return projectStore.getProject(projectId, false);
                     }
                 });
+
+        public DigestRun() {
+            this.start = getDigestStart(now);
+            this.end = getDigestEnd(now);
+        }
     }
 
     @Inject
@@ -196,7 +202,16 @@ public class WeeklyDigestService extends ManagedService {
 
     @Extern
     private void processAccount(String accountId) {
-        processAccount(new DigestRun(), accountStore.getAccount(accountId, true).orElseThrow());
+        processAccount(
+                new DigestRun(),
+                accountStore.getAccount(accountId, true).orElseThrow());
+    }
+
+    @Extern
+    private void processAccount(String accountId, String start, String end) {
+        processAccount(
+                new DigestRun(Instant.parse(start), Instant.parse(end)),
+                accountStore.getAccount(accountId, true).orElseThrow());
     }
 
     @SneakyThrows
