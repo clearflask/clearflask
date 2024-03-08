@@ -221,5 +221,6 @@
   "cookie-consent": "Evästeen suostumus",
   "free-forever": "Ilmainen ikuisesti",
   "you-have-unsaved-changes": "Sinulla on tallentamattomia muutoksia",
-  "empty": "Tyhjä"
+  "empty": "Tyhjä",
+  "notifications": "Ilmoitukset"
 }
