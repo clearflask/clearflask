@@ -11,10 +11,9 @@ import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClient;
 import com.amazonaws.services.simpleemail.model.RawMessage;
 import com.amazonaws.services.simpleemail.model.SendRawEmailRequest;
 
-import jakarta.mail.Message.RecipientType;
-import jakarta.mail.Multipart;
-import jakarta.mail.internet.*;
-
+import javax.mail.Message.RecipientType;
+import javax.mail.Multipart;
+import javax.mail.internet.*;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.*;

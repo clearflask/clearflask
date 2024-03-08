@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.smotana.clearflask</groupId>
@@ -23,7 +24,8 @@
         <sentry.version>5.1.1</sentry.version>
         <guava.version>30.1.1-jre</guava.version>
         <slf4j.version>2.0.12</slf4j.version>
-        <logback.version>1.4.14</logback.version>
+        <!-- 1.3.x is required for javax jdk8 (https://github.com/qos-ch/logback/discussions/585) -->
+        <logback.version>1.3.14</logback.version>
         <!-- Last recommended version cross compatible for OpenSearch and ElasticSearch
              https://opensearch.org/docs/latest/clients/index/ -->
         <elasticsearch.version>7.13.4</elasticsearch.version>
@@ -51,8 +53,8 @@
         <bytebuddy.version>1.10.22</bytebuddy.version>
         <bouncycastle.version>1.70</bouncycastle.version>
         <githubReleaseVersion>${project.version}</githubReleaseVersion>
-        <skipTests />
-        <skipITs />
+        <skipTests/>
+        <skipITs/>
         <skipLicenseUpdate>true</skipLicenseUpdate>
         <!-- For HTTPS, use "scm:git:https://github.com/clearflask/clearflask.git" -->
         <scmConnection>scm:git:git@github.com:clearflask/clearflask.git</scmConnection>
@@ -652,13 +654,15 @@
             </dependency>
             <dependency>
                 <groupId>com.sun.mail</groupId>
-                <artifactId>jakarta.mail</artifactId>
-                <version>2.0.1</version>
+                <artifactId>javax.mail</artifactId>
+                <!-- Same as logback-core parent pom.xml javax.mail.version property -->
+                <version>1.6.2</version>
             </dependency>
             <dependency>
                 <groupId>org.simplejavamail</groupId>
                 <artifactId>simple-java-mail</artifactId>
-                <version>8.6.2</version>
+                <!-- Last version to support javax.mail (https://github.com/bbottema/simple-java-mail)-->
+                <version>5.1.7</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>
@@ -735,6 +739,7 @@
                 <groupId>javax.servlet</groupId>
                 <artifactId>javax.servlet-api</artifactId>
                 <version>4.0.1</version>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>javax.validation</groupId>

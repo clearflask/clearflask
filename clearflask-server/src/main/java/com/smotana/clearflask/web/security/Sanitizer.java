@@ -16,12 +16,12 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.store.ContentStore;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.ApiException;
-import jakarta.mail.internet.AddressException;
-import jakarta.mail.internet.InternetAddress;
 import lombok.extern.slf4j.Slf4j;
 import org.owasp.html.*;
 import org.xbill.DNS.*;
 
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
 import javax.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.Map;
