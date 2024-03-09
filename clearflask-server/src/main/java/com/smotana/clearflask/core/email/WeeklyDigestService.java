@@ -59,7 +59,7 @@ public class WeeklyDigestService extends ManagedService {
 
     public interface Config {
 
-        @DefaultValue("false")
+        @DefaultValue("true")
         boolean enabled();
 
         /**
@@ -168,37 +168,43 @@ public class WeeklyDigestService extends ManagedService {
 
     @Extern
     private void processAll() {
-        // Prepare for this run
-        DigestRun digestRun = new DigestRun();
-
-        // Check if this run is already complete or already in progress
-        if (!lock(digestRun)) {
-            return;
-        }
-
-        // Iterate all accounts
-        Optional<String> cursorOpt = Optional.empty();
-        do {
-            SearchAccountsResponse searchAccountsResponse = accountStore.searchAccounts(AccountSearchSuperAdmin.builder()
-                    .filterStatus(ImmutableList.of(SubscriptionStatus.ACTIVE, SubscriptionStatus.ACTIVETRIAL))
-                    // Pre-filtering by planid, will be checked again below
-                    .filterPlanid(CommonPlanVerifyStore.PLANS_WITHOUT_DIGEST.asList())
-                    .invertPlanid(true)
-                    .build(), true, cursorOpt, Optional.empty());
-            cursorOpt = searchAccountsResponse.getCursorOpt();
-            for (Account account : searchAccountsResponse.getAccounts()) {
-                // Process each account individually
-                try {
-                    processAccount(digestRun, account);
-                } catch (Exception ex) {
-                    log.warn("Weekly digest: Failed to process account {} {}",
-                            account.getEmail(), account.getAccountId(), ex);
-                }
+        synchronized (this) {
+            if (!config.enabled()) {
+                return;
             }
-        } while (cursorOpt.isPresent());
 
-        // Signal completion
-        complete(digestRun);
+            // Prepare for this run
+            DigestRun digestRun = new DigestRun();
+
+            // Check if this run is already complete or already in progress
+            if (!lock(digestRun)) {
+                return;
+            }
+
+            // Iterate all accounts
+            Optional<String> cursorOpt = Optional.empty();
+            do {
+                SearchAccountsResponse searchAccountsResponse = accountStore.searchAccounts(AccountSearchSuperAdmin.builder()
+                        .filterStatus(ImmutableList.of(SubscriptionStatus.ACTIVE, SubscriptionStatus.ACTIVETRIAL))
+                        // Pre-filtering by planid, will be checked again below
+                        .filterPlanid(CommonPlanVerifyStore.PLANS_WITHOUT_DIGEST.asList())
+                        .invertPlanid(true)
+                        .build(), true, cursorOpt, Optional.empty());
+                cursorOpt = searchAccountsResponse.getCursorOpt();
+                for (Account account : searchAccountsResponse.getAccounts()) {
+                    // Process each account individually
+                    try {
+                        processAccount(digestRun, account);
+                    } catch (Exception ex) {
+                        log.warn("Weekly digest: Failed to process account {} {}",
+                                account.getEmail(), account.getAccountId(), ex);
+                    }
+                }
+            } while (cursorOpt.isPresent());
+
+            // Signal completion
+            complete(digestRun);
+        }
     }
 
     @Extern
