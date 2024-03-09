@@ -1038,14 +1038,19 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
 
     @Override
     public Account setWeeklyDigestOptOut(String accountId, ImmutableSet<String> digestOptOutForProjectIds) {
+        ExpressionBuilder expressionBuilder = accountSchema.expressionBuilder().conditionExists();
+        if (digestOptOutForProjectIds.isEmpty()) {
+            expressionBuilder.remove("digestOptOutForProjectIds");
+        } else {
+            expressionBuilder.set("digestOptOutForProjectIds", digestOptOutForProjectIds);
+        }
+        Expression expression = expressionBuilder.build();
         Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
                         .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
-                        .withConditionExpression("attribute_exists(#partitionKey)")
-                        .withUpdateExpression("SET #digestOptOutForProjectIds = :digestOptOutForProjectIds")
-                        .withNameMap(new NameMap()
-                                .with("#digestOptOutForProjectIds", "digestOptOutForProjectIds")
-                                .with("#partitionKey", accountSchema.partitionKeyName()))
-                        .withValueMap(new ValueMap().withStringSet(":digestOptOutForProjectIds", digestOptOutForProjectIds))
+                        .withConditionExpression(expression.conditionExpression().orElse(null))
+                        .withUpdateExpression(expression.updateExpression().orElse(null))
+                        .withNameMap(expression.nameMap().orElse(null))
+                        .withValueMap(expression.valMap().orElse(null))
                         .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
         accountCache.put(accountId, Optional.of(account));

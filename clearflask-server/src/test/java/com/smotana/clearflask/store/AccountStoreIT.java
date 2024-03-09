@@ -370,6 +370,44 @@ public class AccountStoreIT extends AbstractIT {
     }
 
     @Test(timeout = 30_000L)
+    public void testWeeklyDigestOptOut() throws Exception {
+        Account account = new Account(
+                store.genAccountId(),
+                "my@email.com",
+                SubscriptionStatus.ACTIVETRIAL,
+                null,
+                "planId1",
+                Instant.now(),
+                "name",
+                "password",
+                ImmutableSet.of(),
+                ImmutableSet.of(),
+                null,
+                // Prior to adding attrs, all accounts have this as null
+                // test the creation of this map
+                null,
+                null,
+                null,
+                ImmutableSet.of());
+
+        ImmutableSet<String> digestOptOutExpected = ImmutableSet.of();
+        account = store.createAccount(account).getAccount();
+        assertEquals(digestOptOutExpected, account.getDigestOptOutForProjectIds());
+
+        digestOptOutExpected = ImmutableSet.of("asdf");
+        account = store.setWeeklyDigestOptOut(account.getAccountId(), digestOptOutExpected);
+        assertEquals(digestOptOutExpected, account.getDigestOptOutForProjectIds());
+
+        digestOptOutExpected = ImmutableSet.of();
+        account = store.setWeeklyDigestOptOut(account.getAccountId(), digestOptOutExpected);
+        assertEquals(digestOptOutExpected, account.getDigestOptOutForProjectIds());
+
+        digestOptOutExpected = ImmutableSet.of("asdffafadsfasd", "fadfvdvfd");
+        account = store.setWeeklyDigestOptOut(account.getAccountId(), digestOptOutExpected);
+        assertEquals(digestOptOutExpected, account.getDigestOptOutForProjectIds());
+    }
+
+    @Test(timeout = 30_000L)
     public void testAccountSearch() throws Exception {
         String accountId1 = store.genAccountId();
         Account account1 = new Account(
