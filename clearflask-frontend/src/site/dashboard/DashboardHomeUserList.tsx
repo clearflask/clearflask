@@ -10,7 +10,7 @@ const styles = (theme: Theme) => createStyles({
   box: {
     flexGrow: 1,
     minHeight: 300,
-    maxHeight: 300, // If changed, also adjust searchOverrideAdmin limit below
+    maxHeight: 500,
   },
 });
 const useStyles = makeStyles(styles);

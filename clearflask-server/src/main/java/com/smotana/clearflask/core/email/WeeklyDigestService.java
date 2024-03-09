@@ -40,6 +40,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
@@ -233,12 +234,16 @@ public class WeeklyDigestService extends ManagedService {
                     account.getEmail(), account.getAccountId());
             return;
         }
+        String from = digestRun.getStart().atZone(ZoneId.of(config.zoneId()))
+                .format(DateTimeFormatter.ofPattern("MMM d"));
+        String to = digestRun.getEnd().atZone(ZoneId.of(config.zoneId()))
+                .format(DateTimeFormatter.ofPattern("MMM d"));
 
         log.info("Weekly digest: sending to account {} {} projects {}",
                 account.getEmail(), account.getAccountId(),
                 projects.stream().map(DigestProject::getProjectName).toArray());
         digestRun.rateLimiter.acquire();
-        notificationService.onDigest(account, new Digest(projects));
+        notificationService.onDigest(account, new Digest(from, to, projects));
     }
 
     private Optional<DigestProject> processAccountProject(DigestRun digestRun, Account account, Project project) {

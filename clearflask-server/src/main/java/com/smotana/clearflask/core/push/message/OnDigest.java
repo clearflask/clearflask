@@ -78,9 +78,13 @@ public class OnDigest {
 
         String unsubscribeLink = "https://" + configApp.domain() + "/dashboard/settings/account/notifications";
         String templateHtml = emailTemplates.getDigestTemplateHtml()
+                .replace("__FROM__", digest.getFrom())
+                .replace("__TO__", digest.getTo())
                 .replace("__PROJECTS__", projectsHtml.toString())
                 .replace("__UNSUBSCRIBE_LINK__", unsubscribeLink);
         String templateText = emailTemplates.getDigestTemplateText()
+                .replace("__FROM__", digest.getFrom())
+                .replace("__TO__", digest.getTo())
                 .replace("__PROJECTS__", projectsText.toString())
                 .replace("__UNSUBSCRIBE_LINK__", unsubscribeLink);
 

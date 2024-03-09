@@ -112,7 +112,7 @@ const styles = (theme: Theme) => createStyles({
   tourChecklistContainer: {
     display: 'flex',
     justifyContent: 'center',
-  }
+  },
 });
 
 interface Props {
@@ -160,11 +160,6 @@ class DashboardHome extends Component<Props & ConnectProps & WithTranslation<'si
   }
 
   render() {
-    const feedbackAggregate = !this.props.feedback ? undefined
-      : this.getAggregate(this.props.feedback.categoryAndIndex.category.categoryId);
-    const roadmapAggregate = !this.props.roadmap ? undefined
-      : this.getAggregate(this.props.roadmap.categoryAndIndex.category.categoryId);
-
     const chartWidth = 100;
     const chartHeight = 50;
     const chartXAxis = {
@@ -172,9 +167,18 @@ class DashboardHome extends Component<Props & ConnectProps & WithTranslation<'si
       max: new Date(),
     };
 
-    // For workflow preview
+    // Workflow previews
+    const workflows = this.props.config?.content.categories
+      .filter(category => !!category.workflow.statuses.length)
+      .map((category, index) => ({
+        categoryId: category.categoryId,
+        categoryIndex: index,
+        name: category.name,
+        aggregate: this.getAggregate(category.categoryId),
+      }));
     const workflowPreviewRenderAggregateLabel = (aggr: Admin.IdeaAggregateResponse) => (statusId: string | 'total', name: string) => `${name} (${statusId === 'total' ? aggr.total : aggr.statuses[statusId] || 0})`;
     const workflowPreviewDimensions = { width: 700, height: 200 };
+    const feedbackAggregate = this.props.feedback && workflows?.find(w => w.categoryId === this.props.feedback?.categoryAndIndex.category.categoryId)?.aggregate;
 
     return (
       <div className={this.props.classes.page}>
@@ -268,9 +272,9 @@ class DashboardHome extends Component<Props & ConnectProps & WithTranslation<'si
           this.props.classes.stats,
           this.props.classes.scrollVertical,
         )}>
-          {!!this.props.feedback && !!feedbackAggregate && (
+          {workflows?.map(workflow => !!workflow.aggregate && (
             <DashboardHomeBox
-              title={workflowPreviewRenderAggregateLabel(feedbackAggregate)('total', 'Feedback')}
+              title={workflowPreviewRenderAggregateLabel(workflow.aggregate)('total', workflow.name)}
               chartAsBackground={workflowPreviewDimensions}
               chart={(
                 <WorkflowPreview
@@ -278,30 +282,13 @@ class DashboardHome extends Component<Props & ConnectProps & WithTranslation<'si
                   width={workflowPreviewDimensions.width}
                   height={workflowPreviewDimensions.height}
                   editor={this.props.editor}
-                  categoryIndex={this.props.feedback.categoryAndIndex.index}
+                  categoryIndex={workflow.categoryIndex}
                   hideCorner
-                  renderLabel={workflowPreviewRenderAggregateLabel(feedbackAggregate)}
+                  renderLabel={workflowPreviewRenderAggregateLabel(workflow.aggregate)}
                 />
               )}
             />
-          )}
-          {!!this.props.roadmap && !!roadmapAggregate && (
-            <DashboardHomeBox
-              title={workflowPreviewRenderAggregateLabel(roadmapAggregate)('total', 'Tasks')}
-              chartAsBackground={workflowPreviewDimensions}
-              chart={(
-                <WorkflowPreview
-                  static
-                  width={workflowPreviewDimensions.width}
-                  height={workflowPreviewDimensions.height}
-                  editor={this.props.editor}
-                  categoryIndex={this.props.roadmap.categoryAndIndex.index}
-                  hideCorner
-                  renderLabel={workflowPreviewRenderAggregateLabel(roadmapAggregate)}
-                />
-              )}
-            />
-          )}
+          ))}
         </div>
         <div className={this.props.classes.postLists}>
           <div className={this.props.classes.postLists}>
@@ -322,33 +309,14 @@ class DashboardHome extends Component<Props & ConnectProps & WithTranslation<'si
                 showCategoryName: true,
               }}
             />
-            <DashboardHomePostList
-              title="Recently created"
-              server={this.props.server}
-              onClickPost={postId => this.props.onPageClick('post', [postId])}
-              onUserClick={userId => this.props.onPageClick('user', [userId])}
-              search={{
-                sortBy: Admin.IdeaSearchAdminSortByEnum.New,
-              }}
-              displayOverride={{
-                showCreated: true,
-                showVotingCount: true,
-                showExpression: true,
-                showStatus: true,
-                showTags: true,
-                showCategoryName: true,
-              }}
-            />
-          </div>
-          <div className={this.props.classes.postLists}>
-            {!!this.props.feedback && !!feedbackAggregate && (
+            {!!this.props.changelog && (
               <DashboardHomePostList
                 title="Announcements"
                 server={this.props.server}
                 onClickPost={postId => this.props.onPageClick('post', [postId])}
                 onUserClick={userId => this.props.onPageClick('user', [userId])}
                 search={{
-                  filterCategoryIds: [this.props.feedback.categoryAndIndex.category.categoryId],
+                  filterCategoryIds: [this.props.changelog.categoryAndIndex.category.categoryId],
                   sortBy: Admin.IdeaSearchAdminSortByEnum.New,
                 }}
                 displayOverride={{
@@ -360,14 +328,33 @@ class DashboardHome extends Component<Props & ConnectProps & WithTranslation<'si
                 }}
               />
             )}
+          </div>
+          <div className={this.props.classes.postLists}>
             <DashboardHomeUserList
               title="Recent users"
               server={this.props.server}
               onUserClick={userId => this.props.onPageClick('user', [userId])}
             />
+            <DashboardHomePostList
+              title="Randomized"
+              server={this.props.server}
+              onClickPost={postId => this.props.onPageClick('post', [postId])}
+              onUserClick={userId => this.props.onPageClick('user', [userId])}
+              search={{
+                sortBy: Admin.IdeaSearchAdminSortByEnum.Random,
+              }}
+              displayOverride={{
+                showCreated: true,
+                showVotingCount: true,
+                showExpression: true,
+                showStatus: true,
+                showTags: true,
+                showCategoryName: true,
+              }}
+            />
           </div>
         </div>
-        <div className={this.props.classes.tourChecklistContainer} >
+        <div className={this.props.classes.tourChecklistContainer}>
           <DashboardHomeBox
             scroll
             chart={(

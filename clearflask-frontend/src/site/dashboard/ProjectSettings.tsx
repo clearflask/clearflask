@@ -3534,7 +3534,7 @@ export const AccountSettingsNotifications = () => {
     <ProjectSettingsBase title='Notifications'
                          description={(
                            <>
-                             Enable or disable Weekly Digest notifications for each project.
+                             Enable Weekly Digest notifications for each project.
                            </>
                          )}>
       {projectIds.map(projectId => (

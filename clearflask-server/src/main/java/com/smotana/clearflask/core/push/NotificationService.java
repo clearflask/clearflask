@@ -54,6 +54,8 @@ public interface NotificationService {
     @Builder(toBuilder = true)
     @AllArgsConstructor
     class Digest {
+        String from;
+        String to;
         ImmutableList<DigestProject> projects;
     }
 

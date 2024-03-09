@@ -172,14 +172,14 @@ public class NotificationServiceTest extends AbstractTest {
         log.info("push {}", push);
         log.info("inApp {}", inApp);
         assertNotNull(email);
-        assertFalse(email.getSubject().contains("__"));
-        assertFalse(email.getContentHtml().contains("__"));
-        assertFalse(email.getContentText().contains("__"));
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
         assertNotNull(push);
-        assertFalse(push.getTitle().contains("__"));
-        assertFalse(push.getBody().contains("__"));
+        assertFalse(push.getTitle(), push.getTitle().contains("__"));
+        assertFalse(push.getBody(), push.getBody().contains("__"));
         assertNotNull(inApp);
-        assertFalse(inApp.getDescription().contains("__"));
+        assertFalse(inApp.getDescription(), inApp.getDescription().contains("__"));
     }
 
     @Test(timeout = 10_000L)
@@ -236,14 +236,14 @@ public class NotificationServiceTest extends AbstractTest {
         log.info("push {}", push);
         log.info("inApp {}", inApp);
         assertNotNull(email);
-        assertFalse(email.getSubject().contains("__"));
-        assertFalse(email.getContentHtml().contains("__"));
-        assertFalse(email.getContentText().contains("__"));
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
         assertNotNull(push);
-        assertFalse(push.getTitle().contains("__"));
-        assertFalse(push.getBody().contains("__"));
+        assertFalse(push.getTitle(), push.getTitle().contains("__"));
+        assertFalse(push.getBody(), push.getBody().contains("__"));
         assertNotNull(inApp);
-        assertFalse(inApp.getDescription().contains("__"));
+        assertFalse(inApp.getDescription(), inApp.getDescription().contains("__"));
     }
 
     @Test(timeout = 10_000L)
@@ -276,14 +276,14 @@ public class NotificationServiceTest extends AbstractTest {
         log.info("push {}", push);
         log.info("inApp {}", inApp);
         assertNotNull(email);
-        assertFalse(email.getSubject().contains("__"));
-        assertFalse(email.getContentHtml().contains("__"));
-        assertFalse(email.getContentText().contains("__"));
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
         assertNotNull(push);
-        assertFalse(push.getTitle().contains("__"));
-        assertFalse(push.getBody().contains("__"));
+        assertFalse(push.getTitle(), push.getTitle().contains("__"));
+        assertFalse(push.getBody(), push.getBody().contains("__"));
         assertNotNull(inApp);
-        assertFalse(inApp.getDescription().contains("__"));
+        assertFalse(inApp.getDescription(), inApp.getDescription().contains("__"));
     }
 
     @Test(timeout = 10_000L)
@@ -307,9 +307,9 @@ public class NotificationServiceTest extends AbstractTest {
         Email email = mockEmailService.sent.take();
         log.info("email {}", email);
         assertNotNull(email);
-        assertFalse(email.getSubject().contains("__"));
-        assertFalse(email.getContentHtml().contains("__"));
-        assertFalse(email.getContentText().contains("__"));
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
     }
 
     @Test(timeout = 10_000L)
@@ -333,9 +333,9 @@ public class NotificationServiceTest extends AbstractTest {
         Email email = mockEmailService.sent.take();
         log.info("email {}", email);
         assertNotNull(email);
-        assertFalse(email.getSubject().contains("__"));
-        assertFalse(email.getContentHtml().contains("__"));
-        assertFalse(email.getContentText().contains("__"));
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
     }
 
     @Test(timeout = 10_000L)
@@ -364,9 +364,9 @@ public class NotificationServiceTest extends AbstractTest {
         Email email = mockEmailService.sent.take();
         log.info("email {}", email);
         assertNotNull(email);
-        assertFalse(email.getSubject().contains("__"));
-        assertFalse(email.getContentHtml().contains("__"));
-        assertFalse(email.getContentText().contains("__"));
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
     }
 
     @Test(timeout = 10_000L)
@@ -391,9 +391,9 @@ public class NotificationServiceTest extends AbstractTest {
         Email email = mockEmailService.sent.take();
         log.info("email {}", email);
         assertNotNull(email);
-        assertFalse(email.getSubject().contains("__"));
-        assertFalse(email.getContentHtml().contains("__"));
-        assertFalse(email.getContentText().contains("__"));
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
     }
 
     @Test(timeout = 10_000L)
@@ -465,6 +465,9 @@ public class NotificationServiceTest extends AbstractTest {
         Email email = mockEmailService.sent.take();
         log.info("email {}", email);
         assertNotNull(email);
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
     }
 
     private KeyPair generateKeyPair() {
