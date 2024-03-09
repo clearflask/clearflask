@@ -157,7 +157,9 @@ public class WeeklyDigestService extends ManagedService {
     protected void serviceStart() throws Exception {
         executor = MoreExecutors.listeningDecorator(Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder()
                 .setNameFormat("WeeklyDigestService-worker-%d").build()));
-        executor.scheduleAtFixedRate(this::processAll, getNextRuntime(now()), Duration.ofDays(1));
+        Duration nextRuntime = getNextRuntime(now());
+        log.info("Weekly digest next runtime {}", nextRuntime);
+        executor.scheduleAtFixedRate(this::processAll, nextRuntime, Duration.ofDays(1));
     }
 
     @Override
@@ -172,6 +174,7 @@ public class WeeklyDigestService extends ManagedService {
             if (!config.enabled()) {
                 return;
             }
+            log.info("Starting weekly digest");
 
             // Prepare for this run
             DigestRun digestRun = new DigestRun();
