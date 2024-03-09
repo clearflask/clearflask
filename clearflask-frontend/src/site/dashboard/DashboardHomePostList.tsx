@@ -10,7 +10,7 @@ const styles = (theme: Theme) => createStyles({
   box: {
     flexGrow: 1,
     minHeight: 300,
-    maxHeight: 300, // If changed, also adjust searchOverrideAdmin limit below
+    maxHeight: 500,
   },
   list: {
     minWidth: MinContentWidth,
@@ -34,10 +34,6 @@ const DashboardHomePostList = (props: {
         <PostList
           className={classes.list}
           {...postListProps}
-          search={{
-            limit: 5, // If changed, also adjust box.maxHeight above
-              ...postListProps.search,
-          }}
           PanelPostProps={{
             widthExpand: false,
             margins: theme.spacing(1),
