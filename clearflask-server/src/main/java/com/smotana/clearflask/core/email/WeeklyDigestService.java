@@ -1,5 +1,6 @@
 package com.smotana.clearflask.core.email;
 
+import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.google.common.cache.CacheBuilder;
@@ -43,6 +44,7 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -104,7 +106,7 @@ public class WeeklyDigestService extends ManagedService {
     @Value
     @AllArgsConstructor
     private class DigestRun {
-        ZonedDateTime now = now();
+        ZonedDateTime now;
         Instant start;
         Instant end;
         RateLimiter rateLimiter = guavaRateLimiters.create(config.rateLimiterPermitsPerSecond(), 1, 1);
@@ -117,6 +119,19 @@ public class WeeklyDigestService extends ManagedService {
                 });
 
         public DigestRun() {
+            this.now = now();
+            this.start = getDigestStart(now);
+            this.end = getDigestEnd(now);
+        }
+
+        public DigestRun(ZonedDateTime now) {
+            this.now = now;
+            this.start = getDigestStart(now);
+            this.end = getDigestEnd(now);
+        }
+
+        public DigestRun(Instant start, Instant end) {
+            this.now = now();
             this.start = getDigestStart(now);
             this.end = getDigestEnd(now);
         }
@@ -359,6 +374,20 @@ public class WeeklyDigestService extends ManagedService {
                                 notification.getDescription(),
                                 "https://" + Project.getHostname(project.getVersionedConfigAdmin().getConfig(), configApp) + notification.getLinkPath()))
                         .collect(ImmutableList.toImmutableList())));
+    }
+
+    @Extern
+    private String checkLockNow() {
+        return checkLock(Instant.now().toString());
+    }
+
+    @Extern
+    private String checkLock(String tsStr) {
+        DigestRun digestRun = new DigestRun(ZonedDateTime.ofInstant(Instant.parse(tsStr), ZoneId.of(config.zoneId())));
+        return Optional.ofNullable(weeklyDigestWorkSchema.fromItem(weeklyDigestWorkSchema.table().getItem(new GetItemSpec()
+                .withPrimaryKey(weeklyDigestWorkSchema.primaryKey(Map.of(
+                        "weekStart", digestRun.getStart()))
+                )))).toString();
     }
 
     private boolean lock(DigestRun digestRun) {
