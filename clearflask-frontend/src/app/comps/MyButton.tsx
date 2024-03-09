@@ -7,13 +7,13 @@ import classNames from 'classnames';
 import React, { Component } from 'react';
 import CollapseV5 from '../../common/CollapseV5';
 import SubmitButton from '../../common/SubmitButton';
+import { Link } from 'react-router-dom';
 
 const styles = (theme: Theme) => createStyles({
   button: {
     textTransform: 'unset',
   },
-  icon: {
-  },
+  icon: {},
   buttonPost: {
     padding: theme.spacing(0.5, 1),
     color: theme.palette.text.secondary,
@@ -31,9 +31,10 @@ const styles = (theme: Theme) => createStyles({
     color: (props: Props) => props.color ? props.color : undefined,
     '&:hover': {
       backgroundColor: (props: Props) => props.color ? fade(props.color, 0.04) : undefined,
-    }
+    },
   },
 });
+
 interface Props {
   buttonVariant: 'post';
   color?: string;
@@ -41,12 +42,16 @@ interface Props {
   Icon?: OverridableComponent<SvgIconTypeMap>,
   iconClassName?: string;
   expandOnHover?: boolean;
+  to?: string;
 }
+
 interface State {
   isHovering?: boolean;
 }
+
 class MyButton extends Component<Props & Partial<Omit<React.ComponentPropsWithoutRef<typeof SubmitButton>, 'color'>> & WithStyles<typeof styles, true>, State> {
   state: State = {};
+
   render() {
     const { classes, buttonVariant, color, Icon, iconClassName, ...buttonProps } = this.props;
     var variantClassName: string | undefined;
@@ -76,7 +81,7 @@ class MyButton extends Component<Props & Partial<Omit<React.ComponentPropsWithou
     );
     if (this.props.expandOnHover) {
       title = (
-        <CollapseV5 in={!!this.state.isHovering} orientation='horizontal'>
+        <CollapseV5 in={!!this.state.isHovering} orientation="horizontal">
           {title}
         </CollapseV5>
       );
@@ -85,7 +90,7 @@ class MyButton extends Component<Props & Partial<Omit<React.ComponentPropsWithou
     return (
       <SubmitButton
         disableElevation
-        color='inherit'
+        color="inherit"
         {...variantButtonProps}
         {...buttonProps}
         className={classNames(
@@ -94,6 +99,12 @@ class MyButton extends Component<Props & Partial<Omit<React.ComponentPropsWithou
           variantClassName,
           buttonProps.className,
         )}
+        onClick={e => {
+          if (this.props.to) {
+            e.preventDefault();
+          }
+          buttonProps?.onClick?.(e);
+        }}
         {...(!!this.props.expandOnHover ? {
           onMouseOver: e => {
             buttonProps?.onMouseOver?.(e);
@@ -104,10 +115,14 @@ class MyButton extends Component<Props & Partial<Omit<React.ComponentPropsWithou
             this.setState({ isHovering: false });
           },
         } : {})}
+        {...(!this.props.to ? {} : {
+          component: Link,
+          to: this.props.to,
+        })}
       >
         {!!Icon && (
           <Icon
-            fontSize='inherit'
+            fontSize="inherit"
             className={classNames(
               this.props.classes.icon,
               variantIconClassName,
