@@ -406,7 +406,7 @@ public class NotificationServiceTest extends AbstractTest {
 
         service.onDigest(
                 account,
-                Digest.builder().projects(ImmutableList.of(
+                Digest.builder().from("Mar 1").to("Mar 7").projects(ImmutableList.of(
                         DigestProject.builder()
                                 .author(MockModelUtil.getRandomUser())
                                 .projectName("My Project")
