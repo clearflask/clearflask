@@ -208,7 +208,7 @@ public class WeeklyDigestService extends ManagedService {
     }
 
     @Extern
-    private void processAccount(String accountId, String start, String end) {
+    private void processAccountWithCustomRange(String accountId, String start, String end) {
         processAccount(
                 new DigestRun(Instant.parse(start), Instant.parse(end)),
                 accountStore.getAccount(accountId, true).orElseThrow());
