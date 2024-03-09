@@ -34,14 +34,14 @@ const DashboardHomePostList = (props: {
         <PostList
           className={classes.list}
           {...postListProps}
+          search={{
+            limit: 5, // If changed, also adjust box.maxHeight above
+              ...postListProps.search,
+          }}
           PanelPostProps={{
             widthExpand: false,
-            ...postListProps.PanelPostProps,
-            searchOverrideAdmin: {
-              ...postListProps.PanelPostProps?.searchOverrideAdmin,
-              limit: 5, // If changed, also adjust box.maxHeight above
-            },
             margins: theme.spacing(1),
+            ...postListProps.PanelPostProps,
           }}
           displayOverride={{
             titleTruncateLines: 1,
