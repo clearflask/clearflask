@@ -1620,7 +1620,7 @@ class Post extends Component<Props & ConnectProps & WithTranslation<'app'> & Wit
 
         var content: React.ReactNode = this.props.idea.linkedGitHubUrl;
         // Expect form of "https://github.com/jenkinsci/jenkins/issues/100"
-        const match = (new RegExp(/https:\/\/github.com\/([^/]+)\/([^/]+)\/issues\/([0-9])/))
+        const match = (new RegExp(/https:\/\/github.com\/([^/]+)\/([^/]+)\/issues\/([0-9]+)/))
             .exec(this.props.idea.linkedGitHubUrl);
         if (match) {
             const issueNumber = match[3];
