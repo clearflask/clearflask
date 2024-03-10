@@ -613,6 +613,8 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
             }
         }
         if (accountUpdateAdmin.getDigestOptOutForProjectIds() != null) {
+            log.info("Digest opt out for account {} {} opted out projectIds {}",
+                    account.getAccountId(), account.getEmail(), accountUpdateAdmin.getDigestOptOutForProjectIds());
             account = accountStore.setWeeklyDigestOptOut(account.getAccountId(), ImmutableSet.copyOf(accountUpdateAdmin.getDigestOptOutForProjectIds()));
         }
         return account.toAccountAdmin(intercomUtil, chatwootUtil, planStore, cfSso, superAdminPredicate);
