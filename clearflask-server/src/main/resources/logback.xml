@@ -62,6 +62,7 @@
     <logger name="com.kik.config.ice" level="INFO"/>
     <logger name="org.reflections.Reflections" level="INFO"/>
     <logger name="org.jooq" level="WARN"/>
+    <logger name="org.apache.catalina.core.StandardWrapperValve" level="OFF"/>
 
     <root level="TRACE">
         <appender-ref ref="FILE"/>

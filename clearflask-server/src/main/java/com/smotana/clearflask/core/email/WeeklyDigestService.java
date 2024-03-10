@@ -3,6 +3,7 @@ package com.smotana.clearflask.core.email;
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -75,6 +76,12 @@ public class WeeklyDigestService extends ManagedService {
          */
         @DefaultValue("9")
         int sendAtTime();
+
+        /**
+         * Will add jitter to the sendAtTime
+         */
+        @DefaultValue("300")
+        int jitterSeconds();
 
         /**
          * Will try to send emails on Monday at this time
@@ -172,7 +179,7 @@ public class WeeklyDigestService extends ManagedService {
     protected void serviceStart() throws Exception {
         executor = MoreExecutors.listeningDecorator(Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder()
                 .setNameFormat("WeeklyDigestService-worker-%d").build()));
-        Duration nextRuntime = getNextRuntime(now());
+        Duration nextRuntime = getNextRuntime(now(), config.sendAtTime(), config.jitterSeconds());
         log.info("Weekly digest next runtime {}", nextRuntime);
         executor.scheduleAtFixedRate(this::processAll, nextRuntime, Duration.ofDays(1));
     }
@@ -423,24 +430,35 @@ public class WeeklyDigestService extends ManagedService {
         return ZonedDateTime.now(ZoneId.of(config.zoneId()));
     }
 
-    private Duration getNextRuntime(ZonedDateTime now) {
-        ZonedDateTime next = now.withHour(config.sendAtTime());
+    @VisibleForTesting
+    static Duration getNextRuntime(ZonedDateTime now, int sendAtTime, int jitterSeconds) {
+        ZonedDateTime next = now.withHour(sendAtTime)
+                .withMinute(0)
+                .withSecond(0)
+                .withNano(0);
         if (next.isBefore(now)) {
             next = next.plusDays(1);
         }
-        return Duration.between(now, next)
-                // Allow jitter of 10 minutes in case of multiple instances
-                .plus(Duration.ofSeconds(ThreadLocalRandom.current().nextInt(10 * 60 * 60)));
+        Duration between = Duration.between(now, next);
+
+        // Add jitter
+        if (jitterSeconds > 0) {
+            between = between.plus(Duration.ofSeconds(ThreadLocalRandom.current().nextInt(jitterSeconds) - jitterSeconds / 2));
+        }
+
+        return between;
     }
 
-    private Instant getDigestStart(ZonedDateTime now) {
+    @VisibleForTesting
+    static Instant getDigestStart(ZonedDateTime now) {
         ZonedDateTime lastWeek = now.minusWeeks(1);
         // get Monday
         return lastWeek.minusDays(lastWeek.getDayOfWeek().getValue() - DayOfWeek.MONDAY.getValue())
                 .withHour(0).withMinute(0).withSecond(0).withNano(0).toInstant();
     }
 
-    private Instant getDigestEnd(ZonedDateTime now) {
+    @VisibleForTesting
+    static Instant getDigestEnd(ZonedDateTime now) {
         ZonedDateTime lastWeek = now.minusWeeks(1);
         // get Monday
         return lastWeek.plusDays(DayOfWeek.SUNDAY.getValue() - lastWeek.getDayOfWeek().getValue())
