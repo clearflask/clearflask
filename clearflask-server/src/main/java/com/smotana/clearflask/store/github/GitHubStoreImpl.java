@@ -23,6 +23,7 @@ import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.PathNotFoundException;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.*;
@@ -512,7 +513,7 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                     // ghIssueComment.getChanges().getBody()
                     // https://github.com/hub4j/github-api/issues/1243
                     // Need to extract it ourselves here
-                    boolean bodyChanged = changesBodyJsonPath.read(payload) != null;
+                    boolean bodyChanged = jsonPathExists(changesBodyJsonPath, payload);
                     if (bodyChanged) {
                         commentStore.updateComment(project.getProjectId(), postId, commentId, ghIssueComment.getComment().getUpdatedAt().toInstant(), CommentUpdate.builder()
                                 .content(markdownAndQuillUtil.markdownToQuill(project.getProjectId(), "gh-comment", commentId, ghIssueComment.getComment().getBody())).build());
@@ -597,12 +598,12 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                     // ghRelease.getChanges().getBody()
                     // https://github.com/hub4j/github-api/issues/1243
                     // Need to extract it ourselves here
-                    if (changesNameJsonPath.read(payload) != null) {
+                    if (jsonPathExists(changesNameJsonPath, payload)) {
                         updateBuilder.title(ghRelease.getRelease().getName());
                         updated = true;
                     }
                     String bodyQuill = markdownAndQuillUtil.markdownToQuill(project.getProjectId(), "gh-new-post", ideaId, ghRelease.getRelease().getBody());
-                    if (changesBodyJsonPath.read(payload) != null) {
+                    if (jsonPathExists(changesBodyJsonPath, payload)) {
                         updateBuilder.description(bodyQuill);
                         updated = true;
                     }
@@ -817,6 +818,14 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                 throw th;
             }
         });
+    }
+
+    private <T> boolean jsonPathExists(JsonPath path, String payload) {
+        try {
+            return path.read(payload) != null;
+        } catch (PathNotFoundException ex) {
+            return false;
+        }
     }
 
     public static Module module() {
