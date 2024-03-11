@@ -207,6 +207,9 @@ public class WeeklyDigestService extends ManagedService {
             }
 
             // Iterate all accounts
+            long countFailed = 0;
+            long countSent = 0;
+            long countSkipped = 0;
             Optional<String> cursorOpt = Optional.empty();
             do {
                 SearchAccountsResponse searchAccountsResponse = accountStore.searchAccounts(AccountSearchSuperAdmin.builder()
@@ -219,8 +222,14 @@ public class WeeklyDigestService extends ManagedService {
                 for (Account account : searchAccountsResponse.getAccounts()) {
                     // Process each account individually
                     try {
-                        processAccount(digestRun, account);
+                        boolean isSent = processAccount(digestRun, account);
+                        if (isSent) {
+                            countSent++;
+                        } else {
+                            countSkipped++;
+                        }
                     } catch (Exception ex) {
+                        countFailed++;
                         log.warn("Weekly digest: Failed to process account {} {}",
                                 account.getEmail(), account.getAccountId(), ex);
                     }
@@ -229,25 +238,27 @@ public class WeeklyDigestService extends ManagedService {
 
             // Signal completion
             complete(digestRun);
+            log.info("Weekly digest: Complete, {} sent {} skipped {} failed",
+                    countSent, countSkipped, countFailed);
         }
     }
 
     @Extern
-    private void processAccount(String accountId) {
-        processAccount(
+    private boolean processAccount(String accountId) {
+        return processAccount(
                 new DigestRun(),
                 accountStore.getAccount(accountId, true).orElseThrow());
     }
 
     @Extern
-    private void processAccountWithCustomRange(String accountId, String start, String end) {
-        processAccount(
+    private boolean processAccountWithCustomRange(String accountId, String start, String end) {
+        return processAccount(
                 new DigestRun(Instant.parse(start), Instant.parse(end)),
                 accountStore.getAccount(accountId, true).orElseThrow());
     }
 
     @SneakyThrows
-    private void processAccount(DigestRun digestRun, Account account) {
+    private boolean processAccount(DigestRun digestRun, Account account) {
         ImmutableList<DigestProject> projects = Stream.concat(account.getProjectIds().stream(), account.getExternalProjectIds().stream())
                 .distinct()
                 .filter(projectId -> planVerifyStore.verifyAccountAllowedDigest(account, projectId))
@@ -263,7 +274,7 @@ public class WeeklyDigestService extends ManagedService {
         if (projects.isEmpty()) {
             log.info("Weekly digest: skipping account {} {}",
                     account.getEmail(), account.getAccountId());
-            return;
+            return false;
         }
         String from = digestRun.getStart().atZone(ZoneId.of(config.zoneId()))
                 .format(DateTimeFormatter.ofPattern("MMM d"));
@@ -275,6 +286,8 @@ public class WeeklyDigestService extends ManagedService {
                 projects.stream().map(DigestProject::getProjectName).toArray());
         digestRun.rateLimiter.acquire();
         notificationService.onDigest(account, new Digest(from, to, projects));
+
+        return true;
     }
 
     private Optional<DigestProject> processAccountProject(DigestRun digestRun, Account account, Project project) {
@@ -384,17 +397,28 @@ public class WeeklyDigestService extends ManagedService {
     }
 
     @Extern
-    private String checkLockNow() {
-        return checkLock(Instant.now().toString());
+    private String checkLockNowExtern() {
+        return checkLock(Instant.now()).toString();
     }
 
     @Extern
-    private String checkLock(String tsStr) {
-        DigestRun digestRun = new DigestRun(ZonedDateTime.ofInstant(Instant.parse(tsStr), ZoneId.of(config.zoneId())));
+    private String checkLockExtern(String tsStr) {
+        return checkLock(Instant.parse(tsStr)).toString();
+    }
+
+    @VisibleForTesting
+    Optional<WeeklyDigestWork> checkLock(Instant now) {
+        DigestRun digestRun = new DigestRun(ZonedDateTime.ofInstant(now, ZoneId.of(config.zoneId())));
         return Optional.ofNullable(weeklyDigestWorkSchema.fromItem(weeklyDigestWorkSchema.table().getItem(new GetItemSpec()
                 .withPrimaryKey(weeklyDigestWorkSchema.primaryKey(Map.of(
                         "weekStart", digestRun.getStart()))
-                )))).toString();
+                ))));
+    }
+
+    @VisibleForTesting
+    boolean lock(Instant now) {
+        DigestRun digestRun = new DigestRun(ZonedDateTime.ofInstant(now, ZoneId.of(config.zoneId())));
+        return lock(digestRun);
     }
 
     private boolean lock(DigestRun digestRun) {
@@ -417,12 +441,23 @@ public class WeeklyDigestService extends ManagedService {
         return true;
     }
 
+    @Extern
+    private void skipThisWeek() {
+        complete(new DigestRun());
+    }
+
+    @VisibleForTesting
+    void complete(Instant now) {
+        DigestRun digestRun = new DigestRun(ZonedDateTime.ofInstant(now, ZoneId.of(config.zoneId())));
+        complete(digestRun);
+    }
+
     private void complete(DigestRun digestRun) {
         weeklyDigestWorkSchema.table().putItem(new PutItemSpec()
                 .withItem(weeklyDigestWorkSchema.toItem(WeeklyDigestWork.builder()
                         .weekStart(digestRun.getStart())
                         .status(Status.COMPLETE)
-                        .ttlInEpochSec(Instant.now().plus(4, ChronoUnit.WEEKS).getEpochSecond())
+                        .ttlInEpochSec(Instant.now().plus(30, ChronoUnit.DAYS).getEpochSecond())
                         .build())));
     }
 
