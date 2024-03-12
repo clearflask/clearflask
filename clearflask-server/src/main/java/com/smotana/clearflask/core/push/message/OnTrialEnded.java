@@ -46,8 +46,8 @@ public class OnTrialEnded {
         String subject = config.subjectTemplate();
         String content = hasPaymentMethod ? config.contentNoActionTemplate() : config.contentNoPaymentTemplate();
 
-        String templateHtml = emailTemplates.getNotificationTemplateHtml();
-        String templateText = emailTemplates.getNotificationTemplateText();
+        String templateHtml = emailTemplates.getNotificationNoUnsubTemplateHtml();
+        String templateText = emailTemplates.getNotificationNoUnsubTemplateText();
 
         templateHtml = templateHtml.replace("__CONTENT__", content);
         templateText = templateText.replace("__CONTENT__", content);
