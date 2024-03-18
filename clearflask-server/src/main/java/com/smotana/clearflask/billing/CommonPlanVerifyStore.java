@@ -48,6 +48,8 @@ public class CommonPlanVerifyStore implements PlanVerifyStore {
             .add("pitchground-e-lifetime")
             .add("pro-lifetime")
             .add("lifetime-lifetime")
+            // Legacy selfhost plan
+            .add("self-host")
             .build();
 
     @Inject
