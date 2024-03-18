@@ -775,6 +775,18 @@ public class DynamoProjectStore implements ProjectStore {
         }
 
         @Override
+        public String getName() {
+            return projectUtil.getProjectName(versionedConfigAdmin.getConfig());
+        }
+
+        @Override
+        public String getLink(Optional<String> pathOpt) {
+            return "https://" + getHostname() + pathOpt
+                    .map(path -> path.startsWith("/") ? path : ("/" + path))
+                    .orElse("");
+        }
+
+        @Override
         public ProjectModel getModel() {
             return model;
         }

@@ -69,10 +69,12 @@ public class OnDigest {
                         .replace("__ITEMS__", itemsText.toString()));
             }
             projectsHtml.append(emailTemplates.getDigestProjectTemplateHtml()
-                    .replace("__PROJECT_NAME__", emailTemplates.sanitize(digestProject.getProjectName()))
+                    .replace("__PROJECT_NAME__", emailTemplates.sanitize(digestProject.getName()))
+                    .replace("__PROJECT_LINK__", digestProject.getLink())
                     .replace("__SECTIONS__", sectionsHtml.toString()));
             projectsText.append(emailTemplates.getDigestProjectTemplateText()
-                    .replace("__PROJECT_NAME__", emailTemplates.sanitize(digestProject.getProjectName()))
+                    .replace("__PROJECT_NAME__", emailTemplates.sanitize(digestProject.getName()))
+                    .replace("__PROJECT_LINK__", digestProject.getLink())
                     .replace("__SECTIONS__", sectionsText.toString()));
         }
 

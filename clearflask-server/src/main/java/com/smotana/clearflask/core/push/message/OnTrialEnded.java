@@ -22,13 +22,16 @@ public class OnTrialEnded {
 
     public interface Config {
         @DefaultValue("Trial ended")
-        String subjectTemplate();
+        String subjectTemplateTrialEnded();
 
-        @DefaultValue("Your trial period has ended. Your billing will start now.")
-        String contentNoActionTemplate();
+        @DefaultValue("Billing starting")
+        String subjectTemplateBillingStarts();
 
-        @DefaultValue("If you enjoyed our service, please add a payment method.")
-        String contentNoPaymentTemplate();
+        @DefaultValue("Your trial has ended, add a payment method to continue.")
+        String contentTemplateTrialEnded();
+
+        @DefaultValue("Your trial has ended. Your billing will start shortly.")
+        String contentTemplateBillingStarts();
     }
 
     @Inject
@@ -43,8 +46,8 @@ public class OnTrialEnded {
     public Email email(String link, String accountId, String accountEmail, boolean hasPaymentMethod) {
         checkArgument(!Strings.isNullOrEmpty(accountEmail));
 
-        String subject = config.subjectTemplate();
-        String content = hasPaymentMethod ? config.contentNoActionTemplate() : config.contentNoPaymentTemplate();
+        String subject = config.subjectTemplateTrialEnded();
+        String content = hasPaymentMethod ? config.contentTemplateBillingStarts() : config.contentTemplateTrialEnded();
 
         String templateHtml = emailTemplates.getNotificationNoUnsubTemplateHtml();
         String templateText = emailTemplates.getNotificationNoUnsubTemplateText();

@@ -92,6 +92,10 @@ public interface ProjectStore {
     }
 
     interface Project {
+        String getName();
+
+        String getLink(Optional<String> pathOpt);
+
         ProjectModel getModel();
 
         String getAccountId();

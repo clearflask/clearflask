@@ -64,7 +64,8 @@ public interface NotificationService {
     @AllArgsConstructor
     class DigestProject {
         UserModel author;
-        String projectName;
+        String name;
+        String link;
         ImmutableList<DigestSection> sections;
     }
 

@@ -409,7 +409,8 @@ public class NotificationServiceTest extends AbstractTest {
                 Digest.builder().from("Mar 1").to("Mar 7").projects(ImmutableList.of(
                         DigestProject.builder()
                                 .author(MockModelUtil.getRandomUser())
-                                .projectName("My Project")
+                                .name("My Project")
+                                .link("https://example.com")
                                 .sections(ImmutableList.of(
                                         DigestSection.builder()
                                                 .sectionName("Missed notifications")

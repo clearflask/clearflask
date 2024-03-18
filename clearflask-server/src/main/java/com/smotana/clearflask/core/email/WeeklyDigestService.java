@@ -283,7 +283,7 @@ public class WeeklyDigestService extends ManagedService {
 
         log.info("Weekly digest: sending to account {} {} projects {}",
                 account.getEmail(), account.getAccountId(),
-                projects.stream().map(DigestProject::getProjectName).toArray());
+                projects.stream().map(DigestProject::getName).toArray());
         digestRun.rateLimiter.acquire();
         notificationService.onDigest(account, new Digest(from, to, projects));
 
@@ -330,7 +330,8 @@ public class WeeklyDigestService extends ManagedService {
 
         return Optional.of(new DigestProject(
                 adminUser,
-                project.getVersionedConfigAdmin().getConfig().getName(),
+                project.getName(),
+                project.getLink(Optional.empty()),
                 sections));
     }
 
