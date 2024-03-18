@@ -47,12 +47,36 @@ const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
     ),
   },
   {
+    heading: 'Why is there a license for self-hosting?',
+    body: (
+      <>
+        <p>
+          The license for self-hosted installations allows us to fund continued development of this project.
+          Although the license unlocks extra functionality, this functionality is also open-source.
+          If you feel adventurous, you can remove the licensing restrictions and build ClearFlask yourself as we are
+          open-source after all.
+        </p>
+      </>
+    ),
+  },
+  {
+    heading: 'How does the Post limit work?',
+    body: (
+      <>
+        <p>
+          A customer feedback, roadmap task or an announcement counts towards your Post Limit. Once you reach your limit,
+          your account will be temporarily limited until you delete older posts or upgrade your plan.
+        </p>
+      </>
+    ),
+  },
+  {
     heading: 'Can I import/export data?',
     body: (
       <>
         <p>
-          Yes, we provide both import and export functionality via CSV format. You can easily switch between
-          our cloud-hosted plans and a self-hosted installation.
+          Yes, we provide both import and export functionality via CSV format. You can switch between our cloud-hosting
+          to a self-hosting installation.
         </p>
       </>
     ),

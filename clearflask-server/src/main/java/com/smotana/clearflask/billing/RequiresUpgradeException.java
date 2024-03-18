@@ -11,7 +11,7 @@ public class RequiresUpgradeException extends ApiException {
     private final String requiredPlanId;
 
     public RequiresUpgradeException(String userFacingMessage) {
-        this(KillBillPlanStore.DEFAULT_UPGRADE_REQUIRED_PLAN, userFacingMessage);
+        this("n/a", userFacingMessage);
     }
 
     public RequiresUpgradeException(String requiredPlanId, String userFacingMessage) {

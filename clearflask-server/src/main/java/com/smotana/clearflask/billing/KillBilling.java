@@ -943,16 +943,12 @@ public class KillBilling extends ManagedService implements Billing {
     @Override
     public boolean tryAutoUpgradePlan(AccountStore.Account accountInDyn, String requiredPlanId) {
         boolean allowUpgrade = false;
-        /*
-         * CURRENTLY DISABLED, current standard plan has no trial and the upgrade plan is sponsor plan which requires an amount
-         */
         if (ACTIVETRIAL.equals(accountInDyn.getStatus())
-                && getDefaultPaymentMethodDetails(accountInDyn.getAccountId()).isEmpty()
-                && "standard2-unlimited".equals(requiredPlanId)) {
+                && getDefaultPaymentMethodDetails(accountInDyn.getAccountId()).isEmpty()) {
             allowUpgrade = true;
-        } else if (PlanStore.TEAMMATE_PLAN_ID.equals(accountInDyn.getPlanid())
-                && "standard2-unlimited".equals(requiredPlanId)) {
-            allowUpgrade = true;
+            // Disabled for teammate plan
+            //        } else if (PlanStore.TEAMMATE_PLAN_ID.equals(accountInDyn.getPlanid())) {
+            //            allowUpgrade = true;
         }
 
         if (allowUpgrade) {

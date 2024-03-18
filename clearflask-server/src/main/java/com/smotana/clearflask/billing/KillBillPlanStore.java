@@ -39,7 +39,6 @@ import java.util.stream.Stream;
 @Slf4j
 @Singleton
 public class KillBillPlanStore extends ManagedService implements PlanStore {
-    public static final String DEFAULT_UPGRADE_REQUIRED_PLAN = "cloud-monthly";
     /**
      * If changed, also change in UpgradeWrapper.tsx
      */
@@ -75,7 +74,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
      * If changed, also change in BillingPage.tsx
      */
     public static final String ADDON_EXTRA_TEAMMATE = "extra-teammate";
-    private static final String TERMS_POSTS = "Keep your project tidy and delete old posts to stay within the limits.";
+    private static final String TERMS_POSTS = "Delete older posts to keep your project tidy and stay within the limits.";
     private static final String TERMS_PROJECTS = "You can create separate projects each having their own set of users and content";
     private static final String TERMS_ADMINS = "Amount of administrators, product managers or support team members you can have on each project including yourself.";
     private static final String TERMS_CREDIT_SYSTEM = "Credit System allows fine-grained prioritization of value for each idea.";
@@ -93,9 +92,9 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             .add("selfhost-monthly")
             .add("selfhost-yearly")
             .build();
-    private static final ImmutableSet<String> AVAILABLE_PLAN_NAMES = ImmutableSet.<String>builder()
+    public static final ImmutableSet<String> AVAILABLE_PLAN_NAMES = ImmutableSet.<String>builder()
             .addAll(SELFHOST_SERVICE_PLANS)
-            .add("cloud-free")
+            .add("cloud-starter-monthly")
             .add("cloud-monthly")
             .add("cloud-yearly")
             .build();
@@ -247,26 +246,35 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     null, null))
             .put("cloud-free", pp -> new Plan("cloud-free", "Starter",
                     pp, ImmutableList.of(
-                    new PlanPerk("Unlimited admins/posts", null),
-                    new PlanPerk("Private projects", TERMS_PRIVATE_PROJECTS),
-                    new PlanPerk("Whitelabel & API", null)),
+                    new PlanPerk("Feedback", null),
+                    new PlanPerk("Roadmap", null),
+                    new PlanPerk("Announcements", null)),
+                    null, null))
+            .put("cloud-starter-monthly", pp -> new Plan("cloud-starter-monthly", "Starter",
+                    pp, ImmutableList.of(
+                    new PlanPerk("Feedback", null),
+                    new PlanPerk("Roadmap", null),
+                    new PlanPerk("Announcements", null)),
                     null, null))
             .put("cloud-monthly", pp -> new Plan("cloud-monthly", "Growth",
                     pp, ImmutableList.of(
-                    new PlanPerk("Unlimited admins/posts", null),
+                    new PlanPerk("Unlimited teammates/posts", null),
+                    new PlanPerk("Custom domain", null),
                     new PlanPerk("Private projects", TERMS_PRIVATE_PROJECTS),
-                    new PlanPerk("Whitelabel & API", null)),
+                    new PlanPerk("SSO and OAuth", TERMS_SSO_AND_OAUTH)),
                     null, null))
             .put("cloud-yearly", pp -> new Plan("cloud-yearly", "Pro",
                     pp, ImmutableList.of(
-                    new PlanPerk("Teammates Free", null),
-                    new PlanPerk("2-Month Discount", null)),
+                    new PlanPerk("Unlimited Teammates Free", null),
+                    new PlanPerk("Integrations", null),
+                    new PlanPerk("API", TERMS_API),
+                    new PlanPerk("Whitelabel", TERMS_WHITELABEL)),
                     null, null))
             .put("selfhost-monthly", pp -> new Plan("selfhost-monthly", "Monthly License",
                     pp, ImmutableList.of(
                     new PlanPerk("Unlimited admins/posts", null),
                     new PlanPerk("Private projects", TERMS_PRIVATE_PROJECTS),
-                    new PlanPerk("Whitelabel & API", null)),
+                    new PlanPerk("Whitelabel & SSO & API", null)),
                     null, null))
             .put("selfhost-yearly", pp -> new Plan("selfhost-yearly", "Yearly License",
                     pp, ImmutableList.of(
@@ -299,12 +307,13 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     new FeaturesTableFeatures("Custom domain", ImmutableList.of("No", "Yes", "Yes"), null),
                     new FeaturesTableFeatures("Private projects", ImmutableList.of("No", "Yes", "Yes"), TERMS_PRIVATE_PROJECTS),
                     new FeaturesTableFeatures("SSO and OAuth", ImmutableList.of("No", "Yes", "Yes"), TERMS_SSO_AND_OAUTH),
-                    new FeaturesTableFeatures("API", ImmutableList.of("No", "Yes", "Yes"), TERMS_API),
-                    new FeaturesTableFeatures("GitHub integration", ImmutableList.of("No", "Yes", "Yes"), TERMS_GITHUB),
-                    new FeaturesTableFeatures("Intercom integration", ImmutableList.of("No", "Yes", "Yes"), TERMS_INTERCOM),
-                    new FeaturesTableFeatures("Tracking integrations", ImmutableList.of("No", "Yes", "Yes"), TERMS_TRACKING),
                     new FeaturesTableFeatures("Site template", ImmutableList.of("No", "Yes", "Yes"), TERMS_SITE_TEMPLATE),
-                    new FeaturesTableFeatures("Whitelabel", ImmutableList.of("No", "Yes", "Yes"), TERMS_WHITELABEL),
+                    new FeaturesTableFeatures("GitHub integration", ImmutableList.of("No", "No", "Yes"), TERMS_GITHUB),
+                    new FeaturesTableFeatures("Intercom integration", ImmutableList.of("No", "No", "Yes"), TERMS_INTERCOM),
+                    new FeaturesTableFeatures("Hotjar integration", ImmutableList.of("No", "No", "Yes"), TERMS_INTERCOM),
+                    new FeaturesTableFeatures("Tracking integrations", ImmutableList.of("No", "No", "Yes"), TERMS_TRACKING),
+                    new FeaturesTableFeatures("API", ImmutableList.of("No", "No", "Yes"), TERMS_API),
+                    new FeaturesTableFeatures("Whitelabel", ImmutableList.of("No", "No", "Yes"), TERMS_WHITELABEL),
                     new FeaturesTableFeatures("Priority support", ImmutableList.of("No", "Yes", "Yes"), null)
             ), null);
     private static final FeaturesTable FEATURES_TABLE_SELFHOST = new FeaturesTable(
@@ -320,11 +329,11 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     new FeaturesTableFeatures("Custom domain", ImmutableList.of("Yes", "Yes", "Yes"), null),
                     new FeaturesTableFeatures("Private projects", ImmutableList.of("No", "Yes", "Yes"), TERMS_PRIVATE_PROJECTS),
                     new FeaturesTableFeatures("SSO and OAuth", ImmutableList.of("No", "Yes", "Yes"), TERMS_SSO_AND_OAUTH),
-                    new FeaturesTableFeatures("API", ImmutableList.of("No", "Yes", "Yes"), TERMS_API),
                     new FeaturesTableFeatures("GitHub integration", ImmutableList.of("No", "Yes", "Yes"), TERMS_GITHUB),
                     new FeaturesTableFeatures("Intercom integration", ImmutableList.of("No", "Yes", "Yes"), TERMS_INTERCOM),
                     new FeaturesTableFeatures("Tracking integrations", ImmutableList.of("No", "Yes", "Yes"), TERMS_TRACKING),
                     new FeaturesTableFeatures("Site template", ImmutableList.of("No", "Yes", "Yes"), TERMS_SITE_TEMPLATE),
+                    new FeaturesTableFeatures("API", ImmutableList.of("No", "Yes", "Yes"), TERMS_API),
                     new FeaturesTableFeatures("Whitelabel", ImmutableList.of("No", "Yes", "Yes"), TERMS_WHITELABEL),
                     new FeaturesTableFeatures("Search engine", ImmutableList.of("Yes", "Yes", "Yes"), TERMS_ELASTICSEARCH),
                     new FeaturesTableFeatures("Priority support", ImmutableList.of("No", "Yes", "Yes"), null)
@@ -541,9 +550,10 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 case "lifetime2-lifetime":
                 case "standard3-monthly":
                 case "cloud-free":
+                case "cloud-starter-monthly":
                 case "cloud-monthly":
                 case "cloud-yearly":
-                    planOptions.add(availablePlans.get("cloud-free"));
+                    planOptions.add(availablePlans.get("cloud-starter-monthly"));
                     planOptions.add(availablePlans.get("cloud-monthly"));
                     planOptions.add(availablePlans.get("cloud-yearly"));
                     break;

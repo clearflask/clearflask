@@ -7,7 +7,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.api.model.TransactionType;
-import com.smotana.clearflask.billing.KillBillPlanStore;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
@@ -18,7 +17,10 @@ import com.smotana.clearflask.util.IdUtil;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
+import static com.smotana.clearflask.billing.KillBillPlanStore.AVAILABLE_PLAN_NAMES;
+import static com.smotana.clearflask.billing.KillBillPlanStore.SELFHOST_SERVICE_PLANS;
 import static com.smotana.clearflask.testutil.HtmlUtil.textToSimpleHtml;
 
 public class MockModelUtil {
@@ -29,7 +31,10 @@ public class MockModelUtil {
                 IdUtil.randomId() + "@example.com",
                 SubscriptionStatus.ACTIVE,
                 IdUtil.randomId(),
-                KillBillPlanStore.DEFAULT_UPGRADE_REQUIRED_PLAN,
+                AVAILABLE_PLAN_NAMES.stream()
+                        .filter(Predicate.not(SELFHOST_SERVICE_PLANS::contains))
+                        .findAny()
+                        .orElseThrow(),
                 Instant.now().minus(Duration.ofDays(4)),
                 IdUtil.randomId(),
                 IdUtil.randomId(),

@@ -47,6 +47,15 @@ const GrowthRestrictedProperties: Path[] = [
     ['noIndex'],
 ];
 /** If changed, also change in KillBillPlanStore.java */
+const CloudMonthlyRestrictedProperties: Path[] = [
+    ['style', 'whitelabel', 'poweredBy'],
+    ['github'],
+    ['integrations', 'googleAnalytics'],
+    ['integrations', 'hotjar'],
+    ['integrations', 'intercom'],
+    ['noIndex'],
+];
+/** If changed, also change in KillBillPlanStore.java */
 const GrowthWithNoDomainRestrictedProperties: Path[] = [
     ['domain'],
     ...GrowthRestrictedProperties,
@@ -90,7 +99,9 @@ const RestrictedPropertiesByPlan: { [basePlanId: string]: Path[] } = {
     'standard3-monthly': UnrestrictedProperties,
     'lifetime-lifetime': UnrestrictedProperties,
     'lifetime2-lifetime': UnrestrictedProperties,
-    'cloud-monthly': GrowthWithNoDomainRestrictedProperties,
+    'cloud-free': GrowthWithNoDomainRestrictedProperties,
+    'cloud-starter-monthly': GrowthWithNoDomainRestrictedProperties,
+    'cloud-monthly': CloudMonthlyRestrictedProperties,
     'cloud-yearly': UnrestrictedProperties,
     'selfhost-monthly': GrowthWithNoDomainRestrictedProperties,
     'selfhost-yearly': GrowthWithNoDomainRestrictedProperties,
@@ -113,6 +124,7 @@ export const TeammatesMaxCount: { [basePlanId: string]: number } = {
     'standard2-unlimited': 3,
     'lifetime2-lifetime': 1,
     'cloud-free': 1,
+    'cloud-starter-monthly': 1,
     'selfhost-free': 3,
 };
 /** If changed, also change in KillBillPlanStore.java */
@@ -127,6 +139,7 @@ export const PostsMaxCount: { [basePlanId: string]: number } = {
     'starter-unlimited': 30,
     'selfhost-free': 100,
     'cloud-free': 100,
+    'cloud-starter-monthly': 100,
 };
 /** If changed, also change in KillBillPlanStore.java */
 const AllowedPropertiesByAddon: { [addonId: string]: Path[] } = {
@@ -153,6 +166,8 @@ export const RestrictedActions: { [basePlanId: string]: Set<Action> } = {
     'pitchground-b-lifetime': new Set([Action.API_KEY]),
     'selfhost-free': new Set([Action.API_KEY]),
     'cloud-free': new Set([Action.API_KEY]),
+    'cloud-starter-monthly': new Set([Action.API_KEY]),
+    'cloud-monthly': new Set([Action.API_KEY]),
 };
 
 const styles = (theme: Theme) => createStyles({
