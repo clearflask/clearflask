@@ -2125,12 +2125,16 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         Expression expression = expressionBuilder.build();
         log.trace("delete idea expression {}", expression);
 
-        ideaSchema.table().deleteItem(new DeleteItemSpec()
-                .withPrimaryKey(ideaSchema.primaryKey(Map.of(
-                        "projectId", projectId,
-                        "ideaId", ideaId)))
-                .withConditionExpression(expression.conditionExpression().orElse(null))
-                .withNameMap(expression.nameMap().orElse(null)));
+        try {
+            ideaSchema.table().deleteItem(new DeleteItemSpec()
+                    .withPrimaryKey(ideaSchema.primaryKey(Map.of(
+                            "projectId", projectId,
+                            "ideaId", ideaId)))
+                    .withConditionExpression(expression.conditionExpression().orElse(null))
+                    .withNameMap(expression.nameMap().orElse(null)));
+        } catch (ConditionalCheckFailedException ex) {
+            // Already deleted
+        }
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
         SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
