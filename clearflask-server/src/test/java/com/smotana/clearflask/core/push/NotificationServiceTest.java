@@ -13,6 +13,7 @@ import com.google.common.util.concurrent.GuavaRateLimiters;
 import com.google.inject.Inject;
 import com.smotana.clearflask.api.model.TransactionType;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
+import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.core.push.NotificationService.Digest;
 import com.smotana.clearflask.core.push.NotificationService.DigestItem;
 import com.smotana.clearflask.core.push.NotificationService.DigestProject;
@@ -77,6 +78,8 @@ public class NotificationServiceTest extends AbstractTest {
     @Inject
     private IdeaStore mockIdeaStore;
     @Inject
+    private PlanStore mockPlanStore;
+    @Inject
     private MockNotificationStore mockNotificationStore;
 
     @Override
@@ -89,6 +92,7 @@ public class NotificationServiceTest extends AbstractTest {
         bindMock(UserStore.class);
         bindMock(ContentStore.class);
         bindMock(IdeaStore.class);
+        bindMock(PlanStore.class);
 
         install(NotificationServiceImpl.module());
         install(EmailTemplates.module());
@@ -387,6 +391,23 @@ public class NotificationServiceTest extends AbstractTest {
                 versionedConfigAdmin.getConfig(),
                 user,
                 "oldEmail@email.com");
+
+        Email email = mockEmailService.sent.take();
+        log.info("email {}", email);
+        assertNotNull(email);
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
+    }
+
+    @Test(timeout = 10_000L)
+    public void testOnSignup() throws Exception {
+        Account account = MockModelUtil.getRandomAccount().toBuilder()
+                .email("user@email.com")
+                .build();
+        when(this.mockPlanStore.prettifyPlanName(any())).thenReturn("Starter");
+
+        service.onAccountSignup(account);
 
         Email email = mockEmailService.sent.take();
         log.info("email {}", email);

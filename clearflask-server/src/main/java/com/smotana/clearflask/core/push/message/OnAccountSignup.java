@@ -9,10 +9,9 @@ import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.core.push.provider.EmailService.Email;
 import com.smotana.clearflask.store.AccountStore.Account;
-import com.smotana.clearflask.store.UserStore;
-import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -25,18 +24,16 @@ public class OnAccountSignup {
         @DefaultValue("__NAME__ welcome to ClearFlask")
         String subject();
 
-        @DefaultValue("Hello __NAME__, thank you for signing up with us. Visit the dashboard below to get started.")
+        @DefaultValue("Hello __NAME__, thank you for signing up with us on the __PLAN_NAME__ plan.")
         String content();
     }
 
     @Inject
     private Config config;
     @Inject
-    private Application.Config configApp;
-    @Inject
-    private UserStore userStore;
-    @Inject
     private EmailTemplates emailTemplates;
+    @Inject
+    private PlanStore planStore;
 
     public Email email(Account account, String link) {
         checkArgument(!Strings.isNullOrEmpty(account.getEmail()));
@@ -44,11 +41,13 @@ public class OnAccountSignup {
         String subject = config.subject();
         String content = config.content();
         String nameSanitized = emailTemplates.sanitize(account.getName());
+        String planName = planStore.prettifyPlanName(account.getPlanid());
         subject = subject.replace("__NAME__", nameSanitized);
-        content = content.replace("__NAME__", nameSanitized);
+        content = content.replace("__NAME__", nameSanitized)
+                .replace("__PLAN_NAME__", planName);
 
-        String templateHtml = emailTemplates.getNotificationTemplateHtml();
-        String templateText = emailTemplates.getNotificationTemplateText();
+        String templateHtml = emailTemplates.getNotificationNoUnsubTemplateHtml();
+        String templateText = emailTemplates.getNotificationNoUnsubTemplateText();
 
         templateHtml = templateHtml.replace("__CONTENT__", content);
         templateText = templateText.replace("__CONTENT__", content);
