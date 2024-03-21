@@ -24,7 +24,7 @@ public class OnAccountSignup {
         @DefaultValue("__NAME__ welcome to ClearFlask")
         String subject();
 
-        @DefaultValue("Hello __NAME__, thank you for signing up with us on the __PLAN_NAME__ plan.")
+        @DefaultValue("Hello __NAME__, thank you for signing up on the __PLAN_NAME__.")
         String content();
     }
 
