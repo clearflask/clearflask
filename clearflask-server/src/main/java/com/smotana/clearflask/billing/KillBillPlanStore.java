@@ -278,8 +278,8 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     null, null))
             .put("selfhost-yearly", pp -> new Plan("selfhost-yearly", "Yearly License",
                     pp, ImmutableList.of(
-                    new PlanPerk("No limits", null),
-                    new PlanPerk("2-Month Discount", null)),
+                    new PlanPerk("Same as Monthly", null),
+                    new PlanPerk("50% Discount", null)),
                     null, null))
             .build();
     private static final ImmutableList<Plan> PLANS_STATIC = ImmutableList.of(
