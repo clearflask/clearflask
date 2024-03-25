@@ -293,6 +293,7 @@ public class WeeklyDigestService extends ManagedService {
     private Optional<DigestProject> processAccountProject(DigestRun digestRun, Account account, Project project) {
         UserModel adminUser = userStore.accountCreateOrGet(project.getProjectId(), account);
 
+        // New posts
         Optional<DigestSection> newPostsSectionOpt = project.getVersionedConfigAdmin().getConfig().getContent().getCategories().stream()
                 .map(Category::getCategoryId)
                 .filter(categoryId -> categoryId.startsWith("feedback-"))
@@ -302,15 +303,21 @@ public class WeeklyDigestService extends ManagedService {
                                 .filterCreatedStart(digestRun.start)
                                 .filterCreatedEnd(digestRun.end)
                                 .filterCategoryIds(List.of(categoryId))
+                                .filterAuthorId(adminUser.getUserId())
+                                .invertAuthorId(true)
                                 .sortBy(IdeaSearchAdmin.SortByEnum.NEW).build()))
                 .orElseGet(() -> processSectionPosts(digestRun, account, project,
                         "New posts", IdeaSearchAdmin.builder()
                                 .filterCreatedStart(digestRun.start)
                                 .filterCreatedEnd(digestRun.end)
+                                .filterAuthorId(adminUser.getUserId())
+                                .invertAuthorId(true)
                                 .sortBy(IdeaSearchAdmin.SortByEnum.NEW).build()));
 
+        // Notifications
         Optional<DigestSection> notificationsSectionOpt = processSectionNotifications(digestRun, account, project, adminUser);
 
+        // New users
         Optional<DigestSection> newUsersSectionOpt = processSectionUsers(digestRun, account, project, "New users", UserSearchAdmin.builder()
                 .sortOrder(UserSearchAdmin.SortOrderEnum.DESC)
                 .sortBy(UserSearchAdmin.SortByEnum.CREATED).build());

@@ -906,6 +906,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 null,
                 null,
                 null,
+                null,
                 null);
         if (projectStore.getSearchEngineForProject(projectId).isReadElastic()) {
             return elasticUtil.histogram(
@@ -940,6 +941,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                         ideaSearch.getFilterTagIds(),
                         ideaSearch.getInvertTag(),
                         ideaSearch.getFilterAuthorId(),
+                        ideaSearch.getInvertAuthorId(),
                         ideaSearch.getSearchText(),
                         ideaSearch.getFundedByMeAndActive(),
                         ideaSearch.getLimit(),
@@ -984,7 +986,11 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         }
 
         if (!Strings.isNullOrEmpty(ideaSearchAdmin.getFilterAuthorId())) {
-            conditions.add(JooqIdea.IDEA.AUTHORUSERID.eq(ideaSearchAdmin.getFilterAuthorId()));
+            if (ideaSearchAdmin.getInvertAuthorId() == Boolean.TRUE) {
+                conditions.add(JooqIdea.IDEA.AUTHORUSERID.ne(ideaSearchAdmin.getFilterAuthorId()));
+            } else {
+                conditions.add(JooqIdea.IDEA.AUTHORUSERID.eq(ideaSearchAdmin.getFilterAuthorId()));
+            }
         }
 
         if (!Strings.isNullOrEmpty(ideaSearchAdmin.getSimilarToIdeaId())) {
@@ -1076,7 +1082,11 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         }
 
         if (!Strings.isNullOrEmpty(ideaSearchAdmin.getFilterAuthorId())) {
-            query.must(QueryBuilders.termQuery("authorUserId", ideaSearchAdmin.getFilterAuthorId()));
+            if (ideaSearchAdmin.getInvertAuthorId() == Boolean.TRUE) {
+                query.mustNot(QueryBuilders.termQuery("authorUserId", ideaSearchAdmin.getFilterAuthorId()));
+            } else {
+                query.must(QueryBuilders.termQuery("authorUserId", ideaSearchAdmin.getFilterAuthorId()));
+            }
         }
 
         if (!Strings.isNullOrEmpty(ideaSearchAdmin.getSimilarToIdeaId())) {

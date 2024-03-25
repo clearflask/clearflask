@@ -45,6 +45,9 @@ components:
         filterAuthorId:
           x-clearflask-hide: true
           type: string
+        invertAuthorId:
+          x-clearflask-hide: true
+          type: boolean
         searchText:
           x-clearflask-prop: { order: 8, name: 'Search query', description: 'Filter results matching this search term' }
           type: string
