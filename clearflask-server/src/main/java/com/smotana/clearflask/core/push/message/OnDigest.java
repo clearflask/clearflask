@@ -18,6 +18,7 @@ import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 
 import static com.smotana.clearflask.core.push.NotificationServiceImpl.AUTH_TOKEN_PARAM_NAME;
 
@@ -26,7 +27,7 @@ import static com.smotana.clearflask.core.push.NotificationServiceImpl.AUTH_TOKE
 public class OnDigest {
 
     public interface Config {
-        @DefaultValue("Weekly digest")
+        @DefaultValue("Weekly Digest for __PROJECT_NAMES__: __DATE_RANGE__")
         String subjectTemplate();
     }
 
@@ -42,7 +43,18 @@ public class OnDigest {
     private EmailTemplates emailTemplates;
 
     public Email email(Account account, Digest digest) {
-        String subject = config.subjectTemplate();
+        String subject = config.subjectTemplate()
+                .replace("__PROJECT_NAMES__", digest.getProjects().stream()
+                        .map(DigestProject::getName)
+                        .map(emailTemplates::sanitize)
+                        // Delimited by commas
+                        .reduce((a, b) -> a + ", " + b)
+                        // Max length otherwise ...
+                        .map(projectNames -> StringUtils.abbreviate(
+                                projectNames,
+                                25))
+                        .orElse("ClearFlask"))
+                .replace("__DATE_RANGE__", digest.getFrom() + " - " + digest.getTo());
 
         StringBuilder projectsHtml = new StringBuilder();
         StringBuilder projectsText = new StringBuilder();
