@@ -388,6 +388,8 @@ public class CommonPlanVerifyStore implements PlanVerifyStore {
             case "sponsor-monthly":
             case "lifetime-lifetime":
             case "selfhost-licensed":
+            case "cloud-monthly":
+            case "cloud-yearly":
                 break; // No limit
             default:
                 if (LogUtil.rateLimitAllowLog("killbillplanstore-teammates-unknown-limit")) {
