@@ -51,6 +51,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static com.smotana.clearflask.store.UserStore.UserModel;
@@ -319,8 +320,11 @@ public class WeeklyDigestService extends ManagedService {
 
         // New users
         Optional<DigestSection> newUsersSectionOpt = processSectionUsers(digestRun, account, project, "New users", UserSearchAdmin.builder()
-                .sortOrder(UserSearchAdmin.SortOrderEnum.DESC)
-                .sortBy(UserSearchAdmin.SortByEnum.CREATED).build());
+                        // Sort by newest users
+                        .sortOrder(UserSearchAdmin.SortOrderEnum.DESC)
+                        .sortBy(UserSearchAdmin.SortByEnum.CREATED).build(),
+                // Filter out self
+                user -> !user.getUserId().equals(adminUser.getUserId()));
 
         ImmutableList<DigestSection> sections = Stream.of(
                         notificationsSectionOpt,
@@ -362,11 +366,13 @@ public class WeeklyDigestService extends ManagedService {
                         .collect(ImmutableList.toImmutableList())));
     }
 
-    private Optional<DigestSection> processSectionUsers(DigestRun digestRun, Account account, Project project, String title, UserSearchAdmin search) {
+    private Optional<DigestSection> processSectionUsers(DigestRun digestRun, Account account, Project project, String title, UserSearchAdmin search, Predicate<UserModel> userPredicate) {
         ImmutableList<String> userIds = userStore.searchUsers(project.getProjectId(), search, false, Optional.empty(), Optional.empty())
                 .getUserIds();
         ImmutableList<UserModel> users = userStore.getUsers(project.getProjectId(), userIds).values()
                 .stream()
+                .filter(userPredicate)
+                // Filter out digest range
                 .filter(user -> user.getCreated().isAfter(digestRun.getStart())
                         && user.getCreated().isBefore(digestRun.getEnd()))
                 .collect(ImmutableList.toImmutableList());
