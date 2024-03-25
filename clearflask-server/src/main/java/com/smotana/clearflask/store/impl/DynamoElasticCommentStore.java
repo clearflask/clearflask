@@ -858,13 +858,15 @@ public class DynamoElasticCommentStore extends ManagedService implements Comment
         }
         if (searchEngine.isWriteMysql()) {
             JooqVoteWilson voteWilsonRoutine = new JooqVoteWilson();
-            voteWilsonRoutine.setUpvotes(JooqComment.COMMENT.UPVOTES.plus(upvoteDiff));
-            voteWilsonRoutine.setDownvotes(JooqComment.COMMENT.DOWNVOTES.plus(downvoteDiff));
+            voteWilsonRoutine.setUpvotes((long) comment.getUpvotes());
+            voteWilsonRoutine.setDownvotes((long) comment.getDownvotes());
             voteWilsonRoutine.setZ(wilsonScoreInterval.getZ());
             voteWilsonRoutine.setZsquared(wilsonScoreInterval.getZSquared());
 
             CompletionStage<Integer> completionStage = mysql.get().update(JooqComment.COMMENT)
                     .set(JooqComment.COMMENT.SCORE, voteWilsonRoutine.asField())
+                    .set(JooqComment.COMMENT.UPVOTES, (long) comment.getUpvotes())
+                    .set(JooqComment.COMMENT.DOWNVOTES, (long) comment.getDownvotes())
                     .where(JooqComment.COMMENT.PROJECTID.eq(comment.getProjectId())
                             .and(JooqComment.COMMENT.POSTID.eq(comment.getIdeaId()))
                             .and(JooqComment.COMMENT.COMMENTID.eq(comment.getCommentId())))
