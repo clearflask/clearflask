@@ -383,7 +383,7 @@ public class WeeklyDigestService extends ManagedService {
                 title,
                 users.stream()
                         .map(user -> new DigestItem(
-                                user.getNameOrEmail(),
+                                user.getNameOrEmailOrId(),
                                 "https://" + Project.getHostname(project.getVersionedConfigAdmin().getConfig(), configApp) + "/user/" + user.getUserId()))
                         .collect(ImmutableList.toImmutableList())));
     }

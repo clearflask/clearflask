@@ -242,9 +242,9 @@ public interface UserStore {
         @NonNull
         ImmutableSet<String> subscribedCategoryIds;
 
-        public String getNameOrEmail() {
+        public String getNameOrEmailOrId() {
             return Optional.ofNullable(Strings.emptyToNull(name))
-                    .or(Optional.ofNullable(Strings.emptyToNull(email)))
+                    .or(() -> Optional.ofNullable(Strings.emptyToNull(email)))
                     .orElse(userId);
         }
 
