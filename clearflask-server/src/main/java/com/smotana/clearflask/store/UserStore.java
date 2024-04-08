@@ -242,6 +242,12 @@ public interface UserStore {
         @NonNull
         ImmutableSet<String> subscribedCategoryIds;
 
+        public String getNameOrEmail() {
+            return Optional.ofNullable(Strings.emptyToNull(name))
+                    .or(Optional.ofNullable(Strings.emptyToNull(email)))
+                    .orElse(userId);
+        }
+
         public UserMe toUserMe(Function<String, String> intercomEmailToIdentity) {
             return new UserMe(
                     getUserId(),
