@@ -81,6 +81,12 @@ public class ApiExceptionMapperFilter implements Filter {
         }
     }
 
+    @Override
+    public void destroy() {
+        // Nothing to do
+    }
+
+
     public static Module module() {
         return new AbstractModule() {
             @Override

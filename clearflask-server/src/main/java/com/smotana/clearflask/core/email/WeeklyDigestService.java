@@ -326,16 +326,9 @@ public class WeeklyDigestService extends ManagedService {
                 // Filter out self
                 user -> !user.getUserId().equals(adminUser.getUserId()));
 
-        ImmutableList<DigestSection> sections = Stream.of(
-                        notificationsSectionOpt,
-                        newPostsSectionOpt,
-                        newUsersSectionOpt
-                )
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(ImmutableList.toImmutableList());
-        if (sections.isEmpty()) {
-            log.debug("No sections for account {} project {}", account.getAccountId(), project.getProjectId());
+        // See if we have enough data to send a digest
+        if (notificationsSectionOpt.isEmpty() && newPostsSectionOpt.isEmpty()) {
+            log.debug("No significant sections are present for account {} project {}", account.getAccountId(), project.getProjectId());
             return Optional.empty();
         }
 
@@ -343,7 +336,13 @@ public class WeeklyDigestService extends ManagedService {
                 adminUser,
                 project.getName(),
                 project.getLink(Optional.empty()),
-                sections));
+                Stream.of(
+                                notificationsSectionOpt,
+                                newPostsSectionOpt,
+                                newUsersSectionOpt)
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .collect(ImmutableList.toImmutableList())));
     }
 
     private Optional<DigestSection> processSectionPosts(DigestRun digestRun, Account account, Project project, String title, IdeaSearchAdmin search) {
