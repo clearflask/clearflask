@@ -782,7 +782,7 @@
                 <plan>cloud-starter-monthly</plan>
                 <plan>cloud-monthly</plan>
                 <plan>cloud-yearly</plan>
-                <plan>cloud-extended-yearly</plan>
+                <plan>cloud-90day-yearly</plan>
                 <plan>selfhost-monthly</plan>
                 <plan>selfhost-yearly</plan>
             </plans>
