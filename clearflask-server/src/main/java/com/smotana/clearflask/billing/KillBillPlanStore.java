@@ -272,6 +272,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     null, null))
             .put("cloud-90day-yearly", pp -> new Plan("cloud-90day-yearly", "Pro",
                     pp, ImmutableList.of(
+                    new PlanPerk("90 day trial", null),
                     new PlanPerk("Unlimited Teammates Free", null),
                     new PlanPerk("Integrations", null),
                     new PlanPerk("API", TERMS_API),
