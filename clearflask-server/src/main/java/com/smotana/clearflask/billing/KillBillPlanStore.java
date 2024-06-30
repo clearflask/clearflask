@@ -270,6 +270,13 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     new PlanPerk("API", TERMS_API),
                     new PlanPerk("Whitelabel", TERMS_WHITELABEL)),
                     null, null))
+            .put("cloud-90day-yearly", pp -> new Plan("cloud-yearly", "Pro",
+                    pp, ImmutableList.of(
+                    new PlanPerk("Unlimited Teammates Free", null),
+                    new PlanPerk("Integrations", null),
+                    new PlanPerk("API", TERMS_API),
+                    new PlanPerk("Whitelabel", TERMS_WHITELABEL)),
+                    null, null))
             .put("selfhost-monthly", pp -> new Plan("selfhost-monthly", "Monthly License",
                     pp, ImmutableList.of(
                     new PlanPerk("Unlimited admins/posts", null),
@@ -553,6 +560,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 case "cloud-starter-monthly":
                 case "cloud-monthly":
                 case "cloud-yearly":
+                case "cloud-90day-yearly":
                     planOptions.add(availablePlans.get("cloud-starter-monthly"));
                     planOptions.add(availablePlans.get("cloud-monthly"));
                     planOptions.add(availablePlans.get("cloud-yearly"));

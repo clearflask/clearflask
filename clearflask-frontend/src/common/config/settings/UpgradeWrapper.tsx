@@ -103,6 +103,7 @@ const RestrictedPropertiesByPlan: { [basePlanId: string]: Path[] } = {
     'cloud-starter-monthly': GrowthWithNoDomainRestrictedProperties,
     'cloud-monthly': CloudMonthlyRestrictedProperties,
     'cloud-yearly': UnrestrictedProperties,
+    'cloud-90day-yearly': UnrestrictedProperties,
     'selfhost-monthly': GrowthWithNoDomainRestrictedProperties,
     'selfhost-yearly': GrowthWithNoDomainRestrictedProperties,
     'selfhost-licensed': UnrestrictedProperties,

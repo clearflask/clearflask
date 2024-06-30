@@ -319,6 +319,7 @@ public class CommonPlanVerifyStore implements PlanVerifyStore {
             case "lifetime2-lifetime":
             case "standard3-monthly":
             case "cloud-yearly":
+            case "cloud-90day-yearly":
             case "selfhost-licensed":
                 break;
         }
@@ -390,6 +391,7 @@ public class CommonPlanVerifyStore implements PlanVerifyStore {
             case "selfhost-licensed":
             case "cloud-monthly":
             case "cloud-yearly":
+            case "cloud-90day-yearly":
                 break; // No limit
             default:
                 if (LogUtil.rateLimitAllowLog("killbillplanstore-teammates-unknown-limit")) {
