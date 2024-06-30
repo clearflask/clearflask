@@ -270,7 +270,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     new PlanPerk("API", TERMS_API),
                     new PlanPerk("Whitelabel", TERMS_WHITELABEL)),
                     null, null))
-            .put("cloud-90day-yearly", pp -> new Plan("cloud-yearly", "Pro",
+            .put("cloud-90day-yearly", pp -> new Plan("cloud-90day-yearly", "Pro",
                     pp, ImmutableList.of(
                     new PlanPerk("Unlimited Teammates Free", null),
                     new PlanPerk("Integrations", null),
