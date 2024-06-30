@@ -260,33 +260,41 @@ public class IdeaStoreIT extends AbstractIT {
                 idea2.getIdeaId(),
                 idea3.getIdeaId()));
 
-        idea1 = dropIdea(projectId, idea1.getIdeaId(),
-                Optional.of(idea3),
-                Optional.empty());
-        assertSearchResult(projectId, IdeaSearchAdmin.builder().sortBy(IdeaSearchAdmin.SortByEnum.DRAGANDDROP).build(), ImmutableSet.of(
-                idea2.getIdeaId(),
-                idea3.getIdeaId(),
-                idea1.getIdeaId()));
-
         idea2 = dropIdea(projectId, idea2.getIdeaId(),
                 Optional.of(idea3),
-                Optional.of(idea1));
-        assertSearchResult(projectId, IdeaSearchAdmin.builder().sortBy(IdeaSearchAdmin.SortByEnum.DRAGANDDROP).build(), ImmutableSet.of(
-                idea3.getIdeaId(),
-                idea2.getIdeaId(),
-                idea1.getIdeaId()));
-
-        idea1 = dropIdea(projectId, idea1.getIdeaId(),
-                Optional.empty(),
-                Optional.of(idea3));
+                Optional.empty());
         assertSearchResult(projectId, IdeaSearchAdmin.builder().sortBy(IdeaSearchAdmin.SortByEnum.DRAGANDDROP).build(), ImmutableSet.of(
                 idea1.getIdeaId(),
                 idea3.getIdeaId(),
                 idea2.getIdeaId()));
 
-        idea3 = dropIdea(projectId, idea3.getIdeaId(),
+        idea2 = dropIdea(projectId, idea2.getIdeaId(),
+                Optional.empty(),
+                Optional.of(idea1));
+        assertSearchResult(projectId, IdeaSearchAdmin.builder().sortBy(IdeaSearchAdmin.SortByEnum.DRAGANDDROP).build(), ImmutableSet.of(
+                idea2.getIdeaId(),
+                idea1.getIdeaId(),
+                idea3.getIdeaId()));
+
+        idea2 = dropIdea(projectId, idea2.getIdeaId(),
+                Optional.of(idea3),
+                Optional.of(idea1));
+        assertSearchResult(projectId, IdeaSearchAdmin.builder().sortBy(IdeaSearchAdmin.SortByEnum.DRAGANDDROP).build(), ImmutableSet.of(
+                idea1.getIdeaId(),
+                idea2.getIdeaId(),
+                idea3.getIdeaId()));
+
+        idea1 = dropIdea(projectId, idea1.getIdeaId(),
+                Optional.of(idea2),
+                Optional.of(idea3));
+        assertSearchResult(projectId, IdeaSearchAdmin.builder().sortBy(IdeaSearchAdmin.SortByEnum.DRAGANDDROP).build(), ImmutableSet.of(
+                idea2.getIdeaId(),
+                idea1.getIdeaId(),
+                idea3.getIdeaId()));
+
+        idea2 = dropIdea(projectId, idea2.getIdeaId(),
                 Optional.of(idea1),
-                Optional.of(idea2));
+                Optional.of(idea3));
         assertSearchResult(projectId, IdeaSearchAdmin.builder().sortBy(IdeaSearchAdmin.SortByEnum.DRAGANDDROP).build(), ImmutableSet.of(
                 idea1.getIdeaId(),
                 idea3.getIdeaId(),

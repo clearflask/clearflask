@@ -103,7 +103,6 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
 import static com.smotana.clearflask.store.mysql.DefaultMysqlProvider.ID_MAX_LENGTH;
 import static com.smotana.clearflask.util.ExplicitNull.orNull;
-import static org.jooq.SortOrder.ASC;
 import static org.jooq.SortOrder.DESC;
 
 @Slf4j
@@ -1291,7 +1290,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                         sortFields = ImmutableList.of(DSL.rand().sort(DESC));
                         break;
                     case DRAGANDDROP:
-                        sortFields = ImmutableList.of(JooqIdea.IDEA.ORDER.sort(ASC), JooqIdea.IDEA.CREATED.sort(ASC));
+                        sortFields = ImmutableList.of(DSL.coalesce(JooqIdea.IDEA.ORDER, DSL.epoch(JooqIdea.IDEA.CREATED).mul(1000)).asc());
                         break;
                     default:
                         throw new ApiException(Response.Status.BAD_REQUEST,
