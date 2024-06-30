@@ -46,7 +46,9 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
 import org.killbill.billing.catalog.api.PhaseType;
+import org.killbill.billing.client.model.gen.EventSubscription;
 import org.killbill.billing.client.model.gen.Subscription;
+import org.killbill.billing.entitlement.api.SubscriptionEventType;
 
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
@@ -956,12 +958,17 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
         } else if (subscription.getPhaseType() == PhaseType.TRIAL
                 && !PlanStore.STOP_TRIAL_FOR_PLANS.contains(subscription.getPlanName())) {
 
-            LocalDate trialStart = subscription.getChargedThroughDate();
-            if (trialStart == null) {
-                trialStart = subscription.getStartDate();
-            }
-            trialStart = trialStart.plusDays(14);
-            billingPeriodEnd = Instant.ofEpochMilli(trialStart
+            LocalDate trialEnd = subscription.getEvents()
+                    .stream()
+                    .filter(e -> e.getPhase() != null && e.getPhase().contains("evergreen")
+                            && e.getEventType() == SubscriptionEventType.PHASE)
+                    .map(EventSubscription::getEffectiveDate)
+                    .findFirst()
+                    // Fallback assuming all plans have 14 day trial
+                    .orElseGet(() -> Optional.ofNullable(subscription.getChargedThroughDate())
+                            .orElseGet(subscription::getStartDate)
+                            .plusDays(14));
+            billingPeriodEnd = Instant.ofEpochMilli(trialEnd
                     .toDateTimeAtStartOfDay(DateTimeZone.UTC)
                     .toInstant()
                     .getMillis());
