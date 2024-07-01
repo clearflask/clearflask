@@ -15,6 +15,7 @@ import io.dataspray.singletable.DynamoTable;
 import lombok.*;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -178,6 +179,10 @@ public interface IdeaStore {
 
         @NonNull
         Instant created;
+
+        public Instant getCreated() {
+            return created.truncatedTo(ChronoUnit.SECONDS);
+        }
 
         @NonNull
         String title;
