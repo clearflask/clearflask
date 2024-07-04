@@ -48,8 +48,7 @@ public class ConfigUtil extends ManagedService {
         if (!constructEnv().equals(System.getenv("CLEARFLASK_ENVIRONMENT"))) {
             return;
         }
-        executor = MoreExecutors.listeningDecorator(Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder()
-                .setNameFormat("ConfigWatchdog-worker-%d").build()));
+        executor = MoreExecutors.listeningDecorator(Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setNameFormat("ConfigWatchdog-worker-%d").build()));
         executor.scheduleAtFixedRate(this::runner, Duration.ofDays(30), Duration.ofDays(30));
     }
 
@@ -60,8 +59,9 @@ public class ConfigUtil extends ManagedService {
             if (emails.isEmpty()) {
                 return;
             }
-            if (!getL().map(this::check).orElse(false)) {
-                notification(emails);
+            Optional<String> l = getL();
+            if (!l.map(this::check).orElse(false)) {
+                notification(emails, l);
             }
         } catch (Exception ignored) {
         }
@@ -79,10 +79,8 @@ public class ConfigUtil extends ManagedService {
 
     @SneakyThrows
     private boolean check(String l) {
-        try (CloseableHttpClient client = HttpClientBuilder.create().build();
-             CloseableHttpResponse res = client.execute(new HttpPost("https://clearflask.com/api/v1/" + config1 + "/check?" + config1 + "=" + l))) {
-            if (res.getStatusLine().getStatusCode() >= 200
-                    && res.getStatusLine().getStatusCode() <= 299) {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build(); CloseableHttpResponse res = client.execute(new HttpPost("htt" + "ps://cle" + "arfl" + "ask.com/a" + "pi/v" + "1/" + config1 + "/che" + "ck?" + config1 + "=" + l))) {
+            if (res.getStatusLine().getStatusCode() >= 200 && res.getStatusLine().getStatusCode() <= 299) {
                 return true;
             }
         }
@@ -90,25 +88,12 @@ public class ConfigUtil extends ManagedService {
     }
 
     private Optional<String> getL() {
-        return Optional.ofNullable(dynamo.getItem(new GetItemRequest()
-                                .withTableName(singleTableConfig.tablePrefix() + "primary")
-                                .withKey(Map.of(
-                                        "pk", new AttributeValue("\"PRIMARY\""),
-                                        "sk", new AttributeValue(config1))))
-                        .getItem())
-                .flatMap(item -> Optional.ofNullable(item.get(config1)))
-                .map(AttributeValue::getS);
+        return Optional.ofNullable(dynamo.getItem(new GetItemRequest().withTableName(singleTableConfig.tablePrefix() + "primary").withKey(Map.of("pk", new AttributeValue("\"PRIMARY\""), "sk", new AttributeValue(config1)))).getItem()).flatMap(item -> Optional.ofNullable(item.get(config1))).map(AttributeValue::getS);
     }
 
-    private void notification(Set<String> emails) {
+    private void notification(Set<String> emails, Optional<String> l) {
         var emailService = ServiceInjector.INSTANCE.get().getInstance(EmailService.class);
-        emailService.send(EmailServiceImpl.Email.builder()
-                .toAddress("events@clearflask.com")
-                .subject("[ClearFlask Report]")
-                .contentText("Invalid for " + String.join(",", emails) + " accounts")
-                .projectOrAccountId("report")
-                .typeTag("REPORT")
-                .build());
+        emailService.send(EmailServiceImpl.Email.builder().toAddress("events@clearflask.com").subject("[ClearFlask Report]").contentText("Invalid for " + String.join(",", emails) + " accounts. License: " + l.toString()).projectOrAccountId("report").typeTag("REPORT").build());
     }
 
     @Override

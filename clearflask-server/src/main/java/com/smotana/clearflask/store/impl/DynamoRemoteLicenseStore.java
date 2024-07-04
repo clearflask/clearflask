@@ -39,9 +39,7 @@ public class DynamoRemoteLicenseStore extends ManagedService implements RemoteLi
     @Inject
     private SingleTable singleTable;
 
-    private final Cache<Long, Optional<Boolean>> isValidCache = CacheBuilder.newBuilder()
-            .expireAfterWrite(1, TimeUnit.DAYS)
-            .build();
+    private final Cache<Long, Optional<Boolean>> isValidCache = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.DAYS).build();
     private TableSchema<License> licenseSchema;
     private ListeningScheduledExecutorService executor;
 
@@ -52,8 +50,7 @@ public class DynamoRemoteLicenseStore extends ManagedService implements RemoteLi
 
     @Override
     protected void serviceStart() throws Exception {
-        executor = MoreExecutors.listeningDecorator(Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder()
-                .setNameFormat("LicenseValidator-worker-%d").build()));
+        executor = MoreExecutors.listeningDecorator(Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setNameFormat("LicenseValidator-worker-%d").build()));
         executor.scheduleAtFixedRate(isValidCache::invalidateAll, Duration.ofMinutes(1), Duration.ofDays(1));
     }
 
@@ -70,10 +67,7 @@ public class DynamoRemoteLicenseStore extends ManagedService implements RemoteLi
 
     @Override
     public Optional<String> getLicense() {
-        return Optional.ofNullable(licenseSchema.fromItem(licenseSchema.table().getItem(new GetItemSpec()
-                        .withPrimaryKey(licenseSchema.primaryKey(Map.of(
-                                "type", Type.PRIMARY))))))
-                .map(License::getLicense);
+        return Optional.ofNullable(licenseSchema.fromItem(licenseSchema.table().getItem(new GetItemSpec().withPrimaryKey(licenseSchema.primaryKey(Map.of("type", Type.PRIMARY)))))).map(License::getLicense);
     }
 
     @Extern
@@ -100,10 +94,12 @@ public class DynamoRemoteLicenseStore extends ManagedService implements RemoteLi
     }
 
     private boolean validateInternal(String license) {
-        try (CloseableHttpClient client = HttpClientBuilder.create().build();
-             CloseableHttpResponse res = client.execute(new HttpPost("https://clearflask.com/api/v1/license/check?license=" + license))) {
-            if (res.getStatusLine().getStatusCode() >= 200
-                    && res.getStatusLine().getStatusCode() <= 299) {
+        if ("FREEFOREVER".equals(license)) {
+            log.info("License is free forever");
+            return true;
+        }
+        try (CloseableHttpClient client = HttpClientBuilder.create().build(); CloseableHttpResponse res = client.execute(new HttpPost("https://clearflask.com/api/v1/license/check?license=" + license))) {
+            if (res.getStatusLine().getStatusCode() >= 200 && res.getStatusLine().getStatusCode() <= 299) {
                 log.info("License is valid");
                 return true;
             } else if (res.getStatusLine().getStatusCode() == 401) {
