@@ -254,7 +254,7 @@ public class S3ContentStore extends ManagedService implements ContentStore {
 
         URI signedUri = URI.create(signedUrl);
         String signedProxyUrl = new URI(
-                "https",
+                config.scheme(),
                 configApp.domain(),
                 "/api" + Application.RESOURCE_VERSION + "/project/" + contentUrl.getProjectId() + "/content/proxy/userId/" + contentUrl.getUserId() + "/file/" + contentUrl.getFileName(),
                 signedUri.getQuery(),
