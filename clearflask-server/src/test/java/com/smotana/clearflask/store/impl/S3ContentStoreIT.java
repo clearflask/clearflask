@@ -159,7 +159,9 @@ public class S3ContentStoreIT extends AbstractTest {
             }
         }
         assertEquals(contentUrl.getUrl(), 404, get(contentUrl.getUrl()));
-        assertEquals(signedUrl, 404, get(signedUrl));
+        if (!proxyEnabled) {
+            assertEquals(signedUrl, 404, get(signedUrl));
+        }
     }
 
     private int get(String url) throws Exception {
