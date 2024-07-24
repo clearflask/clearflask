@@ -23,7 +23,3 @@ My financial contributions to ClearFlask:
 - [ ] Thinking about it
 - [ ] Monthly / Yearly Plan
 - [ ] Lifetime Plan
-
-I'd be willing to implement this feature:
-
-- [ ] Yes

@@ -57,7 +57,8 @@ import java.util.regex.Pattern;
 public class S3ContentStore extends ManagedService implements ContentStore {
 
     private static final String KEY_PREFIX = "img/ugc/";
-    private static final Pattern CONTENT_TYPE_URL_MATCHER = Pattern.compile("^(?<scheme>[^:]+)://(?<domain>[^/]+)/(?<key>" + KEY_PREFIX + "(?<projectId>[^/]+)/(?<userId>[^/]+)/(?<fileName>[^?]+\\.(?<extension>[^.?]+)))(?<query>\\?[^#]*)?$");
+    private static final Pattern CONTENT_TYPE_URL_MATCHER_S3 = Pattern.compile("^(?<scheme>[^:]+)://(?<domain>[^/]+)/" + KEY_PREFIX + "(?<projectId>[^/]+)/(?<userId>[^/]+)/(?<fileName>[^?]+\\.(?<extension>[^.?]+))(?<query>\\?[^#]*)?$");
+    private static final Pattern CONTENT_TYPE_URL_MATCHER_PROXY = Pattern.compile("^(?<scheme>[^:]+)://(?<domain>[^/]+)/api" + Application.RESOURCE_VERSION + "/project/(?<projectId>[^/]+)/content/proxy/userId/(?<userId>[^/]+)/file/(?<fileName>[^?]+\\.(?<extension>[^.?]+))(?<query>\\?[^#]*)?$");
 
     public interface Config {
         @DefaultValue("clearflask-upload.s3.amazonaws.com")
@@ -265,22 +266,32 @@ public class S3ContentStore extends ManagedService implements ContentStore {
 
     @Override
     public Optional<ContentUrl> parseContentUrl(String url) {
-        Matcher matcher = CONTENT_TYPE_URL_MATCHER.matcher(url);
+        boolean isProxied = false;
+        Matcher matcher = CONTENT_TYPE_URL_MATCHER_S3.matcher(url);
+        // Fallback to proxy URL
+        if (!matcher.matches() && config.proxyEnabled()) {
+            isProxied = true;
+            matcher = CONTENT_TYPE_URL_MATCHER_PROXY.matcher(url);
+        }
         if (!matcher.matches()) {
             return Optional.empty();
         }
         String scheme = matcher.group("scheme");
         String domain = matcher.group("domain");
-        String key = matcher.group("key");
         String projectId = matcher.group("projectId");
         String userId = matcher.group("userId");
         String fileName = matcher.group("fileName");
         String extension = matcher.group("extension");
+        String key = KEY_PREFIX + projectId + "/" + userId + "/" + fileName;
         String query = matcher.group("query");
         ContentType contentType = ContentType.EXTENSION_TO_CONTENT_TYPE.getOrDefault(extension, ContentType.UNKNOWN);
-
-        if (!config.scheme().equals(scheme)
-                || !config.hostname().equals(domain)) {
+        if (!config.scheme().equals(scheme)) {
+            return Optional.empty();
+        }
+        if (!isProxied && !config.hostname().equals(domain)) {
+            return Optional.empty();
+        }
+        if (isProxied && !configApp.domain().equals(domain)) {
             return Optional.empty();
         }
 
