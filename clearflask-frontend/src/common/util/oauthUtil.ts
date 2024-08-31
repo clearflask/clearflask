@@ -117,7 +117,7 @@ export class OAuthFlow {
       extraData,
     };
     const oauthStateStr = encodeURIComponent(JSON.stringify(oauthState));
-    sessionStorage.setItem(`${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${provider.clientId}`, oauthCsrfToken);
+    localStorage.setItem(`${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${provider.clientId}`, oauthCsrfToken);
     return oauthStateStr;
   }
 
@@ -126,7 +126,10 @@ export class OAuthFlow {
     const params = new URL(windowIso.location.href).searchParams;
     const oauthCode = params.get(OAUTH_CODE_PARAM_NAME);
     const oauthStateStr = params.get(OAUTH_STATE_PARAM_NAME);
-    if (!oauthStateStr || !oauthCode) return undefined;
+    if (!oauthStateStr || !oauthCode) {
+      console.log("Missing oauth code or state", oauthCode, oauthStateStr);
+      return undefined;
+    }
 
     var oauthState: OAuthState | undefined;
     try {
@@ -140,16 +143,25 @@ export class OAuthFlow {
         && oauthStateCandidate.cid
         && typeof oauthStateCandidate.cid === 'string') {
         oauthState = oauthStateCandidate;
+      } else {
+        console.log("Invalid oauth state format", oauthStateCandidate);
       }
     } catch (e) {
       oauthState = undefined;
+      console.log("Failed to parse oauth state", oauthStateStr, e);
     }
     if (!oauthState) return undefined;
-    if (oauthState.accountType !== this.props.accountType) return undefined;
+    if (oauthState.accountType !== this.props.accountType) {
+      console.log("Account type mismatch", oauthState.accountType, this.props.accountType)
+      return undefined;
+    }
 
-    const oauthCsrfExpected = windowIso.sessionStorage.getItem(`${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${oauthState.cid}`);
-    if (oauthCsrfExpected !== oauthState?.csrf) return undefined;
-    windowIso.sessionStorage.removeItem(`${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${oauthState.cid}`)
+    const oauthCsrfExpected = localStorage.getItem(`${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${oauthState.cid}`);
+    if (oauthCsrfExpected !== oauthState?.csrf) {
+      console.log("CSRF mismatch", oauthCsrfExpected, oauthState?.csrf);
+      return undefined;
+    }
+    localStorage.removeItem(`${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${oauthState.cid}`)
 
     return {
       id: oauthState.cid,
