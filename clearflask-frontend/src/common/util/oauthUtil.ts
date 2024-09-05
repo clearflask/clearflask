@@ -127,7 +127,7 @@ export class OAuthFlow {
     const oauthCode = params.get(OAUTH_CODE_PARAM_NAME);
     const oauthStateStr = params.get(OAUTH_STATE_PARAM_NAME);
     if (!oauthStateStr || !oauthCode) {
-      console.log("Missing oauth code or state", oauthCode, oauthStateStr);
+      console.log("No oauth code or state found", oauthCode, oauthStateStr);
       return undefined;
     }
 
@@ -161,13 +161,19 @@ export class OAuthFlow {
       console.log("CSRF mismatch", oauthCsrfExpected, oauthState?.csrf);
       return undefined;
     }
-    localStorage.removeItem(`${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${oauthState.cid}`)
+    // TODO: Remove CSRF token from local storage
+    // It appears this result check is called twice, resulting in the CSRF token being removed before the second check
+    // can be performed. For now, do not clear the local storage key, but later we should find out why this is happening.
+    // localStorage.removeItem(`${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${oauthState.cid}`)
 
-    return {
+    const oAuthToken: OAuthToken = {
       id: oauthState.cid,
       code: oauthCode,
       extraData: oauthState.extraData,
-    };
+    }
+    console.log("OAuth success", oAuthToken);
+
+    return oAuthToken;
   }
 
   listenForSuccess(onSuccess: () => void): Unsubscribe {
