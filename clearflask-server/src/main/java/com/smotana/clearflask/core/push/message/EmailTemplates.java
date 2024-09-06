@@ -29,6 +29,7 @@ public class EmailTemplates {
     @Inject
     private Config config;
 
+    private final String notificationNoUnsubLargeTemplateHtml;
     private final String notificationNoUnsubTemplateHtml;
     private final String notificationNoUnsubTemplateText;
     private final String notificationTemplateHtml;
@@ -47,6 +48,7 @@ public class EmailTemplates {
     private final String digestProjectSectionItemTemplateText;
 
     public EmailTemplates() throws IOException {
+        this.notificationNoUnsubLargeTemplateHtml = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/notificationNoUnsubLarge.html"), Charsets.UTF_8);
         this.notificationNoUnsubTemplateHtml = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/notificationNoUnsub.html"), Charsets.UTF_8);
         this.notificationNoUnsubTemplateText = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/notificationNoUnsub.txt"), Charsets.UTF_8);
         this.notificationTemplateHtml = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("email/notification.html"), Charsets.UTF_8);
