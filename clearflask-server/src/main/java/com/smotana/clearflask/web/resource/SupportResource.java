@@ -58,7 +58,7 @@ public class SupportResource extends AbstractResource implements SupportApi {
         @DefaultValue("support")
         String supportEmailLocalPart();
 
-        @DefaultValue("noreply")
+        @DefaultValue("support")
         String fromEmailLocalPart();
 
         @DefaultValue("ClearFlask Support")

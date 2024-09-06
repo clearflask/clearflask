@@ -43,7 +43,7 @@ public class EmailServiceImpl implements EmailService {
         @DefaultValue("ses")
         String useService();
 
-        @DefaultValue("noreply")
+        @DefaultValue("support")
         String fromEmailLocalPart();
 
         @DefaultValue("")
