@@ -28,7 +28,7 @@ public class OnAccountSignup {
                 + "<p>Thank you for signing up for the __PLAN_NAME__!</p>"
                 + "<p>Here’s some helpful tips to help you get the most out of ClearFlask:</p>"
                 + "<ul>"
-                + "<li>Give a link to ClearFlask to your users and watch the new ideas roll in!</li>"
+                + "<li>Share a link to ClearFlask with your users and watch the new ideas roll in!</li>"
                 + "<li>Start setting up your Product Roadmap and let your users see what you're up to.</li>"
                 + "<li>Turn on email notifications so you don’t miss important feedback, or wait for the weekly summary digest email.</li>"
                 + "</ul>"
@@ -38,7 +38,7 @@ public class OnAccountSignup {
         @DefaultValue("Hello __NAME__,\n\n"
                 + "Thank you for signing up for the __PLAN_NAME__!\n"
                 + "Here’s some helpful tips to help you get the most out of ClearFlask:\n\n"
-                + " - Give a link to ClearFlask to your users and watch the new ideas roll in!\n"
+                + " - Share a link to ClearFlask with your users and watch the new ideas roll in!\n"
                 + " - Start setting up your Product Roadmap and let your users see what you're up to.\n"
                 + " - Turn on email notifications so you don’t miss important feedback, or wait for the weekly summary digest email.\n"
                 + "\nIf you have any questions or need assistance at any time, reach out to support@clearflask.com")
