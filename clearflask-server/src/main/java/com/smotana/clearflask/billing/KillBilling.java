@@ -668,6 +668,7 @@ public class KillBilling extends ManagedService implements Billing {
             if (!transactionOpt.isPresent()) {
                 return Optional.empty();
             }
+            log.trace("Found transaction with requires_action {}", transactionOpt.get());
 
             Optional<String> paymentIntentIdOpt = transactionOpt.get().getProperties().stream()
                     .filter(pluginProperty -> "id".equals(pluginProperty.getKey()))
@@ -681,7 +682,7 @@ public class KillBilling extends ManagedService implements Billing {
             PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentIntentIdOpt.get());
             if (!"requires_action".equals(paymentIntent.getStatus())
                     || paymentIntent.getNextAction() == null) {
-                log.warn("Payment intent in KillBill unresolved while Stripe is resolved, triggering sync for accountIdKb {}", accountIdKb);
+                log.warn("Payment intent in KillBill unresolved while Stripe is resolved, triggering sync for accountIdKb {} payment intent status {} next action {}", accountIdKb, paymentIntent.getStatus(), paymentIntent.getNextAction());
                 syncActions(accountIdKb);
                 return Optional.empty();
             }
