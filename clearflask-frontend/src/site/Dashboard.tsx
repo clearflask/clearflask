@@ -75,6 +75,7 @@ import {BillingPaymentActionRedirect, BillingPaymentActionRedirectPath} from './
 import CreatePage from './dashboard/CreatePage';
 import {renderChangelog} from './dashboard/dashboardChangelog';
 import {dashboardOnDragEnd, OnDndHandled, OnDndPreHandling} from './dashboard/dashboardDndActionHandler';
+import {renderTalk} from './dashboard/dashboardTalk';
 import {renderExplore} from './dashboard/dashboardExplore';
 import {renderFeedback} from './dashboard/dashboardFeedback';
 import DashboardHome from './dashboard/DashboardHome';
@@ -341,6 +342,7 @@ interface State {
     usersPreview?: PreviewState,
     usersPreviewRight?: PreviewState,
     postCreateOnLoggedIn?: (userId: string) => void;
+    talkSelectedConvoId?: string,
     // Below is state for various template options that are updated after publish
     // Null means, we received it, but its not present, undefined means we are still waiting
     landing?: LandingInstance | null;
@@ -576,6 +578,9 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                     ),
                 });
                 break;
+            case 'talk':
+                this.renderTalk(context);
+                break;
             case 'explore':
                 this.renderExplore(context);
                 break;
@@ -720,6 +725,19 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                                         root: this.props.classes.tabRoot,
                                     }}
                                 />
+                                {!context.isSelfhostServiceOnly && !!this.props.account.isSuperAdmin && (
+                                  <Tab
+                                    className={this.props.classes.tab}
+                                    component={Link}
+                                    to="/dashboard/talk"
+                                    value="talk"
+                                    disableRipple
+                                    label={this.props.t('talk')}
+                                    classes={{
+                                        root: this.props.classes.tabRoot,
+                                    }}
+                                  />
+                                )}
                                 {!context.isSelfhostServiceOnly && !!this.state.hasUncategorizedCategories && (
                                     <Tab
                                         className={this.props.classes.tab}
@@ -930,6 +948,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
         return content;
     }
 
+    renderTalk = renderTalk;
     renderExplore = renderExplore;
     renderFeedback = renderFeedback;
     renderRoadmap = renderRoadmap;

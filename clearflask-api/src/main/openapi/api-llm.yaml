@@ -1,0 +1,56 @@
+### SPDX-FileCopyrightText: 2024 Matus Faro <matus@smotana.com>
+### SPDX-License-Identifier: Apache-2.0
+#components:
+#  schemas:
+#    Convo:
+#      type: object
+#      required:
+#        - title
+#      properties:
+#        title:
+#          type: string
+#
+#/project/{projectId}/ai/transactionsearch:
+#  post:
+#    operationId: transactionSearch
+#    tags: [ Credit ]
+#    parameters:
+#      - name: projectId
+#        in: path
+#        required: true
+#        schema:
+#          type: string
+#      - name: userId
+#        in: path
+#        required: true
+#        schema:
+#          type: string
+#      - name: cursor
+#        in: query
+#        schema:
+#          $ref: 'api-client.yaml#/components/schemas/Cursor'
+#    requestBody:
+#      required: true
+#      content:
+#        application/json:
+#          schema:
+#            $ref: 'api-credit.yaml#/components/schemas/TransactionSearch'
+#    responses:
+#      '200':
+#        content:
+#          application/json:
+#            schema:
+#              title: TransactionSearchResponse
+#              type: object
+#              properties:
+#                cursor:
+#                  $ref: 'api-client.yaml#/components/schemas/Cursor'
+#                results:
+#                  type: array
+#                  items:
+#                    $ref: 'api-credit.yaml#/components/schemas/Transaction'
+#                balance:
+#                  $ref: 'api-credit.yaml#/components/schemas/Balance'
+#              required:
+#                - results
+#                - balance

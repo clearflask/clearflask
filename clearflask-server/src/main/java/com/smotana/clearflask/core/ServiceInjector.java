@@ -158,6 +158,10 @@ public enum ServiceInjector {
                 install(WebhookServiceImpl.module());
                 install(DynamoCouponStore.module());
 
+                // LLM
+                install(DynamoLlmHistoryStore.module());
+                install(DiskLlmMemoryStore.module());
+
                 // Notification
                 install(NotificationServiceImpl.module());
                 install(AmazonSimpleEmailServiceProvider.module());
