@@ -14,11 +14,14 @@ const styles = (theme: Theme) => createStyles({
     color: theme.palette.text.hint,
   },
   aiIcon: {
-    margin: theme.spacing(2),
+    margin: theme.spacing(3),
     marginRight: 0,
   },
   inputText: {
-    margin: theme.spacing(1.5),
+    margin: theme.spacing(3),
+  },
+  sendButton: {
+    margin: theme.spacing(3),
   },
 });
 const useStyles = makeStyles(styles);
@@ -66,7 +69,13 @@ export const DashboardTalkInput = (props: {
           }
         }}
       />
-      <Button disabled={isSubmitting} onClick={() => onSubmit()}>Send</Button>
+      <Button
+        className={classes.sendButton}
+        disabled={isSubmitting}
+        onClick={() => onSubmit()}
+      >
+        Send
+      </Button>
     </div>
   );
 };

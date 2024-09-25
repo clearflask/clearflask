@@ -2,34 +2,34 @@
 // SPDX-License-Identifier: Apache-2.0
 import MomentUtils from '@date-io/moment';
 import {
-    Button,
-    Checkbox,
-    Collapse,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogContentText,
-    DialogTitle,
-    FormControl,
-    FormControlLabel,
-    FormHelperText,
-    FormLabel,
-    Grid,
-    IconButton,
-    InputAdornment,
-    InputLabel,
-    Link as MuiLink,
-    MenuItem,
-    Select,
-    Slider,
-    Switch,
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableRow,
-    TextField,
-    Typography,
+  Button,
+  Checkbox,
+  Collapse,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  FormControl,
+  FormControlLabel,
+  FormHelperText,
+  FormLabel,
+  Grid,
+  IconButton,
+  InputAdornment,
+  InputLabel,
+  Link as MuiLink,
+  MenuItem,
+  Select,
+  Slider,
+  Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography,
 } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, useTheme } from '@material-ui/core/styles';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
@@ -55,10 +55,10 @@ import * as AdminClient from '../../api/admin';
 import { ReduxState, Server, StateConf, Status } from '../../api/server';
 import ServerAdmin, { DemoUpdateDelay, Project as AdminProject, ReduxStateAdmin } from '../../api/serverAdmin';
 import AppDynamicPage, {
-    BoardContainer,
-    BoardPanel,
-    LandingLink,
-    PageTitleDescription,
+  BoardContainer,
+  BoardPanel,
+  LandingLink,
+  PageTitleDescription,
 } from '../../app/AppDynamicPage';
 import AppThemeProvider from '../../app/AppThemeProvider';
 import ErrorMsg from '../../app/ErrorMsg';
@@ -2045,8 +2045,8 @@ export const ProjectSettingsLanding = (props: {
                   />
                 </BrowserPreview>
                 <Section
-                  title="Welcome messageModel"
-                  description="Decide on a welcome messageModel for your users"
+                  title="Welcome message"
+                  description="Decide on a welcome message for your users"
                   preview={(
                     <>
                       {(!!landing.pageAndIndex.page.title || !!landing.pageAndIndex.page.description) && (

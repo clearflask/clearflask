@@ -105,9 +105,9 @@ We use information about you for the purposes listed below:
   create new features that we think our users will enjoy and that will help them create and manage websites more
   efficiently or make our Services easier to use.
 * **To market our Services and measure, gauge, and improve the effectiveness of our marketing.** For example, by
-  targeting our marketing messageModels to groups of our users (like those who have a particular plan with us or have
+  targeting our marketing messages to groups of our users (like those who have a particular plan with us or have
   been users for a certain length of time), advertising our Services, analyzing the results of our marketing campaigns (
-  like how many people purchased a paid plan after receiving a marketing messageModel), and understanding and
+  like how many people purchased a paid plan after receiving a marketing message), and understanding and
   forecasting user retention.
 * **To protect our Services, our users, and the public.** For example, by detecting security incidents; detecting and
   protecting against malicious, deceptive, fraudulent, or illegal activity; fighting spam; complying with our legal

@@ -31,7 +31,7 @@ public class DiskLlmMemoryStore implements LlmMemoryStore {
         @DefaultValue("true")
         boolean persistent();
 
-        @DefaultValue("")
+        @DefaultValue("/opt/clearflask/db")
         String dbFileLocation();
 
         @DefaultValue("clearflask-llm-memory-store.db")

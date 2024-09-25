@@ -11,7 +11,7 @@ import javax.ws.rs.Path;
 import org.apache.cxf.jaxrs.ext.ResourceComparator;
 import org.apache.cxf.jaxrs.model.ClassResourceInfo;
 import org.apache.cxf.jaxrs.model.OperationResourceInfo;
-import org.apache.cxf.messageModel.Message;
+import org.apache.cxf.message.Message;
 
 /**
  * This class only help CXF to decide which resource interface is more suitable. It used Java reflexion to iterate over Java methods but it *DO NOT* select the target method.
@@ -21,10 +21,10 @@ public class CXFInterfaceComparator implements ResourceComparator {
    private static final Logger LOGGER = LoggerFactory.getLogger(CXFInterfaceComparator.class);
 
    @Override
-   public int compare(ClassResourceInfo cri1, ClassResourceInfo cri2, Message messageModel) {
-      String requestVerb = (String) messageModel.get(Message.HTTP_REQUEST_METHOD);
-      String requestURI = (String) messageModel.get(Message.REQUEST_URI);
-      String requestPath = requestURI.replace((String) messageModel.get(Message.BASE_PATH), "");
+   public int compare(ClassResourceInfo cri1, ClassResourceInfo cri2, Message message) {
+      String requestVerb = (String) message.get(Message.HTTP_REQUEST_METHOD);
+      String requestURI = (String) message.get(Message.REQUEST_URI);
+      String requestPath = requestURI.replace((String) message.get(Message.BASE_PATH), "");
 
       // remove "/"at the end of requestPath if present
       if (requestPath.endsWith("/")){
@@ -42,7 +42,7 @@ public class CXFInterfaceComparator implements ResourceComparator {
 
    /**
     * Analyse each methods provided to check if there is a match with the
-    * messageModel request path and request HTTP verb.
+    * message request path and request HTTP verb.
     *
     * @param cri
     *            the interface to be analysed
@@ -114,7 +114,7 @@ public class CXFInterfaceComparator implements ResourceComparator {
    }
 
    @Override
-   public int compare(OperationResourceInfo ori1, OperationResourceInfo ori2, Message messageModel) {
+   public int compare(OperationResourceInfo ori1, OperationResourceInfo ori2, Message message) {
       return 0; // Leave CXF decision
    }
 }

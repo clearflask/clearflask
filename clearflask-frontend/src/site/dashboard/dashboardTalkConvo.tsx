@@ -1,9 +1,9 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { shallowEqual, useSelector } from 'react-redux';
-import { ReduxState } from '../../api/server';
+import { ReduxState, Server, Status } from '../../api/server';
 import * as Client from '../../api/client';
 import UserWithAvatarDisplay from '../../common/UserWithAvatarDisplay';
 import classNames from 'classnames';
@@ -51,11 +51,23 @@ const LlmUser = {
 };
 
 export const DashboardTalkConvo = (props: {
+  server: Server;
   convoId: string;
 }) => {
   const classes = useStyles();
+  const status = useSelector<ReduxState, Status | undefined>(state => state.llm.convoDetailsByConvoId[props.convoId]?.status, shallowEqual);
   const messages = useSelector<ReduxState, Client.ConvoMessage[] | undefined>(state => state.llm.convoDetailsByConvoId[props.convoId]?.messages, shallowEqual);
   const loggedInUser = useSelector<ReduxState, Client.User | undefined>(state => state.users.loggedIn.user, shallowEqual);
+
+  useEffect(() => {
+    if (status !== undefined) {
+      return;
+    }
+    props.server.dispatch().then(d => d.convoDetails({
+      projectId: props.server.getProjectId(),
+      convoId: props.convoId,
+    }));
+  }, [props.convoId, props.server, status]);
 
   return (
     <div className={classes.outer}>

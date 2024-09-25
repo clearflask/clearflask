@@ -2,17 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 import MomentUtils from '@date-io/moment';
 import {
-    Box,
-    Button,
-    CardActions,
-    CardHeader,
-    Checkbox,
-    Container,
-    FormControlLabel,
-    Grid,
-    Paper,
-    TextField,
-    Typography,
+  Box,
+  Button,
+  CardActions,
+  CardHeader,
+  Checkbox,
+  Container,
+  FormControlLabel,
+  Grid,
+  Paper,
+  TextField,
+  Typography,
 } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { DateTimePicker } from '@material-ui/pickers/DateTimePicker';
@@ -153,7 +153,7 @@ const forms: ContactForm[] = [
     submitTitle: 'Contact us',
     imagePath: '/img/support/question.svg',
     fields: [
-      { attrName: 'messageModel', type: 'multiline', title: 'Inquiry', required: true },
+      { attrName: 'message', type: 'multiline', title: 'Inquiry', required: true },
       {
         attrName: SUPPORT_MESSAGE_FIELD_CONTACT,
         title: 'Contact',
@@ -201,7 +201,7 @@ class ContactPage extends Component<Props & RouteComponentProps & ConnectProps &
         <Route exact key="success" path={`${prefixMatch}/success`} render={props => (
           <div className={classNames(this.props.classes.page, this.props.classes.growAndFlex)}>
             <Box display="flex" justifyContent="center">
-              <Message severity="success" message="Your messageModel has been sent!" />
+              <Message severity="success" message="Your message has been sent!" />
             </Box>
           </div>
         )} />

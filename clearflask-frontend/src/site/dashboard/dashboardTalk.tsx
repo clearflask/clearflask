@@ -62,7 +62,7 @@ export async function renderTalk(this: Dashboard, context: DashboardPageContext)
     header: {
       title: { title: 'Talk' },
       action: {
-        label: 'New Convo',
+        label: 'New',
         icon: CreateIcon,
         onClick: () => this.setState({ talkSelectedConvoId: undefined }),
       },
@@ -75,7 +75,10 @@ export async function renderTalk(this: Dashboard, context: DashboardPageContext)
       </Provider>
     ) : (
       <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-        <DashboardTalkConvo convoId={this.state.talkSelectedConvoId} />
+        <DashboardTalkConvo
+          server={activeProject.server}
+          convoId={this.state.talkSelectedConvoId}
+        />
       </Provider>
     ),
     barBottom: layoutState => (

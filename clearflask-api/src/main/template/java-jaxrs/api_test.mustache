@@ -134,10 +134,10 @@ public class {{classname}}Test {
         assertNotNull(o);
         Set<ConstraintViolation<Object>> violations = validator.validate(o);
         if (!violations.isEmpty()) {
-            StringBuilder messageModel = new StringBuilder("Validation failed");
+            StringBuilder message = new StringBuilder("Validation failed");
             for (ConstraintViolation<Object> violation : violations)
-                messageModel.append("; ").append(violation.getPropertyPath()).append(": ").append(violation.getMessage());
-            fail(messageModel.toString());
+                message.append("; ").append(violation.getPropertyPath()).append(": ").append(violation.getMessage());
+            fail(message.toString());
         }
     }
 
