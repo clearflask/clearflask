@@ -83,6 +83,13 @@ paths:
     $ref: 'api-content.yaml#/~1project~1{projectId}~1content~1upload'
   /project/{projectId}/admin/content/uploadAs:
     $ref: 'api-content.yaml#/~1project~1{projectId}~1admin~1content~1uploadAs'
+  # api-llm.yaml
+  /project/{projectId}/llm/convo/list:
+    $ref: 'api-llm.yaml#/~1project~1{projectId}~1llm~1convo~1list'
+  /project/{projectId}/llm/convo/{convoId}:
+    $ref: 'api-llm.yaml#/~1project~1{projectId}~1llm~1convo~1{convoId}'
+  /project/{projectId}/llm/message:
+    $ref: 'api-llm.yaml#/~1project~1{projectId}~1llm~1message'
   # api-admin.yaml
   /project/{projectId}/admin/subscription/idea:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1subscription~1idea'

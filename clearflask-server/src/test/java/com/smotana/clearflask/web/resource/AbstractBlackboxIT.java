@@ -148,6 +148,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 CreditResource.module(),
                 CertFetcherImpl.module(),
                 NotificationResource.module(),
+                LlmResource.module(),
                 KillBillResource.module(),
                 GitHubResource.module(),
                 GitHubStoreImpl.module(),

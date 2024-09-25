@@ -1,56 +1,153 @@
 ### SPDX-FileCopyrightText: 2024 Matus Faro <matus@smotana.com>
 ### SPDX-License-Identifier: Apache-2.0
-#components:
-#  schemas:
-#    Convo:
-#      type: object
-#      required:
-#        - title
-#      properties:
-#        title:
-#          type: string
-#
-#/project/{projectId}/ai/transactionsearch:
-#  post:
-#    operationId: transactionSearch
-#    tags: [ Credit ]
-#    parameters:
-#      - name: projectId
-#        in: path
-#        required: true
-#        schema:
-#          type: string
-#      - name: userId
-#        in: path
-#        required: true
-#        schema:
-#          type: string
-#      - name: cursor
-#        in: query
-#        schema:
-#          $ref: 'api-client.yaml#/components/schemas/Cursor'
-#    requestBody:
-#      required: true
-#      content:
-#        application/json:
-#          schema:
-#            $ref: 'api-credit.yaml#/components/schemas/TransactionSearch'
-#    responses:
-#      '200':
-#        content:
-#          application/json:
-#            schema:
-#              title: TransactionSearchResponse
-#              type: object
-#              properties:
-#                cursor:
-#                  $ref: 'api-client.yaml#/components/schemas/Cursor'
-#                results:
-#                  type: array
-#                  items:
-#                    $ref: 'api-credit.yaml#/components/schemas/Transaction'
-#                balance:
-#                  $ref: 'api-credit.yaml#/components/schemas/Balance'
-#              required:
-#                - results
-#                - balance
+components:
+  schemas:
+    Convo:
+      type: object
+      required:
+        - convoId
+        - created
+        - title
+      properties:
+        convoId:
+          type: string
+        created:
+          type: string
+          format: date-time
+        title:
+          type: string
+    ConvoMessage:
+      type: object
+      required:
+        - messageId
+        - created
+        - content
+      properties:
+        messageId:
+          type: string
+        created:
+          type: string
+          format: date-time
+        authorType:
+          type: string
+          enum: [ USER, AI, SYSTEM ]
+        content:
+          type: string
+    ConvoMessageCreate:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+
+/project/{projectId}/llm/convo/list:
+  get:
+    operationId: convoList
+    tags: [ Llm ]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: ConvoListResponse
+              type: object
+              required:
+                - results
+              properties:
+                results:
+                  type: array
+                  items:
+                    $ref: 'api-llm.yaml#/components/schemas/Convo'
+/project/{projectId}/llm/convo/{convoId}:
+  get:
+    operationId: convoDetails
+    tags: [ Llm ]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: convoId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: ConvoDetailsResponse
+              type: object
+              required:
+                - results
+              properties:
+                results:
+                  type: array
+                  items:
+                    $ref: 'api-llm.yaml#/components/schemas/ConvoMessage'
+  delete:
+    operationId: convoDelete
+    tags: [ Llm ]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: convoId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
+/project/{projectId}/llm/message:
+  put:
+    operationId: messageCreate
+    tags: [ Llm ]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: convoId
+        description: If missing, a new convo is created
+        in: query
+        required: false
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-llm.yaml#/components/schemas/ConvoMessageCreate'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: CreateMessageResponse
+              type: object
+              required:
+                - convoId
+                - message
+                - response
+              properties:
+                convoId:
+                  type: string
+                message:
+                  $ref: 'api-llm.yaml#/components/schemas/ConvoMessage'
+                response:
+                  $ref: 'api-llm.yaml#/components/schemas/ConvoMessage'

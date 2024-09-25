@@ -235,6 +235,7 @@ public enum ServiceInjector {
                 install(CommentResource.module());
                 install(CreditResource.module());
                 install(NotificationResource.module());
+                install(LlmResource.module());
 
                 // Billing
                 install(CommonPlanVerifyStore.module());

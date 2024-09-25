@@ -831,7 +831,7 @@
                         </image>
                         <image>
                             <alias>aws-services</alias>
-                            <name>localstack/localstack</name>
+                            <name>localstack/localstack:0.14.3</name>
                             <build>
                                 <createImageOptions>
                                     <platform>${docker.platform}</platform>

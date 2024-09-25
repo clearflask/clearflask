@@ -113,7 +113,7 @@ services:
       - ELASTICSEARCH_URL=http://elasticsearch:9200
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
   localstack:
-    image: localstack/localstack
+    image: localstack/localstack:0.14.3
     privileged: true
     ports:
       - 4566:4566

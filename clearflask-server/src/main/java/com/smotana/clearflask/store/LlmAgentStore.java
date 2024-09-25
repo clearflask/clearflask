@@ -1,5 +1,5 @@
 package com.smotana.clearflask.store;
 
-public interface LlmStore {
+public interface LlmAgentStore {
     // TODO
 }

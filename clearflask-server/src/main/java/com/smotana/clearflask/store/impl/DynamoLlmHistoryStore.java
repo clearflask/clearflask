@@ -11,6 +11,7 @@ import com.google.common.collect.Iterables;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
+import com.smotana.clearflask.api.model.ConvoMessage.AuthorTypeEnum;
 import com.smotana.clearflask.store.LlmHistoryStore;
 import io.dataspray.singletable.IndexSchema;
 import io.dataspray.singletable.SingleTable;
@@ -18,6 +19,7 @@ import io.dataspray.singletable.TableSchema;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.StreamSupport;
 
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
@@ -29,30 +31,38 @@ public class DynamoLlmHistoryStore implements LlmHistoryStore {
     @Inject
     private SingleTable singleTable;
 
-    private TableSchema<Convo> convoSchema;
-    private IndexSchema<Convo> convoByProjectIdSchema;
-    private TableSchema<Message> messageSchema;
+    private TableSchema<ConvoModel> convoSchema;
+    private IndexSchema<ConvoModel> convoByProjectIdSchema;
+    private TableSchema<MessageModel> messageSchema;
 
     @Inject
     private void setup() {
-        convoSchema = singleTable.parseTableSchema(Convo.class);
-        convoByProjectIdSchema = singleTable.parseGlobalSecondaryIndexSchema(2, Convo.class);
-        messageSchema = singleTable.parseTableSchema(Message.class);
+        convoSchema = singleTable.parseTableSchema(ConvoModel.class);
+        convoByProjectIdSchema = singleTable.parseGlobalSecondaryIndexSchema(2, ConvoModel.class);
+        messageSchema = singleTable.parseTableSchema(MessageModel.class);
     }
 
     @Override
-    public Convo createConvo(String projectId, String userId, String title) {
-        Convo convo = new Convo(projectId,
+    public ConvoModel createConvo(String projectId, String userId, String title) {
+        ConvoModel convoModel = new ConvoModel(projectId,
                 userId,
                 genConvoId(),
                 Instant.now(),
                 title);
-        convoSchema.table().putItem(convoSchema.toItem(convo));
-        return convo;
+        convoSchema.table().putItem(convoSchema.toItem(convoModel));
+        return convoModel;
     }
 
     @Override
-    public ImmutableList<Convo> getConvos(String projectId, String userId) {
+    public Optional<ConvoModel> getConvo(String projectId, String userId, String convoId) {
+        return Optional.ofNullable(convoSchema.fromItem(convoSchema.table().getItem(convoSchema.primaryKey(Map.of(
+                "convoId", convoId,
+                "projectId", projectId,
+                "userId", userId)))));
+    }
+
+    @Override
+    public ImmutableList<ConvoModel> listConvos(String projectId, String userId) {
         return StreamSupport.stream(convoSchema.table().query(new QuerySpec()
                                 .withHashKey(convoSchema.partitionKey(Map.of(
                                         "projectId", projectId,
@@ -88,27 +98,27 @@ public class DynamoLlmHistoryStore implements LlmHistoryStore {
                 .forEach(batch -> {
                     TableWriteItems tableWriteItems = new TableWriteItems(messageSchema.tableName());
                     batch.stream()
-                            .map(message -> messageSchema.primaryKey(Map.of(
-                                    "convoId", message.getConvoId(),
-                                    "messageId", message.getMessageId())))
+                            .map(messageModel -> messageSchema.primaryKey(Map.of(
+                                    "convoId", messageModel.getConvoId(),
+                                    "messageId", messageModel.getMessageId())))
                             .forEach(tableWriteItems::addPrimaryKeyToDelete);
                     singleTable.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
                 });
     }
 
     @Override
-    public Message putMessage(String convoId, AuthorType authorType, String content) {
-        Message message = new Message(convoId,
+    public MessageModel putMessage(String convoId, AuthorTypeEnum authorType, String content) {
+        MessageModel messageModel = new MessageModel(convoId,
                 genMessageId(),
                 Instant.now(),
                 authorType,
                 content);
-        messageSchema.table().putItem(messageSchema.toItem(message));
-        return message;
+        messageSchema.table().putItem(messageSchema.toItem(messageModel));
+        return messageModel;
     }
 
     @Override
-    public ImmutableList<Message> getMessages(String convoId) {
+    public ImmutableList<MessageModel> getMessages(String convoId) {
         return StreamSupport.stream(messageSchema.table().query(new QuerySpec()
                                 .withHashKey(messageSchema.partitionKey(Map.of(
                                         "convoId", convoId)))
@@ -132,8 +142,8 @@ public class DynamoLlmHistoryStore implements LlmHistoryStore {
                         .spliterator(), false)
                 .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
                 .map(convoByProjectIdSchema::fromItem)
-                .forEach(convo -> {
-                    deleteConvo(projectId, convo.getUserId(), convo.getConvoId());
+                .forEach(convoModel -> {
+                    deleteConvo(projectId, convoModel.getUserId(), convoModel.getConvoId());
                 });
     }
 

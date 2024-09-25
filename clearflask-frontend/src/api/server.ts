@@ -18,15 +18,17 @@ import ServerMock from './serverMock';
 export type Unsubscribe = () => void;
 export type ErrorSubscriber = ((errorMsg: string, isUserFacing: boolean) => void);
 export type ErrorSubscribers = { [subscriberId: string]: ErrorSubscriber };
-export const errorSubscribers: ErrorSubscribers = {}
+export const errorSubscribers: ErrorSubscribers = {};
 export type ChallengeSubscriber = ((challenge: string) => Promise<string | undefined>);
 export type ChallengeSubscribers = { [subscriberId: string]: ChallengeSubscriber };
-export const challengeSubscribers: ChallengeSubscribers = {}
+export const challengeSubscribers: ChallengeSubscribers = {};
+
 export interface DispatchProps {
   ssr?: boolean;
   ssrStatusPassthrough?: boolean;
   debounce?: boolean | number; // optionally set to expiry in ms
 }
+
 export const ignoreSearchKeys = 'ignoreSearchKeys';
 
 export enum Status {
@@ -86,13 +88,13 @@ export class Server {
       if (storeOther) await storeOther.dispatch(msg);
     } catch (response) {
       if (!isProd()) {
-        console.trace("Dispatch error: ", msg, response);
+        console.trace('Dispatch error: ', msg, response);
       }
       try {
         if (response && response.status === 429 && response.headers && response.headers.has && response.headers.has('x-cf-challenge')) {
           const challengeSubscriber = Object.values(challengeSubscribers)[0];
           if (!challengeSubscriber) {
-            Object.values(errorSubscribers).forEach(subscriber => subscriber && subscriber("Failed to show captcha challenge", true));
+            Object.values(errorSubscribers).forEach(subscriber => subscriber && subscriber('Failed to show captcha challenge', true));
             throw response;
           }
           var solution: string | undefined = await challengeSubscriber(response.headers.get('x-cf-challenge'));
@@ -130,8 +132,8 @@ export class Server {
         }
         Object.values(errorSubscribers).forEach(subscriber => subscriber && subscriber(errorMsg, isUserFacing));
       } catch (err) {
-        console.log("Error dispatching error: ", err);
-        Object.values(errorSubscribers).forEach(subscriber => subscriber && subscriber("Unknown error occurred, please try again", true));
+        console.log('Error dispatching error: ', err);
+        Object.values(errorSubscribers).forEach(subscriber => subscriber && subscriber('Unknown error occurred, please try again', true));
       }
       throw response;
     }
@@ -152,6 +154,7 @@ export class Server {
       credits: stateCreditsDefault,
       notifications: stateNotificationsDefault,
       teammates: stateTeammatesDefault,
+      llm: stateLlmDefault,
     };
     return state;
   }
@@ -189,7 +192,8 @@ export class Server {
 
   static __dispatch<D extends object>(props: DispatchProps = {}, dispatcher: D, debounceCache: Cache): Promise<D> {
     if (!props.ssr && windowIso.isSsr) {
-      return new Promise(() => { }); // Promise that never resolves
+      return new Promise(() => {
+      }); // Promise that never resolves
     }
     var dispatchPromise = Promise.resolve(dispatcher);
 
@@ -241,12 +245,12 @@ export class Server {
                   }
                   // Finally return it
                   return result;
-                }
+                },
               });
             } else {
               return Reflect.get(target, prop);
             }
-          }
+          },
         });
       });
     }
@@ -259,8 +263,8 @@ export class Server {
       windowIso.awaitPromises.push(dispatchPromise);
       // Await all subsequent 'then' calls
       // Note: 'then' is also called during async-await so it works there too.
-      dispatchPromise.then = (function (_super) {
-        return function (this: any) {
+      dispatchPromise.then = (function(_super) {
+        return function(this: any) {
           var apiPromise = _super.apply(this, arguments as any);
           if (!!windowIso.isSsr) windowIso.awaitPromises.push(apiPromise);
           return apiPromise;
@@ -298,7 +302,7 @@ export class Server {
       meta: {
         action: Admin.Action.configGetAdmin,
         request: {
-          projectId: this.getProjectId()
+          projectId: this.getProjectId(),
         },
       },
       payload: { config: config, version: randomUuid() },
@@ -327,9 +331,10 @@ export const getSearchKey = (search?: object): string => {
     searchKey += ';' + key + '=' + JSON.stringify(isObject ? getSearchKey(val) : val);
   });
   return searchKey;
-}
+};
 
 const stateProjectIdDefault = null;
+
 function reducerProjectId(projectId: string | null = stateProjectIdDefault, action: AllActions): string | null {
   switch (action.type) {
     case Admin.configGetAdminActionStatus.Fulfilled:
@@ -346,10 +351,12 @@ export const cssBlurry: Record<string, string | CSSProperties> = {
   color: 'transparent',
   textShadow: '3px 0px 6px rgba(0,0,0,0.8)',
 };
+
 interface updateSettingsAction {
   type: 'updateSettings';
   payload: Partial<StateSettings>;
 }
+
 export interface StateSettings {
   suppressSetTitle?: boolean;
   forceEmbed?: boolean;
@@ -387,6 +394,7 @@ export interface StateSettings {
   demoDisablePostOpen?: boolean;
 };
 const stateSettingsDefault = {};
+
 function reducerSettings(state: StateSettings = stateSettingsDefault, action: AllActions): StateSettings {
   switch (action.type) {
     case 'updateSettings':
@@ -406,7 +414,9 @@ export interface StateConf {
   ver?: string;
   rejectionMessage?: string;
 }
+
 const stateConfDefault = {};
+
 function reducerConf(state: StateConf = stateConfDefault, action: AllActions): StateConf {
   switch (action.type) {
     case Client.configBindSlugActionStatus.Pending:
@@ -453,6 +463,7 @@ interface ideaSearchResultRemoveIdeaAction {
     ideaId: string;
   };
 }
+
 interface ideaSearchResultAddIdeaAction {
   type: 'ideaSearchResultAddIdea';
   payload: {
@@ -461,6 +472,7 @@ interface ideaSearchResultAddIdeaAction {
     index: number;
   };
 }
+
 export interface StateIdeas {
   byId: {
     [ideaId: string]: {
@@ -479,11 +491,13 @@ export interface StateIdeas {
   };
   maxFundAmountSeen: number;
 }
+
 const stateIdeasDefault = {
   byId: {},
   bySearch: {},
   maxFundAmountSeen: 0,
 };
+
 function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions): StateIdeas {
   var searchKey;
   switch (action.type) {
@@ -493,7 +507,7 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
         byId: {
           ...state.byId,
           [action.meta.request.ideaId]: { status: Status.PENDING },
-        }
+        },
       };
     case Client.ideaGetActionStatus.Rejected:
       return {
@@ -501,7 +515,7 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
         byId: {
           ...state.byId,
           [action.meta.request.ideaId]: { status: Status.REJECTED },
-        }
+        },
       };
     case Client.ideaGetActionStatus.Fulfilled:
       return {
@@ -632,7 +646,7 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
                 childCommentCount: (state.byId[postIdWithNewComment].idea?.childCommentCount || 0) + 1,
               }),
             },
-          }
+          },
         },
       };
     case Client.ideaGetAllActionStatus.Pending:
@@ -703,8 +717,8 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
           [searchKey]: {
             ...state.bySearch[searchKey],
             status: Status.PENDING,
-          }
-        }
+          },
+        },
       };
     case Client.ideaSearchActionStatus.Rejected:
     case Admin.ideaSearchAdminActionStatus.Rejected:
@@ -718,8 +732,8 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
           [searchKey]: {
             ...state.bySearch[searchKey],
             status: Status.REJECTED,
-          }
-        }
+          },
+        },
       };
     case Client.ideaSearchActionStatus.Fulfilled:
     case Admin.ideaSearchAdminActionStatus.Fulfilled:
@@ -755,7 +769,7 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
               ),
             cursor: action.payload.cursor,
             filterStatusIds,
-          }
+          },
         },
         maxFundAmountSeen: Math.max(
           (action.payload.results as Client.Idea[]).reduce((max, idea) => Math.max(max, idea.funded || 0), 0) || 0,
@@ -770,7 +784,7 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
           [searchKey]: {
             ...state.bySearch[searchKey],
             ideaIds: (state.bySearch[searchKey]?.ideaIds || []).filter(id => id !== action.payload.ideaId),
-          }
+          },
         },
       };
     case 'ideaSearchResultAddIdea':
@@ -786,7 +800,7 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
               action.payload.ideaId,
               ...(state.bySearch[searchKey]?.ideaIds?.slice(action.payload.index) || []),
             ],
-          }
+          },
         },
       };
     case Client.ideaVoteUpdateActionStatus.Pending:
@@ -858,8 +872,8 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
           [action.meta.request.ideaId]: {
             ...state.byId[action.meta.request.ideaId],
             idea: idea.idea,
-          }
-        }
+          },
+        },
       };
     case Client.ideaVoteUpdateActionStatus.Fulfilled:
       return {
@@ -869,7 +883,7 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
           [action.payload.idea.ideaId]: {
             idea: action.payload.idea,
             status: Status.FULFILLED,
-          }
+          },
         },
         maxFundAmountSeen: Math.max(action.payload.idea.funded || 0, state.maxFundAmountSeen),
       };
@@ -885,6 +899,7 @@ interface draftSearchResultAddDraftAction {
     draftId: string;
   };
 }
+
 export interface StateDrafts {
   byId: {
     [draftId: string]: {
@@ -901,10 +916,12 @@ export interface StateDrafts {
     }
   };
 }
+
 const stateDraftsDefault = {
   byId: {},
   bySearch: {},
 };
+
 function reducerDrafts(state: StateDrafts = stateDraftsDefault, action: AllActions): StateDrafts {
   var searchKey;
   switch (action.type) {
@@ -920,7 +937,7 @@ function reducerDrafts(state: StateDrafts = stateDraftsDefault, action: AllActio
               action.payload.draftId,
               ...(state.bySearch[searchKey]?.draftIds || []),
             ],
-          }
+          },
         },
       };
     case Admin.ideaDraftCreateAdminActionStatus.Fulfilled:
@@ -938,7 +955,7 @@ function reducerDrafts(state: StateDrafts = stateDraftsDefault, action: AllActio
     case Admin.ideaCreateAdminActionStatus.Fulfilled:
       const draftIdToDelete = action.type === Admin.ideaDraftDeleteAdminActionStatus.Fulfilled
         ? action.meta.request.draftId
-        : action.meta.request.deleteDraftId
+        : action.meta.request.deleteDraftId;
       if (!draftIdToDelete) return state;
       const { [draftIdToDelete]: removedDraft, ...byIdWithoutDeleted } = state.byId;
       return {
@@ -997,8 +1014,8 @@ function reducerDrafts(state: StateDrafts = stateDraftsDefault, action: AllActio
           [searchKey]: {
             ...state.bySearch[searchKey],
             status: Status.PENDING,
-          }
-        }
+          },
+        },
       };
     case Admin.ideaDraftSearchAdminActionStatus.Rejected:
       searchKey = getSearchKey(action.meta.request.ideaDraftSearch);
@@ -1009,8 +1026,8 @@ function reducerDrafts(state: StateDrafts = stateDraftsDefault, action: AllActio
           [searchKey]: {
             ...state.bySearch[searchKey],
             status: Status.REJECTED,
-          }
-        }
+          },
+        },
       };
     case Admin.ideaDraftSearchAdminActionStatus.Fulfilled:
       searchKey = getSearchKey(action.meta.request.ideaDraftSearch);
@@ -1039,7 +1056,7 @@ function reducerDrafts(state: StateDrafts = stateDraftsDefault, action: AllActio
                 action.payload.results.map(draft => draft.draftId)
               ),
             cursor: action.payload.cursor,
-          }
+          },
         },
       };
     default:
@@ -1075,12 +1092,14 @@ export interface StateComments {
     }
   };
 }
+
 const stateCommentsDefault = {
   byId: {},
   byIdeaIdOrParentCommentId: {},
   bySearch: {},
   bySearchAdmin: {},
 };
+
 function reducerComments(state: StateComments = stateCommentsDefault, action: AllActions): StateComments {
   var searchKey;
   switch (action.type) {
@@ -1091,8 +1110,8 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
           ...state.byIdeaIdOrParentCommentId,
           [action.meta.request.ideaCommentSearch.parentCommentId || action.meta.request.ideaId]: {
             ...state.byIdeaIdOrParentCommentId[action.meta.request.ideaCommentSearch.parentCommentId || action.meta.request.ideaId],
-            status: Status.PENDING
-          }
+            status: Status.PENDING,
+          },
         },
       };
     case Client.ideaCommentSearchActionStatus.Rejected:
@@ -1102,8 +1121,8 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
           ...state.byIdeaIdOrParentCommentId,
           [action.meta.request.ideaCommentSearch.parentCommentId || action.meta.request.ideaId]: {
             ...state.byIdeaIdOrParentCommentId[action.meta.request.ideaCommentSearch.parentCommentId || action.meta.request.ideaId],
-            status: Status.REJECTED
-          }
+            status: Status.REJECTED,
+          },
         },
       };
     case Client.commentDeleteActionStatus.Fulfilled:
@@ -1119,7 +1138,7 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
           [action.meta.request.commentId]: {
             status: Status.FULFILLED,
             comment,
-          }
+          },
         },
       };
     case Client.ideaCommentSearchActionStatus.Fulfilled:
@@ -1130,8 +1149,8 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
           ...state.byIdeaIdOrParentCommentId,
           [action.meta.request.ideaCommentSearch.parentCommentId || action.meta.request.ideaId]: {
             ...state.byIdeaIdOrParentCommentId[action.meta.request.ideaCommentSearch.parentCommentId || action.meta.request.ideaId],
-            status: Status.FULFILLED
-          }
+            status: Status.FULFILLED,
+          },
         },
       };
       // Then put all the comments in the right places
@@ -1144,7 +1163,7 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
             ...(newState.byIdeaIdOrParentCommentId[comment.parentCommentId || action.meta.request.ideaId]?.commentIds || []),
             comment.commentId,
           ]),
-        }
+        },
       });
       return {
         ...newState,
@@ -1176,7 +1195,7 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
               ...(state.byIdeaIdOrParentCommentId[action.payload.parentCommentId || action.payload.ideaId] && state.byIdeaIdOrParentCommentId[action.payload.parentCommentId || action.payload.ideaId].commentIds || []),
               action.payload.commentId,
             ]),
-          }
+          },
         },
         byId: {
           ...state.byId,
@@ -1198,7 +1217,7 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
                   ...state.byId[parentCommentOrMergedPostId].comment as any,
                   childCommentCount: (state.byId[parentCommentOrMergedPostId].comment?.childCommentCount || 0) + 1,
                 },
-              }
+              },
             }
             : {}),
         },
@@ -1212,8 +1231,8 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
           [searchKey]: {
             ...state.bySearch[searchKey],
             status: Status.PENDING,
-          }
-        }
+          },
+        },
       };
     case Client.commentSearchActionStatus.Rejected:
       searchKey = getSearchKey(action.meta.request.commentSearch);
@@ -1224,8 +1243,8 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
           [searchKey]: {
             ...state.bySearch[searchKey],
             status: Status.REJECTED,
-          }
-        }
+          },
+        },
       };
     case Client.commentSearchActionStatus.Fulfilled:
       searchKey = getSearchKey(action.meta.request.commentSearch);
@@ -1254,7 +1273,7 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
                 action.payload.results.map(comment => comment.commentId)
               ),
             cursor: action.payload.cursor,
-          }
+          },
         },
       };
     case Admin.commentSearchAdminActionStatus.Pending:
@@ -1266,8 +1285,8 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
           [searchKey]: {
             ...state.bySearchAdmin[searchKey],
             status: Status.PENDING,
-          }
-        }
+          },
+        },
       };
     case Admin.commentSearchAdminActionStatus.Rejected:
       searchKey = getSearchKey(action.meta.request.commentSearchAdmin);
@@ -1278,8 +1297,8 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
           [searchKey]: {
             ...state.bySearchAdmin[searchKey],
             status: Status.REJECTED,
-          }
-        }
+          },
+        },
       };
     case Admin.commentSearchAdminActionStatus.Fulfilled:
       searchKey = getSearchKey(action.meta.request.commentSearchAdmin);
@@ -1308,11 +1327,14 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
                 action.payload.results.map(comment => comment.commentId)
               ),
             cursor: action.payload.cursor,
-          }
+          },
         },
       };
     case Admin.ideaUnMergeAdminActionStatus.Fulfilled:
-      const { [action.meta.request.ideaId]: removedMergedPostAsComment, ...byIdWithoutMergedPostAsComment } = state.byId;
+      const {
+        [action.meta.request.ideaId]: removedMergedPostAsComment,
+        ...byIdWithoutMergedPostAsComment
+      } = state.byId;
       if (!removedMergedPostAsComment) return state;
       return {
         ...state,
@@ -1343,11 +1365,13 @@ export interface StateUsers {
     user?: Client.UserMe,
   };
 }
+
 const stateUsersDefault = {
   byId: {},
   bySearch: {},
   loggedIn: {},
 };
+
 function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions): StateUsers {
   var searchKey;
   switch (action.type) {
@@ -1360,8 +1384,8 @@ function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions)
           [searchKey]: {
             ...state.bySearch[searchKey],
             status: Status.PENDING,
-          }
-        }
+          },
+        },
       };
     case Admin.userSearchAdminActionStatus.Rejected:
       searchKey = getSearchKey(action.meta.request.userSearchAdmin);
@@ -1372,8 +1396,8 @@ function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions)
           [searchKey]: {
             ...state.bySearch[searchKey],
             status: Status.REJECTED,
-          }
-        }
+          },
+        },
       };
     case Admin.userSearchAdminActionStatus.Fulfilled:
       searchKey = getSearchKey(action.meta.request.userSearchAdmin);
@@ -1402,7 +1426,7 @@ function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions)
                 action.payload.results.map(user => user.userId)
               ),
             cursor: action.payload.cursor,
-          }
+          },
         },
       };
     case Admin.ideaVotersGetAdminActionStatus.Fulfilled:
@@ -1429,8 +1453,8 @@ function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions)
           ...state.byId,
           [action.meta.request.userId]: {
             status: Status.PENDING,
-          }
-        }
+          },
+        },
       };
     case Admin.userUpdateAdminActionStatus.Rejected:
     case Client.userGetActionStatus.Rejected:
@@ -1441,8 +1465,8 @@ function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions)
           ...state.byId,
           [action.meta.request.userId]: {
             status: Status.REJECTED,
-          }
-        }
+          },
+        },
       };
     case Admin.userUpdateAdminActionStatus.Fulfilled:
     case Client.userGetActionStatus.Fulfilled:
@@ -1495,7 +1519,7 @@ function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions)
           [action.payload.user.userId]: {
             user: action.payload.user,
             status: Status.FULFILLED,
-          }
+          },
         },
         loggedIn: {
           user: action.payload.user,
@@ -1516,7 +1540,7 @@ function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions)
           [user.userId]: {
             user,
             status: Status.FULFILLED,
-          }
+          },
         },
         loggedIn: {
           user,
@@ -1556,6 +1580,7 @@ export interface StateVotes {
   expressionByIdeaId: { [ideaId: string]: Array<string> };
   fundAmountByIdeaId: { [ideaId: string]: number };
 }
+
 const stateVotesDefault = {
   statusByIdeaId: {},
   votesByIdeaId: {},
@@ -1563,6 +1588,7 @@ const stateVotesDefault = {
   expressionByIdeaId: {},
   fundAmountByIdeaId: {},
 };
+
 function reducerVotes(state: StateVotes = stateVotesDefault, action: AllActions): StateVotes {
   switch (action.type) {
     case Client.ideaVoteGetOwnActionStatus.Pending:
@@ -1630,17 +1656,17 @@ function reducerVotes(state: StateVotes = stateVotesDefault, action: AllActions)
           expressionByIdeaId: {
             ...state.expressionByIdeaId,
             [action.meta.request.ideaId]:
-              action.meta.request.ideaVoteUpdate.expressions.action === Client.IdeaVoteUpdateExpressionsActionEnum.Set
-              && [action.meta.request.ideaVoteUpdate.expressions.expression!]
-              || action.meta.request.ideaVoteUpdate.expressions.action === Client.IdeaVoteUpdateExpressionsActionEnum.Unset
-              && []
-              || action.meta.request.ideaVoteUpdate.expressions.action === Client.IdeaVoteUpdateExpressionsActionEnum.Add
-              && [...new Set<string>([
-                action.meta.request.ideaVoteUpdate.expressions.expression!,
-                ...(state.expressionByIdeaId[action.meta.request.ideaId] || []),])]
-              || action.meta.request.ideaVoteUpdate.expressions.action === Client.IdeaVoteUpdateExpressionsActionEnum.Remove
-              && (state.expressionByIdeaId[action.meta.request.ideaId] || []).filter(e => e !== action.meta.request.ideaVoteUpdate.expressions!.expression)
-              || [],
+            action.meta.request.ideaVoteUpdate.expressions.action === Client.IdeaVoteUpdateExpressionsActionEnum.Set
+            && [action.meta.request.ideaVoteUpdate.expressions.expression!]
+            || action.meta.request.ideaVoteUpdate.expressions.action === Client.IdeaVoteUpdateExpressionsActionEnum.Unset
+            && []
+            || action.meta.request.ideaVoteUpdate.expressions.action === Client.IdeaVoteUpdateExpressionsActionEnum.Add
+            && [...new Set<string>([
+              action.meta.request.ideaVoteUpdate.expressions.expression!,
+              ...(state.expressionByIdeaId[action.meta.request.ideaId] || [])])]
+            || action.meta.request.ideaVoteUpdate.expressions.action === Client.IdeaVoteUpdateExpressionsActionEnum.Remove
+            && (state.expressionByIdeaId[action.meta.request.ideaId] || []).filter(e => e !== action.meta.request.ideaVoteUpdate.expressions!.expression)
+            || [],
           },
         } : {}),
         ...(action.meta.request.ideaVoteUpdate.fundDiff ? {
@@ -1667,17 +1693,17 @@ function reducerVotes(state: StateVotes = stateVotesDefault, action: AllActions)
           expressionByIdeaId: {
             ...state.expressionByIdeaId,
             [action.meta.request.ideaId]:
-              action.meta.request.ideaVoteUpdate.expressions.action === Client.IdeaVoteUpdateExpressionsActionEnum.Set
-              && []
-              || action.meta.request.ideaVoteUpdate.expressions.action === Client.IdeaVoteUpdateExpressionsActionEnum.Unset
-              && [...(action.meta.request.ideaVoteUpdate.expressions.expression ? [action.meta.request.ideaVoteUpdate.expressions.expression] : [])]
-              || action.meta.request.ideaVoteUpdate.expressions.action === Client.IdeaVoteUpdateExpressionsActionEnum.Add
-              && (state.expressionByIdeaId[action.meta.request.ideaId] || []).filter(e => e !== action.meta.request.ideaVoteUpdate.expressions!.expression)
-              || action.meta.request.ideaVoteUpdate.expressions.action === Client.IdeaVoteUpdateExpressionsActionEnum.Remove
-              && [...new Set<string>([
-                action.meta.request.ideaVoteUpdate.expressions.expression!,
-                ...(state.expressionByIdeaId[action.meta.request.ideaId] || []),])]
-              || [],
+            action.meta.request.ideaVoteUpdate.expressions.action === Client.IdeaVoteUpdateExpressionsActionEnum.Set
+            && []
+            || action.meta.request.ideaVoteUpdate.expressions.action === Client.IdeaVoteUpdateExpressionsActionEnum.Unset
+            && [...(action.meta.request.ideaVoteUpdate.expressions.expression ? [action.meta.request.ideaVoteUpdate.expressions.expression] : [])]
+            || action.meta.request.ideaVoteUpdate.expressions.action === Client.IdeaVoteUpdateExpressionsActionEnum.Add
+            && (state.expressionByIdeaId[action.meta.request.ideaId] || []).filter(e => e !== action.meta.request.ideaVoteUpdate.expressions!.expression)
+            || action.meta.request.ideaVoteUpdate.expressions.action === Client.IdeaVoteUpdateExpressionsActionEnum.Remove
+            && [...new Set<string>([
+              action.meta.request.ideaVoteUpdate.expressions.expression!,
+              ...(state.expressionByIdeaId[action.meta.request.ideaId] || [])])]
+            || [],
           },
         } : {}),
         ...(action.meta.request.ideaVoteUpdate.fundDiff ? {
@@ -1816,10 +1842,12 @@ export interface StateCommentVotes {
   statusByCommentId: { [commentId: string]: Status };
   votesByCommentId: { [commentId: string]: Client.VoteOption };
 }
+
 const stateCommentVotesDefault = {
   statusByCommentId: {},
   votesByCommentId: {},
 };
+
 function reducerCommentVotes(state: StateCommentVotes = stateCommentVotesDefault, action: AllActions): StateCommentVotes {
   switch (action.type) {
     case Client.commentVoteGetOwnActionStatus.Pending:
@@ -1954,12 +1982,14 @@ export interface StateCredits {
   myBalance: {
     status?: Status;
     balance?: number;
-  }
+  };
 }
+
 const stateCreditsDefault = {
   transactionSearch: {},
   myBalance: {},
 };
+
 function reducerCredits(state: StateCredits = stateCreditsDefault, action: AllActions): StateCredits {
   switch (action.type) {
     case Client.transactionSearchActionStatus.Pending:
@@ -2007,7 +2037,7 @@ function reducerCredits(state: StateCredits = stateCreditsDefault, action: AllAc
           myBalance: {
             status: Status.FULFILLED,
             balance: action.payload.balance.balance,
-          }
+          },
         } : {}),
         ...(action.payload.transaction !== undefined ? {
           transactionSearch: {},
@@ -2067,9 +2097,11 @@ export interface StateNotifications {
     cursor?: string;
   };
 }
+
 const stateNotificationsDefault = {
   notificationSearch: {},
 };
+
 function reducerNotifications(state: StateNotifications = stateNotificationsDefault, action: AllActions): StateNotifications {
   switch (action.type) {
     case Client.notificationSearchActionStatus.Pending:
@@ -2132,7 +2164,9 @@ export interface StateTeammates {
     invitations?: Array<Admin.InvitationAdmin>;
   };
 }
+
 const stateTeammatesDefault = {};
+
 function reducerTeammates(state: StateTeammates = stateTeammatesDefault, action: AllActions): StateTeammates {
   switch (action.type) {
     case Admin.projectAdminsRemoveAdminActionStatus.Fulfilled:
@@ -2181,6 +2215,122 @@ function reducerTeammates(state: StateTeammates = stateTeammatesDefault, action:
   }
 }
 
+export interface StateLlm {
+  convoList?: {
+    status?: Status;
+    convos?: Array<Client.Convo>;
+  };
+  convoDetailsByConvoId: {
+    [convoId: string]: {
+      status?: Status;
+      messages?: Client.ConvoMessage[];
+    };
+  };
+}
+
+const stateLlmDefault: StateLlm = {
+  convoDetailsByConvoId: {},
+};
+
+function reducerLlm(state: StateLlm = stateLlmDefault, action: AllActions): StateLlm {
+  switch (action.type) {
+    case Client.convoListActionStatus.Fulfilled:
+      return {
+        ...state,
+        convoList: {
+          status: Status.FULFILLED,
+          convos: action.payload.results,
+        },
+      };
+    case Client.convoListActionStatus.Pending:
+      return {
+        ...state,
+        convoList: {
+          ...state.convoList,
+          status: Status.PENDING,
+        },
+      };
+    case Client.convoListActionStatus.Rejected:
+      return {
+        ...state,
+        convoList: {
+          ...state.convoList,
+          status: Status.REJECTED,
+        },
+      };
+    case Client.convoDetailsActionStatus.Fulfilled:
+      return {
+        ...state,
+        convoDetailsByConvoId: {
+          ...state.convoDetailsByConvoId,
+          [action.meta.request.convoId]: {
+            status: Status.FULFILLED,
+            messages: action.payload.results,
+          },
+        },
+      };
+    case Client.convoDetailsActionStatus.Pending:
+      return {
+        ...state,
+        convoDetailsByConvoId: {
+          ...state.convoDetailsByConvoId,
+          [action.meta.request.convoId]: {
+            ...state.convoDetailsByConvoId[action.meta.request.convoId],
+            status: Status.PENDING,
+          },
+        },
+      };
+    case Client.convoDetailsActionStatus.Rejected:
+      return {
+        ...state,
+        convoDetailsByConvoId: {
+          ...state.convoDetailsByConvoId,
+          [action.meta.request.convoId]: {
+            ...state.convoDetailsByConvoId[action.meta.request.convoId],
+            status: Status.REJECTED,
+          },
+        },
+      };
+    case Client.convoDeleteActionStatus.Fulfilled:
+      const {
+        [action.meta.request.convoId]: removedConvo,
+        ...convoDetailsByConvoIdWithoutDeleted
+      } = state.convoDetailsByConvoId;
+      return {
+        ...state,
+        convoDetailsByConvoId: convoDetailsByConvoIdWithoutDeleted,
+      };
+    case Client.messageCreateActionStatus.Fulfilled:
+      return {
+        ...state,
+        convoList: action.meta.request.convoId !== undefined ? state.convoList : {
+          ...state.convoList,
+          convos: [
+            ...state.convoList?.convos || [],
+            {
+              ...state.convoList?.convos?.[action.payload.convoId],
+              convoId: action.payload.convoId,
+              created: action.payload.message.created,
+              title: action.payload.message.content,
+            },
+          ],
+        },
+        convoDetailsByConvoId: {
+          ...state.convoDetailsByConvoId,
+          [action.payload.convoId]: {
+            messages: [
+              ...(state.convoDetailsByConvoId[action.payload.convoId]?.messages || []),
+              action.payload.message,
+              action.payload.response,
+            ],
+          },
+        },
+      };
+    default:
+      return state;
+  }
+}
+
 export interface ReduxState {
   projectId: string | null;
   settings: StateSettings;
@@ -2194,7 +2344,9 @@ export interface ReduxState {
   credits: StateCredits;
   notifications: StateNotifications;
   teammates: StateTeammates;
+  llm: StateLlm;
 }
+
 export const reducers = combineReducers({
   projectId: reducerProjectId,
   settings: reducerSettings,
@@ -2208,6 +2360,7 @@ export const reducers = combineReducers({
   credits: reducerCredits,
   notifications: reducerNotifications,
   teammates: reducerTeammates,
+  llm: reducerLlm,
   ...({
     loadingBar: loadingBarReducer,
   } as {}),

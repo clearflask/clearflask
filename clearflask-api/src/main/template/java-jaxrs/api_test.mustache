@@ -97,7 +97,7 @@ public class {{classname}}Test {
 {{#generateSpringBootApplication}}
     @LocalServerPort
     private int serverPort;
-{{/generateSpringBootApplication}}    
+{{/generateSpringBootApplication}}
 
     private {{classname}} api;
 
@@ -105,23 +105,23 @@ public class {{classname}}Test {
     public void setup() {
         List<?> providers = Arrays.asList(new JacksonJsonProvider(), new JacksonXMLProvider(), new MultipartProvider());
 
-{{#generateSpringBootApplication}}        
+{{#generateSpringBootApplication}}
         api = JAXRSClientFactory.create("http://localhost:" + serverPort + "/services", {{classname}}.class, providers);
-{{/generateSpringBootApplication}}        
+{{/generateSpringBootApplication}}
 {{^generateSpringBootApplication}}
         api = JAXRSClientFactory.create("{{{basePath}}}", {{classname}}.class, providers);
 {{/generateSpringBootApplication}}
         org.apache.cxf.jaxrs.client.Client client = WebClient.client(api);
 
-        ClientConfiguration config = WebClient.getConfig(client); 
-{{#useGzipFeatureForTests}}        
+        ClientConfiguration config = WebClient.getConfig(client);
+{{#useGzipFeatureForTests}}
         // Example for using Gzipping
         GZIPOutInterceptor gzipOutInterceptor = new GZIPOutInterceptor();
         // use Gzipping for first request sent to server
         //gzipOutInterceptor.setForce(true);
         config.getOutInterceptors().add(gzipOutInterceptor);
 
-        config.getInInterceptors().add(new GZIPInInterceptor()); 
+        config.getInInterceptors().add(new GZIPInInterceptor());
 {{/useGzipFeatureForTests}}
 {{#useLoggingFeatureForTests}}
         LoggingOutInterceptor loggingOutInterceptor = new LoggingOutInterceptor();
@@ -134,10 +134,10 @@ public class {{classname}}Test {
         assertNotNull(o);
         Set<ConstraintViolation<Object>> violations = validator.validate(o);
         if (!violations.isEmpty()) {
-            StringBuilder message = new StringBuilder("Validation failed");
+            StringBuilder messageModel = new StringBuilder("Validation failed");
             for (ConstraintViolation<Object> violation : violations)
-                message.append("; ").append(violation.getPropertyPath()).append(": ").append(violation.getMessage());
-            fail(message.toString());
+                messageModel.append("; ").append(violation.getPropertyPath()).append(": ").append(violation.getMessage());
+            fail(messageModel.toString());
         }
     }
 

@@ -49,7 +49,7 @@ any acts or omissions by you, including any damages of any kind incurred as a re
 
 When you create an account, we consider that to be an inquiry about our products and services, which means that we may
 contact you to share more details about what we have to offer. Don't worry -- if you aren't interested in learning more,
-you can opt out of the marketing communication, whether it's an email, phone call, or text message.
+you can opt out of the marketing communication, whether it's an email, phone call, or text messageModel.
 
 ## 3\. Minimum Age Requirements
 
@@ -148,7 +148,7 @@ You represent and warrant that your use of our Services:
 * Will not infringe or misappropriate the intellectual property rights of any third party;
 * Will not overburden Smotana’s systems, as determined by us in our sole discretion;
 * Will not disclose sensitive personal information of others;
-* Will not be used to send spam or bulk unsolicited messages;
+* Will not be used to send spam or bulk unsolicited messageModels;
 * Will not interfere with, disrupt, or attack any service or network; and
 * Will not be used to create, distribute, or enable material that is - or that facilitates or operates in conjunction
   with - malware, spyware, adware, or other malicious programs or code.

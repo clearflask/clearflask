@@ -208,7 +208,7 @@
     "npm-force-resolutions": "0.0.3",
     "npx": "10.2.2",
     "react-app-rewired": "2.1.8",
-    "react-dev-utils": "11.0.4",
+    "react-dev-utils": "12.0.1",
     "style-loader": "1.3.0",
     "terser-webpack-plugin": "4.2.3",
     "ts-node": "9.1.1",

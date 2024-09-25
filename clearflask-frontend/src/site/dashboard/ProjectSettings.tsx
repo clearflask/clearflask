@@ -2,34 +2,34 @@
 // SPDX-License-Identifier: Apache-2.0
 import MomentUtils from '@date-io/moment';
 import {
-  Button,
-  Checkbox,
-  Collapse,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  FormControl,
-  FormControlLabel,
-  FormHelperText,
-  FormLabel,
-  Grid,
-  IconButton,
-  InputAdornment,
-  InputLabel,
-  Link as MuiLink,
-  MenuItem,
-  Select,
-  Slider,
-  Switch,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TextField,
-  Typography,
+    Button,
+    Checkbox,
+    Collapse,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    FormControl,
+    FormControlLabel,
+    FormHelperText,
+    FormLabel,
+    Grid,
+    IconButton,
+    InputAdornment,
+    InputLabel,
+    Link as MuiLink,
+    MenuItem,
+    Select,
+    Slider,
+    Switch,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableRow,
+    TextField,
+    Typography,
 } from '@material-ui/core';
 import { createStyles, makeStyles, Theme, useTheme } from '@material-ui/core/styles';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
@@ -55,10 +55,10 @@ import * as AdminClient from '../../api/admin';
 import { ReduxState, Server, StateConf, Status } from '../../api/server';
 import ServerAdmin, { DemoUpdateDelay, Project as AdminProject, ReduxStateAdmin } from '../../api/serverAdmin';
 import AppDynamicPage, {
-  BoardContainer,
-  BoardPanel,
-  LandingLink,
-  PageTitleDescription,
+    BoardContainer,
+    BoardPanel,
+    LandingLink,
+    PageTitleDescription,
 } from '../../app/AppDynamicPage';
 import AppThemeProvider from '../../app/AppThemeProvider';
 import ErrorMsg from '../../app/ErrorMsg';
@@ -432,7 +432,8 @@ export const ProjectSettingsTeammatesList = (props: {
             <TableRow key={invitation.invitationId}>
               <TableCell key="name"><Typography></Typography></TableCell>
               <TableCell key="email"><Typography>{invitation.email}</Typography></TableCell>
-              <TableCell key="role"><Typography className={classes.rolePending}>Pending</Typography></TableCell>
+              <TableCell key="role"><Typography
+                className={classes.rolePending}>Pending</Typography></TableCell>
               <TableCell key="action">
                 {// Because reducer makes a mock invitation with empty invitationId, Only show remove button if not empty
                   !!invitation.invitationId && (
@@ -475,7 +476,8 @@ export const ProjectSettingsTeammatesList = (props: {
       >
         <DialogTitle>Remove teammate</DialogTitle>
         <DialogContent>
-          <DialogContentText>Are you sure you want to remove your teammate from this project? This will not remove their
+          <DialogContentText>Are you sure you want to remove your teammate from this project? This will not
+            remove their
             contributions nor any project users/mods they may have created and may still have access
             to.</DialogContentText>
         </DialogContent>
@@ -575,7 +577,8 @@ export const ProjectSettingsTeammatesPermissionsInfo = (props: {}) => {
         <TableBody>
           {permissions.map((permission, permisionIndex) => (
             <TableRow key={permisionIndex}>
-              <TableCell key="permission"><Typography>{permission[permission.length - 1]}</Typography></TableCell>
+              <TableCell
+                key="permission"><Typography>{permission[permission.length - 1]}</Typography></TableCell>
               {permission.map((item, itemIndex, itemArr) => (itemIndex < (itemArr.length - 1)) ? (
                 <TableCell key={itemIndex}>{!!item && (<CheckIcon color="primary" />)}</TableCell>
               ) : null)}
@@ -616,7 +619,8 @@ export const ProjectSettingsInstallPortal = (props: {
       )}
       content={(
         <>
-          <p><Typography>Link your product directly to the full portal. Add the following link to your product's
+          <p><Typography>Link your product directly to the full portal. Add the following link to your
+            product's
             website.</Typography></p>
         </>
       )}
@@ -639,10 +643,12 @@ export const ProjectSettingsInstallWidget = (props: {
       )}
       content={(
         <>
-          <p><Typography>The widget is a simple IFrame tag that can be put anywhere on your site.</Typography></p>
+          <p><Typography>The widget is a simple IFrame tag that can be put anywhere on your site.</Typography>
+          </p>
           <p><Typography>You can even put it inside a popup:</Typography></p>
           <ProjectSettingsInstallWidgetPopupSwitch popup={popup} setPopup={setPopup} />
-          <p><Typography>Embed the whole portal or an individual page without the navigation menu:</Typography></p>
+          <p><Typography>Embed the whole portal or an individual page without the navigation
+            menu:</Typography></p>
           <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
             <ProjectSettingsInstallWidgetPath server={props.server} widgetPath={widgetPath}
                                               setWidgetPath={setWidgetPath} />
@@ -672,12 +678,14 @@ export const ProjectSettingsInstallStatus = (props: {
       title="Status"
       preview={(
         <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
-          <ProjectSettingsInstallStatusPreview server={props.server} postId={statusPostId} config={statusConfig} />
+          <ProjectSettingsInstallStatusPreview server={props.server} postId={statusPostId}
+                                               config={statusConfig} />
         </Provider>
       )}
       content={(
         <>
-          <p><Typography>You can also embed the Status of an idea, or a roadmap item. This is useful if you want to show
+          <p><Typography>You can also embed the Status of an idea, or a roadmap item. This is useful if you
+            want to show
             an upcoming feature or build your own Roadmap.</Typography></p>
           <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
             <PostSelection
@@ -1112,8 +1120,10 @@ export const ProjectSettingsBranding = (props: {
         )}
         content={(
           <>
-            <PropertyByPath server={props.server} editor={props.editor} path={['style', 'palette', 'primary']} />
-            <PropertyByPath server={props.server} editor={props.editor} path={['style', 'palette', 'darkMode']} />
+            <PropertyByPath server={props.server} editor={props.editor}
+                            path={['style', 'palette', 'primary']} />
+            <PropertyByPath server={props.server} editor={props.editor}
+                            path={['style', 'palette', 'darkMode']} />
           </>
         )}
       />
@@ -1122,7 +1132,8 @@ export const ProjectSettingsBranding = (props: {
           title="Whitelabel"
           content={(
             <>
-              <PropertyByPath server={props.server} editor={props.editor} path={['style', 'whitelabel', 'poweredBy']} />
+              <PropertyByPath server={props.server} editor={props.editor}
+                              path={['style', 'whitelabel', 'poweredBy']} />
             </>
           )}
         />
@@ -1155,17 +1166,21 @@ export const ProjectSettingsDomain = (props: {
       <TourAnchor anchorId="settings-domain-custom" placement="top-start">
         {(next, isActive, anchorRef) => (
           <div ref={anchorRef} className={classes.domainField}>
-            <Typography variant="h6" component="div" className={classes.domainFieldText}>https://&nbsp;</Typography>
-            <PropertyByPath overrideDescription="" server={props.server} editor={props.editor} path={['domain']}
+            <Typography variant="h6" component="div"
+                        className={classes.domainFieldText}>https://&nbsp;</Typography>
+            <PropertyByPath overrideDescription="" server={props.server} editor={props.editor}
+                            path={['domain']}
                             TextFieldProps={{ onKeyDown: next }} />
           </div>
         )}
       </TourAnchor>
       <TourAnchor anchorId="settings-domain-dns-info" placement="bottom">
-        <Typography variant="body1" component="div">Ensure your DNS settings are configured with your domain set to
+        <Typography variant="body1" component="div">Ensure your DNS settings are configured with your domain set
+          to
           CNAME sni.clearflask.com</Typography>
         {detectEnv() !== Environment.PRODUCTION_SELF_HOST && (
-          <Typography variant="caption" component="div">NOTE: First request to a custom domain always bypasses our
+          <Typography variant="caption" component="div">NOTE: First request to a custom domain always bypasses
+            our
             global CDN, contact support if you need both.</Typography>
         )}
       </TourAnchor>
@@ -1770,7 +1785,8 @@ export const ProjectSettingsUsersOauth = (props: {
               </Select>
             </FormControl>
             <Collapse mountOnEnter in={newOauthType === 'Custom'}>
-              <p>To setup OAuth, you need to register first. If you are having trouble filling out all the fields,
+              <p>To setup OAuth, you need to register first. If you are having trouble filling out all the
+                fields,
                 please contact support.</p>
               <p>You may be asked to provide a <b>Redirect URL</b> for security measures:</p>
               {projectLink && (
@@ -1778,23 +1794,27 @@ export const ProjectSettingsUsersOauth = (props: {
               )}
             </Collapse>
             <Collapse mountOnEnter in={!!newOauthType && newOauthType !== 'Custom'}>
-              <p>To setup OAuth for {newOauthType}, you need to register to obtain a <b>Client ID</b> and <b>Client
+              <p>To setup OAuth for {newOauthType}, you need to register to obtain a <b>Client
+                ID</b> and <b>Client
                 Secret</b>.</p>
               <p>You will be asked to provide a <b>Redirect URL</b> for security measures:</p>
               {projectLink && (
                 <pre>{projectLink + '/oauth'}</pre>
               )}
               <Collapse mountOnEnter in={newOauthType === 'Google'}>Visit <MuiLink
-                href="https://console.developers.google.com/apis/credentials/oauthclient" rel="noreferrer noopener"
+                href="https://console.developers.google.com/apis/credentials/oauthclient"
+                rel="noreferrer noopener"
                 target="_blank">here</MuiLink> to get started.</Collapse>
               <Collapse mountOnEnter in={newOauthType === 'Github'}>Visit <MuiLink
                 href="https://github.com/settings/applications/new" rel="noreferrer noopener"
                 target="_blank">here</MuiLink> to get started.</Collapse>
               <Collapse mountOnEnter in={newOauthType === 'Facebook'}>Visit <MuiLink
-                href="https://developers.facebook.com/apps" rel="noreferrer noopener" target="_blank">here</MuiLink> to
+                href="https://developers.facebook.com/apps" rel="noreferrer noopener"
+                target="_blank">here</MuiLink> to
                 get started.</Collapse>
               <Collapse mountOnEnter in={newOauthType === 'Gitlab'}>Visit <MuiLink
-                href="https://gitlab.com/oauth/applications" rel="noreferrer noopener" target="_blank">here</MuiLink> to
+                href="https://gitlab.com/oauth/applications" rel="noreferrer noopener"
+                target="_blank">here</MuiLink> to
                 get started.</Collapse>
               <Collapse mountOnEnter in={newOauthType === 'Discord'}>Visit <MuiLink
                 href="https://discordapp.com/developers/applications" rel="noreferrer noopener"
@@ -1802,13 +1822,16 @@ export const ProjectSettingsUsersOauth = (props: {
               <Collapse mountOnEnter in={newOauthType === 'Twitch'}>Visit <MuiLink
                 href="https://glass.twitch.tv/console/apps/create" rel="noreferrer noopener"
                 target="_blank">here</MuiLink> to get started.</Collapse>
-              <Collapse mountOnEnter in={newOauthType === 'Azure'}>Visit <MuiLink href="https://portal.azure.com/"
-                                                                                  rel="noreferrer noopener"
-                                                                                  target="_blank">here</MuiLink> -&gt; "Azure
+              <Collapse mountOnEnter in={newOauthType === 'Azure'}>Visit <MuiLink
+                href="https://portal.azure.com/"
+                rel="noreferrer noopener"
+                target="_blank">here</MuiLink> -&gt; "Azure
                 Active Directory" -&gt; "App Registrations" to get started.</Collapse>
               <Collapse mountOnEnter in={newOauthType === 'LinkedIn'}>Visit <MuiLink
-                href="https://www.linkedin.com/developers/tools/oauth/token-generator" rel="noreferrer noopener"
-                target="_blank">here</MuiLink> to get started. After you create an App, enable "Sign In with LinkedIn"
+                href="https://www.linkedin.com/developers/tools/oauth/token-generator"
+                rel="noreferrer noopener"
+                target="_blank">here</MuiLink> to get started. After you create an App, enable "Sign In
+                with LinkedIn"
                 under Products tab.</Collapse>
               <p>Once you are done, fill these out:</p>
               <TextField
@@ -1937,12 +1960,14 @@ export const ProjectSettingsUsersOauthItem = (props: {
         />
       )}
     >
-      <PropertyByPath server={props.server} overrideName="Button Icon" overrideDescription="" editor={props.editor}
+      <PropertyByPath server={props.server} overrideName="Button Icon" overrideDescription=""
+                      editor={props.editor}
                       path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'icon']} />
       <IconPickerHelperText />
       <PropertyByPath server={props.server} editor={props.editor}
                       path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'clientId']} />
-      <PropertyByPath server={props.server} editor={props.editor} path={['oauthClientSecrets', props.oauth.oauthId]} />
+      <PropertyByPath server={props.server} editor={props.editor}
+                      path={['oauthClientSecrets', props.oauth.oauthId]} />
       <PropertyByPath server={props.server} editor={props.editor}
                       path={['users', 'onboarding', 'notificationMethods', 'oauth', props.oauthIndex, 'authorizeUrl']} />
       <PropertyByPath server={props.server} editor={props.editor}
@@ -1986,7 +2011,8 @@ export const ProjectSettingsLanding = (props: {
         mapper={templater => templater.landingGet()}
         renderResolved={(templater, landing) => (
           <>
-            <Typography variant="body1" component="div">Show a dedicated welcome page for your visitors</Typography>
+            <Typography variant="body1" component="div">Show a dedicated welcome page for your
+              visitors</Typography>
             <FormControlLabel
               label={!!landing ? 'Enabled' : 'Disabled'}
               control={(
@@ -2019,8 +2045,8 @@ export const ProjectSettingsLanding = (props: {
                   />
                 </BrowserPreview>
                 <Section
-                  title="Welcome message"
-                  description="Decide on a welcome message for your users"
+                  title="Welcome messageModel"
+                  description="Decide on a welcome messageModel for your users"
                   preview={(
                     <>
                       {(!!landing.pageAndIndex.page.title || !!landing.pageAndIndex.page.description) && (
@@ -2033,8 +2059,10 @@ export const ProjectSettingsLanding = (props: {
                             fixedWidth: 350,
                           }}
                         >
-                          <div className={classNames(classes.previewPageTitleDescription, classes.maxContent)}>
-                            <PageTitleDescription page={landing.pageAndIndex.page} suppressSpacing />
+                          <div
+                            className={classNames(classes.previewPageTitleDescription, classes.maxContent)}>
+                            <PageTitleDescription page={landing.pageAndIndex.page}
+                                                  suppressSpacing />
                           </div>
                         </BrowserPreview>
                       )}
@@ -2075,7 +2103,8 @@ export const ProjectSettingsLanding = (props: {
                             fixedHeight: 400,
                           }}
                         >
-                          <div className={classNames(classes.previewLandingLink, classes.maxContent)}>
+                          <div
+                            className={classNames(classes.previewLandingLink, classes.maxContent)}>
                             <LandingLink
                               server={props.server}
                               config={props.editor.getConfig()}
@@ -2330,9 +2359,11 @@ export const ProjectSettingsFeedback = (props: {
                 description={(
                   <>
                     Customize your public page for collecting feedback.
-                    <p>The <b>Customer-first Form</b> is recommended as it focuses on capturing user feedback first and
+                    <p>The <b>Customer-first Form</b> is recommended as it focuses on capturing user
+                      feedback first and
                       showing other feedback later.</p>
-                    <p>Whereas the <b>Community-first Explorer</b> allows all users to search and filter others'
+                    <p>Whereas the <b>Community-first Explorer</b> allows all users to search and
+                      filter others'
                       feedback immediately.</p>
                   </>
                 )}
@@ -2381,15 +2412,19 @@ export const ProjectSettingsFeedback = (props: {
                     />
                     {!!feedback.pageAndIndex && (
                       <>
-                        <PropertyByPath server={props.server} overrideDescription="" editor={props.editor}
+                        <PropertyByPath server={props.server} overrideDescription=""
+                                        editor={props.editor}
                                         path={['layout', 'pages', feedback.pageAndIndex.index, 'title']} />
-                        <PropertyByPath server={props.server} overrideDescription="" editor={props.editor}
+                        <PropertyByPath server={props.server} overrideDescription=""
+                                        editor={props.editor}
                                         path={['layout', 'pages', feedback.pageAndIndex.index, 'description']} />
                         {!!feedback.pageAndIndex.page.explorer?.allowCreate && (
                           <>
-                            <PropertyByPath server={props.server} overrideDescription="" editor={props.editor}
+                            <PropertyByPath server={props.server} overrideDescription=""
+                                            editor={props.editor}
                                             path={['layout', 'pages', feedback.pageAndIndex.index, 'explorer', 'allowCreate', 'actionTitle']} />
-                            <PropertyByPath server={props.server} overrideDescription="" editor={props.editor}
+                            <PropertyByPath server={props.server} overrideDescription=""
+                                            editor={props.editor}
                                             path={['layout', 'pages', feedback.pageAndIndex.index, 'explorer', 'allowCreate', 'actionTitleLong']} />
                           </>
                         )}
@@ -2866,7 +2901,8 @@ export const ProjectSettingsRoadmap = (props: {
 
           return (
             <>
-              <Typography variant="body1" component="div">Manage portal roadmap page and statuses</Typography>
+              <Typography variant="body1" component="div">Manage portal roadmap page and
+                statuses</Typography>
               <FormControlLabel
                 label={!!roadmap ? 'Public' : 'Hidden'}
                 control={(
@@ -3094,7 +3130,8 @@ export const ProjectSettingsChangelog = (props: {
         mapper={templater => templater.changelogGet()}
         renderResolved={(templater, changelog) => (
           <>
-            <Typography variant="body1" component="div">Publish released features and let your customers subscribe to
+            <Typography variant="body1" component="div">Publish released features and let your customers
+              subscribe to
               changes</Typography>
             <FormControlLabel
               label={!changelog ? 'Disabled' : (!changelog?.pageAndIndex ? 'Hidden' : 'Shown')}
@@ -3285,20 +3322,28 @@ export const ProjectSettingsGitHub = (props: {
             title="Configure synchronization"
             description={(
               <>
-                Your linked GitHub repository <b>{gitHub?.name}</b> synchronization can be configured here.
+                Your linked GitHub repository <b>{gitHub?.name}</b> synchronization can be configured
+                here.
               </>
             )}
             content={!!gitHub && (
               <>
-                <PropertyByPath server={props.server} editor={props.editor} path={['github', 'createWithCategoryId']} />
-                <PropertyByPath server={props.server} editor={props.editor} path={['github', 'initialStatusId']} />
-                <PropertyByPath server={props.server} editor={props.editor} path={['github', 'createWithTags']} />
-                <PropertyByPath server={props.server} editor={props.editor} path={['github', 'statusSync']} />
-                <PropertyByPath server={props.server} editor={props.editor} path={['github', 'responseSync']} />
-                <PropertyByPath server={props.server} editor={props.editor} path={['github', 'commentSync']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['github', 'createWithCategoryId']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['github', 'initialStatusId']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['github', 'createWithTags']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['github', 'statusSync']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['github', 'responseSync']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['github', 'commentSync']} />
                 <PropertyByPath server={props.server} editor={props.editor}
                                 path={['github', 'createReleaseWithCategoryId']} />
-                <PropertyByPath server={props.server} editor={props.editor} path={['github', 'releaseNotifyAll']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['github', 'releaseNotifyAll']} />
                 <p>
                   <Button
                     style={{ color: theme.palette.error.dark }}
@@ -3317,13 +3362,15 @@ export const ProjectSettingsGitHub = (props: {
             <>
               <Collapse in={!repos && hasUnsavedChanges}>
                 <p>
-                  <Message message="You must publish unsaved changes before we can redirect you to GitHub"
-                           severity="warning" />
+                  <Message
+                    message="You must publish unsaved changes before we can redirect you to GitHub"
+                    severity="warning" />
                 </p>
               </Collapse>
               <Collapse in={!repos && !!promptCheckWithCode && !checkWithoutStateComplete}>
                 <p>
-                  <Message message="We detected you made changes to your installation" severity="info" action={(
+                  <Message message="We detected you made changes to your installation"
+                           severity="info" action={(
                     <Button
                       onClick={() => {
                         !!promptCheckWithCode && getRepos(promptCheckWithCode);
@@ -3485,7 +3532,8 @@ export const ProjectSettingsIntercom = (props: {
             <Provider store={ServerAdmin.get().getStore()}>
               <PropertyByPath server={props.server} editor={props.editor}
                               path={['integrations', 'intercom', 'appId']} />
-              <PropertyByPath server={props.server} editor={props.editor} path={['intercomIdentityVerificationSecret']}
+              <PropertyByPath server={props.server} editor={props.editor}
+                              path={['intercomIdentityVerificationSecret']}
                               unhide />
             </Provider>
           </ProjectSettingsEnableCheckbox>
@@ -3619,7 +3667,8 @@ export const ProjectSettingsApi = () => {
     <ProjectSettingsBase title="Developer API"
                          description={(
                            <>
-                             Programmatically access and make changes or use Zapier to integrate with your workflow.
+                             Programmatically access and make changes or use Zapier to integrate with your
+                             workflow.
                              <p>
                                Check out the&nbsp;
                                <Link
