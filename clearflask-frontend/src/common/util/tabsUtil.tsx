@@ -10,12 +10,12 @@ import React from 'react';
 // Tabs passes props to children and these are passed along here
 // https://github.com/mui-org/material-ui/blob/master/packages/material-ui/src/Tabs/Tabs.js#L410
 export const TabFragment = (props: {
-  value: any,
-  children: React.ReactNode | ((tabProps: {
-    indicator?: React.ReactNode,
-    selectionFollowsFocus?: boolean,
-  } & Pick<React.ComponentProps<typeof Tab>, 'fullWidth' | 'selected' | 'onChange' | 'textColor' | 'value'>) => React.ReactNode),
-},
+                              value: any,
+                              children: React.ReactNode | ((tabProps: {
+                                indicator?: React.ReactNode,
+                                selectionFollowsFocus?: boolean,
+                              } & Pick<React.ComponentProps<typeof Tab>, 'fullWidth' | 'selected' | 'onChange' | 'textColor' | 'value'>) => React.ReactNode),
+                            },
 ) => {
   const { value, children, ...tabProps } = props;
 
@@ -65,15 +65,14 @@ export const TabsVertical = (props: {
   const classes = useStyles();
   return (
     <Tabs
-      scrollButtons='off'
-      variant='fullWidth'
-      orientation='vertical'
+      scrollButtons="off"
+      variant="fullWidth"
+      orientation="vertical"
       classes={{
         root: classes.expandHeight,
         indicator: classes.tabsIndicator,
         scroller: classNames(classes.tabsScroller, classes.expandHeight),
         flexContainer: classes.expandHeight,
-
       }}
       value={props.selected}
       onChange={props.onClick ? (e, postId) => props.onClick?.(postId) : undefined}

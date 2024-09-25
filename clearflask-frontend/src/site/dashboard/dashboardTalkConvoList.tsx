@@ -14,6 +14,9 @@ import { truncateWithElipsis } from '../../common/util/stringUtil';
 
 
 const styles = (theme: Theme) => createStyles({
+  outer: {
+    margin: theme.spacing(2, 0),
+  },
   convo: {
     padding: theme.spacing(2),
   },
@@ -45,7 +48,7 @@ export const DashboardTalkConvoList = (props: {
   }
 
   return (
-    <>
+    <div className={classes.outer}>
       <TabsVertical
         selected={props.selectedConvoId}
         onClick={convoId => props.setSelectedConvoId(convoId)}
@@ -82,6 +85,6 @@ export const DashboardTalkConvoList = (props: {
           Failed to load conversations
         </TableCell>
       )}
-    </>
+    </div>
   );
 };

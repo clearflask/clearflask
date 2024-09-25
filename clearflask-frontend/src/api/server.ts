@@ -2306,13 +2306,13 @@ function reducerLlm(state: StateLlm = stateLlmDefault, action: AllActions): Stat
         convoList: action.meta.request.convoId !== undefined ? state.convoList : {
           ...state.convoList,
           convos: [
-            ...state.convoList?.convos || [],
             {
               ...state.convoList?.convos?.[action.payload.convoId],
               convoId: action.payload.convoId,
               created: action.payload.message.created,
               title: action.payload.message.content,
             },
+            ...state.convoList?.convos || [],
           ],
         },
         convoDetailsByConvoId: {
