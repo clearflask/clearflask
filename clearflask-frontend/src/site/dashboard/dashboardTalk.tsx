@@ -87,7 +87,7 @@ export async function renderTalk(this: Dashboard, context: DashboardPageContext)
             open={!!this.state.talkDeleteConvoShowDialog && !!this.state.talkSelectedConvoId}
             onClose={() => this.setState({ talkDeleteConvoShowDialog: false })}
           >
-            <DialogTitle>Delete account</DialogTitle>
+            <DialogTitle>Delete conversation</DialogTitle>
             <DialogContent>
               <DialogContentText>Are you sure you want to permanently delete this conversation?</DialogContentText>
             </DialogContent>
