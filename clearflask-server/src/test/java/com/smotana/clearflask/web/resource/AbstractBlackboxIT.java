@@ -149,6 +149,8 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 CertFetcherImpl.module(),
                 NotificationResource.module(),
                 LlmResource.module(),
+                DynamoLlmHistoryStore.module(),
+                DiskLlmMemoryStore.module(),
                 KillBillResource.module(),
                 GitHubResource.module(),
                 GitHubStoreImpl.module(),
@@ -261,6 +263,9 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                     om.override(om.id().serviceEndpoint()).withValue("http://s3.localhost.localstack.cloud:4566");
                     om.override(om.id().signingRegion()).withValue("us-east-1");
                     om.override(om.id().dnsResolverTo()).withValue("localhost");
+                }));
+                install(ConfigSystem.overrideModule(DiskLlmMemoryStore.Config.class, om -> {
+                    om.override(om.id().persistent()).withValue(false);
                 }));
             }
         }));
