@@ -222,5 +222,6 @@
   "free-forever": "crwdns1200:0crwdne1200:0",
   "you-have-unsaved-changes": "crwdns1204:0crwdne1204:0",
   "empty": "crwdns1208:0crwdne1208:0",
-  "notifications": "crwdns1298:0crwdne1298:0"
+  "notifications": "crwdns1298:0crwdne1298:0",
+  "talk": "crwdns1300:0crwdne1300:0"
 }
