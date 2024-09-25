@@ -2292,13 +2292,19 @@ function reducerLlm(state: StateLlm = stateLlmDefault, action: AllActions): Stat
         },
       };
     case Client.convoDeleteActionStatus.Fulfilled:
-      const {
-        [action.meta.request.convoId]: removedConvo,
-        ...convoDetailsByConvoIdWithoutDeleted
-      } = state.convoDetailsByConvoId;
       return {
         ...state,
-        convoDetailsByConvoId: convoDetailsByConvoIdWithoutDeleted,
+        convoList: {
+          ...state.convoList,
+          convos: state.convoList?.convos?.filter(convo => convo.convoId !== action.meta.request.convoId),
+        },
+        convoDetailsByConvoId: {
+          ...state.convoDetailsByConvoId,
+          [action.meta.request.convoId]: {
+            status: Status.FULFILLED,
+            messages: [],
+          },
+        },
       };
     case Client.messageCreateActionStatus.Fulfilled:
       return {

@@ -291,6 +291,9 @@ const styles = (theme: Theme) => createStyles({
   languageSelect: {
     margin: theme.spacing(0, 1),
   },
+  buttonRed: {
+    color: theme.palette.error.main,
+  },
 });
 
 interface Props {
@@ -329,6 +332,8 @@ interface State {
   usersPreviewRight?: PreviewState,
   postCreateOnLoggedIn?: (userId: string) => void;
   talkSelectedConvoId?: string,
+  talkDeleteConvoShowDialog?: boolean,
+  talkDeleteConvoIsSubmitting?: boolean,
   // Below is state for various template options that are updated after publish
   // Null means, we received it, but its not present, undefined means we are still waiting
   landing?: LandingInstance | null;
