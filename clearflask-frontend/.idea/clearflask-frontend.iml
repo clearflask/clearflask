@@ -8,6 +8,10 @@
       <excludeFolder url="file://$MODULE_DIR$/target" />
       <excludeFolder url="file://$MODULE_DIR$/temp" />
       <excludeFolder url="file://$MODULE_DIR$/tmp" />
+      <excludeFolder url="file://$MODULE_DIR$/src/api/admin" />
+      <excludeFolder url="file://$MODULE_DIR$/src/api/client" />
+      <excludeFolder url="file://$MODULE_DIR$/src/api/connect" />
+      <excludeFolder url="file://$MODULE_DIR$/src/api/schema" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

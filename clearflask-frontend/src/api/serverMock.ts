@@ -1856,7 +1856,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     if (!loggedInUser) return this.throwLater(403, 'Not logged in');
     var convo: Client.ConvoDetailsResponse & Client.Convo;
-    if (request.convoId) {
+    if (request.convoId !== 'new') {
       convo = this.getProject(request.projectId)
         .llmConvos[loggedInUser.userId]
         ?.[request.convoId];
@@ -1882,30 +1882,64 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       content: request.convoMessageCreate.content,
       created: new Date(),
     };
-    const response: Client.ConvoMessage = Math.random() > 0.8 ? {
-      messageId: randomUuid(),
-      authorType: Client.ConvoMessageAuthorTypeEnum.SYSTEM,
-      content: capitalize(loremIpsum({
-        units: 'words',
-        count: Math.round(Math.random() * 5 + 3),
-      })),
-      created: new Date(),
-    } : {
-      messageId: randomUuid(),
-      authorType: Client.ConvoMessageAuthorTypeEnum.AI,
-      content: capitalize(loremIpsum({
-        units: 'words',
-        count: Math.round(Math.random() * 15 + 10),
-      })),
-      created: new Date(),
-    };
-    convo.results.push(message);
+    const responseMessageId = randomUuid();
     return this.returnLater({
       convoId: convo.convoId,
       message,
-      response,
+      responseMessageId,
     });
   }
+
+  messageStreamGet(request: Client.MessageStreamGetRequest): EventSource {
+    const loggedInUser = this.getProject(request.projectId).loggedInUser!;
+    const convo = this.getProject(request.projectId)
+      .llmConvos[loggedInUser.userId][request.convoId]!;
+
+    const eventSource = {
+      close: () => {
+      },
+    } as EventSource;
+    var messageStr = '';
+    const sendNextToken = () => {
+      const nextToken = loremIpsum({
+        units: 'words',
+        count: Math.round(Math.random() * 2 + 1),
+      });
+      messageStr += nextToken;
+      eventSource.onmessage?.({
+        type: 'token',
+        data: nextToken,
+      } as MessageEvent);
+    };
+    const sendMessage = () => {
+      const message: Client.ConvoMessage = Math.random() > 0.8 ? {
+        messageId: randomUuid(),
+        authorType: Client.ConvoMessageAuthorTypeEnum.ALERT,
+        content: capitalize(loremIpsum({
+          units: 'words',
+          count: Math.round(Math.random() * 5 + 3),
+        })),
+        created: new Date(),
+      } : {
+        messageId: randomUuid(),
+        authorType: Client.ConvoMessageAuthorTypeEnum.AI,
+        content: capitalize(messageStr),
+        created: new Date(),
+      };
+      convo.results.push(message);
+      eventSource.onmessage?.({
+        type: 'message',
+        data: JSON.stringify(message),
+      } as MessageEvent);
+    };
+    const numTokens = Math.round(Math.random() * 15 + 10);
+    for (let i = 0; i < numTokens; i++) {
+      setTimeout(sendNextToken, i * 100);
+    }
+    setTimeout(sendMessage, numTokens * 100);
+    return eventSource;
+  }
+
 
   // **** Private methods
 

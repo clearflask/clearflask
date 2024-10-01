@@ -1,26 +1,18 @@
 package com.smotana.clearflask.store;
 
-import lombok.Value;
+import dev.langchain4j.data.message.SystemMessage;
 
 public interface LlmPromptStore {
 
-    Prompt getPrompt(String projectId, String promptId) throws PromptNotReadyException, ProjectNotEligibleException;
+    SystemMessage getPrompt(String projectId) throws PromptNotReadyException, ProjectNotEligibleException;
 
-    @Value
-    class Prompt {
-        String promptId;
-        String projectId;
-        String prompt;
-        String response;
-    }
-
-    class PromptNotReadyException extends Exception {
+    class PromptNotReadyException extends RuntimeException {
         public PromptNotReadyException(String projectId, String promptId) {
             super("Prompt " + promptId + " not ready for project " + projectId);
         }
     }
 
-    class ProjectNotEligibleException extends Exception {
+    class ProjectNotEligibleException extends RuntimeException {
         public ProjectNotEligibleException(String projectId) {
             super("Project " + projectId + " is not eligible for AI");
         }

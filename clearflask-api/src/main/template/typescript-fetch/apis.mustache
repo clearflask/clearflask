@@ -40,7 +40,7 @@ export interface {{classname}}Interface {
      * {{&summary}}
      {{/summary}}
      */
-    {{nickname}}({{#allParams.0}}requestParameters: {{operationIdCamelCase}}Request, {{/allParams.0}}headerExtra?:{[key:string]:string}): Promise<{{#returnType}}{{#isResponseFile}}runtime.FileDownload{{/isResponseFile}}{{^isResponseFile}}{{{returnType}}}{{/isResponseFile}}{{/returnType}}{{^returnType}}void{{/returnType}}>;
+    {{nickname}}({{#allParams.0}}requestParameters: {{operationIdCamelCase}}Request, {{/allParams.0}}{{^vendorExtensions.x-sse}}headerExtra?:{[key:string]:string}{{/vendorExtensions.x-sse}}): {{#vendorExtensions.x-sse}}EventSource{{/vendorExtensions.x-sse}}{{^vendorExtensions.x-sse}}Promise<{{#returnType}}{{#isResponseFile}}runtime.FileDownload{{/isResponseFile}}{{^isResponseFile}}{{{returnType}}}{{/isResponseFile}}{{/returnType}}{{^returnType}}void{{/returnType}}>{{/vendorExtensions.x-sse}};
     {{/operation}}
 }
 
@@ -58,7 +58,7 @@ export class {{classname}} extends runtime.BaseAPI implements {{classname}}Inter
      * {{&summary}}
      {{/summary}}
      */
-    async {{nickname}}Raw({{#allParams.0}}requestParameters: {{operationIdCamelCase}}Request, {{/allParams.0}}headerExtra?:{[key:string]:string}): Promise<runtime.ApiResponse<{{#returnType}}{{#isResponseFile}}runtime.FileDownload{{/isResponseFile}}{{^isResponseFile}}{{{returnType}}}{{/isResponseFile}}{{/returnType}}{{^returnType}}void{{/returnType}}>> {
+    {{^vendorExtensions.x-sse}}async {{/vendorExtensions.x-sse}}{{nickname}}Raw({{#allParams.0}}requestParameters: {{operationIdCamelCase}}Request, {{/allParams.0}}{{^vendorExtensions.x-sse}}headerExtra?:{[key:string]:string}{{/vendorExtensions.x-sse}}): {{#vendorExtensions.x-sse}}EventSource{{/vendorExtensions.x-sse}}{{^vendorExtensions.x-sse}}Promise<runtime.ApiResponse<{{#returnType}}{{#isResponseFile}}runtime.FileDownload{{/isResponseFile}}{{^isResponseFile}}{{{returnType}}}{{/isResponseFile}}{{/returnType}}{{^returnType}}void{{/returnType}}>>{{/vendorExtensions.x-sse}} {
         {{#allParams}}
         {{#required}}
         if (requestParameters.{{paramName}} === null || requestParameters.{{paramName}} === undefined) {
@@ -98,7 +98,7 @@ export class {{classname}} extends runtime.BaseAPI implements {{classname}}Inter
 
         {{/isListContainer}}
         {{/queryParams}}
-        const headerParameters: runtime.HTTPHeaders = headerExtra || {};
+        const headerParameters: runtime.HTTPHeaders = {{^vendorExtensions.x-sse}}headerExtra || {{/vendorExtensions.x-sse}}{};
 
         {{#bodyParam}}
         {{^consumes}}
@@ -181,7 +181,7 @@ export class {{classname}} extends runtime.BaseAPI implements {{classname}}Inter
 
         {{/isListContainer}}
         {{/formParams}}
-        const response = await this.request({
+        const response = {{#vendorExtensions.x-sse}}new EventSource(this.createFetchParams({{/vendorExtensions.x-sse}}{{^vendorExtensions.x-sse}}await this.request({{/vendorExtensions.x-sse}}{
             path: `{{{path}}}`{{#pathParams}}.replace(`{${"{{baseName}}"}}`, encodeURIComponent(String(requestParameters.{{paramName}}))){{/pathParams}},
             method: '{{httpMethod}}',
             headers: headerParameters,
@@ -204,8 +204,12 @@ export class {{classname}} extends runtime.BaseAPI implements {{classname}}Inter
             {{#hasFormParams}}
             body: formData,
             {{/hasFormParams}}
-        });
+        }{{#vendorExtensions.x-sse}}).url{{/vendorExtensions.x-sse}});
 
+        {{#vendorExtensions.x-sse}}
+        return response;
+        {{/vendorExtensions.x-sse}}
+        {{^vendorExtensions.x-sse}}
         {{#returnType}}
         {{#isResponseFile}}
         return new runtime.FileDownloadApiResponse(response);
@@ -235,6 +239,7 @@ export class {{classname}} extends runtime.BaseAPI implements {{classname}}Inter
         {{^returnType}}
         return new runtime.VoidApiResponse(response);
         {{/returnType}}
+        {{/vendorExtensions.x-sse}}
     }
 
     /**
@@ -245,7 +250,11 @@ export class {{classname}} extends runtime.BaseAPI implements {{classname}}Inter
      * {{&summary}}
      {{/summary}}
      */
-    async {{nickname}}({{#allParams.0}}requestParameters: {{operationIdCamelCase}}Request, {{/allParams.0}}headerExtra?:{[key:string]:string}): Promise<{{#returnType}}{{#isResponseFile}}runtime.FileDownload{{/isResponseFile}}{{^isResponseFile}}{{{returnType}}}{{/isResponseFile}}{{/returnType}}{{^returnType}}void{{/returnType}}> {
+    {{^vendorExtensions.x-sse}}async {{/vendorExtensions.x-sse}}{{nickname}}({{#allParams.0}}requestParameters: {{operationIdCamelCase}}Request, {{/allParams.0}}{{^vendorExtensions.x-sse}}headerExtra?:{[key:string]:string}{{/vendorExtensions.x-sse}}): {{#vendorExtensions.x-sse}}EventSource{{/vendorExtensions.x-sse}}{{^vendorExtensions.x-sse}}Promise<{{#returnType}}{{#isResponseFile}}runtime.FileDownload{{/isResponseFile}}{{^isResponseFile}}{{{returnType}}}{{/isResponseFile}}{{/returnType}}{{^returnType}}void{{/returnType}}>{{/vendorExtensions.x-sse}} {
+        {{#vendorExtensions.x-sse}}
+        return this.{{nickname}}Raw({{#allParams.0}}requestParameters, {{/allParams.0}});
+        {{/vendorExtensions.x-sse}}
+        {{^vendorExtensions.x-sse}}
         {{#returnType}}
         const response = await this.{{nickname}}Raw({{#allParams.0}}requestParameters, {{/allParams.0}}headerExtra);
         return await response.value();
@@ -253,6 +262,7 @@ export class {{classname}} extends runtime.BaseAPI implements {{classname}}Inter
         {{^returnType}}
         await this.{{nickname}}Raw({{#allParams.0}}requestParameters, {{/allParams.0}}headerExtra);
         {{/returnType}}
+        {{/vendorExtensions.x-sse}}
     }
 
     {{/operation}}

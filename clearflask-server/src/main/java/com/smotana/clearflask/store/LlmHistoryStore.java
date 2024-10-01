@@ -46,9 +46,11 @@ public interface LlmHistoryStore {
             String userId,
             String convoId);
 
-    MessageModel putMessage(String convoId,
+    MessageModel putMessage(String messageId, String convoId,
             AuthorTypeEnum authorType,
             String content);
+
+    Optional<MessageModel> getMessage(String convoId, String messageId);
 
     ImmutableList<MessageModel> getMessages(String convoId);
 

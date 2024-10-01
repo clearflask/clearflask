@@ -20,6 +20,7 @@
 
     <properties>
         <java.version>11</java.version>
+        <JAVA_VERSION>${java.version}</JAVA_VERSION>
         <COPYING.path>${basedir}/COPYING</COPYING.path>
         <sentry.version>5.1.1</sentry.version>
         <guava.version>30.1.1-jre</guava.version>
@@ -290,9 +291,9 @@
                     <version>3.1.1</version>
                 </plugin>
                 <plugin>
-                    <groupId>io.fabric8</groupId>
+                    <groupId>`io.fabric8`</groupId>
                     <artifactId>docker-maven-plugin</artifactId>
-                    <version>0.42.0</version>
+                    <version>0.45.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -588,10 +589,13 @@
                 </exclusions>
             </dependency>
 
+
             <dependency>
                 <groupId>dev.langchain4j</groupId>
-                <artifactId>langchain4j</artifactId>
+                <artifactId>langchain4j-bom</artifactId>
                 <version>0.34.0</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>org.mapdb</groupId>

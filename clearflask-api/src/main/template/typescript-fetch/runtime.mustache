@@ -39,7 +39,7 @@ export class BaseAPI {
         throw response;
     }
 
-    private createFetchParams(context: RequestOpts) {
+    protected createFetchParams(context: RequestOpts) {
         let url = this.configuration.basePath + context.path;
         if (context.query !== undefined && Object.keys(context.query).length !== 0) {
             // only add the querystring to the URL if there are query parameters.
@@ -280,7 +280,7 @@ export class FileDownloadApiResponse {
         if (disposition && disposition.indexOf('attachment') !== -1) {
             var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
             var matches = filenameRegex.exec(disposition);
-            if (matches != null && matches[1]) { 
+            if (matches != null && matches[1]) {
                 result.filename = matches[1].replace(/['"]/g, '');
             }
         }

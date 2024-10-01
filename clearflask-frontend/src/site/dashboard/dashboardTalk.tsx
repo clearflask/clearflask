@@ -25,7 +25,7 @@ export async function renderTalk(this: Dashboard, context: DashboardPageContext)
   const onSubmitMessage = async (message: string) => {
     const response = await (await activeProject.server.dispatch()).messageCreate({
       projectId: activeProject.server.getProjectId(),
-      convoId: this.state.talkSelectedConvoId,
+      convoId: this.state.talkSelectedConvoId || 'new',
       convoMessageCreate: {
         content: message,
       },
@@ -33,6 +33,7 @@ export async function renderTalk(this: Dashboard, context: DashboardPageContext)
     if (this.state.talkSelectedConvoId === undefined) {
       this.setState({ talkSelectedConvoId: response.convoId });
     }
+    this.setState({ talkUpcomingMessageId: response.responseMessageId });
     return response;
   };
 
@@ -89,7 +90,8 @@ export async function renderTalk(this: Dashboard, context: DashboardPageContext)
           >
             <DialogTitle>Delete conversation</DialogTitle>
             <DialogContent>
-              <DialogContentText>Are you sure you want to permanently delete this conversation?</DialogContentText>
+              <DialogContentText>Are you sure you want to permanently delete this
+                conversation?</DialogContentText>
             </DialogContent>
             <DialogActions>
               <Button onClick={() => this.setState({ talkDeleteConvoShowDialog: false })}>Cancel</Button>
@@ -129,6 +131,7 @@ export async function renderTalk(this: Dashboard, context: DashboardPageContext)
         <DashboardTalkConvo
           server={activeProject.server}
           convoId={this.state.talkSelectedConvoId}
+          talkUpcomingMessageId={this.state.talkUpcomingMessageId}
         />
       </Provider>
     ),

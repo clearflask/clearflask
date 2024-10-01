@@ -69,12 +69,12 @@ public class LlmHistoryStoreIT extends AbstractIT {
         ConvoModel convoModel3 = store.createConvo("p1", "u2", "t3");
         ConvoModel convoModel4 = store.createConvo("p2", "u1", "t4");
 
-        MessageModel messageModel1 = store.putMessage(convoModel1.getConvoId(), USER, "c1");
-        LlmHistoryStore.MessageModel messageModel2 = store.putMessage(convoModel1.getConvoId(), AI, "c2");
-        MessageModel messageModel3 = store.putMessage(convoModel2.getConvoId(), AI, "c3");
-        LlmHistoryStore.MessageModel messageModel4 = store.putMessage(convoModel3.getConvoId(), AI, "c4");
-        LlmHistoryStore.MessageModel messageModel5 = store.putMessage(convoModel4.getConvoId(), AI, "c5");
-        MessageModel messageModel6 = store.putMessage("non-existent", AI, "c6");
+        MessageModel messageModel1 = store.putMessage(store.genMessageId(), convoModel1.getConvoId(), USER, "c1");
+        LlmHistoryStore.MessageModel messageModel2 = store.putMessage(store.genMessageId(), convoModel1.getConvoId(), AI, "c2");
+        MessageModel messageModel3 = store.putMessage(store.genMessageId(), convoModel2.getConvoId(), AI, "c3");
+        LlmHistoryStore.MessageModel messageModel4 = store.putMessage(store.genMessageId(), convoModel3.getConvoId(), AI, "c4");
+        LlmHistoryStore.MessageModel messageModel5 = store.putMessage(store.genMessageId(), convoModel4.getConvoId(), AI, "c5");
+        MessageModel messageModel6 = store.putMessage(store.genMessageId(), "non-existent", AI, "c6");
 
         assertEquals(Set.of(messageModel1.getMessageId(), messageModel2.getMessageId()), store.getMessages(convoModel1.getConvoId()).stream().map(MessageModel::getMessageId).collect(ImmutableSet.toImmutableSet()));
         assertEquals(Set.of(messageModel3.getMessageId()), store.getMessages(convoModel2.getConvoId()).stream().map(MessageModel::getMessageId).collect(ImmutableSet.toImmutableSet()));

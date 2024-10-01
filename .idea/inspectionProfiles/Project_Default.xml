@@ -36,6 +36,9 @@
     <inspection_tool class="JavadocDeclaration" enabled="true" level="WARNING" enabled_by_default="true">
       <option name="ADDITIONAL_TAGS" value="startuml,enduml,enduml" />
     </inspection_tool>
+    <inspection_tool class="JavadocReference" enabled="true" level="ERROR" enabled_by_default="true">
+      <option name="REPORT_INACCESSIBLE" value="false" />
+    </inspection_tool>
     <inspection_tool class="MissingJavadoc" enabled="true" level="WARNING" enabled_by_default="true">
       <option name="PACKAGE_SETTINGS">
         <Options>

@@ -73,12 +73,14 @@ paths:
   /project/{projectId}/admin/content/uploadAs:
     $ref: 'api-content.yaml#/~1project~1{projectId}~1admin~1content~1uploadAs'
   # api-llm.yaml
-  /project/{projectId}/llm/convo/list:
-    $ref: 'api-llm.yaml#/~1project~1{projectId}~1llm~1convo~1list'
-  /project/{projectId}/llm/convo/{convoId}:
-    $ref: 'api-llm.yaml#/~1project~1{projectId}~1llm~1convo~1{convoId}'
-  /project/{projectId}/llm/message:
-    $ref: 'api-llm.yaml#/~1project~1{projectId}~1llm~1message'
+  /project/{projectId}/admin/llm/convo/list:
+    $ref: 'api-llm.yaml#/~1project~1{projectId}~1admin~1llm~1convo~1list'
+  /project/{projectId}/admin/llm/convo/{convoId}:
+    $ref: 'api-llm.yaml#/~1project~1{projectId}~1admin~1llm~1convo~1{convoId}'
+  /project/{projectId}/admin/llm/convo/{convoId}/message:
+    $ref: 'api-llm.yaml#/~1project~1{projectId}~1admin~1llm~1convo~1{convoId}~1message'
+  /project/{projectId}/admin/llm/convo/{convoId}/message/{messageId}:
+    $ref: 'api-llm.yaml#/~1project~1{projectId}~1admin~1llm~1convo~1{convoId}~1message~1{messageId}'
   # api-admin.yaml
   /support/message:
     $ref: 'api-account.yaml#/~1support~1message'

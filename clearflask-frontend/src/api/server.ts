@@ -40,7 +40,8 @@ export enum Status {
 export type AllActions = Admin.Actions | Client.Actions
   | updateSettingsAction
   | ideaSearchResultRemoveIdeaAction | ideaSearchResultAddIdeaAction
-  | draftSearchResultAddDraftAction;
+  | draftSearchResultAddDraftAction
+  | llmSetMessageAction;
 
 export class Server {
   static storesState: StoresState | undefined;
@@ -2215,6 +2216,14 @@ function reducerTeammates(state: StateTeammates = stateTeammatesDefault, action:
   }
 }
 
+interface llmSetMessageAction {
+  type: 'llmSetMessage';
+  payload: {
+    convoId: string;
+    message: Client.ConvoMessage;
+  };
+}
+
 export interface StateLlm {
   convoList?: {
     status?: Status;
@@ -2327,7 +2336,19 @@ function reducerLlm(state: StateLlm = stateLlmDefault, action: AllActions): Stat
             messages: [
               ...(state.convoDetailsByConvoId[action.payload.convoId]?.messages || []),
               action.payload.message,
-              action.payload.response,
+            ],
+          },
+        },
+      };
+    case 'llmSetMessage':
+      return {
+        ...state,
+        convoDetailsByConvoId: {
+          ...state.convoDetailsByConvoId,
+          [action.payload.convoId]: {
+            messages: [
+              ...(state.convoDetailsByConvoId[action.payload.convoId]?.messages || []),
+              action.payload.message,
             ],
           },
         },

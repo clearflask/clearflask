@@ -30,7 +30,7 @@ components:
           format: date-time
         authorType:
           type: string
-          enum: [ USER, AI, SYSTEM ]
+          enum: [ USER, AI, ALERT ]
         content:
           type: string
     ConvoMessageCreate:
@@ -41,10 +41,10 @@ components:
         content:
           type: string
 
-/project/{projectId}/llm/convo/list:
+/project/{projectId}/admin/llm/convo/list:
   get:
     operationId: convoList
-    tags: [ Llm ]
+    tags: [ LlmAdmin ]
     parameters:
       - name: projectId
         in: path
@@ -65,10 +65,10 @@ components:
                   type: array
                   items:
                     $ref: 'api-llm.yaml#/components/schemas/Convo'
-/project/{projectId}/llm/convo/{convoId}:
+/project/{projectId}/admin/llm/convo/{convoId}:
   get:
     operationId: convoDetails
-    tags: [ Llm ]
+    tags: [ LlmAdmin ]
     parameters:
       - name: projectId
         in: path
@@ -96,7 +96,7 @@ components:
                     $ref: 'api-llm.yaml#/components/schemas/ConvoMessage'
   delete:
     operationId: convoDelete
-    tags: [ Llm ]
+    tags: [ LlmAdmin ]
     parameters:
       - name: projectId
         in: path
@@ -111,10 +111,10 @@ components:
     responses:
       '200':
         $ref: 'api-client.yaml#/components/responses/Ok'
-/project/{projectId}/llm/message:
+/project/{projectId}/admin/llm/convo/{convoId}/message:
   put:
     operationId: messageCreate
-    tags: [ Llm ]
+    tags: [ LlmAdmin ]
     parameters:
       - name: projectId
         in: path
@@ -122,9 +122,9 @@ components:
         schema:
           type: string
       - name: convoId
-        description: If missing, a new convo is created
-        in: query
-        required: false
+        description: If 'new', a new convo is created
+        in: path
+        required: true
         schema:
           type: string
     requestBody:
@@ -143,11 +143,36 @@ components:
               required:
                 - convoId
                 - message
-                - response
+                - responseMessageId
               properties:
                 convoId:
                   type: string
                 message:
                   $ref: 'api-llm.yaml#/components/schemas/ConvoMessage'
-                response:
-                  $ref: 'api-llm.yaml#/components/schemas/ConvoMessage'
+                responseMessageId:
+                  type: string
+/project/{projectId}/admin/llm/convo/{convoId}/message/{messageId}:
+  get:
+    x-sse: true
+    operationId: messageStreamGet
+    tags: [ LlmAdmin ]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: convoId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: messageId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          text/event-stream: { }

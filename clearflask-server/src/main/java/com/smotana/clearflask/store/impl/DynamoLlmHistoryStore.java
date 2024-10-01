@@ -11,11 +11,13 @@ import com.google.common.collect.Iterables;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
+import com.google.inject.Singleton;
 import com.smotana.clearflask.api.model.ConvoMessage.AuthorTypeEnum;
 import com.smotana.clearflask.store.LlmHistoryStore;
 import io.dataspray.singletable.IndexSchema;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
 import java.util.Map;
@@ -24,6 +26,8 @@ import java.util.stream.StreamSupport;
 
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
 
+@Slf4j
+@Singleton
 public class DynamoLlmHistoryStore implements LlmHistoryStore {
 
     @Inject
@@ -107,14 +111,21 @@ public class DynamoLlmHistoryStore implements LlmHistoryStore {
     }
 
     @Override
-    public MessageModel putMessage(String convoId, AuthorTypeEnum authorType, String content) {
+    public MessageModel putMessage(String messageId, String convoId, AuthorTypeEnum authorType, String content) {
         MessageModel messageModel = new MessageModel(convoId,
-                genMessageId(),
+                messageId,
                 Instant.now(),
                 authorType,
                 content);
         messageSchema.table().putItem(messageSchema.toItem(messageModel));
         return messageModel;
+    }
+
+    @Override
+    public Optional<MessageModel> getMessage(String convoId, String messageId) {
+        return Optional.ofNullable(messageSchema.fromItem(messageSchema.table().getItem(messageSchema.primaryKey(Map.of(
+                "convoId", convoId,
+                "messageId", messageId)))));
     }
 
     @Override
