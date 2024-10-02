@@ -4,8 +4,9 @@ import { Button, InputBase } from '@material-ui/core';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import React, { useCallback, useState } from 'react';
 import AiIcon from '../../common/icon/AiIcon';
-import { Server } from '../../api/server';
+import { ReduxState, Server } from '../../api/server';
 import * as Client from '../../api/client';
+import { shallowEqual, useSelector } from 'react-redux';
 
 const styles = (theme: Theme) => createStyles({
   input: {
@@ -28,11 +29,13 @@ const useStyles = makeStyles(styles);
 
 export const DashboardTalkInput = (props: {
   server: Server;
+  convoId?: string;
   onSubmitMessage: (message: string) => Promise<Client.CreateMessageResponse>;
 }) => {
   const classes = useStyles();
   const [value, setValue] = React.useState('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const hasUpcomingMessage = useSelector<ReduxState, boolean>(state => !!props.convoId && !!state.llm.convoDetailsByConvoId[props.convoId]?.upcomingMessageId, shallowEqual);
 
   const onSubmit = useCallback(async () => {
     if (!value.trim().length) {
@@ -48,6 +51,8 @@ export const DashboardTalkInput = (props: {
     setValue('');
   }, [props, value]);
 
+  const isDisabled = isSubmitting || hasUpcomingMessage;
+
   return (
     <div className={classes.input}>
       <AiIcon
@@ -56,22 +61,23 @@ export const DashboardTalkInput = (props: {
       />
       <InputBase
         className={classes.inputText}
-        placeholder={'Talk to your customer'}
+        placeholder={'Ask'}
         multiline
         fullWidth
         value={value}
-        disabled={isSubmitting}
         onChange={e => setValue(e.target.value)}
         onKeyDown={e => {
           if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            onSubmit();
+            if (!isDisabled) {
+              onSubmit();
+            }
           }
         }}
       />
       <Button
         className={classes.sendButton}
-        disabled={isSubmitting}
+        disabled={isDisabled}
         onClick={() => onSubmit()}
       >
         Send

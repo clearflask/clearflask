@@ -334,7 +334,6 @@ interface State {
   talkSelectedConvoId?: string,
   talkDeleteConvoShowDialog?: boolean,
   talkDeleteConvoIsSubmitting?: boolean,
-  talkUpcomingMessageId?: string,
   // Below is state for various template options that are updated after publish
   // Null means, we received it, but its not present, undefined means we are still waiting
   landing?: LandingInstance | null;

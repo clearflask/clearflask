@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { shallowEqual, useSelector } from 'react-redux';
 import { ReduxState, Server, Status } from '../../api/server';
 import * as Client from '../../api/client';
@@ -10,12 +10,20 @@ import classNames from 'classnames';
 import { Alert } from '@material-ui/lab';
 import TimeAgoI18n from '../../app/utils/TimeAgoI18n';
 import { Typography } from '@material-ui/core';
+import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
 
 const styles = (theme: Theme) => createStyles({
   outer: {
     display: 'flex',
     flexDirection: 'column',
     padding: theme.spacing(4),
+    height: '100%',
+    width: '100%',
+    ...contentScrollApplyStyles({
+      theme,
+      orientation: Orientation.Vertical,
+      backgroundColor: theme.palette.background.paper,
+    }),
   },
   inner: {
     display: 'flex',
@@ -53,13 +61,14 @@ const LlmUser = {
 export const DashboardTalkConvo = (props: {
   server: Server;
   convoId: string;
-  talkUpcomingMessageId?: string;
 }) => {
   const classes = useStyles();
   const status = useSelector<ReduxState, Status | undefined>(state => state.llm.convoDetailsByConvoId[props.convoId]?.status, shallowEqual);
   const messages = useSelector<ReduxState, Client.ConvoMessage[] | undefined>(state => state.llm.convoDetailsByConvoId[props.convoId]?.messages, shallowEqual);
   const loggedInUser = useSelector<ReduxState, Client.User | undefined>(state => state.users.loggedIn.user, shallowEqual);
   const [upcomingMessageStr, setUpcomingMessageStr] = React.useState<string>('');
+  const upcomingMessageId = useSelector<ReduxState, string | undefined>(state => state.llm.convoDetailsByConvoId[props.convoId]?.upcomingMessageId, shallowEqual);
+  const chatScrollRef = useChatScroll([messages?.length, upcomingMessageStr]);
 
   useEffect(() => {
     if (status !== undefined) {
@@ -71,14 +80,13 @@ export const DashboardTalkConvo = (props: {
     }));
   }, [props.convoId, props.server, status]);
 
-  const upcomingMessageArrived = messages?.some(m => m.messageId === props.talkUpcomingMessageId);
   useEffect(() => {
-    if (!props.talkUpcomingMessageId || upcomingMessageArrived) {
+    if (!upcomingMessageId) {
       return;
     }
     const convoId = props.convoId;
-    const messageId = props.talkUpcomingMessageId;
-    var partialMsg = '';
+    const messageId = upcomingMessageId;
+    let partialMsg = '';
 
     const eventSourcePromise = props.server.dispatch().then(d => d.messageStreamGet({
       projectId: props.server.getProjectId(),
@@ -100,6 +108,7 @@ export const DashboardTalkConvo = (props: {
                 message: newMessage,
               },
             });
+            setUpcomingMessageStr('');
             eventSource.close();
             break;
         }
@@ -124,15 +133,11 @@ export const DashboardTalkConvo = (props: {
     return () => {
       eventSourcePromise.then(eventSource => eventSource.close());
     };
-  }, [
-    props.convoId,
-    props.server,
-    props.talkUpcomingMessageId,
-    upcomingMessageArrived,
-  ]);
+    // eslint-disable-next-line
+  }, [upcomingMessageId]);
 
   return (
-    <div className={classes.outer}>
+    <div className={classes.outer} ref={chatScrollRef}>
       {messages?.map(message => (
         <div key={message.messageId} className={classNames(
           classes.inner,
@@ -158,7 +163,7 @@ export const DashboardTalkConvo = (props: {
           )}
         </div>
       ))}
-      {!!props.talkUpcomingMessageId && !upcomingMessageArrived && (
+      {!!upcomingMessageId && (
         <div key="upcoming" className={classNames(
           classes.inner,
           classes.innerAi,
@@ -172,9 +177,22 @@ export const DashboardTalkConvo = (props: {
               <TimeAgoI18n date={new Date()} />
             </Typography>
           </div>
-          {upcomingMessageStr}
+          {upcomingMessageStr || '...'}
         </div>
       )}
     </div>
   );
 };
+
+function useChatScroll(deps: any) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.scrollTop = ref.current.scrollHeight;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
+
+  return ref;
+}

@@ -33,7 +33,6 @@ export async function renderTalk(this: Dashboard, context: DashboardPageContext)
     if (this.state.talkSelectedConvoId === undefined) {
       this.setState({ talkSelectedConvoId: response.convoId });
     }
-    this.setState({ talkUpcomingMessageId: response.responseMessageId });
     return response;
   };
 
@@ -62,7 +61,7 @@ export async function renderTalk(this: Dashboard, context: DashboardPageContext)
 
   context.sections.push({
     name: 'list',
-    size: { breakWidth: 350, flexGrow: 20, maxWidth: 1024, scroll: Orientation.Vertical },
+    size: { breakWidth: 350, flexGrow: 20, maxWidth: 1024 },
     header: {
       title: { title: 'Talk' },
       action: !this.state.talkSelectedConvoId ? undefined : {
@@ -131,7 +130,6 @@ export async function renderTalk(this: Dashboard, context: DashboardPageContext)
         <DashboardTalkConvo
           server={activeProject.server}
           convoId={this.state.talkSelectedConvoId}
-          talkUpcomingMessageId={this.state.talkUpcomingMessageId}
         />
       </Provider>
     ),
@@ -140,6 +138,7 @@ export async function renderTalk(this: Dashboard, context: DashboardPageContext)
         <DashboardTalkInput
           server={activeProject.server}
           onSubmitMessage={onSubmitMessage}
+          convoId={this.state.talkSelectedConvoId}
         />
       </Provider>
     ),

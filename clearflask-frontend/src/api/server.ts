@@ -2233,6 +2233,7 @@ export interface StateLlm {
     [convoId: string]: {
       status?: Status;
       messages?: Client.ConvoMessage[];
+      upcomingMessageId?: string;
     };
   };
 }
@@ -2273,6 +2274,7 @@ function reducerLlm(state: StateLlm = stateLlmDefault, action: AllActions): Stat
         convoDetailsByConvoId: {
           ...state.convoDetailsByConvoId,
           [action.meta.request.convoId]: {
+            ...state.convoDetailsByConvoId[action.meta.request.convoId],
             status: Status.FULFILLED,
             messages: action.payload.results,
           },
@@ -2310,6 +2312,7 @@ function reducerLlm(state: StateLlm = stateLlmDefault, action: AllActions): Stat
         convoDetailsByConvoId: {
           ...state.convoDetailsByConvoId,
           [action.meta.request.convoId]: {
+            ...state.convoDetailsByConvoId[action.meta.request.convoId],
             status: Status.FULFILLED,
             messages: [],
           },
@@ -2318,7 +2321,7 @@ function reducerLlm(state: StateLlm = stateLlmDefault, action: AllActions): Stat
     case Client.messageCreateActionStatus.Fulfilled:
       return {
         ...state,
-        convoList: action.meta.request.convoId !== undefined ? state.convoList : {
+        convoList: action.meta.request.convoId !== 'new' ? state.convoList : {
           ...state.convoList,
           convos: [
             {
@@ -2333,10 +2336,12 @@ function reducerLlm(state: StateLlm = stateLlmDefault, action: AllActions): Stat
         convoDetailsByConvoId: {
           ...state.convoDetailsByConvoId,
           [action.payload.convoId]: {
+            ...state.convoDetailsByConvoId[action.meta.request.convoId],
             messages: [
               ...(state.convoDetailsByConvoId[action.payload.convoId]?.messages || []),
               action.payload.message,
             ],
+            upcomingMessageId: action.payload.responseMessageId,
           },
         },
       };
@@ -2346,10 +2351,14 @@ function reducerLlm(state: StateLlm = stateLlmDefault, action: AllActions): Stat
         convoDetailsByConvoId: {
           ...state.convoDetailsByConvoId,
           [action.payload.convoId]: {
+            ...state.convoDetailsByConvoId[action.payload.convoId],
             messages: [
               ...(state.convoDetailsByConvoId[action.payload.convoId]?.messages || []),
               action.payload.message,
             ],
+            upcomingMessageId: action.payload.message.messageId === state.convoDetailsByConvoId[action.payload.convoId]?.upcomingMessageId
+              ? undefined
+              : state.convoDetailsByConvoId[action.payload.convoId]?.upcomingMessageId,
           },
         },
       };

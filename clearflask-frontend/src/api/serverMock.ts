@@ -1882,6 +1882,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       content: request.convoMessageCreate.content,
       created: new Date(),
     };
+    convo.results.push(message);
     const responseMessageId = randomUuid();
     return this.returnLater({
       convoId: convo.convoId,
@@ -1913,7 +1914,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     };
     const sendMessage = () => {
       const message: Client.ConvoMessage = Math.random() > 0.8 ? {
-        messageId: randomUuid(),
+        messageId: request.messageId,
         authorType: Client.ConvoMessageAuthorTypeEnum.ALERT,
         content: capitalize(loremIpsum({
           units: 'words',
@@ -1921,7 +1922,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         })),
         created: new Date(),
       } : {
-        messageId: randomUuid(),
+        messageId: request.messageId,
         authorType: Client.ConvoMessageAuthorTypeEnum.AI,
         content: capitalize(messageStr),
         created: new Date(),

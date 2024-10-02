@@ -8987,7 +8987,7 @@ packages:
     dependencies:
       domelementtype: 2.3.0
       domhandler: 4.3.1
-      entities: 2.1.0
+      entities: 2.2.0
 
   /domain-browser/1.2.0:
     resolution: {integrity: sha512-jnjyiM6eRyZl2H+W8Q/zLMA481hzi0eszAaBUzIVnmYVDBbnLxVNnfu1HgEBvCbL+71FrxMl3E6lpKH7Ge3OXA==}
@@ -9191,6 +9191,7 @@ packages:
 
   /entities/2.1.0:
     resolution: {integrity: sha512-hCx1oky9PFrJ611mf0ifBLBRW8lUUVRlFolb5gWRfIELabBlbp9xZvrqZLZAs+NxFnbfQoeGd8wDkygjg7U85w==}
+    dev: false
 
   /entities/2.2.0:
     resolution: {integrity: sha512-p92if5Nz619I0w+akJrLZH0MX0Pb5DX39XOwQTtXSdQQOaYH03S1uIQp4mhOZtAXrxq4ViO67YTiLBo2638o9A==}
@@ -11321,7 +11322,7 @@ packages:
       domelementtype: 2.3.0
       domhandler: 4.3.1
       domutils: 2.8.0
-      entities: 2.1.0
+      entities: 2.2.0
 
   /http-deceiver/1.2.7:
     resolution: {integrity: sha512-LmpOGxTfbpgtGVxJrj5k7asXHCgNZp5nLfp+hWc8QQRqtb7fUy6kRY3BO1h9ddF6yIPYUARgxGOwB42DnxIaNw==}
