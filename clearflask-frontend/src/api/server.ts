@@ -2249,7 +2249,7 @@ function reducerLlm(state: StateLlm = stateLlmDefault, action: AllActions): Stat
         ...state,
         convoList: {
           status: Status.FULFILLED,
-          convos: action.payload.results,
+          convos: action.payload.results.sort((l, r) => r.created.valueOf() - l.created.valueOf()),
         },
       };
     case Client.convoListActionStatus.Pending:

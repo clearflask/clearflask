@@ -61,6 +61,7 @@ public class LangChainLlmToolingStore implements LlmToolingStore {
 
     @Override
     public ToolExecution runTool(String projectId, ToolExecutionRequest request) {
+        log.info("Running tool {} args {}", request.name(), request.arguments());
         String result = Optional.ofNullable(toolExecutorByName.get(request.name()))
                 .orElseThrow(() -> new IllegalArgumentException("Tool not found: " + request.name()))
                 .execute(request, projectId);

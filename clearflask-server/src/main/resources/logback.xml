@@ -64,8 +64,6 @@
     <logger name="org.jooq" level="WARN"/>
     <logger name="org.apache.catalina.core.StandardWrapperValve" level="OFF"/>
 
-    <logger name="com.smotana.clearflask.store.LangChainLlmAgentStore" level="DEBUG"/>
-
     <root level="TRACE">
         <appender-ref ref="FILE"/>
         <appender-ref ref="ASYNC_EMAIL_SES"/>

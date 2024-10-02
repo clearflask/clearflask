@@ -122,6 +122,8 @@ public class LangChainLlmAgentStore implements LlmAgentStore {
 
         AtomicLong recursionCounter = new AtomicLong(0);
 
+        log.info("User message request: {}", question);
+
         this.model.generate(messages, llmToolingStore.getTools(), new StreamingResponseHandler<>() {
             @Override
             public void onNext(String token) {
@@ -171,7 +173,7 @@ public class LangChainLlmAgentStore implements LlmAgentStore {
                             response.tokenUsage().totalTokenCount(),
                             response.tokenUsage().outputTokenCount(),
                             response.tokenUsage().inputTokenCount());
-                    log.debug("AI message response: {}", response.content().text());
+                    log.info("AI message response: {}", response.content().text());
 
                     // Handle tool execution requests
                     if (response.content().hasToolExecutionRequests()) {

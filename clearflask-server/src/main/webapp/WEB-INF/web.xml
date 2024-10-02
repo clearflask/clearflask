@@ -14,6 +14,7 @@
     <filter>
         <filter-name>ExceptionMapperFilter</filter-name>
         <filter-class>com.smotana.clearflask.web.filter.ApiExceptionMapperFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>ExceptionMapperFilter</filter-name>
@@ -23,6 +24,7 @@
     <filter>
         <filter-name>HttpRedirector</filter-name>
         <filter-class>com.smotana.clearflask.web.filter.HttpRedirectorFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>HttpRedirector</filter-name>
@@ -77,6 +79,7 @@
     <filter>
         <filter-name>ExpiresFilter</filter-name>
         <filter-class>org.apache.catalina.filters.ExpiresFilter</filter-class>
+        <async-supported>true</async-supported>
         <init-param>
             <param-name>ExpiresDefault</param-name>
             <param-value>access plus 2 hours</param-value>
@@ -95,6 +98,7 @@
     <filter>
         <filter-name>NoCacheFilter</filter-name>
         <filter-class>com.smotana.clearflask.web.filter.NoCacheFilter</filter-class>
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>NoCacheFilter</filter-name>
@@ -123,10 +127,12 @@
             <param-value>com.smotana.clearflask.web.Application</param-value>
         </init-param>
         <load-on-startup>1</load-on-startup>
+        <async-supported>true</async-supported>
     </servlet>
     <servlet>
         <servlet-name>ErrorHandler</servlet-name>
         <servlet-class>com.smotana.clearflask.web.ErrorHandler</servlet-class>
+        <async-supported>true</async-supported>
     </servlet>
 
     <servlet-mapping>

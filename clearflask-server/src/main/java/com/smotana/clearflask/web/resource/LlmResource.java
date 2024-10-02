@@ -122,25 +122,30 @@ public class LlmResource extends AbstractResource implements LlmAdminApi {
     @SuppressWarnings("VoidMethodAnnotatedWithGET") // False positive for SSE endpoint
     @Override
     public void messageStreamGet(String projectId, String convoId, String messageId, SseEventSink eventSink) {
-        llmAgentStore.awaitAnswer(projectId, convoId, messageId, new LlmAgentStore.AnswerSubscriber() {
+        try {
+            llmAgentStore.awaitAnswer(projectId, convoId, messageId, new LlmAgentStore.AnswerSubscriber() {
 
-            @Override
-            public void onNext(String nextToken) {
-                eventSink.send(sse.newEventBuilder()
-                        .name("token")
-                        .data(nextToken)
-                        .build());
-            }
+                @Override
+                public void onNext(String nextToken) {
+                    eventSink.send(sse.newEventBuilder()
+                            .name("token")
+                            .data(nextToken)
+                            .build());
+                }
 
-            @Override
-            public void onComplete(MessageModel messageModel) {
-                eventSink.send(sse.newEventBuilder()
-                        .name("message")
-                        .data(messageModel.toConvoMessage())
-                        .build());
-                eventSink.close();
-            }
-        });
+                @Override
+                public void onComplete(MessageModel messageModel) {
+                    eventSink.send(sse.newEventBuilder()
+                            .name("message")
+                            .data(messageModel.toConvoMessage())
+                            .build());
+                    eventSink.close();
+                }
+            });
+        } catch (Exception ex) {
+            eventSink.close();
+            throw ex;
+        }
     }
 
     public static Module module() {
