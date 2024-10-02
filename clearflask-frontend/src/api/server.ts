@@ -2249,7 +2249,7 @@ function reducerLlm(state: StateLlm = stateLlmDefault, action: AllActions): Stat
         ...state,
         convoList: {
           status: Status.FULFILLED,
-          convos: action.payload.results.sort((l, r) => r.created.valueOf() - l.created.valueOf()),
+          convos: action.payload.results.sort((l, r) => l.created.valueOf() - r.created.valueOf()),
         },
       };
     case Client.convoListActionStatus.Pending:
@@ -2276,7 +2276,7 @@ function reducerLlm(state: StateLlm = stateLlmDefault, action: AllActions): Stat
           [action.meta.request.convoId]: {
             ...state.convoDetailsByConvoId[action.meta.request.convoId],
             status: Status.FULFILLED,
-            messages: action.payload.results,
+            messages: action.payload.results.sort((l, r) => l.created.valueOf() - r.created.valueOf()),
           },
         },
       };
