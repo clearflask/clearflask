@@ -119,9 +119,8 @@ public class LlmResource extends AbstractResource implements LlmAdminApi {
 
     @RolesAllowed({Role.ADMINISTRATOR_ACTIVE})
     @Limit(requiredPermits = 100)
-    @SuppressWarnings("VoidMethodAnnotatedWithGET") // False positive for SSE endpoint
     @Override
-    public void messageStreamGet(String projectId, String convoId, String messageId, SseEventSink eventSink) {
+    public void messageStreamGet(String projectId, String convoId, String messageId, @Context SseEventSink eventSink) {
         try {
             llmAgentStore.awaitAnswer(projectId, convoId, messageId, new LlmAgentStore.AnswerSubscriber() {
 
@@ -143,7 +142,9 @@ public class LlmResource extends AbstractResource implements LlmAdminApi {
                 }
             });
         } catch (Exception ex) {
-            eventSink.close();
+            if (eventSink != null) {
+                eventSink.close();
+            }
             throw ex;
         }
     }
