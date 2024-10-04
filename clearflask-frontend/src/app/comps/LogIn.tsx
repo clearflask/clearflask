@@ -1,6 +1,22 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
-import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, IconButton, InputAdornment, List, ListItem, ListItemIcon, ListItemText, ListSubheader, TextField } from '@material-ui/core';
+import {
+  Button,
+  Collapse,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  IconButton,
+  InputAdornment,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  ListSubheader,
+  TextField,
+} from '@material-ui/core';
 import { DialogProps } from '@material-ui/core/Dialog';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import withMobileDialog, { InjectedProps } from '@material-ui/core/withMobileDialog';
@@ -33,6 +49,7 @@ import { detectEnv, Environment } from '../../common/util/detectEnv';
 import { OAuthFlow, Unsubscribe } from '../../common/util/oauthUtil';
 import windowIso from '../../common/windowIso';
 import DigitsInput from '../utils/DigitsInput';
+
 type WithMobileDialogProps = InjectedProps & Partial<WithWidth>;
 
 enum NotificationType {
@@ -87,6 +104,7 @@ const styles = (theme: Theme) => createStyles({
     padding: '0px !important',
   },
 });
+
 export interface Props {
   className?: string;
   server: Server;
@@ -104,6 +122,7 @@ export interface Props {
   externalSubmit?: (onSubmit?: () => Promise<string | undefined>) => void;
   guestLabelOverride?: string;
 }
+
 interface ConnectProps {
   configver?: string;
   config?: Client.Config;
@@ -111,6 +130,7 @@ interface ConnectProps {
   loggedInUser?: Client.UserMe;
   demoSsoOauthRedirect?: boolean;
 }
+
 interface State {
   open?: boolean;
   notificationType?: NotificationType;
@@ -129,11 +149,15 @@ interface State {
   emailVerifyDialog?: (userId?: string) => void;
   emailVerification?: (number | undefined)[];
 }
+
 class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, true> & WithSnackbarProps & WithMobileDialogProps, State> {
   readonly emailInputRef: React.RefObject<HTMLInputElement> = React.createRef();
   state: State = {};
   externalSubmitEnabled: boolean = false;
-  readonly oauthFlow = new OAuthFlow({ accountType: 'user', redirectPath: this.props.demoSsoOauthRedirect ? '/oauth-demo' : '/oauth' });
+  readonly oauthFlow = new OAuthFlow({
+    accountType: 'user',
+    redirectPath: this.props.demoSsoOauthRedirect ? '/oauth-demo' : '/oauth',
+  });
   oauthListenerUnsubscribe: Unsubscribe | undefined;
 
   componentWillUnmount() {
@@ -166,7 +190,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
       if (onboarding.notificationMethods.anonymous
         && (onboarding.notificationMethods.anonymous.onlyShowIfPushNotAvailable !== true
           || (!notifOpts.has(NotificationType.Android) && !notifOpts.has(NotificationType.Ios) && !notifOpts.has(NotificationType.Browser)))) {
-        notifOpts.add(NotificationType.Silent)
+        notifOpts.add(NotificationType.Silent);
       }
       if (onboarding.notificationMethods.email) {
         notifOpts.add(NotificationType.Email);
@@ -237,14 +261,14 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
               isSubmitting: false,
               emailLoginDialog: resolve,
             });
-          })
+          });
         } else if (userCreateResponse.requiresEmailVerification) {
           return new Promise(resolve => {
             this.setState({
               isSubmitting: false,
               emailVerifyDialog: resolve,
             });
-          })
+          });
         } else {
           this.setState({ isSubmitting: false });
           if (userCreateResponse.user) {
@@ -279,21 +303,21 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
           },
         }}
         inputRef={this.emailInputRef}
-        variant='outlined'
-        size='small'
+        variant="outlined"
+        size="small"
         fullWidth
         required={!showEmailInputInline}
         value={this.state.email || ''}
         onChange={e => this.setState({ email: e.target.value })}
-        label='Email'
-        type='email'
+        label="Email"
+        type="email"
         error={!!this.state.email && (!emailValid || !emailAllowedDomain)}
         helperText={(!!this.props.minimalistic || !!showEmailInputInline) ? undefined : (
           <span className={this.props.classes.noWrap}>
             {!this.state.email || emailAllowedDomain ? 'Where to send you updates' : `Allowed domains: ${onboarding?.notificationMethods.email?.allowedDomains?.join(', ')}`}
           </span>
         )}
-        margin='normal'
+        margin="normal"
         style={{ marginTop: showDisplayNameInput ? undefined : '0px' }}
         disabled={this.state.isSubmitting}
       />
@@ -311,9 +335,10 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
               className={this.props.classes.content}
               style={singleColumnLayout ? { flexDirection: 'column' } : undefined}
             >
-              <List component='nav' className={this.props.classes.notificationList}>
+              <List component="nav" className={this.props.classes.notificationList}>
                 {((!this.props.actionTitle && !this.props.minimalistic) || typeof this.props.actionTitle === 'string') && (
-                  <ListSubheader className={this.props.classes.noWrap} component="div">{this.props.actionTitle !== undefined ? this.props.actionTitle : 'Create account'}</ListSubheader>
+                  <ListSubheader className={this.props.classes.noWrap}
+                                 component="div">{this.props.actionTitle !== undefined ? this.props.actionTitle : 'Create account'}</ListSubheader>
                 )}
                 <Collapse mountOnEnter in={notifOpts.has(NotificationType.SSO)}>
                   <ListItem
@@ -332,7 +357,8 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                       || 'External'} />
                   </ListItem>
                   <Collapse mountOnEnter in={onlySingleOption}>
-                    <Button color='primary' className={this.props.classes.allowButton} onClick={this.onClickSsoNotif.bind(this)}>Open</Button>
+                    <Button color="primary" className={this.props.classes.allowButton}
+                            onClick={this.onClickSsoNotif.bind(this)}>Open</Button>
                   </Collapse>
                 </Collapse>
                 {oauthOpts.map(oauthOpt => (
@@ -356,11 +382,13 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                       <ListItemText primary={oauthOpt.buttonTitle} />
                     </ListItem>
                     <Collapse mountOnEnter in={onlySingleOption}>
-                      <Button color='primary' className={this.props.classes.allowButton} onClick={e => this.onClickOauthNotif(oauthOpt)}>Open</Button>
+                      <Button color="primary" className={this.props.classes.allowButton}
+                              onClick={e => this.onClickOauthNotif(oauthOpt)}>Open</Button>
                     </Collapse>
                   </Collapse>
                 ))}
-                <Collapse mountOnEnter in={notifOpts.has(NotificationType.Android) || notifOpts.has(NotificationType.Ios)}>
+                <Collapse mountOnEnter
+                          in={notifOpts.has(NotificationType.Android) || notifOpts.has(NotificationType.Ios)}>
                   <ListItem
                     // https://github.com/mui-org/material-ui/pull/15049
                     button={!onlySingleOption as any}
@@ -369,10 +397,11 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                     disabled={onlySingleOptionRequiresAllow || this.state.isSubmitting}
                   >
                     <ListItemIcon><MobilePushIcon /></ListItemIcon>
-                    <ListItemText primary='Mobile Push' className={this.props.classes.noWrap} />
+                    <ListItemText primary="Mobile Push" className={this.props.classes.noWrap} />
                   </ListItem>
                   <Collapse mountOnEnter in={onlySingleOptionRequiresAllow}>
-                    <Button color='primary' className={this.props.classes.allowButton} onClick={this.onClickMobileNotif.bind(this)}>Allow</Button>
+                    <Button color="primary" className={this.props.classes.allowButton}
+                            onClick={this.onClickMobileNotif.bind(this)}>Allow</Button>
                   </Collapse>
                 </Collapse>
                 <Collapse mountOnEnter in={notifOpts.has(NotificationType.Browser)}>
@@ -383,10 +412,11 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                     disabled={onlySingleOptionRequiresAllow || this.state.isSubmitting}
                   >
                     <ListItemIcon><WebPushIcon /></ListItemIcon>
-                    <ListItemText primary='Browser Push' className={this.props.classes.noWrap} />
+                    <ListItemText primary="Browser Push" className={this.props.classes.noWrap} />
                   </ListItem>
                   <Collapse mountOnEnter in={onlySingleOptionRequiresAllow}>
-                    <Button color='primary' className={this.props.classes.allowButton} onClick={this.onClickWebNotif.bind(this)}>Allow</Button>
+                    <Button color="primary" className={this.props.classes.allowButton}
+                            onClick={this.onClickWebNotif.bind(this)}>Allow</Button>
                   </Collapse>
                 </Collapse>
                 <Collapse mountOnEnter in={notifOpts.has(NotificationType.Email)}>
@@ -400,7 +430,8 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                     disabled={this.state.isSubmitting}
                   >
                     <ListItemIcon><EmailIcon /></ListItemIcon>
-                    <ListItemText className={this.props.classes.noWrap} primary={!showEmailInputInline ? 'Email' : emailInput} />
+                    <ListItemText className={this.props.classes.noWrap}
+                                  primary={!showEmailInputInline ? 'Email' : emailInput} />
                   </ListItem>
                 </Collapse>
                 <Collapse mountOnEnter in={notifOpts.has(NotificationType.Silent)}>
@@ -419,7 +450,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                     disabled={true}
                   >
                     <ListItemIcon><DisabledIcon /></ListItemIcon>
-                    <ListItemText primary='Sign-up is not available' />
+                    <ListItemText primary="Sign-up is not available" />
                   </ListItem>
                 </Collapse>
               </List>
@@ -430,22 +461,23 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                   maxHeight: showAccountFields ? '400px' : '0px',
                 }}
               >
-                {!singleColumnLayout && (<Hr vertical isInsidePaper length='25%' />)}
+                {!singleColumnLayout && (<Hr vertical isInsidePaper length="25%" />)}
                 <div>
                   {!this.props.minimalistic && (
                     <ListSubheader className={this.props.classes.noWrap} component="div">Your info</ListSubheader>
                   )}
                   {showDisplayNameInput && (
                     <TextField
-                      variant='outlined'
-                      size='small'
+                      variant="outlined"
+                      size="small"
                       fullWidth
                       required={isDisplayNameRequired}
                       value={this.state.displayName || ''}
                       onChange={e => this.setState({ displayName: e.target.value })}
-                      label='Name'
-                      helperText={!!this.props.minimalistic ? undefined : (<span className={this.props.classes.noWrap}>How others see you</span>)}
-                      margin='normal'
+                      label="Name"
+                      helperText={!!this.props.minimalistic ? undefined : (
+                        <span className={this.props.classes.noWrap}>How others see you</span>)}
+                      margin="normal"
                       classes={{ root: this.props.classes.noWrap }}
                       style={{ marginTop: '0px' }}
                       disabled={this.state.isSubmitting}
@@ -456,13 +488,13 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                       {!showEmailInputInline && emailInput}
                       {showPasswordInput && (
                         <TextField
-                          variant='outlined'
-                          size='small'
+                          variant="outlined"
+                          size="small"
                           fullWidth
                           required={isPasswordRequired}
                           value={this.state.pass || ''}
                           onChange={e => this.setState({ pass: e.target.value })}
-                          label='Password'
+                          label="Password"
                           helperText={!!this.props.minimalistic ? undefined : (
                             <span className={this.props.classes.noWrap}>
                               {isPasswordRequired
@@ -473,17 +505,18 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
                           type={this.state.revealPassword ? 'text' : 'password'}
                           InputProps={{
                             endAdornment: (
-                              <InputAdornment position='end'>
+                              <InputAdornment position="end">
                                 <IconButton
-                                  aria-label='Toggle password visibility'
+                                  aria-label="Toggle password visibility"
                                   onClick={() => this.setState({ revealPassword: !this.state.revealPassword })}
                                 >
-                                  {this.state.revealPassword ? <VisibilityIcon fontSize='small' /> : <VisibilityOffIcon fontSize='small' />}
+                                  {this.state.revealPassword ? <VisibilityIcon fontSize="small" /> :
+                                    <VisibilityOffIcon fontSize="small" />}
                                 </IconButton>
                               </InputAdornment>
-                            )
+                            ),
                           }}
-                          margin='normal'
+                          margin="normal"
                           disabled={this.state.isSubmitting}
                         />
                       )}
@@ -497,7 +530,8 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
             <AcceptTerms overrideTerms={onboarding.terms.documents} />
           )}
           <Collapse mountOnEnter in={!!this.props.loggedInUser}>
-            <DialogContentText>You are logged in as <span className={this.props.classes.bold}>{this.props.loggedInUser?.name || this.props.loggedInUser?.email || 'Anonymous'}</span></DialogContentText>
+            <DialogContentText>You are logged in as <span
+              className={this.props.classes.bold}>{this.props.loggedInUser?.name || this.props.loggedInUser?.email || 'Anonymous'}</span></DialogContentText>
           </Collapse>
         </DialogContent>
         {!this.props.externalSubmit && (
@@ -507,28 +541,32 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
             )}
             {!!signupAllowed ? (
               <SubmitButton
-                color='primary'
+                color="primary"
                 isSubmitting={this.state.isSubmitting}
                 disabled={!isSubmittable && !this.props.loggedInUser}
                 onClick={doSubmit}
               >{this.props.actionSubmitTitle || 'Continue'}</SubmitButton>
             ) : (!!this.props.onClose ? (
-              <Button onClick={() => { this.props.onClose?.() }}>Back</Button>
+              <Button onClick={() => {
+                this.props.onClose?.();
+              }}>Back</Button>
             ) : null)}
           </DialogActions>
         )}
         <Dialog
           open={!!this.state.awaitExternalBind}
           onClose={() => this.setState({ awaitExternalBind: undefined })}
-          maxWidth='xs'
+          maxWidth="xs"
           {...this.props.forgotEmailDialogProps}
         >
           <DialogTitle>Awaiting confirmation...</DialogTitle>
           <DialogContent>
             {this.state.awaitExternalBind === 'recovery' ? (
-              <DialogContentText>We sent an email to <span className={this.props.classes.bold}>{this.state.email}</span>. Return to this page after clicking the confirmation link.</DialogContentText>
+              <DialogContentText>We sent an email to <span className={this.props.classes.bold}>{this.state.email}</span>.
+                Return to this page after clicking the confirmation link.</DialogContentText>
             ) : (
-              <DialogContentText>A popup was opened leading you to a sign-in page. After you complete sign-in, this dialog will automatically close.</DialogContentText>
+              <DialogContentText>A popup was opened leading you to a sign-in page. After you complete sign-in, this
+                dialog will automatically close.</DialogContentText>
             )}
           </DialogContent>
           <DialogActions>
@@ -539,13 +577,14 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
           open={!!this.state.emailLoginDialog}
           onClose={() => {
             this.state.emailLoginDialog?.();
-            this.setState({ emailLoginDialog: undefined })
+            this.setState({ emailLoginDialog: undefined });
           }}
-          maxWidth='xs'
+          maxWidth="xs"
         >
           <DialogTitle>Login via Email</DialogTitle>
           <DialogContent>
-            <DialogContentText>The email <span className={this.props.classes.bold}>{this.state.email}</span> is associated with an account.</DialogContentText>
+            <DialogContentText>The email <span className={this.props.classes.bold}>{this.state.email}</span> is
+              associated with an account.</DialogContentText>
             <DialogContentText>Open the link from the email or copy the verification token here:</DialogContentText>
             <DigitsInput
               digits={6}
@@ -583,7 +622,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
           <DialogActions>
             <Button onClick={() => {
               this.state.emailLoginDialog?.();
-              this.setState({ emailLoginDialog: undefined })
+              this.setState({ emailLoginDialog: undefined });
             }}>Cancel</Button>
           </DialogActions>
         </Dialog>
@@ -593,11 +632,13 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
             this.state.emailVerifyDialog?.();
             this.setState({ emailVerifyDialog: undefined });
           }}
-          maxWidth='xs'
+          maxWidth="xs"
         >
           <DialogTitle>Verify your email</DialogTitle>
           <DialogContent>
-            <DialogContentText>We sent a verification email to <span className={this.props.classes.bold}>{this.state.email}</span>. Please copy the verification token from the email here:</DialogContentText>
+            <DialogContentText>We sent a verification email to <span
+              className={this.props.classes.bold}>{this.state.email}</span>. Please copy the verification token from the
+              email here:</DialogContentText>
             <DigitsInput
               digits={6}
               value={this.state.emailVerification}
@@ -640,7 +681,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
           <DialogActions>
             <Button onClick={() => {
               this.state.emailVerifyDialog?.();
-              this.setState({ emailVerifyDialog: undefined })
+              this.setState({ emailVerifyDialog: undefined });
             }}>Cancel</Button>
           </DialogActions>
         </Dialog>
@@ -655,7 +696,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
       <Dialog
         open={!!this.props.open}
         onClose={this.props.onClose}
-        scroll='body'
+        scroll="body"
         PaperProps={{
           style: {
             width: 'fit-content',
@@ -701,10 +742,17 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
           },
         }));
       } else {
-        this.props.server.dispatch().then(d => d.userBind({
-          projectId: this.props.server.getProjectId(),
-          userBind: {},
-        }));
+        if (this.props.onboardBefore?.visibility === Client.OnboardingVisibilityEnum.Private) {
+          this.props.server.dispatch().then(d => d.configAndUserBindSlug({
+            slug: windowIso.location.hostname,
+            userBind: {},
+          }));
+        } else {
+          this.props.server.dispatch().then(d => d.userBind({
+            projectId: this.props.server.getProjectId(),
+            userBind: {},
+          }));
+        }
       }
     });
   }
@@ -721,7 +769,7 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
     this.listenForExternalBind();
     this.setState({ awaitExternalBind: 'sso' });
     !windowIso.isSsr && windowIso.open(onboarding.notificationMethods.sso.redirectUrl
-      .replace('<return_uri>', `${windowIso.location.protocol}//${windowIso.location.host}${this.props.demoSsoOauthRedirect ? '/sso-demo' : '/sso'}`),
+        .replace('<return_uri>', `${windowIso.location.protocol}//${windowIso.location.host}${this.props.demoSsoOauthRedirect ? '/sso-demo' : '/sso'}`),
       `cf_${this.props.server.getProjectId()}_sso`,
       `width=${windowIso.document.documentElement.clientWidth * 0.9},height=${windowIso.document.documentElement.clientHeight * 0.9}`,
     );
@@ -741,11 +789,14 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
         });
       } else if (r.type === 'error') {
         if (r.userFacingMsg) {
-          this.props.enqueueSnackbar(r.userFacingMsg || 'Failed to setup mobile push', { variant: 'error', preventDuplicate: true });
+          this.props.enqueueSnackbar(r.userFacingMsg || 'Failed to setup mobile push', {
+            variant: 'error',
+            preventDuplicate: true,
+          });
         }
         this.forceUpdate();
       }
-    })
+    });
   }
 
   onClickWebNotif() {
@@ -759,7 +810,10 @@ class LogIn extends Component<Props & ConnectProps & WithStyles<typeof styles, t
         });
       } else if (r.type === 'error') {
         if (r.userFacingMsg) {
-          this.props.enqueueSnackbar(r.userFacingMsg || 'Failed to setup browser notifications', { variant: 'error', preventDuplicate: true });
+          this.props.enqueueSnackbar(r.userFacingMsg || 'Failed to setup browser notifications', {
+            variant: 'error',
+            preventDuplicate: true,
+          });
         }
         this.forceUpdate();
       }
@@ -774,5 +828,5 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
     onboardBefore: state.conf.onboardBefore,
     loggedInUser: state.users.loggedIn.status === Status.FULFILLED ? state.users.loggedIn.user : undefined,
     demoSsoOauthRedirect: state.settings.demoSsoOauthRedirect,
-  }
+  };
 })(withStyles(styles, { withTheme: true })(withSnackbar(withMobileDialog<Props & ConnectProps & WithStyles<typeof styles, true> & WithSnackbarProps>({ breakpoint: 'xs' })(LogIn))));

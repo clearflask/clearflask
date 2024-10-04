@@ -1512,7 +1512,15 @@ function reducerUsers(state: StateUsers = stateUsersDefault, action: AllActions)
     case Client.userBindActionStatus.Fulfilled:
     case Client.userBindSlugActionStatus.Fulfilled:
     case Client.configAndUserBindSlugActionStatus.Fulfilled:
-      if (!action.payload.user) return state;
+      if (!action.payload.user) {
+        return {
+          ...state,
+          loggedIn: {
+            ...state.loggedIn,
+            status: Status.FULFILLED,
+          },
+        };
+      }
       return {
         ...state,
         byId: {
