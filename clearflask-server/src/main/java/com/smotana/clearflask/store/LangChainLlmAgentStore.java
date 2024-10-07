@@ -16,6 +16,7 @@ import com.smotana.clearflask.store.LlmHistoryStore.MessageModel;
 import com.smotana.clearflask.util.LogUtil;
 import dev.langchain4j.data.message.*;
 import dev.langchain4j.model.StreamingResponseHandler;
+import dev.langchain4j.model.openai.OpenAiChatModelName;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import dev.langchain4j.model.output.Response;
 import lombok.extern.slf4j.Slf4j;
@@ -33,10 +34,10 @@ public class LangChainLlmAgentStore implements LlmAgentStore {
 
     public interface Config {
 
-        @DefaultValue("gpt-4o")
-        String openAiModelName();
+        @DefaultValue("GPT_4_O_MINI")
+        OpenAiChatModelName openAiModelName();
 
-        Observable<String> openAiModelNameObservable();
+        Observable<OpenAiChatModelName> openAiModelNameObservable();
 
         @DefaultValue("none")
         String openAiApiKey();

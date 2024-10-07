@@ -1,6 +1,5 @@
 package com.smotana.clearflask.store;
 
-import com.google.common.base.Enums;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -13,7 +12,6 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import dev.langchain4j.data.message.*;
 import dev.langchain4j.model.Tokenizer;
-import dev.langchain4j.model.openai.OpenAiChatModelName;
 import dev.langchain4j.model.openai.OpenAiTokenizer;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
@@ -53,8 +51,7 @@ public class DynamoLlmMemoryStore implements LlmMemoryStore {
     }
 
     private void setupTokenizer() {
-        OpenAiChatModelName modelName = Enums.getIfPresent(OpenAiChatModelName.class, configAgentStore.openAiModelName()).or(OpenAiChatModelName.GPT_4_O);
-        tokenizer = new OpenAiTokenizer(modelName);
+        tokenizer = new OpenAiTokenizer(configAgentStore.openAiModelName());
     }
 
     LoadingCache<String, MessagesModel> messagesModelCache = CacheBuilder.newBuilder()
