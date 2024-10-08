@@ -9,10 +9,12 @@ import com.smotana.clearflask.api.model.VersionedConfigAdmin;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
+import com.smotana.clearflask.store.impl.ConfigurableLlmPromptStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
 import com.smotana.clearflask.testutil.AbstractTest;
 import com.smotana.clearflask.util.ChatwootUtil;
 import com.smotana.clearflask.util.IntercomUtil;
+import com.smotana.clearflask.util.MustacheProvider;
 import com.smotana.clearflask.util.ProjectUpgrader;
 import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +51,7 @@ public class LlmPromptStoreTest extends AbstractTest {
         install(ConfigurableLlmPromptStore.module());
 
         bindMock(AccountStore.class);
+        install(MustacheProvider.module());
 
         // For project store
         bindMock(ContentStore.class);

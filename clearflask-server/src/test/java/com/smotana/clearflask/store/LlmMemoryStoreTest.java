@@ -6,6 +6,8 @@ import com.google.inject.Inject;
 import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
+import com.smotana.clearflask.store.impl.DynamoLlmMemoryStore;
+import com.smotana.clearflask.store.impl.LangChainLlmAgentStore;
 import com.smotana.clearflask.testutil.AbstractTest;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;

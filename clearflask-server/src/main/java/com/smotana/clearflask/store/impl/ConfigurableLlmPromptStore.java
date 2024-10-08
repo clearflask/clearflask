@@ -1,4 +1,4 @@
-package com.smotana.clearflask.store;
+package com.smotana.clearflask.store.impl;
 
 import com.google.common.base.Charsets;
 import com.google.common.cache.CacheBuilder;
@@ -11,7 +11,10 @@ import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.samskivert.mustache.Mustache;
 import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
+import com.smotana.clearflask.store.LlmPromptStore;
+import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.util.Extern;
 import dev.langchain4j.data.message.SystemMessage;
@@ -27,12 +30,12 @@ import java.time.ZonedDateTime;
 @Singleton
 public class ConfigurableLlmPromptStore implements LlmPromptStore {
 
-    public static final String PROMPT_RESOURCE_PATH = "llm/prompt.mustache";
-
     @Inject
     private ProjectStore projectStore;
     @Inject
     private AccountStore accountStore;
+    @Inject
+    private Mustache.Compiler mustache;
 
     private final LoadingCache<CacheKey, String> projectIdToPromptCache = CacheBuilder.newBuilder()
             .expireAfterWrite(Duration.ofMinutes(10))
@@ -46,17 +49,12 @@ public class ConfigurableLlmPromptStore implements LlmPromptStore {
 
     @Inject
     protected void setup() throws Exception {
-        templateStr = Resources.toString(Thread.currentThread().getContextClassLoader().getResource(PROMPT_RESOURCE_PATH), Charsets.UTF_8);
+        templateStr = Resources.toString(Thread.currentThread().getContextClassLoader().getResource("llm/prompt.mustache"), Charsets.UTF_8);
     }
 
     @Extern
     private String getPromptExtern(String projectId) {
         String accountId = projectStore.getProject(projectId, true).orElseThrow().getAccountId();
-        return getPrompt(projectId, accountId).text();
-    }
-
-    @Extern
-    private String getPromptExtern(String projectId, String accountId) {
         return getPrompt(projectId, accountId).text();
     }
 
@@ -68,9 +66,7 @@ public class ConfigurableLlmPromptStore implements LlmPromptStore {
     private String createPrompt(String projectId, String accountId) {
         Project project = projectStore.getProject(projectId, true).orElseThrow();
         Account account = accountStore.getAccount(accountId, true).orElseThrow();
-        String prompt = Mustache.compiler()
-                .escapeHTML(false)
-                .standardsMode(false)
+        String prompt = mustache
                 .compile(templateStr)
                 .execute(new PromptContext(
                         account,

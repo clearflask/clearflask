@@ -23,8 +23,8 @@ public interface LlmToolingStore {
             @ToolMemoryId String projectId,
             @P("sorting type: TRENDING (recently popular), TOP (most popular), NEW (most recent), RANDOM (random sample)") SortByEnum sortBy,
             @P(value = "search for occurrence of a term in title/description", required = false) String search,
-            @P(value = "filter by category ids", required = false) List<String> filterCategoryIds,
+            @P(value = "specify a list of categoryIds to filter by", required = false) List<String> filterCategoryIds,
             @P(value = "filter by user/author id", required = false) String filterAuthorId,
-            @P("number of results to return between 1 an 100") long limit
+            @P("number of results to return between 1 an 100") Long limit
     );
 }

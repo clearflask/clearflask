@@ -1,4 +1,4 @@
-package com.smotana.clearflask.store;
+package com.smotana.clearflask.store.impl;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -12,6 +12,7 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.ConvoMessage;
 import com.smotana.clearflask.api.model.CreateMessageResponse;
+import com.smotana.clearflask.store.*;
 import com.smotana.clearflask.store.LlmHistoryStore.MessageModel;
 import com.smotana.clearflask.util.LogUtil;
 import dev.langchain4j.data.message.*;
@@ -104,6 +105,7 @@ public class LangChainLlmAgentStore implements LlmAgentStore {
                 .logResponses(config.debugLogging())
                 .temperature(config.temperature())
                 .timeout(config.timeout())
+                .parallelToolCalls(true)
                 .build();
     }
 
@@ -169,12 +171,12 @@ public class LangChainLlmAgentStore implements LlmAgentStore {
             @Override
             public void onComplete(Response<AiMessage> response) {
                 try {
-                    log.info("AI message completed due to {} with tokens: {} = {} in + {} out",
+                    log.info("LLM message completed {} tokens: {} [{} IN] [{} OUT]",
                             response.finishReason(),
                             response.tokenUsage().totalTokenCount(),
-                            response.tokenUsage().outputTokenCount(),
-                            response.tokenUsage().inputTokenCount());
-                    log.info("AI message response: {}", response.content().text());
+                            response.tokenUsage().inputTokenCount(),
+                            response.tokenUsage().outputTokenCount());
+                    log.info("LLM message response: {}", response.content().text());
 
                     // Handle tool execution requests
                     if (response.content().hasToolExecutionRequests()) {
@@ -182,7 +184,7 @@ public class LangChainLlmAgentStore implements LlmAgentStore {
                         // Recursion safeguard
                         if (recursionCounter.getAndAdd(1) > Math.min(10, llmToolingStore.getTools().size())) {
                             if (LogUtil.rateLimitAllowLog("LangChainLlmAgentStore-recursion-limit")) {
-                                log.warn("Recursion limit reached, stopping execution");
+                                log.error("Recursion limit reached, stopping execution");
                             }
                             MessageModel messageModel = llmHistoryStore.putMessage(responseMessageId, convoId, ConvoMessage.AuthorTypeEnum.ALERT, "AI fell into recursion, please try again later.");
                             Optional.ofNullable(LangChainLlmAgentStore.this.messageIdToSubscriber.getIfPresent(responseMessageId))
@@ -191,7 +193,9 @@ public class LangChainLlmAgentStore implements LlmAgentStore {
                         }
 
                         // Fetch data
-                        ImmutableList<ToolExecutionResultMessage> toolResponseMessages = response.content().toolExecutionRequests().parallelStream()
+                        ImmutableList<ToolExecutionResultMessage> toolResponseMessages = response.content()
+                                .toolExecutionRequests()
+                                .parallelStream()
                                 .map(toolExecutionRequest -> llmToolingStore.runTool(projectId, toolExecutionRequest))
                                 .map(toolExecution -> ToolExecutionResultMessage.from(toolExecution.request(), toolExecution.result()))
                                 .collect(ImmutableList.toImmutableList());

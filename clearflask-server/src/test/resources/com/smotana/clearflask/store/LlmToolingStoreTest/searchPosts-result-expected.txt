@@ -1,0 +1,20 @@
+*title🤣*
+postId:some-idea-1-fgwed
+created:1970-01-01T00:00:00Z
+content:"description&#x1f923;"
+author:userId:john-doe name:"John Doe" isMod
+categoryId:some-category-id-1
+statusId:some-status-id-1
+tagIds:tag-id-1,tag-id-2
+comments:4
+voters:324
+voteValue:123
+response:some response
+responseAuthor:userId:bob-a name:"Bob A" isMod
+---
+*title🤣*
+postId:some-idea-2-fsdaf
+created:1970-01-01T00:00:00Z
+content:"description&#x1f923;"
+author:userId:taylor-s
+categoryId:some-category-id-2

@@ -1,4 +1,4 @@
-package com.smotana.clearflask.store;
+package com.smotana.clearflask.store.impl;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -10,6 +10,7 @@ import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.smotana.clearflask.store.LlmMemoryStore;
 import dev.langchain4j.data.message.*;
 import dev.langchain4j.model.Tokenizer;
 import dev.langchain4j.model.openai.OpenAiTokenizer;

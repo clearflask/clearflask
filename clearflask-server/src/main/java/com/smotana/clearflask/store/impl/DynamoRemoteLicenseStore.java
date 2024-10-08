@@ -94,8 +94,8 @@ public class DynamoRemoteLicenseStore extends ManagedService implements RemoteLi
     }
 
     private boolean validateInternal(String license) {
-        if ("FREEFOREVER".equals(license)) {
-            log.info("License is free forever");
+        if ("FREEFORNOW".equals(license)) {
+            log.info("License is free for now");
             return true;
         }
         try (CloseableHttpClient client = HttpClientBuilder.create().build(); CloseableHttpResponse res = client.execute(new HttpPost("https://clearflask.com/api/v1/license/check?license=" + license))) {

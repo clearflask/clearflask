@@ -34,7 +34,8 @@ import com.smotana.clearflask.security.limiter.TieredWebLimiter;
 import com.smotana.clearflask.security.limiter.challenge.CaptchaChallenger;
 import com.smotana.clearflask.security.limiter.challenge.LocalChallengeLimiter;
 import com.smotana.clearflask.security.limiter.rate.LocalRateLimiter;
-import com.smotana.clearflask.store.*;
+import com.smotana.clearflask.store.CloudLocalLicenseStore;
+import com.smotana.clearflask.store.ConfigAwsCredentialsProvider;
 import com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider;
@@ -124,6 +125,7 @@ public enum ServiceInjector {
                 install(ServiceManagerProvider.module());
                 install(GsonProvider.module());
                 install(GuavaRateLimiters.module());
+                install(MustacheProvider.module());
 
                 // Stores
                 install(ConfigAwsCredentialsProvider.module());
