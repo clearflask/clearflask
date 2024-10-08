@@ -154,6 +154,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 ConfigurableLlmPromptStore.module(),
                 LangChainLlmAgentStore.module(),
                 LangChainLlmToolingStore.module(),
+                MustacheProvider.module(),
                 KillBillResource.module(),
                 GitHubResource.module(),
                 GitHubStoreImpl.module(),
