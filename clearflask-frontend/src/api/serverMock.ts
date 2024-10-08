@@ -1926,6 +1926,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         authorType: Client.ConvoMessageAuthorTypeEnum.AI,
         content: capitalize(messageStr),
         created: new Date(),
+        inputTokenCount: 1403,
+        outputTokenCount: 87,
       };
       convo.results.push(message);
       eventSource.onmessage?.({

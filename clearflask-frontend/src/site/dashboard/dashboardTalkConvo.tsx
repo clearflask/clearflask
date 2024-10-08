@@ -11,6 +11,11 @@ import { Alert } from '@material-ui/lab';
 import TimeAgoI18n from '../../app/utils/TimeAgoI18n';
 import { Typography } from '@material-ui/core';
 import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
+import ServerAdmin from '../../api/serverAdmin';
+
+// Estimated token prices; gpt-4o-mini https://openai.com/api/pricing/
+const INPUT_TOKEN_PRICE_PER_MILLION = 0.150;
+const OUTPUT_TOKEN_PRICE_PER_MILLION = 0.600;
 
 const styles = (theme: Theme) => createStyles({
   outer: {
@@ -48,6 +53,9 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     justifyContent: 'left',
     alignItems: 'baseline',
+  },
+  tokens: {
+    marginLeft: theme.spacing(1),
   },
 });
 const useStyles = makeStyles(styles);
@@ -136,6 +144,8 @@ export const DashboardTalkConvo = (props: {
     // eslint-disable-next-line
   }, [upcomingMessageId]);
 
+  const isSuperAdminLoggedIn = ServerAdmin.get().isSuperAdminLoggedIn();
+
   return (
     <div className={classes.outer} ref={chatScrollRef}>
       {messages?.map(message => (
@@ -157,6 +167,18 @@ export const DashboardTalkConvo = (props: {
                 <Typography variant="caption" color="textSecondary">
                   <TimeAgoI18n date={message.created} />
                 </Typography>
+                {isSuperAdminLoggedIn && message.inputTokenCount !== undefined && message.outputTokenCount !== undefined && (
+                  <Typography variant="caption" color="textSecondary" className={classes.tokens}>
+                    {((INPUT_TOKEN_PRICE_PER_MILLION / message.inputTokenCount / 1000000)
+                      + (OUTPUT_TOKEN_PRICE_PER_MILLION / message.outputTokenCount / 1000000))
+                      .toLocaleString('en-US', {
+                        style: 'currency',
+                        currency: 'USD',
+                        maximumSignificantDigits: 2,
+                      })
+                    } [IN:{message.inputTokenCount}] [OUT:{message.outputTokenCount}]
+                  </Typography>
+                )}
               </div>
               {message.content}
             </>

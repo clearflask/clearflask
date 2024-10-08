@@ -209,7 +209,9 @@ public class LangChainLlmAgentStore implements LlmAgentStore {
                     }
 
                     // Send the final message
-                    MessageModel messageModel = llmHistoryStore.putMessage(responseMessageId, convoId, ConvoMessage.AuthorTypeEnum.AI, response.content().text());
+                    MessageModel messageModel = llmHistoryStore.putMessage(responseMessageId, convoId, ConvoMessage.AuthorTypeEnum.AI, response.content().text(),
+                            Optional.ofNullable(response.tokenUsage().inputTokenCount()).map(Long::valueOf).orElse(null),
+                            Optional.ofNullable(response.tokenUsage().outputTokenCount()).map(Long::valueOf).orElse(null));
                     Optional.ofNullable(LangChainLlmAgentStore.this.messageIdToSubscriber.getIfPresent(responseMessageId))
                             .ifPresent(subscriber -> subscriber.onComplete(messageModel));
                     llmMemoryStore.add(convoId, response.content());

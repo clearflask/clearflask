@@ -8,6 +8,7 @@ import com.smotana.clearflask.util.IdUtil;
 import io.dataspray.singletable.DynamoTable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.NonNull;
 import lombok.Value;
 
 import java.time.Instant;
@@ -50,6 +51,12 @@ public interface LlmHistoryStore {
             AuthorTypeEnum authorType,
             String content);
 
+    MessageModel putMessage(String messageId, String convoId,
+            AuthorTypeEnum authorType,
+            String content,
+            Long inputTokenCount,
+            Long outputTokenCount);
+
     Optional<MessageModel> getMessage(String convoId, String messageId);
 
     ImmutableList<MessageModel> getMessages(String convoId);
@@ -62,10 +69,15 @@ public interface LlmHistoryStore {
     @DynamoTable(type = Primary, partitionKeys = {"userId", "projectId"}, rangePrefix = "llmConvo", rangeKeys = {"convoId"})
     @DynamoTable(type = Gsi, indexNumber = 2, partitionKeys = {"projectId"}, rangePrefix = "llmConvoByProjectId")
     class ConvoModel {
+        @NonNull
         public String projectId;
+        @NonNull
         public String userId;
+        @NonNull
         public String convoId;
+        @NonNull
         public Instant created;
+        @NonNull
         public String title;
 
         public Convo toConvo() {
@@ -81,18 +93,27 @@ public interface LlmHistoryStore {
     @AllArgsConstructor
     @DynamoTable(type = Primary, partitionKeys = {"convoId"}, rangePrefix = "llmMsg", rangeKeys = {"messageId"})
     class MessageModel {
+        @NonNull
         public String convoId;
+        @NonNull
         public String messageId;
+        @NonNull
         public Instant created;
+        @NonNull
         public AuthorTypeEnum authorType;
+        @NonNull
         public String content;
+        public Long tokenIn;
+        public Long tokenOut;
 
         public ConvoMessage toConvoMessage() {
             return new ConvoMessage(
                     messageId,
                     created,
                     authorType,
-                    content);
+                    content,
+                    tokenIn,
+                    tokenOut);
         }
     }
 }

@@ -33,6 +33,12 @@ components:
           enum: [ USER, AI, ALERT ]
         content:
           type: string
+        inputTokenCount:
+          type: integer
+          format: int64
+        outputTokenCount:
+          type: integer
+          format: int64
     ConvoMessageCreate:
       type: object
       required:

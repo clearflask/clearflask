@@ -112,11 +112,18 @@ public class DynamoLlmHistoryStore implements LlmHistoryStore {
 
     @Override
     public MessageModel putMessage(String messageId, String convoId, AuthorTypeEnum authorType, String content) {
+        return putMessage(messageId, convoId, authorType, content, null, null);
+    }
+
+    @Override
+    public MessageModel putMessage(String messageId, String convoId, AuthorTypeEnum authorType, String content, Long inputTokenCount, Long outputTokenCount) {
         MessageModel messageModel = new MessageModel(convoId,
                 messageId,
                 Instant.now(),
                 authorType,
-                content);
+                content,
+                inputTokenCount,
+                outputTokenCount);
         messageSchema.table().putItem(messageSchema.toItem(messageModel));
         return messageModel;
     }
