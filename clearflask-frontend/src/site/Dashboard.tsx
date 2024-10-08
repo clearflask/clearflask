@@ -69,7 +69,7 @@ import windowIso from '../common/windowIso';
 import { LanguageSelect } from '../LanguageSelect';
 import { ADMIN_LOGIN_REDIRECT_TO } from './AccountEnterPage';
 import ContactPage from './ContactPage';
-import { BillingPaymentActionRedirect, BillingPaymentActionRedirectPath } from './dashboard/BillingPage';
+import { AddonAi, BillingPaymentActionRedirect, BillingPaymentActionRedirectPath } from './dashboard/BillingPage';
 import CreatePage from './dashboard/CreatePage';
 import { renderChangelog } from './dashboard/dashboardChangelog';
 import { dashboardOnDragEnd, OnDndHandled, OnDndPreHandling } from './dashboard/dashboardDndActionHandler';
@@ -716,7 +716,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                     root: this.props.classes.tabRoot,
                   }}
                 />
-                {!context.isSelfhostServiceOnly && !!this.props.account.isSuperAdmin && (
+                {!context.isSelfhostServiceOnly && (this.props.account.isSuperAdmin || this.props.account.addons?.[AddonAi]) && (
                   <Tab
                     className={this.props.classes.tab}
                     component={Link}

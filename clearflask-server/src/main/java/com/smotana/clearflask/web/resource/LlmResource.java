@@ -12,8 +12,11 @@ import com.smotana.clearflask.api.model.ConvoDetailsResponse;
 import com.smotana.clearflask.api.model.ConvoListResponse;
 import com.smotana.clearflask.api.model.ConvoMessageCreate;
 import com.smotana.clearflask.api.model.CreateMessageResponse;
+import com.smotana.clearflask.billing.KillBillPlanStore;
+import com.smotana.clearflask.core.ServiceInjector.Environment;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.LlmAgentStore;
 import com.smotana.clearflask.store.LlmHistoryStore;
 import com.smotana.clearflask.store.LlmHistoryStore.ConvoModel;
@@ -22,6 +25,7 @@ import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Role;
+import com.smotana.clearflask.web.security.SuperAdminPredicate;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 
@@ -47,27 +51,28 @@ public class LlmResource extends AbstractResource implements LlmAdminApi {
     private LlmAgentStore llmAgentStore;
     @Inject
     private AccountStore accountStore;
+    @Inject
+    private SuperAdminPredicate superAdminPredicate;
+    @Inject
+    private Environment env;
 
-    @RolesAllowed({Role.ADMINISTRATOR_ACTIVE})
+    @RolesAllowed({Role.ADMINISTRATOR})
     @Limit(requiredPermits = 1)
     @Override
     public void convoDelete(String projectId, String convoId) {
-        String accountId = getExtendedPrincipal()
-                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedAccountIdOpt)
-                .orElseThrow();
+        String accountId = getAuthenticatedAccountId();
+
         llmHistoryStore.deleteConvo(
                 projectId,
                 accountId,
                 convoId);
     }
 
-    @RolesAllowed({Role.ADMINISTRATOR_ACTIVE})
+    @RolesAllowed({Role.ADMINISTRATOR})
     @Limit(requiredPermits = 1)
     @Override
     public ConvoDetailsResponse convoDetails(String projectId, String convoId) {
-        String accountId = getExtendedPrincipal()
-                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedAccountIdOpt)
-                .orElseThrow();
+        String accountId = getAuthenticatedAccountId();
 
         // Ensure this convo is owned by the requestor
         llmHistoryStore.getConvo(
@@ -85,13 +90,11 @@ public class LlmResource extends AbstractResource implements LlmAdminApi {
                 .collect(ImmutableList.toImmutableList()));
     }
 
-    @RolesAllowed({Role.ADMINISTRATOR_ACTIVE})
+    @RolesAllowed({Role.ADMINISTRATOR})
     @Limit(requiredPermits = 1)
     @Override
     public ConvoListResponse convoList(String projectId) {
-        String accountId = getExtendedPrincipal()
-                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedAccountIdOpt)
-                .orElseThrow();
+        String accountId = getAuthenticatedAccountId();
 
         ImmutableList<ConvoModel> convoModels = llmHistoryStore.listConvos(
                 projectId,
@@ -106,9 +109,14 @@ public class LlmResource extends AbstractResource implements LlmAdminApi {
     @Limit(requiredPermits = 100, challengeAfter = 30)
     @Override
     public CreateMessageResponse messageCreate(String projectId, String convoId, ConvoMessageCreate convoMessageCreate) {
-        String accountId = getExtendedPrincipal()
-                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedAccountIdOpt)
-                .orElseThrow();
+        String accountId = getAuthenticatedAccountId();
+        Account account = accountStore.getAccount(accountId, true).orElseThrow();
+
+        if (Environment.PRODUCTION_SELF_HOST.equals(env)
+                || (!"true".equals(account.getAddons().get(KillBillPlanStore.ADDON_AI))
+                && !superAdminPredicate.isEmailSuperAdmin(account.getEmail()))) {
+            throw new ApiException(Response.Status.PAYMENT_REQUIRED, "AI not enabled");
+        }
 
         final ConvoModel convoModel;
         if ("new".equalsIgnoreCase(convoId)) {
@@ -127,7 +135,7 @@ public class LlmResource extends AbstractResource implements LlmAdminApi {
         return llmAgentStore.ask(projectId, accountId, convoModel.getConvoId(), convoMessageCreate.getContent());
     }
 
-    @RolesAllowed({Role.ADMINISTRATOR_ACTIVE})
+    @RolesAllowed({Role.ADMINISTRATOR})
     @Limit(requiredPermits = 100)
     @Override
     public void messageStreamGet(String projectId, String convoId, String messageId, @Context SseEventSink eventSink) {
@@ -157,6 +165,14 @@ public class LlmResource extends AbstractResource implements LlmAdminApi {
             }
             throw ex;
         }
+    }
+
+    private String getAuthenticatedAccountId() {
+        return getExtendedPrincipal()
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedSuperAccountIdOpt)
+                .or(() -> getExtendedPrincipal()
+                        .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedAccountIdOpt))
+                .orElseThrow();
     }
 
     public static Module module() {

@@ -74,11 +74,16 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
      * If changed, also change in BillingPage.tsx
      */
     public static final String ADDON_EXTRA_TEAMMATE = "extra-teammate";
+    /**
+     * If changed, also change in BillingPage.tsx
+     */
+    public static final String ADDON_AI = "extra-ai";
     private static final String TERMS_POSTS = "Delete older posts to keep your project tidy and stay within the limits.";
     private static final String TERMS_PROJECTS = "You can create separate projects each having their own set of users and content";
     private static final String TERMS_ADMINS = "Amount of administrators, product managers or support team members you can have on each project including yourself.";
     private static final String TERMS_CREDIT_SYSTEM = "Credit System allows fine-grained prioritization of value for each idea.";
     private static final String TERMS_PRIVATE_PROJECTS = "Create a private project so only authorized users can view and provide feedback";
+    private static final String TERMS_AI = "Talk to your customers via AI";
     private static final String TERMS_SSO_AND_OAUTH = "Use your existing user accounts to log into ClearFlask with Single Sign-On or external OAuth provider such as Google, Github or Facebook";
     private static final String TERMS_SITE_TEMPLATE = "Use your own HTML template to display parts of the site";
     private static final String TERMS_TRACKING = "Include Google Analytics or Hotjar on every page";
@@ -675,6 +680,8 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 return Optional.of(new PlanPerk("Whitelabel", TERMS_WHITELABEL));
             case ADDON_PRIVATE_PROJECTS:
                 return Optional.of(new PlanPerk("Private projects", TERMS_PRIVATE_PROJECTS));
+            case ADDON_AI:
+                return Optional.of(new PlanPerk("AI", TERMS_AI));
             case ADDON_EXTRA_PROJECT:
                 long projectCount = Optional.ofNullable(Longs.tryParse(value)).orElse(0L);
                 boolean isMultiple = projectCount > 1;

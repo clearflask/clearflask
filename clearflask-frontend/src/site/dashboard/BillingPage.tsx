@@ -72,6 +72,7 @@ export const AddonWhitelabel = 'whitelabel';
 export const AddonPrivateProjects = 'private-projects';
 export const AddonExtraProject = 'extra-project';
 export const AddonExtraTeammate = 'extra-teammate';
+export const AddonAi = 'extra-ai';
 
 export const BillingPaymentActionRedirectPath = 'billing-redirect';
 
@@ -191,6 +192,7 @@ interface State {
   showAddonsChange?: boolean;
   whitelabel?: boolean;
   privateProjects?: boolean;
+  ai?: boolean;
   extraProjects?: number;
   extraTeammates?: number;
   showCreditAdjustment?: boolean;
@@ -924,6 +926,16 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                       )}
                       label={(<FormHelperText>Private projects</FormHelperText>)}
                     />
+                    <FormControlLabel
+                      control={(
+                        <Switch
+                          checked={this.state.ai !== undefined ? this.state.ai : !!this.props.account.addons?.[AddonAi]}
+                          onChange={(e, checked) => this.setState({ ai: !!checked })}
+                          color="default"
+                        />
+                      )}
+                      label={(<FormHelperText>Private projects</FormHelperText>)}
+                    />
                   </DialogContent>
                   <DialogActions>
                     <Button onClick={() => this.setState({ showAddonsChange: undefined })}
@@ -933,12 +945,14 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                       disabled={this.state.whitelabel === undefined
                         && this.state.privateProjects === undefined
                         && this.state.extraProjects === undefined
+                        && this.state.ai === undefined
                         && this.state.extraTeammates === undefined}
                       color="primary"
                       onClick={() => {
                         if (this.state.whitelabel === undefined
                           && this.state.privateProjects === undefined
                           && this.state.extraProjects === undefined
+                          && this.state.ai === undefined
                           && this.state.extraTeammates === undefined) return;
 
                         this.setState({ isSubmitting: true });
@@ -953,6 +967,9 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                               }),
                               ...(this.state.extraProjects === undefined ? {} : {
                                 [AddonExtraProject]: `${this.state.extraProjects}`,
+                              }),
+                              ...(this.state.ai === undefined ? {} : {
+                                [AddonAi]: this.state.ai ? 'true' : '',
                               }),
                               ...(this.state.extraTeammates === undefined ? {} : {
                                 [AddonExtraTeammate]: `${this.state.extraTeammates}`,
