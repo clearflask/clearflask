@@ -114,7 +114,7 @@ public class AccountStoreIT extends AbstractIT {
     @Test(timeout = 30_000L)
     public void testAccount() throws Exception {
         Account account = new Account(
-                store.genAccountId(),
+                store.genAccountId("name"),
                 "my@email.com",
                 SubscriptionStatus.ACTIVETRIAL,
                 null,
@@ -236,7 +236,7 @@ public class AccountStoreIT extends AbstractIT {
     @Test(timeout = 30_000L)
     public void testSession() throws Exception {
         Account account = new Account(
-                store.genAccountId(),
+                store.genAccountId("name"),
                 "my@email.com",
                 SubscriptionStatus.ACTIVETRIAL,
                 null,
@@ -290,7 +290,7 @@ public class AccountStoreIT extends AbstractIT {
     @Test(timeout = 30_000L)
     public void testAccountAttrs() throws Exception {
         Account account = new Account(
-                store.genAccountId(),
+                store.genAccountId("name"),
                 "my@email.com",
                 SubscriptionStatus.ACTIVETRIAL,
                 null,
@@ -372,7 +372,7 @@ public class AccountStoreIT extends AbstractIT {
     @Test(timeout = 30_000L)
     public void testWeeklyDigestOptOut() throws Exception {
         Account account = new Account(
-                store.genAccountId(),
+                store.genAccountId("name"),
                 "my@email.com",
                 SubscriptionStatus.ACTIVETRIAL,
                 null,
@@ -409,7 +409,7 @@ public class AccountStoreIT extends AbstractIT {
 
     @Test(timeout = 30_000L)
     public void testAccountSearch() throws Exception {
-        String accountId1 = store.genAccountId();
+        String accountId1 = store.genAccountId("Adsfagregerghrthshgfdsg");
         Account account1 = new Account(
                 accountId1,
                 "whateveryo@example.com",
@@ -426,7 +426,7 @@ public class AccountStoreIT extends AbstractIT {
                 null,
                 null,
                 ImmutableSet.of());
-        String accountId2 = store.genAccountId();
+        String accountId2 = store.genAccountId("POIPLMQWPEEBQWNBENWQMNVEM");
         Account account2 = new Account(
                 accountId2,
                 "mysomethingemail@gmail.io",
@@ -489,7 +489,7 @@ public class AccountStoreIT extends AbstractIT {
     @Test(timeout = 30_000L)
     public void testShouldSendTrialEnded() throws Exception {
         Account account = new Account(
-                store.genAccountId(),
+                store.genAccountId("name"),
                 "my@email.com",
                 SubscriptionStatus.ACTIVETRIAL,
                 null,

@@ -401,7 +401,7 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
         emailValidator.assertValid(email);
         name = sanitizer.accountName(name);
 
-        String accountId = accountStore.genAccountId();
+        String accountId = accountStore.genAccountId(name);
 
         // Accept coupon
         Optional<CouponModel> redeemedCouponOpt = Optional.empty();

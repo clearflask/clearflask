@@ -3,6 +3,7 @@
 package com.smotana.clearflask.store;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.smotana.clearflask.api.model.*;
@@ -94,7 +95,7 @@ public interface ProjectStore {
     interface Project {
         String getName();
 
-        String getLink(Optional<String> pathOpt);
+        String getLink();
 
         ProjectModel getModel();
 
@@ -111,6 +112,8 @@ public interface ProjectStore {
         VersionedConfigAdmin getVersionedConfigAdmin();
 
         double getCategoryExpressionWeight(String categoryId, String expression);
+
+        ImmutableCollection<Category> getCategories();
 
         Optional<Category> getCategory(String categoryId);
 

@@ -335,7 +335,7 @@ public class WeeklyDigestService extends ManagedService {
         return Optional.of(new DigestProject(
                 adminUser,
                 project.getName(),
-                project.getLink(Optional.empty()),
+                project.getLink(),
                 Stream.of(
                                 notificationsSectionOpt,
                                 newPostsSectionOpt,

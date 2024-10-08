@@ -21,14 +21,17 @@ import com.smotana.clearflask.core.ServiceManagerProvider;
 import com.smotana.clearflask.store.ProjectStore.SearchEngine;
 import com.smotana.clearflask.util.GsonProvider;
 import com.smotana.clearflask.web.Application;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
 import org.junit.Before;
 import org.mockito.Mockito;
 
 import javax.annotation.Nullable;
+import java.io.File;
 import java.util.Optional;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.junit.Assert.assertTrue;
 
 @Slf4j
@@ -138,5 +141,30 @@ public abstract class AbstractTest extends AbstractModule {
         // TODO support scope as well
         String configName = configNamingStrategy.methodToFlatName(configClass.getMethod(methodName), scopeOpt);
         configSource.fireEvent(configName, valueOpt);
+    }
+
+    /**
+     * Fetch a test resource given by name. Expected to be in "{testResources}/{package}/{testClass}/{fileName}"
+     * <p>
+     * If calling from a test class com.smotana.clearflask.testutil.ExampleTest for a resource data.json,
+     * the expected file should be under test resources in:
+     * com/smotana/clearflask/testutil/ExampleTest/data.json
+     *
+     * @return String
+     */
+    protected String getTestResource(String fileName) {
+        return new String(getTestResourceBytes(fileName));
+    }
+
+    @SneakyThrows
+    protected byte[] getTestResourceBytes(String fileName) {
+        Class testClazz = this.getClass();
+        String filePath = testClazz.getCanonicalName().replace(".", File.separator)
+                + File.separator + fileName;
+        try (var resource = testClazz
+                .getClassLoader()
+                .getResourceAsStream(filePath)) {
+            return checkNotNull(resource, "Test resource at %s not found", filePath).readAllBytes();
+        }
     }
 }

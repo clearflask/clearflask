@@ -13,11 +13,11 @@ import com.smotana.clearflask.api.model.ConvoListResponse;
 import com.smotana.clearflask.api.model.ConvoMessageCreate;
 import com.smotana.clearflask.api.model.CreateMessageResponse;
 import com.smotana.clearflask.security.limiter.Limit;
+import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.LlmAgentStore;
 import com.smotana.clearflask.store.LlmHistoryStore;
 import com.smotana.clearflask.store.LlmHistoryStore.ConvoModel;
 import com.smotana.clearflask.store.LlmHistoryStore.MessageModel;
-import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
@@ -45,15 +45,19 @@ public class LlmResource extends AbstractResource implements LlmAdminApi {
     private LlmHistoryStore llmHistoryStore;
     @Inject
     private LlmAgentStore llmAgentStore;
+    @Inject
+    private AccountStore accountStore;
 
     @RolesAllowed({Role.ADMINISTRATOR_ACTIVE})
     @Limit(requiredPermits = 1)
     @Override
     public void convoDelete(String projectId, String convoId) {
-        String userId = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt).map(UserStore.UserSession::getUserId).get();
+        String accountId = getExtendedPrincipal()
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .orElseThrow();
         llmHistoryStore.deleteConvo(
                 projectId,
-                userId,
+                accountId,
                 convoId);
     }
 
@@ -61,12 +65,14 @@ public class LlmResource extends AbstractResource implements LlmAdminApi {
     @Limit(requiredPermits = 1)
     @Override
     public ConvoDetailsResponse convoDetails(String projectId, String convoId) {
-        String userId = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt).map(UserStore.UserSession::getUserId).get();
+        String accountId = getExtendedPrincipal()
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .orElseThrow();
 
         // Ensure this convo is owned by the requestor
         llmHistoryStore.getConvo(
                         projectId,
-                        userId,
+                        accountId,
                         convoId)
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Convo not found"));
 
@@ -83,11 +89,13 @@ public class LlmResource extends AbstractResource implements LlmAdminApi {
     @Limit(requiredPermits = 1)
     @Override
     public ConvoListResponse convoList(String projectId) {
-        String userId = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt).map(UserStore.UserSession::getUserId).get();
+        String accountId = getExtendedPrincipal()
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .orElseThrow();
 
         ImmutableList<ConvoModel> convoModels = llmHistoryStore.listConvos(
                 projectId,
-                userId);
+                accountId);
 
         return new ConvoListResponse(convoModels.stream()
                 .map(ConvoModel::toConvo)
@@ -98,23 +106,25 @@ public class LlmResource extends AbstractResource implements LlmAdminApi {
     @Limit(requiredPermits = 100, challengeAfter = 30)
     @Override
     public CreateMessageResponse messageCreate(String projectId, String convoId, ConvoMessageCreate convoMessageCreate) {
-        String userId = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt).map(UserStore.UserSession::getUserId).get();
+        String accountId = getExtendedPrincipal()
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .orElseThrow();
 
         final ConvoModel convoModel;
         if ("new".equalsIgnoreCase(convoId)) {
             convoModel = llmHistoryStore.createConvo(
                     projectId,
-                    userId,
+                    accountId,
                     StringUtils.abbreviate(convoMessageCreate.getContent(), 300));
         } else {
             convoModel = llmHistoryStore.getConvo(
                             projectId,
-                            userId,
+                            accountId,
                             convoId)
                     .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Convo not found"));
         }
 
-        return llmAgentStore.ask(projectId, convoModel.getConvoId(), convoMessageCreate.getContent());
+        return llmAgentStore.ask(projectId, accountId, convoModel.getConvoId(), convoMessageCreate.getContent());
     }
 
     @RolesAllowed({Role.ADMINISTRATOR_ACTIVE})

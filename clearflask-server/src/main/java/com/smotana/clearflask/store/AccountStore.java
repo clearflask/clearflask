@@ -31,8 +31,8 @@ import static io.dataspray.singletable.TableType.Primary;
 
 public interface AccountStore {
 
-    default String genAccountId() {
-        return IdUtil.randomId();
+    default String genAccountId(String name) {
+        return IdUtil.contentUnique(name);
     }
 
     AccountAndIndexingFuture createAccount(Account account);

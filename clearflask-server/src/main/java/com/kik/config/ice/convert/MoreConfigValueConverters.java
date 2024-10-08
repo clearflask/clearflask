@@ -27,6 +27,7 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.util.Types;
 import com.smotana.clearflask.store.ProjectStore.SearchEngine;
+import dev.langchain4j.model.openai.OpenAiChatModelName;
 import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.extern.slf4j.Slf4j;
 import nl.martijndwars.webpush.Urgency;
@@ -95,7 +96,8 @@ public class MoreConfigValueConverters {
     public static Module module() {
         return module(ImmutableSet.of(
                 Urgency.class,
-                SearchEngine.class
+                SearchEngine.class,
+                OpenAiChatModelName.class
         ));
     }
 

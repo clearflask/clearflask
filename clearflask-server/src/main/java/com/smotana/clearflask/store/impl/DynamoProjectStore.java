@@ -780,10 +780,8 @@ public class DynamoProjectStore implements ProjectStore {
         }
 
         @Override
-        public String getLink(Optional<String> pathOpt) {
-            return "https://" + getHostname() + pathOpt
-                    .map(path -> path.startsWith("/") ? path : ("/" + path))
-                    .orElse("");
+        public String getLink() {
+            return "https://" + getHostname();
         }
 
         @Override
@@ -827,6 +825,11 @@ public class DynamoProjectStore implements ProjectStore {
                 return EXPRESSION_WEIGHT_DEFAULT;
             }
             return expressionToWeight.getOrDefault(expression, EXPRESSION_WEIGHT_DEFAULT);
+        }
+
+        @Override
+        public ImmutableCollection<Category> getCategories() {
+            return categories.values();
         }
 
         @Override

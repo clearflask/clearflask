@@ -11,6 +11,7 @@ public interface LlmAgentStore {
      * @return Message ID of the response. Use {@link #awaitAnswer} to retrieve it.
      */
     CreateMessageResponse ask(String projectId,
+            String accountId,
             String convoId,
             String question);
 
