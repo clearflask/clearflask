@@ -124,3 +124,13 @@ paths:
     $ref: 'api-project.yaml#/~1project~1{projectId}~1admin~1admins'
   /project/{projectId}/admin/content/uploadAs:
     $ref: 'api-content.yaml#/~1project~1{projectId}~1admin~1content~1uploadAs'
+  /project/{projectId}/superadmin/llm/prompt:
+    $ref: 'api-llm.yaml#/~1project~1{projectId}~1superadmin~1llm~1prompt'
+  /project/{projectId}/admin/llm/convo/list:
+    $ref: 'api-llm.yaml#/~1project~1{projectId}~1admin~1llm~1convo~1list'
+  /project/{projectId}/admin/llm/convo/{convoId}:
+    $ref: 'api-llm.yaml#/~1project~1{projectId}~1admin~1llm~1convo~1{convoId}'
+  /project/{projectId}/admin/llm/convo/{convoId}/message:
+    $ref: 'api-llm.yaml#/~1project~1{projectId}~1admin~1llm~1convo~1{convoId}~1message'
+  /project/{projectId}/admin/llm/convo/{convoId}/message/{messageId}:
+    $ref: 'api-llm.yaml#/~1project~1{projectId}~1admin~1llm~1convo~1{convoId}~1message~1{messageId}'

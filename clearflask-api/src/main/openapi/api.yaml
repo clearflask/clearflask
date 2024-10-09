@@ -73,6 +73,8 @@ paths:
   /project/{projectId}/admin/content/uploadAs:
     $ref: 'api-content.yaml#/~1project~1{projectId}~1admin~1content~1uploadAs'
   # api-llm.yaml
+  /project/{projectId}/superadmin/llm/prompt:
+    $ref: 'api-llm.yaml#/~1project~1{projectId}~1superadmin~1llm~1prompt'
   /project/{projectId}/admin/llm/convo/list:
     $ref: 'api-llm.yaml#/~1project~1{projectId}~1admin~1llm~1convo~1list'
   /project/{projectId}/admin/llm/convo/{convoId}:

@@ -3,6 +3,8 @@ package com.smotana.clearflask.store;
 import com.smotana.clearflask.api.model.CreateMessageResponse;
 import com.smotana.clearflask.store.LlmHistoryStore.MessageModel;
 
+import java.util.Optional;
+
 public interface LlmAgentStore {
 
     /**
@@ -13,7 +15,8 @@ public interface LlmAgentStore {
     CreateMessageResponse ask(String projectId,
             String accountId,
             String convoId,
-            String question);
+            String question,
+            Optional<String> promptOverrideOpt);
 
     /**
      * Will asynchronously stream messages, otherwise will synchronously reply; always assume asynchronous.

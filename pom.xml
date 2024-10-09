@@ -35,10 +35,7 @@
         <jooq.version>3.16.10</jooq.version>
         <ice.version>1.0.8</ice.version>
         <curator.version>4.0.1</curator.version>
-        <!-- If I still can't upgrade to 2.27+,
-             try downgrading to 2.22.2 if this gets resolved:
-             https://github.com/oracle/oci-java-sdk/issues/78 -->
-        <jersey.version>2.27</jersey.version>
+        <jersey.version>2.45</jersey.version>
         <awssdk.version>1.12.75</awssdk.version>
         <hk2.version>2.5.0-b62</hk2.version>
         <jjwt.version>0.11.2</jjwt.version>
@@ -784,6 +781,11 @@
             <dependency>
                 <groupId>org.glassfish.jersey.inject</groupId>
                 <artifactId>jersey-hk2</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.media</groupId>
+                <artifactId>jersey-media-sse</artifactId>
                 <version>${jersey.version}</version>
             </dependency>
             <dependency>

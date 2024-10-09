@@ -46,10 +46,35 @@ components:
       properties:
         content:
           type: string
+        overridePrompt:
+          # Superadmin only
+          type: string
 
+/project/{projectId}/superadmin/llm/prompt:
+  get:
+    operationId: promptGetSuperAdmin
+    tags: [ LlmSuperAdmin ]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: PromptGetResponse
+              type: object
+              required:
+                - prompt
+              properties:
+                prompt:
+                  type: string
 /project/{projectId}/admin/llm/convo/list:
   get:
-    operationId: convoList
+    operationId: convoListAdmin
     tags: [ LlmAdmin ]
     parameters:
       - name: projectId
@@ -73,7 +98,7 @@ components:
                     $ref: 'api-llm.yaml#/components/schemas/Convo'
 /project/{projectId}/admin/llm/convo/{convoId}:
   get:
-    operationId: convoDetails
+    operationId: convoDetailsAdmin
     tags: [ LlmAdmin ]
     parameters:
       - name: projectId
@@ -101,7 +126,7 @@ components:
                   items:
                     $ref: 'api-llm.yaml#/components/schemas/ConvoMessage'
   delete:
-    operationId: convoDelete
+    operationId: convoDeleteAdmin
     tags: [ LlmAdmin ]
     parameters:
       - name: projectId
@@ -119,7 +144,7 @@ components:
         $ref: 'api-client.yaml#/components/responses/Ok'
 /project/{projectId}/admin/llm/convo/{convoId}/message:
   put:
-    operationId: messageCreate
+    operationId: messageCreateAdmin
     tags: [ LlmAdmin ]
     parameters:
       - name: projectId
@@ -160,7 +185,7 @@ components:
 /project/{projectId}/admin/llm/convo/{convoId}/message/{messageId}:
   get:
     x-sse: true
-    operationId: messageStreamGet
+    operationId: messageStreamGetAdmin
     tags: [ LlmAdmin ]
     parameters:
       - name: projectId

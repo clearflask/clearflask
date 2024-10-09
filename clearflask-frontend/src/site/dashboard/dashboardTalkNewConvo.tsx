@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import React from 'react';
-import * as Client from '../../api/client';
+import * as Admin from '../../api/admin';
 import { Link as MuiLink, Table, TableBody, TableCell, TableRow, Typography } from '@material-ui/core';
 
 const PredefinedQuestions = [
@@ -28,7 +28,7 @@ const styles = (theme: Theme) => createStyles({
 const useStyles = makeStyles(styles);
 
 export const DashboardTalkNewConvo = (props: {
-  onSubmitMessage: (message: string) => Promise<Client.CreateMessageResponse>;
+  onSubmitMessage: (message: string) => Promise<Admin.CreateMessageResponse>;
 }) => {
   const classes = useStyles();
 

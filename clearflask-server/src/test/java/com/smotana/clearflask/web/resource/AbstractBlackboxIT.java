@@ -97,6 +97,8 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     @Inject
     protected GitHubResource gitHubResource;
     @Inject
+    protected LlmResource llmResource;
+    @Inject
     protected MockExtendedSecurityContext mockExtendedSecurityContext;
     @Inject
     protected AmazonDynamoDB dynamo;

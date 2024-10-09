@@ -12,7 +12,7 @@ import randomUuid from '../common/util/uuid';
 import windowIso, { StoresState, StoresStateSerializable } from '../common/windowIso';
 import * as Admin from './admin';
 import * as Client from './client';
-import ServerAdmin from './serverAdmin';
+import ServerAdmin, { llmSetMessageAction } from './serverAdmin';
 import ServerMock from './serverMock';
 
 export type Unsubscribe = () => void;
@@ -155,7 +155,6 @@ export class Server {
       credits: stateCreditsDefault,
       notifications: stateNotificationsDefault,
       teammates: stateTeammatesDefault,
-      llm: stateLlmDefault,
     };
     return state;
   }
@@ -2224,157 +2223,6 @@ function reducerTeammates(state: StateTeammates = stateTeammatesDefault, action:
   }
 }
 
-interface llmSetMessageAction {
-  type: 'llmSetMessage';
-  payload: {
-    convoId: string;
-    message: Client.ConvoMessage;
-  };
-}
-
-export interface StateLlm {
-  convoList?: {
-    status?: Status;
-    convos?: Array<Client.Convo>;
-  };
-  convoDetailsByConvoId: {
-    [convoId: string]: {
-      status?: Status;
-      messages?: Client.ConvoMessage[];
-      upcomingMessageId?: string;
-    };
-  };
-}
-
-const stateLlmDefault: StateLlm = {
-  convoDetailsByConvoId: {},
-};
-
-function reducerLlm(state: StateLlm = stateLlmDefault, action: AllActions): StateLlm {
-  switch (action.type) {
-    case Client.convoListActionStatus.Fulfilled:
-      return {
-        ...state,
-        convoList: {
-          status: Status.FULFILLED,
-          convos: action.payload.results.sort((l, r) => l.created.valueOf() - r.created.valueOf()),
-        },
-      };
-    case Client.convoListActionStatus.Pending:
-      return {
-        ...state,
-        convoList: {
-          ...state.convoList,
-          status: Status.PENDING,
-        },
-      };
-    case Client.convoListActionStatus.Rejected:
-      return {
-        ...state,
-        convoList: {
-          ...state.convoList,
-          status: Status.REJECTED,
-        },
-      };
-    case Client.convoDetailsActionStatus.Fulfilled:
-      return {
-        ...state,
-        convoDetailsByConvoId: {
-          ...state.convoDetailsByConvoId,
-          [action.meta.request.convoId]: {
-            ...state.convoDetailsByConvoId[action.meta.request.convoId],
-            status: Status.FULFILLED,
-            messages: action.payload.results.sort((l, r) => l.created.valueOf() - r.created.valueOf()),
-          },
-        },
-      };
-    case Client.convoDetailsActionStatus.Pending:
-      return {
-        ...state,
-        convoDetailsByConvoId: {
-          ...state.convoDetailsByConvoId,
-          [action.meta.request.convoId]: {
-            ...state.convoDetailsByConvoId[action.meta.request.convoId],
-            status: Status.PENDING,
-          },
-        },
-      };
-    case Client.convoDetailsActionStatus.Rejected:
-      return {
-        ...state,
-        convoDetailsByConvoId: {
-          ...state.convoDetailsByConvoId,
-          [action.meta.request.convoId]: {
-            ...state.convoDetailsByConvoId[action.meta.request.convoId],
-            status: Status.REJECTED,
-          },
-        },
-      };
-    case Client.convoDeleteActionStatus.Fulfilled:
-      return {
-        ...state,
-        convoList: {
-          ...state.convoList,
-          convos: state.convoList?.convos?.filter(convo => convo.convoId !== action.meta.request.convoId),
-        },
-        convoDetailsByConvoId: {
-          ...state.convoDetailsByConvoId,
-          [action.meta.request.convoId]: {
-            ...state.convoDetailsByConvoId[action.meta.request.convoId],
-            status: Status.FULFILLED,
-            messages: [],
-          },
-        },
-      };
-    case Client.messageCreateActionStatus.Fulfilled:
-      return {
-        ...state,
-        convoList: action.meta.request.convoId !== 'new' ? state.convoList : {
-          ...state.convoList,
-          convos: [
-            {
-              ...state.convoList?.convos?.[action.payload.convoId],
-              convoId: action.payload.convoId,
-              created: action.payload.message.created,
-              title: action.payload.message.content,
-            },
-            ...state.convoList?.convos || [],
-          ],
-        },
-        convoDetailsByConvoId: {
-          ...state.convoDetailsByConvoId,
-          [action.payload.convoId]: {
-            ...state.convoDetailsByConvoId[action.meta.request.convoId],
-            messages: [
-              ...(state.convoDetailsByConvoId[action.payload.convoId]?.messages || []),
-              action.payload.message,
-            ],
-            upcomingMessageId: action.payload.responseMessageId,
-          },
-        },
-      };
-    case 'llmSetMessage':
-      return {
-        ...state,
-        convoDetailsByConvoId: {
-          ...state.convoDetailsByConvoId,
-          [action.payload.convoId]: {
-            ...state.convoDetailsByConvoId[action.payload.convoId],
-            messages: [
-              ...(state.convoDetailsByConvoId[action.payload.convoId]?.messages || []),
-              action.payload.message,
-            ],
-            upcomingMessageId: action.payload.message.messageId === state.convoDetailsByConvoId[action.payload.convoId]?.upcomingMessageId
-              ? undefined
-              : state.convoDetailsByConvoId[action.payload.convoId]?.upcomingMessageId,
-          },
-        },
-      };
-    default:
-      return state;
-  }
-}
-
 export interface ReduxState {
   projectId: string | null;
   settings: StateSettings;
@@ -2388,7 +2236,6 @@ export interface ReduxState {
   credits: StateCredits;
   notifications: StateNotifications;
   teammates: StateTeammates;
-  llm: StateLlm;
 }
 
 export const reducers = combineReducers({
@@ -2404,7 +2251,6 @@ export const reducers = combineReducers({
   credits: reducerCredits,
   notifications: reducerNotifications,
   teammates: reducerTeammates,
-  llm: reducerLlm,
   ...({
     loadingBar: loadingBarReducer,
   } as {}),

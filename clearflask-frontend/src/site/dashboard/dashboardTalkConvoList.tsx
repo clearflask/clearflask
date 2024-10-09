@@ -1,17 +1,17 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import { Link as MuiLink, TableCell, Typography } from '@material-ui/core';
-import { ReduxState, Server, Status } from '../../api/server';
+import { Server, Status } from '../../api/server';
 import Loading from '../../app/utils/Loading';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import React, { useEffect } from 'react';
 import { shallowEqual, useSelector } from 'react-redux';
-import { Convo } from '../../api/client';
+import * as Admin from '../../api/admin';
 import TimeAgoI18n from '../../app/utils/TimeAgoI18n';
 import { DashboardEmptyPlaceholder } from '../DashboardEmptyPlaceholder';
 import { TabFragment, TabsVertical } from '../../common/util/tabsUtil';
 import { truncateWithElipsis } from '../../common/util/stringUtil';
-
+import { ReduxStateAdmin } from '../../api/serverAdmin';
 
 const styles = (theme: Theme) => createStyles({
   outer: {
@@ -29,14 +29,14 @@ export const DashboardTalkConvoList = (props: {
   setSelectedConvoId: (convoId: string | undefined) => void;
 }) => {
   const classes = useStyles();
-  const status = useSelector<ReduxState, Status | undefined>(state => state.llm.convoList?.status, shallowEqual);
-  const convos = useSelector<ReduxState, Convo[] | undefined>(state => state.llm.convoList?.convos, shallowEqual);
+  const status = useSelector<ReduxStateAdmin, Status | undefined>(state => state.llm.convoList?.status, shallowEqual);
+  const convos = useSelector<ReduxStateAdmin, Admin.Convo[] | undefined>(state => state.llm.convoList?.convos, shallowEqual);
   useEffect(() => {
     if (status !== undefined) {
       return;
     }
 
-    props.server.dispatch().then(d => d.convoList({
+    props.server.dispatchAdmin().then(d => d.convoListAdmin({
       projectId: props.server.getProjectId(),
     }));
   }, [props.server, status]);

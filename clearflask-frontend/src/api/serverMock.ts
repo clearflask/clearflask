@@ -255,7 +255,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       admins: Array<Admin.ProjectAdmin>;
       invitations: Array<Admin.InvitationAdmin>;
       isExternal: boolean;
-      llmConvos: { [userId: string]: { [convoId: string]: Client.ConvoDetailsResponse & Client.Convo } }
+      llmConvos: { [userId: string]: { [convoId: string]: Admin.ConvoDetailsResponse & Admin.Convo } }
     }
   } = {};
   nextCommentId = 10000;
@@ -1823,7 +1823,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater({ url: data });
   }
 
-  convoDelete(request: Client.ConvoDeleteRequest): Promise<void> {
+  convoDeleteAdmin(request: Admin.ConvoDeleteAdminRequest): Promise<void> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     if (!loggedInUser) return this.throwLater(403, 'Not logged in');
     const convos = this.getProject(request.projectId)
@@ -1832,7 +1832,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater(undefined);
   }
 
-  convoDetails(request: Client.ConvoDetailsRequest): Promise<Client.ConvoDetailsResponse> {
+  convoDetailsAdmin(request: Admin.ConvoDetailsAdminRequest): Promise<Admin.ConvoDetailsResponse> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     if (!loggedInUser) return this.throwLater(403, 'Not logged in');
     const convo = this.getProject(request.projectId)
@@ -1842,7 +1842,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater(convo);
   }
 
-  convoList(request: Client.ConvoListRequest): Promise<Client.ConvoListResponse> {
+  convoListAdmin(request: Admin.ConvoListAdminRequest): Promise<Admin.ConvoListResponse> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     if (!loggedInUser) return this.throwLater(403, 'Not logged in');
     const convos = Object.values(this.getProject(request.projectId)
@@ -1852,10 +1852,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     });
   }
 
-  messageCreate(request: Client.MessageCreateRequest): Promise<Client.CreateMessageResponse> {
+  messageCreateAdmin(request: Admin.MessageCreateAdminRequest): Promise<Admin.CreateMessageResponse> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     if (!loggedInUser) return this.throwLater(403, 'Not logged in');
-    var convo: Client.ConvoDetailsResponse & Client.Convo;
+    var convo: Admin.ConvoDetailsResponse & Admin.Convo;
     if (request.convoId !== 'new') {
       convo = this.getProject(request.projectId)
         .llmConvos[loggedInUser.userId]
@@ -1876,9 +1876,9 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       };
       convos[convo.convoId] = convo;
     }
-    const message: Client.ConvoMessage = {
+    const message: Admin.ConvoMessage = {
       messageId: randomUuid(),
-      authorType: Client.ConvoMessageAuthorTypeEnum.USER,
+      authorType: Admin.ConvoMessageAuthorTypeEnum.USER,
       content: request.convoMessageCreate.content,
       created: new Date(),
     };
@@ -1891,31 +1891,26 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     });
   }
 
-  messageStreamGet(request: Client.MessageStreamGetRequest): EventSource {
+  messageStreamGetAdmin(request: Admin.MessageStreamGetAdminRequest): EventSource {
     const loggedInUser = this.getProject(request.projectId).loggedInUser!;
     const convo = this.getProject(request.projectId)
       .llmConvos[loggedInUser.userId][request.convoId]!;
+    const messageStr = 'The most requested feature appears to be related to issues with uploading images and manual sorting in the roadmap. Here are the key posts highlighting these requests:\n\n1. **Manual Sorting Issue in the Roadmap**\n   - **Post Title**: Issue with manual sorting in the roadmap\n   - **Author**: [Tomek](https://product.clearflask.com/user/tomek-x1rcq)\n   - **Content**: As a roadmap manager, I’d like to sort entries in my roadmap so I can set and see work sequence and priorities. Manual sorting works in "Now" column, however in "Later" or "Next" my changes do not save and entries are sorted in a random order.\n   - **Post Link**: [View Post](https://product.clearflask.com/post/github-150-2378398488-392216038)\n\n2. **Image Uploading Issue**\n   - **Post Title**: Pasting an image link fails to upload image properly\n   - **Author**: [Matus Faro](https://product.clearflask.com/user/matus-faro-xzhd)\n   - **Content**: Pasting an image link to a post fails to properly upload the image. The img tag src is directly set and an upload is not triggered. On save, image is sanitized away.\n   - **Post Link**: [View Post](https://product.clearflask.com/post/github-152-2426441703-392216038)\n\nThese posts indicate that users are facing challenges with both manual sorting in the roadmap and issues related to image uploads.';
 
     const eventSource = {
       close: () => {
       },
     } as EventSource;
-    var messageStr = '';
-    const sendNextToken = () => {
-      const nextToken = loremIpsum({
-        units: 'words',
-        count: Math.round(Math.random() * 2 + 1),
-      });
-      messageStr += nextToken;
+    const sendNextToken = (nextToken: string) => {
       eventSource.onmessage?.({
         type: 'token',
         data: nextToken,
       } as MessageEvent);
     };
     const sendMessage = () => {
-      const message: Client.ConvoMessage = Math.random() > 0.8 ? {
+      const message: Admin.ConvoMessage = Math.random() > 0.8 ? {
         messageId: request.messageId,
-        authorType: Client.ConvoMessageAuthorTypeEnum.ALERT,
+        authorType: Admin.ConvoMessageAuthorTypeEnum.ALERT,
         content: capitalize(loremIpsum({
           units: 'words',
           count: Math.round(Math.random() * 5 + 3),
@@ -1923,8 +1918,8 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         created: new Date(),
       } : {
         messageId: request.messageId,
-        authorType: Client.ConvoMessageAuthorTypeEnum.AI,
-        content: capitalize(messageStr),
+        authorType: Admin.ConvoMessageAuthorTypeEnum.AI,
+        content: messageStr,
         created: new Date(),
         inputTokenCount: 1403,
         outputTokenCount: 87,
@@ -1935,12 +1930,88 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         data: JSON.stringify(message),
       } as MessageEvent);
     };
-    const numTokens = Math.round(Math.random() * 15 + 10);
-    for (let i = 0; i < numTokens; i++) {
-      setTimeout(sendNextToken, i * 100);
-    }
-    setTimeout(sendMessage, numTokens * 100);
+    let tokenCount = 0;
+    (messageStr.match(/[\s\S]{1,8}/g) || []).forEach(token => {
+      setTimeout(() => sendNextToken(token),
+        tokenCount * 50 // fixed delay between tokens
+        + 300 // static initial delay
+        + Math.floor(Math.random() * 50) - 25, // Jitter
+      );
+      tokenCount++;
+    });
+    setTimeout(sendMessage, tokenCount * 100 + 300);
     return eventSource;
+  }
+
+  promptGetSuperAdmin(request: Admin.PromptGetSuperAdminRequest): Promise<Admin.PromptGetResponse> {
+    return this.returnLater({
+      prompt: '# Intro\n' +
+        'You are a helpful ClearFlask Agent.\n' +
+        'ClearFlask is a feedback management platform that helps collect, prioritize, and act on feedback.\n' +
+        'ClearFlask customers integrate the platform into their own product to gather insights on their own users.\n' +
+        '\n' +
+        '# Project information\n' +
+        'Customer is using ClearFlask and configured a project used for collecting feedback for their product.\n' +
+        'projectName: "Example"\n' +
+        `projectId: "${request.projectId}"\n` +
+        'projectUrl: "https://ai-test-example.localhost:8080"\n' +
+        'When linking to specific feedback, use the following format:\n' +
+        '"{projectUrl}/post/{postId}"\n' +
+        'When linking to specific user, use the following format:\n' +
+        '"{projectUrl}/user/{userId}"\n' +
+        '\n' +
+        '## Categories\n' +
+        'Each project typically has multiple categories of Posts.\n' +
+        'Typical categories are:\n' +
+        '- Feedback: users contribute various feedback with feature requests and bug reports\n' +
+        '- Roadmap: customer created items describing the project\'s current, near and long term roadmap features\n' +
+        '- Changelog: customer created items describing the project\'s accomplishments or announcements.\n' +
+        'This project has the following categories configured:\n' +
+        '### Category\n' +
+        'categoryName: "feedback"\n' +
+        'categoryId: "feedback-d17bcb4f-2cec-4920-bbd9-2790dcced6c4"\n' +
+        '    Users can create this category.\n' +
+        '    Posts can have these statuses:\n' +
+        '    - statusName:"new" statusId:"ea859598-07a7-497f-b51c-ccc8ed63bbc8"\n' +
+        '    - statusName:"considering" statusId:"8303da4e-40d4-45d9-9af3-ceae2921efd5"\n' +
+        '    - statusName:"accepted" statusId:"accepted-22840db2-4d9f-4e01-a4f0-63c4759cfc4a"\n' +
+        '    - statusName:"closed" statusId:"417f8708-a4d4-4818-bd31-b4a0ba01d73c"\n' +
+        '### Category\n' +
+        'categoryName: "task"\n' +
+        'categoryId: "roadmap-757864b1-351b-4204-b657-dc717596ebf9"\n' +
+        '    Users cannot create this category directly.\n' +
+        '    Posts can have these statuses:\n' +
+        '    - statusName:"ideas" statusId:"backlog-4b1d0716-1678-4052-a0f6-46a39c6e3c78"\n' +
+        '    - statusName:"later" statusId:"1d273049-9155-44fc-8aa9-48fa7e3b40e1"\n' +
+        '    - statusName:"next" statusId:"1abd5b22-526d-4fb7-93fa-88d1b12f1e9f"\n' +
+        '    - statusName:"now" statusId:"4553c46d-67c0-4517-8c02-9477843143d7"\n' +
+        '    - statusName:"completed" statusId:"completed-b9b2ec87-c8dc-4e00-a1fb-e8a180275b55"\n' +
+        '    - statusName:"cancelled" statusId:"closed-2d5da0f2-f4ec-4fdd-8add-2a19c049d747"\n' +
+        '### Category\n' +
+        'categoryName: "announcements"\n' +
+        'categoryId: "changelog-99ec00f8-7a84-4d8e-998f-11d9e7f2ad99"\n' +
+        '    Users cannot create this category directly.\n' +
+        '\n' +
+        '# User onboarding\n' +
+        'Each user of the customer\'s project has to have an account to contribute feedback.\n' +
+        'The project is PUBLIC. PUBLIC means open to the world while PRIVATE means only users with an account can see it.\n' +
+        '            Users can sign-up with email.\n' +
+        '            Users can sign-up by providing their web browser\'s Push API.\n' +
+        '\n' +
+        '# Tools available\n' +
+        'To answer customer\'s questions about what users are saying, you have access to the following tools:\n' +
+        'searchPosts: You can search for posts\n' +
+        '- Optionally filter by categories such as only feedback when seeking posts submitted by users.\n' +
+        '\n' +
+        '# Customer\'s account\n' +
+        'accountId: "matus-faro-h3bq"\n' +
+        'name: "Matus Faro"\n' +
+        'email: "my@email.com"\n' +
+        'Always refer to the customer either by their exact name or shortened version of it.\n' +
+        '\n' +
+        '# Other\n' +
+        'Now is 2024-10-05T01:30:09.146844-04:00[America/Toronto].\n',
+    });
   }
 
 

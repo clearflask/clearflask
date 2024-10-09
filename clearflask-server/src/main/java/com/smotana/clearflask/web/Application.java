@@ -17,6 +17,7 @@ import com.smotana.clearflask.web.security.AuthenticationFilter;
 import io.sentry.Sentry;
 import lombok.extern.slf4j.Slf4j;
 import org.glassfish.hk2.api.ServiceLocator;
+import org.glassfish.jersey.media.sse.SseFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.jvnet.hk2.guice.bridge.api.GuiceBridge;
@@ -84,6 +85,7 @@ public class Application extends ResourceConfig {
         register(AuthenticationFilter.class);
         register(RolesAllowedDynamicFeature.class);
         register(LimiterDynamicFeature.class);
+        register(SseFeature.class);
 
         log.info("Initializing HK2-Guice bridge");
         GuiceBridge.getGuiceBridge().initializeGuiceBridge(serviceLocator);

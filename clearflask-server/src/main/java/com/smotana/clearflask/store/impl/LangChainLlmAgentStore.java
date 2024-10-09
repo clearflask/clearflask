@@ -110,8 +110,10 @@ public class LangChainLlmAgentStore implements LlmAgentStore {
     }
 
     @Override
-    public CreateMessageResponse ask(String projectId, String accountId, String convoId, String question) {
-        SystemMessage prompt = llmPromptStore.getPrompt(projectId, accountId);
+    public CreateMessageResponse ask(String projectId, String accountId, String convoId, String question, Optional<String> promptOverrideOpt) {
+        SystemMessage prompt = promptOverrideOpt
+                .map(SystemMessage::from)
+                .orElseGet(() -> llmPromptStore.getPrompt(projectId, accountId));
         List<ChatMessage> memoryMessages = llmMemoryStore.messages(convoId);
         UserMessage newMessage = UserMessage.from(question);
 

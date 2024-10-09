@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import React from 'react';
-import { Provider } from 'react-redux';
 import { Orientation } from '../../common/ContentScroll';
 import setTitle from '../../common/util/titleUtil';
 import { Dashboard, DashboardPageContext } from '../Dashboard';
@@ -13,6 +12,8 @@ import CreateIcon from '@material-ui/icons/Create';
 import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@material-ui/core';
 import classNames from 'classnames';
 import SubmitButton from '../../common/SubmitButton';
+import SettingsIcon from '@material-ui/icons/Settings';
+import { DashboardTalkEditPrompt } from './dashboardTalkEditPrompt';
 
 export async function renderTalk(this: Dashboard, context: DashboardPageContext) {
   setTitle('Talk - Dashboard');
@@ -23,16 +24,18 @@ export async function renderTalk(this: Dashboard, context: DashboardPageContext)
   const activeProject = context.activeProject;
 
   const onSubmitMessage = async (message: string) => {
-    const response = await (await activeProject.server.dispatch()).messageCreate({
+    const response = await (await activeProject.server.dispatchAdmin()).messageCreateAdmin({
       projectId: activeProject.server.getProjectId(),
       convoId: this.state.talkSelectedConvoId || 'new',
       convoMessageCreate: {
         content: message,
+        overridePrompt: this.state.talkPromptOverride,
       },
     });
     if (this.state.talkSelectedConvoId === undefined) {
       this.setState({ talkSelectedConvoId: response.convoId });
     }
+    this.setState({ talkPromptEditShow: false });
     return response;
   };
 
@@ -48,28 +51,43 @@ export async function renderTalk(this: Dashboard, context: DashboardPageContext)
       scroll: Orientation.Vertical,
     },
     content: layoutState => (
-      <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-        <DashboardTalkConvoList
-          key={activeProject.server.getProjectId()}
-          server={activeProject.server}
-          selectedConvoId={this.state.talkSelectedConvoId}
-          setSelectedConvoId={convoId => this.setState({ talkSelectedConvoId: convoId })}
-        />
-      </Provider>
+      <DashboardTalkConvoList
+        key={activeProject.server.getProjectId()}
+        server={activeProject.server}
+        selectedConvoId={this.state.talkSelectedConvoId}
+        setSelectedConvoId={convoId => this.setState({
+          talkSelectedConvoId: convoId,
+          talkPromptEditShow: false,
+        })}
+      />
     ),
   });
+
+  const settingsButton = (
+    <Button
+      endIcon={<SettingsIcon />}
+      className={classNames(this.props.classes.headerAction)}
+      onClick={() => this.setState({ talkPromptEditShow: !this.state.talkPromptEditShow })}
+      color="inherit"
+    >
+      {!this.state.talkPromptEditShow ? 'PROMPT' : 'CLOSE'}
+    </Button>
+  );
 
   context.sections.push({
     name: 'list',
     size: { breakWidth: 350, flexGrow: 20, maxWidth: 1024 },
     header: {
       title: { title: 'Talk' },
-      action: !this.state.talkSelectedConvoId ? undefined : {
+      action: (!this.state.talkSelectedConvoId || !!this.state.talkPromptEditShow) ? undefined : {
         label: 'New',
         icon: CreateIcon,
-        onClick: () => this.setState({ talkSelectedConvoId: undefined }),
+        onClick: () => this.setState({
+          talkPromptEditShow: false,
+          talkSelectedConvoId: undefined,
+        }),
       },
-      right: !this.state.talkSelectedConvoId ? undefined : (
+      right: (!this.state.talkSelectedConvoId || !!this.state.talkPromptEditShow) ? settingsButton : (
         <>
           <Button
             className={classNames(this.props.classes.headerAction, this.props.classes.buttonRed)}
@@ -83,6 +101,7 @@ export async function renderTalk(this: Dashboard, context: DashboardPageContext)
           >
             DELETE
           </Button>
+          {settingsButton}
           <Dialog
             open={!!this.state.talkDeleteConvoShowDialog && !!this.state.talkSelectedConvoId}
             onClose={() => this.setState({ talkDeleteConvoShowDialog: false })}
@@ -102,7 +121,7 @@ export async function renderTalk(this: Dashboard, context: DashboardPageContext)
                     return;
                   }
                   this.setState({ talkDeleteConvoIsSubmitting: true });
-                  activeProject.server.dispatch().then(d => d.convoDelete({
+                  activeProject.server.dispatchAdmin().then(d => d.convoDeleteAdmin({
                     projectId: activeProject.server.getProjectId(),
                     convoId: this.state.talkSelectedConvoId!,
                   }).then(() => {
@@ -119,29 +138,35 @@ export async function renderTalk(this: Dashboard, context: DashboardPageContext)
         </>
       ),
     },
-    content: !this.state.talkSelectedConvoId ? (
-      <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-        <DashboardTalkNewConvo
-          onSubmitMessage={onSubmitMessage}
-        />
-      </Provider>
-    ) : (
-      <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-        <DashboardTalkConvo
-          server={activeProject.server}
-          convoId={this.state.talkSelectedConvoId}
-        />
-      </Provider>
+    content: (
+      <>
+        {!!this.state.talkPromptEditShow && (
+          <DashboardTalkEditPrompt
+            server={activeProject.server}
+            overridePrompt={this.state.talkPromptOverride}
+            setOverridePrompt={prompt => this.setState({ talkPromptOverride: prompt })}
+          />
+        )}
+        {!this.state.talkPromptEditShow && !this.state.talkSelectedConvoId && (
+          <DashboardTalkNewConvo
+            onSubmitMessage={onSubmitMessage}
+          />
+        )}
+        {!this.state.talkPromptEditShow && !!this.state.talkSelectedConvoId && (
+          <DashboardTalkConvo
+            server={activeProject.server}
+            convoId={this.state.talkSelectedConvoId}
+          />
+        )}
+      </>
     ),
-    barBottom: layoutState => (
-      <Provider key={activeProject.projectId} store={activeProject.server.getStore()}>
-        <DashboardTalkInput
-          server={activeProject.server}
-          onSubmitMessage={onSubmitMessage}
-          convoId={this.state.talkSelectedConvoId}
-        />
-      </Provider>
-    ),
+    barBottom: !!this.state.talkPromptEditShow ? undefined : (layoutState => (
+      <DashboardTalkInput
+        server={activeProject.server}
+        onSubmitMessage={onSubmitMessage}
+        convoId={this.state.talkSelectedConvoId}
+      />
+    )),
   });
 
   context.showProjectLink = true;

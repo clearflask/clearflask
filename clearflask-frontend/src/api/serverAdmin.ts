@@ -13,7 +13,7 @@ import { htmlDataRetrieve } from '../common/util/htmlData';
 import windowIso, { StoresStateSerializable } from '../common/windowIso';
 import * as Admin from './admin';
 import * as Client from './client';
-import { DispatchProps, Server, Status } from './server';
+import { AllActions, DispatchProps, Server, Status } from './server';
 import ServerMock from './serverMock';
 
 export const DemoUpdateDelay = 300;
@@ -24,8 +24,11 @@ export interface Project {
   user: Client.UserMeWithBalance;
   editor: ConfigEditor.Editor;
   server: Server;
+
   hasUnsavedChanges(): boolean;
+
   subscribeToUnsavedChanges: (subscriber: () => void) => () => void;
+
   resetUnsavedChanges(newConfig: Admin.VersionedConfigAdmin);
 }
 
@@ -97,6 +100,7 @@ export default class ServerAdmin {
   getServers(): Server[] {
     return Object.values(this.projects).map(p => p.server);
   }
+
   dispatchAdmin(props: DispatchProps = {}): Promise<Admin.Dispatcher> {
     return Server.__dispatch(props, this.dispatcherAdmin, this.dispatchDebounceCache);
   }
@@ -161,7 +165,10 @@ export default class ServerAdmin {
       // Simulate config get and bind
       const action: Client.configAndUserBindSlugActionFulfilled = {
         type: Client.configAndUserBindSlugActionStatus.Fulfilled,
-        meta: { action: Client.Action.configAndUserBindSlug, request: { slug: versionedConfigAdmin.config.slug, userBind: {} } },
+        meta: {
+          action: Client.Action.configAndUserBindSlug,
+          request: { slug: versionedConfigAdmin.config.slug, userBind: {} },
+        },
         payload: {
           projectId,
           config: versionedConfigAdmin,
@@ -182,6 +189,7 @@ export default class ServerAdmin {
       legal: stateLegalDefault,
       tour: stateTourDefault,
       invitations: stateInvitationsDefault,
+      llm: stateLlmDefault,
     };
     return state;
   }
@@ -215,13 +223,17 @@ export default class ServerAdmin {
         }
       }
     }
-  }, 10000, true)
+  }, 10000, true);
+
   onForbidenAttemptRebind() {
     this._onForbidenAttemptRebindDebounced();
   }
 }
 
-interface billingClearAction { type: 'billingClear' }
+interface billingClearAction {
+  type: 'billingClear';
+}
+
 export interface StateAccount {
   isSuperAdmin: boolean;
   account: {
@@ -233,11 +245,13 @@ export interface StateAccount {
     billing?: Admin.AccountBilling;
   };
 }
+
 const stateAccountDefault = {
   isSuperAdmin: false,
   account: {},
   billing: {},
 };
+
 function reducerAccount(state: StateAccount = stateAccountDefault, action: AllActionsAdmin): StateAccount {
   switch (action.type) {
     case Admin.accountSignupAdminActionStatus.Pending:
@@ -349,10 +363,12 @@ export interface StatePlans {
     status?: Status;
   };
 }
+
 const statePlansDefault = {
   plans: {},
   changeOptions: {},
 };
+
 function reducerPlans(state: StatePlans = statePlansDefault, action: AllActionsAdmin): StatePlans {
   switch (action.type) {
     case Admin.plansGetActionStatus.Pending:
@@ -392,9 +408,11 @@ export interface StateConfigs {
     byProjectId?: { [projectId: string]: Admin.ConfigAndBindAllResultByProjectId };
   };
 }
+
 const stateConfigsDefault = {
   configs: {},
 };
+
 function reducerConfigs(state: StateConfigs = stateConfigsDefault, action: AllActionsAdmin): StateConfigs {
   switch (action.type) {
     case Admin.configGetAllAndUserBindAllAdminActionStatus.Pending:
@@ -452,7 +470,10 @@ function reducerConfigs(state: StateConfigs = stateConfigsDefault, action: AllAc
         },
       };
     case Admin.projectDeleteAdminActionStatus.Fulfilled:
-      const { [action.meta.request.projectId]: removedConfig, ...projectsWithoutDeleted } = state.configs.byProjectId || {};
+      const {
+        [action.meta.request.projectId]: removedConfig,
+        ...projectsWithoutDeleted
+      } = state.configs.byProjectId || {};
       return {
         ...state,
         configs: {
@@ -475,7 +496,9 @@ export interface StateLegal {
   status?: Status;
   legal?: Admin.LegalResponse;
 }
+
 const stateLegalDefault = {};
+
 function reducerLegal(state: StateLegal = stateLegalDefault, action: AllActionsAdmin): StateLegal {
   switch (action.type) {
     case Admin.legalGetActionStatus.Pending:
@@ -506,9 +529,11 @@ export interface StateInvitations {
     }
   };
 }
+
 const stateInvitationsDefault = {
   byId: {},
 };
+
 function reducerInvitations(state: StateInvitations = stateInvitationsDefault, action: AllActionsAdmin): StateInvitations {
   switch (action.type) {
     case Admin.accountViewInvitationAdminActionStatus.Pending:
@@ -520,7 +545,7 @@ function reducerInvitations(state: StateInvitations = stateInvitationsDefault, a
             ...state.byId[action.meta.request.invitationId],
             status: Status.PENDING,
           },
-        }
+        },
       };
     case Admin.accountViewInvitationAdminActionStatus.Rejected:
       return {
@@ -530,7 +555,7 @@ function reducerInvitations(state: StateInvitations = stateInvitationsDefault, a
           [action.meta.request.invitationId]: {
             status: Status.REJECTED,
           },
-        }
+        },
       };
     case Admin.accountViewInvitationAdminActionStatus.Fulfilled:
       return {
@@ -541,7 +566,7 @@ function reducerInvitations(state: StateInvitations = stateInvitationsDefault, a
             status: Status.FULFILLED,
             invitation: action.payload,
           },
-        }
+        },
       };
     case Admin.accountAcceptInvitationAdminActionStatus.Fulfilled:
       if (!state.byId[action.meta.request.invitationId].invitation) return state;
@@ -556,13 +581,13 @@ function reducerInvitations(state: StateInvitations = stateInvitationsDefault, a
               isAcceptedByYou: true,
             },
           },
-        }
+        },
       };
     case Admin.accountSignupAdminActionStatus.Fulfilled:
     case Admin.accountBindAdminActionStatus.Fulfilled:
       const invitationIdAcceptedAsPartOfSignup = action.type === Admin.accountBindAdminActionStatus.Fulfilled
         ? (!!action.payload.created && action.meta.request.accountBindAdmin.oauthToken?.invitationId)
-        : (action.meta.request.accountSignupAdmin.invitationId)
+        : (action.meta.request.accountSignupAdmin.invitationId);
       if (!invitationIdAcceptedAsPartOfSignup) return state;
       if (!state.byId[invitationIdAcceptedAsPartOfSignup]?.invitation) return state;
       return {
@@ -576,7 +601,187 @@ function reducerInvitations(state: StateInvitations = stateInvitationsDefault, a
               isAcceptedByYou: true,
             },
           },
-        }
+        },
+      };
+    default:
+      return state;
+  }
+}
+
+export interface llmSetMessageAction {
+  type: 'llmSetMessage';
+  payload: {
+    convoId: string;
+    message: Admin.ConvoMessage;
+  };
+}
+
+export interface StateLlm {
+  convoList?: {
+    status?: Status;
+    convos?: Array<Admin.Convo>;
+  };
+  convoDetailsByConvoId: {
+    [convoId: string]: {
+      status?: Status;
+      messages?: Admin.ConvoMessage[];
+      upcomingMessageId?: string;
+    };
+  };
+  prompt?: {
+    status?: Status;
+    prompt?: string;
+  };
+}
+
+const stateLlmDefault: StateLlm = {
+  convoDetailsByConvoId: {},
+};
+
+function reducerLlm(state: StateLlm = stateLlmDefault, action: AllActions): StateLlm {
+  switch (action.type) {
+    case Admin.convoListAdminActionStatus.Fulfilled:
+      return {
+        ...state,
+        convoList: {
+          status: Status.FULFILLED,
+          convos: action.payload.results.sort((l, r) => l.created.valueOf() - r.created.valueOf()),
+        },
+      };
+    case Admin.convoListAdminActionStatus.Pending:
+      return {
+        ...state,
+        convoList: {
+          ...state.convoList,
+          status: Status.PENDING,
+        },
+      };
+    case Admin.convoListAdminActionStatus.Rejected:
+      return {
+        ...state,
+        convoList: {
+          ...state.convoList,
+          status: Status.REJECTED,
+        },
+      };
+    case Admin.convoDetailsAdminActionStatus.Fulfilled:
+      return {
+        ...state,
+        convoDetailsByConvoId: {
+          ...state.convoDetailsByConvoId,
+          [action.meta.request.convoId]: {
+            ...state.convoDetailsByConvoId[action.meta.request.convoId],
+            status: Status.FULFILLED,
+            messages: action.payload.results.sort((l, r) => l.created.valueOf() - r.created.valueOf()),
+          },
+        },
+      };
+    case Admin.convoDetailsAdminActionStatus.Pending:
+      return {
+        ...state,
+        convoDetailsByConvoId: {
+          ...state.convoDetailsByConvoId,
+          [action.meta.request.convoId]: {
+            ...state.convoDetailsByConvoId[action.meta.request.convoId],
+            status: Status.PENDING,
+          },
+        },
+      };
+    case Admin.convoDetailsAdminActionStatus.Rejected:
+      return {
+        ...state,
+        convoDetailsByConvoId: {
+          ...state.convoDetailsByConvoId,
+          [action.meta.request.convoId]: {
+            ...state.convoDetailsByConvoId[action.meta.request.convoId],
+            status: Status.REJECTED,
+          },
+        },
+      };
+    case Admin.convoDeleteAdminActionStatus.Fulfilled:
+      return {
+        ...state,
+        convoList: {
+          ...state.convoList,
+          convos: state.convoList?.convos?.filter(convo => convo.convoId !== action.meta.request.convoId),
+        },
+        convoDetailsByConvoId: {
+          ...state.convoDetailsByConvoId,
+          [action.meta.request.convoId]: {
+            ...state.convoDetailsByConvoId[action.meta.request.convoId],
+            status: Status.FULFILLED,
+            messages: [],
+          },
+        },
+      };
+    case Admin.messageCreateAdminActionStatus.Fulfilled:
+      return {
+        ...state,
+        convoList: action.meta.request.convoId !== 'new' ? state.convoList : {
+          ...state.convoList,
+          convos: [
+            {
+              ...state.convoList?.convos?.[action.payload.convoId],
+              convoId: action.payload.convoId,
+              created: action.payload.message.created,
+              title: action.payload.message.content,
+            },
+            ...state.convoList?.convos || [],
+          ],
+        },
+        convoDetailsByConvoId: {
+          ...state.convoDetailsByConvoId,
+          [action.payload.convoId]: {
+            ...state.convoDetailsByConvoId[action.meta.request.convoId],
+            messages: [
+              ...(state.convoDetailsByConvoId[action.payload.convoId]?.messages || []),
+              action.payload.message,
+            ],
+            upcomingMessageId: action.payload.responseMessageId,
+          },
+        },
+      };
+    case 'llmSetMessage':
+      return {
+        ...state,
+        convoDetailsByConvoId: {
+          ...state.convoDetailsByConvoId,
+          [action.payload.convoId]: {
+            ...state.convoDetailsByConvoId[action.payload.convoId],
+            messages: [
+              ...(state.convoDetailsByConvoId[action.payload.convoId]?.messages || []),
+              action.payload.message,
+            ],
+            upcomingMessageId: action.payload.message.messageId === state.convoDetailsByConvoId[action.payload.convoId]?.upcomingMessageId
+              ? undefined
+              : state.convoDetailsByConvoId[action.payload.convoId]?.upcomingMessageId,
+          },
+        },
+      };
+    case Admin.promptGetSuperAdminActionStatus.Pending:
+      return {
+        ...state,
+        prompt: {
+          ...state.prompt,
+          status: Status.PENDING,
+        },
+      };
+    case Admin.promptGetSuperAdminActionStatus.Rejected:
+      return {
+        ...state,
+        prompt: {
+          ...state.prompt,
+          status: Status.REJECTED,
+        },
+      };
+    case Admin.promptGetSuperAdminActionStatus.Fulfilled:
+      return {
+        ...state,
+        prompt: {
+          ...state.prompt,
+          status: Status.FULFILLED,
+          prompt: action.payload.prompt,
+        },
       };
     default:
       return state;
@@ -589,7 +794,9 @@ export interface ReduxStateAdmin extends ReduxStateTour {
   configs: StateConfigs;
   legal: StateLegal;
   invitations: StateInvitations;
+  llm: StateLlm;
 }
+
 export const reducersAdmin = combineReducers({
   account: reducerAccount,
   plans: reducerPlans,
@@ -597,4 +804,5 @@ export const reducersAdmin = combineReducers({
   legal: reducerLegal,
   tour: reducerTour,
   invitations: reducerInvitations,
+  llm: reducerLlm,
 });

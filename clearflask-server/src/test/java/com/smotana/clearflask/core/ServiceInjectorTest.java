@@ -44,6 +44,7 @@ public class ServiceInjectorTest {
                 Gson.class,
                 AccountResource.class,
                 CommentResource.class,
+                LlmResource.class,
                 IdeaResource.class,
                 SupportResource.class,
                 NotificationResource.class,

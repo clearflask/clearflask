@@ -119,11 +119,3 @@ paths:
     $ref: 'api-notification.yaml#/~1project~1{projectId}~1notificationclear~1{notificationId}'
   /project/{projectId}/content/upload:
     $ref: 'api-content.yaml#/~1project~1{projectId}~1content~1upload'
-  /project/{projectId}/admin/llm/convo/list:
-    $ref: 'api-llm.yaml#/~1project~1{projectId}~1admin~1llm~1convo~1list'
-  /project/{projectId}/admin/llm/convo/{convoId}:
-    $ref: 'api-llm.yaml#/~1project~1{projectId}~1admin~1llm~1convo~1{convoId}'
-  /project/{projectId}/admin/llm/convo/{convoId}/message:
-    $ref: 'api-llm.yaml#/~1project~1{projectId}~1admin~1llm~1convo~1{convoId}~1message'
-  /project/{projectId}/admin/llm/convo/{convoId}/message/{messageId}:
-    $ref: 'api-llm.yaml#/~1project~1{projectId}~1admin~1llm~1convo~1{convoId}~1message~1{messageId}'

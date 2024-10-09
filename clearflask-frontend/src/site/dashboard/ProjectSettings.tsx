@@ -4375,7 +4375,15 @@ const DebouncedTextFieldWithColorPicker = (props: React.ComponentProps<typeof Te
   );
 };
 
-export const useDebounceProp = <T, >(initialValue: T, setter: (val: T) => void, onAboutToChange?: () => void): [T, (val: T) => void] => {
+/**
+ * Similar to {@link React.useState}, but debounces setter. The new value is available immediately, but the provided
+ * setter is debounced.
+ *
+ * @param initialValue
+ * @param setter setter to be debounced
+ * @param onAboutToChange
+ */
+export const useDebounceProp = <T, >(initialValue: T | (() => T), setter: (val: T) => void, onAboutToChange?: () => void): [T, (val: T) => void, (val: T) => void] => {
   const inProgressCounter = useRef(new Bag<number>(0));
   const [val, setVal] = useState<T>(initialValue);
 
@@ -4387,12 +4395,16 @@ export const useDebounceProp = <T, >(initialValue: T, setter: (val: T) => void, 
     }, DemoUpdateDelay);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return [val, val => {
-    inProgressCounter.current.set((inProgressCounter.current.get() || 0) + 1);
-    if (inProgressCounter.current.get() === 1) {
-      onAboutToChange?.();
-    }
-    setVal(val);
-    setterDebouncedRef.current(val);
-  }];
+  return [
+    val,
+    val => {
+      inProgressCounter.current.set((inProgressCounter.current.get() || 0) + 1);
+      if (inProgressCounter.current.get() === 1) {
+        onAboutToChange?.();
+      }
+      setVal(val);
+      setterDebouncedRef.current(val);
+    },
+    setVal,
+  ];
 };

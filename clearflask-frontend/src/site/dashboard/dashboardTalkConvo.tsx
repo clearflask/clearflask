@@ -2,16 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import React, { useEffect, useRef } from 'react';
-import { shallowEqual, useSelector } from 'react-redux';
+import { Provider, shallowEqual, useSelector } from 'react-redux';
 import { ReduxState, Server, Status } from '../../api/server';
 import * as Client from '../../api/client';
+import * as Admin from '../../api/admin';
 import UserWithAvatarDisplay from '../../common/UserWithAvatarDisplay';
 import classNames from 'classnames';
 import { Alert } from '@material-ui/lab';
 import TimeAgoI18n from '../../app/utils/TimeAgoI18n';
 import { Typography } from '@material-ui/core';
 import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
-import ServerAdmin from '../../api/serverAdmin';
+import ServerAdmin, { ReduxStateAdmin } from '../../api/serverAdmin';
+import MarkdownElement from '../../app/utils/MarkdownElement';
 
 // Estimated token prices; gpt-4o-mini https://openai.com/api/pricing/
 const INPUT_TOKEN_PRICE_PER_MILLION = 0.150;
@@ -71,18 +73,17 @@ export const DashboardTalkConvo = (props: {
   convoId: string;
 }) => {
   const classes = useStyles();
-  const status = useSelector<ReduxState, Status | undefined>(state => state.llm.convoDetailsByConvoId[props.convoId]?.status, shallowEqual);
-  const messages = useSelector<ReduxState, Client.ConvoMessage[] | undefined>(state => state.llm.convoDetailsByConvoId[props.convoId]?.messages, shallowEqual);
-  const loggedInUser = useSelector<ReduxState, Client.User | undefined>(state => state.users.loggedIn.user, shallowEqual);
+  const status = useSelector<ReduxStateAdmin, Status | undefined>(state => state.llm.convoDetailsByConvoId[props.convoId]?.status, shallowEqual);
+  const messages = useSelector<ReduxStateAdmin, Admin.ConvoMessage[] | undefined>(state => state.llm.convoDetailsByConvoId[props.convoId]?.messages, shallowEqual);
   const [upcomingMessageStr, setUpcomingMessageStr] = React.useState<string>('');
-  const upcomingMessageId = useSelector<ReduxState, string | undefined>(state => state.llm.convoDetailsByConvoId[props.convoId]?.upcomingMessageId, shallowEqual);
+  const upcomingMessageId = useSelector<ReduxStateAdmin, string | undefined>(state => state.llm.convoDetailsByConvoId[props.convoId]?.upcomingMessageId, shallowEqual);
   const chatScrollRef = useChatScroll([messages?.length, upcomingMessageStr]);
 
   useEffect(() => {
     if (status !== undefined) {
       return;
     }
-    props.server.dispatch().then(d => d.convoDetails({
+    props.server.dispatchAdmin().then(d => d.convoDetailsAdmin({
       projectId: props.server.getProjectId(),
       convoId: props.convoId,
     }));
@@ -96,11 +97,12 @@ export const DashboardTalkConvo = (props: {
     const messageId = upcomingMessageId;
     let partialMsg = '';
 
-    const eventSourcePromise = props.server.dispatch().then(d => d.messageStreamGet({
-      projectId: props.server.getProjectId(),
-      convoId,
-      messageId,
-    })).then(eventSource => {
+    const eventSourcePromise = props.server.dispatchAdmin().then(d => {
+      let eventSource = d.messageStreamGetAdmin({
+        projectId: props.server.getProjectId(),
+        convoId,
+        messageId,
+      });
       eventSource.onmessage = e => {
         switch (e.type) {
           case 'token':
@@ -108,7 +110,7 @@ export const DashboardTalkConvo = (props: {
             setUpcomingMessageStr(partialMsg);
             break;
           case 'message':
-            const newMessage: Client.ConvoMessage = JSON.parse(e.data);
+            const newMessage: Admin.ConvoMessage = JSON.parse(e.data);
             props.server.getStore().dispatch({
               type: 'llmSetMessage',
               payload: {
@@ -129,7 +131,7 @@ export const DashboardTalkConvo = (props: {
             message: {
               messageId,
               created: new Date(),
-              authorType: Client.ConvoMessageAuthorTypeEnum.ALERT,
+              authorType: Admin.ConvoMessageAuthorTypeEnum.ALERT,
               content: 'Failed to retrieve message, try refreshing the page.',
             },
           },
@@ -151,26 +153,29 @@ export const DashboardTalkConvo = (props: {
       {messages?.map(message => (
         <div key={message.messageId} className={classNames(
           classes.inner,
-          message.authorType === Client.ConvoMessageAuthorTypeEnum.USER && classes.innerUser,
-          message.authorType === Client.ConvoMessageAuthorTypeEnum.AI && classes.innerAi,
-          message.authorType === Client.ConvoMessageAuthorTypeEnum.ALERT && classes.innerSystem,
+          message.authorType === Admin.ConvoMessageAuthorTypeEnum.USER && classes.innerUser,
+          message.authorType === Admin.ConvoMessageAuthorTypeEnum.AI && classes.innerAi,
+          message.authorType === Admin.ConvoMessageAuthorTypeEnum.ALERT && classes.innerSystem,
         )}>
-          {message.authorType === Client.ConvoMessageAuthorTypeEnum.ALERT ? (
+          {message.authorType === Admin.ConvoMessageAuthorTypeEnum.ALERT ? (
             <Alert severity="warning">{message.content}</Alert>
           ) : (
             <>
               <div className={classes.messageHeader}>
-                <UserWithAvatarDisplay
-                  user={message.authorType === Client.ConvoMessageAuthorTypeEnum.USER ? loggedInUser : LlmUser}
-                  baseline
-                />
+                {message.authorType === Admin.ConvoMessageAuthorTypeEnum.USER ? (
+                  <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
+                    <MeWithAvatarDisplay />
+                  </Provider>
+                ) : (
+                  <UserWithAvatarDisplay user={LlmUser} baseline />
+                )}
                 <Typography variant="caption" color="textSecondary">
                   <TimeAgoI18n date={message.created} />
                 </Typography>
                 {isSuperAdminLoggedIn && message.inputTokenCount !== undefined && message.outputTokenCount !== undefined && (
                   <Typography variant="caption" color="textSecondary" className={classes.tokens}>
-                    {((INPUT_TOKEN_PRICE_PER_MILLION / message.inputTokenCount / 1000000)
-                      + (OUTPUT_TOKEN_PRICE_PER_MILLION / message.outputTokenCount / 1000000))
+                    {((INPUT_TOKEN_PRICE_PER_MILLION * message.inputTokenCount / 1000000)
+                      + (OUTPUT_TOKEN_PRICE_PER_MILLION * message.outputTokenCount / 1000000))
                       .toLocaleString('en-US', {
                         style: 'currency',
                         currency: 'USD',
@@ -180,7 +185,13 @@ export const DashboardTalkConvo = (props: {
                   </Typography>
                 )}
               </div>
-              {message.content}
+              <Typography variant="body1">
+                {message.authorType === Admin.ConvoMessageAuthorTypeEnum.AI ? (
+                  <MarkdownElement text={message.content} />
+                ) : (
+                  message.content
+                )}
+              </Typography>
             </>
           )}
         </div>
@@ -199,7 +210,9 @@ export const DashboardTalkConvo = (props: {
               <TimeAgoI18n date={new Date()} />
             </Typography>
           </div>
-          {upcomingMessageStr || '...'}
+          <Typography variant="body1">
+            <MarkdownElement text={upcomingMessageStr || '...'} />
+          </Typography>
         </div>
       )}
     </div>
@@ -218,3 +231,10 @@ function useChatScroll(deps: any) {
 
   return ref;
 }
+
+export const MeWithAvatarDisplay = (props: React.ComponentProps<typeof UserWithAvatarDisplay>) => {
+  const loggedInUser = useSelector<ReduxState, Client.User | undefined>(state => state.users.loggedIn.user, shallowEqual);
+  return (
+    <UserWithAvatarDisplay user={loggedInUser} {...props} />
+  );
+};

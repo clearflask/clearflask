@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import * as Sentry from "@sentry/node";
-import { Integrations } from "@sentry/tracing";
+import {Integrations} from "@sentry/tracing";
 import cluster from 'cluster';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
@@ -9,18 +9,18 @@ import express from 'express';
 import fs from 'fs';
 import http from 'http';
 import httpp from 'http-proxy';
-import https, { ServerOptions } from 'https';
+import https, {ServerOptions} from 'https';
 import i18nextMiddleware from 'i18next-http-middleware';
 import MapExpire from 'map-expire/MapExpire';
 import path from 'path';
 import process from 'process';
 import serveStatic from 'serve-static';
-import tls, { SecureContext } from 'tls';
-import { CertGetOrCreateResponse } from "../api/connect";
-import { getI18n } from '../i18n-ssr';
+import tls, {SecureContext} from 'tls';
+import {CertGetOrCreateResponse} from "../api/connect";
+import {getI18n} from '../i18n-ssr';
 import connectConfig from './config';
 import httpx from './httpx';
-import reactRenderer, { replaceParentDomain } from './renderer';
+import reactRenderer, {replaceParentDomain} from './renderer';
 import ServerConnect from './serverConnect';
 
 Sentry.init({
@@ -39,15 +39,19 @@ const urlsSkipCache = new Set([
 const apiBasePathWs = connectConfig.apiBasePath.replace(/[a-z]+:\/\//i, 'ws://');
 
 function createApiProxy() {
-  const serverHttpp = httpp.createProxyServer({ xfwd: true });
+  const serverHttpp = httpp.createProxyServer({
+    xfwd: true,
+    preserveHeaderKeyCase: true,
+  });
+
   serverHttpp.on('error', function (err, req, res) {
     console.error(err);
     res.writeHead(500, { 'Content-Type': 'text/javascript' });
     res.end(JSON.stringify({
       userFacingMessage: 'Oops, something went wrong',
     }));
-    return;
   });
+
   return serverHttpp;
 }
 
@@ -157,7 +161,7 @@ function createApp(serverApi) {
   serverApp.use(compression());
 
   // Health check and acme challenge before http->https redirect
-  addHealthRoute(serverApp, serverApi)
+  addHealthRoute(serverApp, serverApi);
   addAcmeRoute(serverApp);
 
   // Redirect http to https
@@ -191,7 +195,7 @@ function createApp(serverApi) {
       serverApp.get(`/${file}`, function (req, res) {
         replaceAndSend(res, file);
       });
-    })
+    });
   } else {
     serverApp.get('/api/openapi.yaml', function (req, res) {
       res.header('Cache-Control', `public, max-age=${7 * 24 * 60 * 60}`);
