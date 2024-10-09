@@ -173,14 +173,11 @@ public class LlmResource extends AbstractResource implements LlmAdminApi, LlmSup
                 @Override
                 public void onComplete(MessageModel messageModel) {
                     log.trace("Message complete {}", messageModel);
-                    if (eventSink.isClosed()) {
-                        return;
-                    }
                     eventSink.send(sse.newEventBuilder()
-                            .name("message")
-                            .data(messageModel.toConvoMessage())
-                            .build());
-                    eventSink.close();
+                                    .name("message")
+                                    .data(messageModel.toConvoMessage())
+                                    .build())
+                            .thenRun(eventSink::close);
                 }
             });
         } catch (Exception ex) {

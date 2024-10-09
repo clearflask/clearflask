@@ -111,7 +111,7 @@ export const DashboardTalkConvo = (props: {
             break;
           case 'message':
             const newMessage: Admin.ConvoMessage = JSON.parse(e.data);
-            props.server.getStore().dispatch({
+            ServerAdmin.get().getStore().dispatch({
               type: 'llmSetMessage',
               payload: {
                 convoId,
@@ -124,7 +124,7 @@ export const DashboardTalkConvo = (props: {
         }
       };
       eventSource.onerror = e => {
-        props.server.getStore().dispatch({
+        ServerAdmin.get().getStore().dispatch({
           type: 'llmSetMessage',
           payload: {
             convoId,
@@ -136,6 +136,7 @@ export const DashboardTalkConvo = (props: {
             },
           },
         });
+        eventSource.close();
       };
       return eventSource;
     });

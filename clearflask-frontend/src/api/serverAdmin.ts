@@ -13,7 +13,7 @@ import { htmlDataRetrieve } from '../common/util/htmlData';
 import windowIso, { StoresStateSerializable } from '../common/windowIso';
 import * as Admin from './admin';
 import * as Client from './client';
-import { AllActions, DispatchProps, Server, Status } from './server';
+import { DispatchProps, Server, Status } from './server';
 import ServerMock from './serverMock';
 
 export const DemoUpdateDelay = 300;
@@ -32,7 +32,7 @@ export interface Project {
   resetUnsavedChanges(newConfig: Admin.VersionedConfigAdmin);
 }
 
-export type AllActionsAdmin = Admin.Actions | AllTourActions | billingClearAction;
+export type AllActionsAdmin = Admin.Actions | AllTourActions | billingClearAction | llmSetMessageAction;
 
 export default class ServerAdmin {
   static instance: ServerAdmin | undefined;
@@ -638,7 +638,7 @@ const stateLlmDefault: StateLlm = {
   convoDetailsByConvoId: {},
 };
 
-function reducerLlm(state: StateLlm = stateLlmDefault, action: AllActions): StateLlm {
+function reducerLlm(state: StateLlm = stateLlmDefault, action: AllActionsAdmin): StateLlm {
   switch (action.type) {
     case Admin.convoListAdminActionStatus.Fulfilled:
       return {

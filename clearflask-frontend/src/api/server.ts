@@ -12,7 +12,7 @@ import randomUuid from '../common/util/uuid';
 import windowIso, { StoresState, StoresStateSerializable } from '../common/windowIso';
 import * as Admin from './admin';
 import * as Client from './client';
-import ServerAdmin, { llmSetMessageAction } from './serverAdmin';
+import ServerAdmin from './serverAdmin';
 import ServerMock from './serverMock';
 
 export type Unsubscribe = () => void;
@@ -40,8 +40,7 @@ export enum Status {
 export type AllActions = Admin.Actions | Client.Actions
   | updateSettingsAction
   | ideaSearchResultRemoveIdeaAction | ideaSearchResultAddIdeaAction
-  | draftSearchResultAddDraftAction
-  | llmSetMessageAction;
+  | draftSearchResultAddDraftAction;
 
 export class Server {
   static storesState: StoresState | undefined;
