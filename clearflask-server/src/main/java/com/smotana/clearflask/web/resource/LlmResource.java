@@ -4,10 +4,13 @@ package com.smotana.clearflask.web.resource;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
+import com.kik.config.ice.ConfigSystem;
+import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.LlmAdminApi;
 import com.smotana.clearflask.api.LlmSuperAdminApi;
 import com.smotana.clearflask.api.model.*;
@@ -48,8 +51,18 @@ import java.util.Optional;
 @Path(Application.RESOURCE_VERSION)
 public class LlmResource extends AbstractResource implements LlmAdminApi, LlmSuperAdminApi {
 
+    public interface Config {
+        /**
+         * TODO Temporary to debug issue with SSE last message being dropped.
+         */
+        @DefaultValue("true")
+        boolean sseCloseAfterLastMessage();
+    }
+
     @Context
     private Sse sse;
+    @Inject
+    private Config config;
     @Inject
     private LlmHistoryStore llmHistoryStore;
     @Inject
@@ -62,6 +75,8 @@ public class LlmResource extends AbstractResource implements LlmAdminApi, LlmSup
     private SuperAdminPredicate superAdminPredicate;
     @Inject
     private Environment env;
+    @Inject
+    private Gson gson;
 
     @RolesAllowed({Role.ADMINISTRATOR})
     @Limit(requiredPermits = 1)
@@ -162,6 +177,7 @@ public class LlmResource extends AbstractResource implements LlmAdminApi, LlmSup
                 public void onNext(String nextToken) {
                     log.trace("Sending token {}", nextToken);
                     if (eventSink.isClosed()) {
+                        log.info("Event sink closed, not sending token {}", nextToken);
                         return;
                     }
                     eventSink.send(sse.newEventBuilder()
@@ -172,12 +188,26 @@ public class LlmResource extends AbstractResource implements LlmAdminApi, LlmSup
 
                 @Override
                 public void onComplete(MessageModel messageModel) {
+                    if (eventSink.isClosed()) {
+                        log.info("Event sink closed, not sending message {}", messageModel);
+                        return;
+                    }
                     log.trace("Message complete {}", messageModel);
                     eventSink.send(sse.newEventBuilder()
                                     .name("message")
-                                    .data(messageModel.toConvoMessage())
+                                    .data(gson.toJson(messageModel.toConvoMessage()))
                                     .build())
-                            .thenRun(eventSink::close);
+                            // TODO There is an issue where the last message doesn't appear to client
+                            // This is a temporary message to see if this message gets through.
+                            .thenCompose(v -> eventSink.send(sse.newEventBuilder()
+                                    .name("close")
+                                    .data("close")
+                                    .build()))
+                            .thenRun(() -> {
+                                if (config.sseCloseAfterLastMessage()) {
+                                    eventSink.close();
+                                }
+                            });
                 }
             });
         } catch (Exception ex) {
@@ -212,6 +242,7 @@ public class LlmResource extends AbstractResource implements LlmAdminApi, LlmSup
             @Override
             protected void configure() {
                 bind(LlmResource.class);
+                install(ConfigSystem.configModule(Config.class));
                 Multibinder.newSetBinder(binder(), Object.class, Names.named(Application.RESOURCE_NAME)).addBinding()
                         .to(LlmResource.class);
             }
