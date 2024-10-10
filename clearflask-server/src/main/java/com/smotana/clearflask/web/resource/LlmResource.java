@@ -9,7 +9,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
-import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.api.LlmAdminApi;
 import com.smotana.clearflask.api.LlmSuperAdminApi;
 import com.smotana.clearflask.api.model.*;
@@ -52,8 +51,6 @@ public class LlmResource extends AbstractResource implements LlmAdminApi, LlmSup
 
     @Context
     private Sse sse;
-    @Inject
-    private Config config;
     @Inject
     private LlmHistoryStore llmHistoryStore;
     @Inject
@@ -223,7 +220,6 @@ public class LlmResource extends AbstractResource implements LlmAdminApi, LlmSup
             @Override
             protected void configure() {
                 bind(LlmResource.class);
-                install(ConfigSystem.configModule(Config.class));
                 Multibinder.newSetBinder(binder(), Object.class, Names.named(Application.RESOURCE_NAME)).addBinding()
                         .to(LlmResource.class);
             }
