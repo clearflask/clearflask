@@ -10,7 +10,6 @@ import com.google.inject.Module;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
-import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.LlmAdminApi;
 import com.smotana.clearflask.api.LlmSuperAdminApi;
 import com.smotana.clearflask.api.model.*;
@@ -50,14 +49,6 @@ import java.util.Optional;
 @Singleton
 @Path(Application.RESOURCE_VERSION)
 public class LlmResource extends AbstractResource implements LlmAdminApi, LlmSuperAdminApi {
-
-    public interface Config {
-        /**
-         * TODO Temporary to debug issue with SSE last message being dropped.
-         */
-        @DefaultValue("true")
-        boolean sseCloseAfterLastMessage();
-    }
 
     @Context
     private Sse sse;
@@ -197,17 +188,7 @@ public class LlmResource extends AbstractResource implements LlmAdminApi, LlmSup
                                     .name("message")
                                     .data(gson.toJson(messageModel.toConvoMessage()))
                                     .build())
-                            // TODO There is an issue where the last message doesn't appear to client
-                            // This is a temporary message to see if this message gets through.
-                            .thenCompose(v -> eventSink.send(sse.newEventBuilder()
-                                    .name("close")
-                                    .data("close")
-                                    .build()))
-                            .thenRun(() -> {
-                                if (config.sseCloseAfterLastMessage()) {
-                                    eventSink.close();
-                                }
-                            });
+                            .thenRun(eventSink::close);
                 }
             });
         } catch (Exception ex) {

@@ -44,6 +44,13 @@ function createApiProxy() {
     preserveHeaderKeyCase: true,
   });
 
+  serverHttpp.on('proxyReq', (proxyReq, req, res, options) => {
+    if (req.headers.accept === 'text/event-stream') {
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+    }
+  });
+
   serverHttpp.on('error', function (err, req, res) {
     console.error(err);
     res.writeHead(500, { 'Content-Type': 'text/javascript' });
@@ -158,7 +165,15 @@ function createApp(serverApi) {
   const reactRender = reactRenderer();
 
   serverApp.use(cookieParser());
-  serverApp.use(compression());
+  serverApp.use(compression({
+    filter: (req, res) => {
+      // Do not compress Server-Sent Events
+      if (res.getHeader('Content-Type') === 'text/event-stream') {
+        return false;
+      }
+      return compression.filter(req, res);
+    }
+  }));
 
   // Health check and acme challenge before http->https redirect
   addHealthRoute(serverApp, serverApi);
