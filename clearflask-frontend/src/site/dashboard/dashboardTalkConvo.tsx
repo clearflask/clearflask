@@ -103,25 +103,23 @@ export const DashboardTalkConvo = (props: {
         convoId,
         messageId,
       });
-      eventSource.onmessage = e => {
-        switch (e.type) {
-          case 'token':
-            partialMsg += e.data;
-            setUpcomingMessageStr(partialMsg);
-            break;
-          case 'message':
-            const newMessage: Admin.ConvoMessage = JSON.parse(e.data);
-            ServerAdmin.get().getStore().dispatch({
-              type: 'llmSetMessage',
-              payload: {
-                convoId,
-                message: newMessage,
-              },
-            });
-            setUpcomingMessageStr('');
-            eventSource.close();
-            break;
+      eventSource.addEventListener('token', e => {
+        if (e['data']) {
+          partialMsg += e['data'];
+          setUpcomingMessageStr(partialMsg);
         }
+      });
+      eventSource.onmessage = e => {
+        const newMessage: Admin.ConvoMessage = JSON.parse(e.data);
+        ServerAdmin.get().getStore().dispatch({
+          type: 'llmSetMessage',
+          payload: {
+            convoId,
+            message: newMessage,
+          },
+        });
+        setUpcomingMessageStr('');
+        eventSource.close();
       };
       eventSource.onerror = e => {
         ServerAdmin.get().getStore().dispatch({
