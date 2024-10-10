@@ -4,6 +4,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableList;
+import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -11,6 +12,7 @@ import com.google.inject.Singleton;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.store.LlmMemoryStore;
+import com.smotana.clearflask.util.Extern;
 import dev.langchain4j.data.message.*;
 import dev.langchain4j.model.Tokenizer;
 import dev.langchain4j.model.openai.OpenAiTokenizer;
@@ -39,6 +41,8 @@ public class DynamoLlmMemoryStore implements LlmMemoryStore {
     private LangChainLlmAgentStore.Config configAgentStore;
     @Inject
     private SingleTable singleTable;
+    @Inject
+    private Gson gson;
 
     private TableSchema<MessagesModel> messagesSchema;
     private volatile Tokenizer tokenizer;
@@ -63,6 +67,11 @@ public class DynamoLlmMemoryStore implements LlmMemoryStore {
                     return fetchMessagesModel(convoId);
                 }
             });
+
+    @Extern
+    public String messagesExtern(String convoId) {
+        return gson.toJson(messages(convoId));
+    }
 
     @Override
     public List<ChatMessage> messages(String convoId) {

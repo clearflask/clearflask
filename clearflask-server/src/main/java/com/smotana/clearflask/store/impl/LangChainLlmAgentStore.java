@@ -111,12 +111,15 @@ public class LangChainLlmAgentStore implements LlmAgentStore {
 
     @Override
     public CreateMessageResponse ask(String projectId, String accountId, String convoId, String question, Optional<String> promptOverrideOpt) {
+
+        UserMessage newMessage = UserMessage.from(question);
+        MessageModel questionMessageModel = llmHistoryStore.putMessage(llmHistoryStore.genMessageId(), convoId, ConvoMessage.AuthorTypeEnum.USER, question);
+        llmMemoryStore.add(convoId, newMessage);
+
         SystemMessage prompt = promptOverrideOpt
                 .map(SystemMessage::from)
                 .orElseGet(() -> llmPromptStore.getPrompt(projectId, accountId));
         List<ChatMessage> memoryMessages = llmMemoryStore.messages(convoId);
-        UserMessage newMessage = UserMessage.from(question);
-
         List<ChatMessage> messages = Lists.newArrayList();
         messages.add(prompt);
         messages.addAll(memoryMessages);
@@ -206,7 +209,10 @@ public class LangChainLlmAgentStore implements LlmAgentStore {
 
                         // Re-run the model with the results
                         LangChainLlmAgentStore.this.model.generate(messages, llmToolingStore.getTools(), this);
-                        llmMemoryStore.add(convoId, response.content());
+                        llmMemoryStore.addAll(convoId, ImmutableList.<ChatMessage>builder()
+                                .add(response.content())
+                                .addAll(toolResponseMessages)
+                                .build());
                         return;
                     }
 
@@ -225,12 +231,9 @@ public class LangChainLlmAgentStore implements LlmAgentStore {
             }
         });
 
-        MessageModel questionMessageMode = llmHistoryStore.putMessage(llmHistoryStore.genMessageId(), convoId, ConvoMessage.AuthorTypeEnum.USER, question);
-        llmMemoryStore.add(convoId, newMessage);
-
         return new CreateMessageResponse(
                 convoId,
-                questionMessageMode.toConvoMessage(),
+                questionMessageModel.toConvoMessage(),
                 responseMessageId);
     }
 
