@@ -510,7 +510,8 @@ sudo tee /etc/tomcat/server.xml <<"EOF"
       <Host name="localhost"
             appBase="webapps/100killbill"
             unpackWARs="true"
-            autoDeploy="true">
+            autoDeploy="true"
+            undeployOldVersions="true">
 
         <Valve className="org.apache.catalina.valves.RemoteIpValve"
                protocolHeader="x-forwarded-proto"
@@ -538,7 +539,8 @@ sudo tee /etc/tomcat/server.xml <<"EOF"
       <Host name="localhost"
             appBase="webapps/200kaui"
             unpackWARs="true"
-            autoDeploy="true">
+            autoDeploy="true"
+            undeployOldVersions="true">
 
         <Valve className="org.apache.catalina.valves.RemoteIpValve"
                protocolHeader="x-forwarded-proto"
@@ -566,7 +568,8 @@ sudo tee /etc/tomcat/server.xml <<"EOF"
       <Host name="localhost"
             appBase="webapps/150clearflask"
             unpackWARs="true"
-            autoDeploy="true">
+            autoDeploy="true"
+            undeployOldVersions="true">
 
         <Valve className="org.apache.catalina.valves.RemoteIpValve"
                protocolHeader="x-forwarded-proto"
