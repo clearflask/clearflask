@@ -26,6 +26,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.util.Optional;
 
 @Slf4j
@@ -58,7 +59,13 @@ public class HealthResource {
     @Produces(MediaType.TEXT_PLAIN)
     public String version(@Context ServletContext servletContext) {
         String gitPropertiesStr = Optional.ofNullable(Thread.currentThread().getContextClassLoader().getResource("git.properties"))
-                .map(url -> Resources.toString(url, Charsets.UTF_8))
+                .map(url -> {
+                    try {
+                        return Resources.toString(url, Charsets.UTF_8);
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                })
                 .orElse("Cannot find git.properties");
 
         String contextVersionStr = Optional.ofNullable(servletContext.getRealPath("/"))
