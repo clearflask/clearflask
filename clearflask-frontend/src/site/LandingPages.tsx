@@ -3,8 +3,20 @@
 /** Intentional comment to prevent licence-maven-plugin from deleting the below line */
 /// <reference path="../@types/transform-media-imports.d.ts"/>
 import loadable from '@loadable/component';
-import { Button, ButtonGroup, Container, IconButton, Size, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@material-ui/core';
-import { Theme, createStyles, fade, makeStyles } from '@material-ui/core/styles';
+import {
+  Button,
+  ButtonGroup,
+  Container,
+  IconButton,
+  Size,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Typography,
+} from '@material-ui/core';
+import { createStyles, fade, makeStyles, Theme } from '@material-ui/core/styles';
 import AccessibilityIcon from '@material-ui/icons/AccessibilityNew';
 import PaymentIcon from '@material-ui/icons/AccountBalance';
 import OncallIcon from '@material-ui/icons/Alarm';
@@ -129,7 +141,7 @@ import CommentList from '../app/comps/CommentList';
 import DividerCorner from '../app/utils/DividerCorner';
 import Loading from '../app/utils/Loading';
 import ClosablePopper from '../common/ClosablePopper';
-import { Orientation, Side, contentScrollApplyStyles } from '../common/ContentScroll';
+import { contentScrollApplyStyles, Orientation, Side } from '../common/ContentScroll';
 import FakeBrowser from '../common/FakeBrowser';
 import Hr from '../common/Hr';
 import ImgIso from '../common/ImgIso';
@@ -154,8 +166,11 @@ import Demo from './landing/Demo';
 import Hero from './landing/Hero';
 import HorizontalPanels from './landing/HorizontalPanels';
 import PrioritizationControlsCredits from './landing/PrioritizationControlsCredits';
+import AiIcon from '../common/icon/AiIcon';
 
-const WorkflowPreview = loadable(() => import(/* webpackChunkName: "WorkflowPreview" */'../common/config/settings/injects/WorkflowPreview').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const WorkflowPreview = loadable(() => import(/* webpackChunkName: "WorkflowPreview" */'../common/config/settings/injects/WorkflowPreview').then(importSuccess).catch(importFailed), {
+  fallback: (<Loading />),
+});
 
 const useStyles = makeStyles((theme: Theme) => createStyles({
   marker: {
@@ -309,6 +324,14 @@ const useStyles = makeStyles((theme: Theme) => createStyles({
   textAlignCenter: {
     textAlign: 'center',
   },
+  landingAi: {
+    marginTop: theme.spacing(3),
+    marginBottom: theme.spacing(-4),
+  },
+  aiIcon: {
+    fontSize: '1.2em',
+    margin: theme.spacing(0, 0, 1, 1),
+  },
   demoCustomizeControl: {
     margin: theme.spacing(2),
     width: '100%',
@@ -347,42 +370,43 @@ export function Landing() {
   const classes = useStyles();
   return (
     <>
+      <LandingAi />
       <LandingHero />
       <LandingCustomers />
       <Block
         className={classes.textAlignCenter}
-        type='headingOnly'
-        title='See what we have to offer'
+        type="headingOnly"
+        title="See what we have to offer"
         spacingBottom={0}
       />
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' staggerHeight={40}>
+      <HorizontalPanels wrapBelow="md" maxContentWidth="xs" maxWidth="lg" staggerHeight={40}>
         <Block
-          type='column'
-          icon={(<CustomerFeedbackIcon fontSize='inherit' />)}
+          type="column"
+          icon={(<CustomerFeedbackIcon fontSize="inherit" />)}
           title={t('customer-feedback')}
           titleColorSecondary
           demoImage={DemoFeedbackImg}
-          demoWrap='browser'
+          demoWrap="browser"
         />
         <Block
-          type='column'
-          icon={(<RoadmapIcon fontSize='inherit' style={{ transform: 'rotate(180deg)' }} />)}
+          type="column"
+          icon={(<RoadmapIcon fontSize="inherit" style={{ transform: 'rotate(180deg)' }} />)}
           title={t('product-roadmap')}
           titleColorSecondary
           demoImage={DemoRoadmapImg}
-          demoWrap='browser'
+          demoWrap="browser"
         />
         <Block
-          type='column'
-          icon={(<ChangeIcon fontSize='inherit' />)}
+          type="column"
+          icon={(<ChangeIcon fontSize="inherit" />)}
           title={t('announcements')}
           titleColorSecondary
           demoImage={DemoChangelog2Img}
-          demoWrap='browser'
+          demoWrap="browser"
         />
       </HorizontalPanels>
       <Block
-        type='headingMain'
+        type="headingMain"
         title={t('simple-yet-powerful-feedback-experience')}
         description={t('ask-your-customers-for-feedback-on-your-product-and-extract-valuable-ideas')}
         largePoints
@@ -390,8 +414,8 @@ export function Landing() {
           t('choose-between-feedback-first-or'),
           t('website-integration'),
         ]}
-        alignItems='center'
-        demoFixedWidth='100%'
+        alignItems="center"
+        demoFixedWidth="100%"
         demoFixedHeight={500}
         demo={(
           <Stack
@@ -403,7 +427,7 @@ export function Landing() {
                 <FakeBrowser>
                   <ImgIso img={DemoPageFeedbackClassigImg} />
                 </FakeBrowser>
-              )
+              ),
             }, {
               height: 'max-content',
               width: 330,
@@ -411,16 +435,16 @@ export function Landing() {
                 <FakeBrowser>
                   <ImgIso img={DemoFeedbackImg} />
                 </FakeBrowser>
-              )
+              ),
             }]}
           />
         )}
-        buttonTitle='See how'
-        buttonLink='/product/ask'
+        buttonTitle="See how"
+        buttonLink="/product/ask"
       />
       <Block
         mirror
-        type='headingMain'
+        type="headingMain"
         title={t('convert-ideas-into-actionable-tasks')}
         description={t('find-the-most-valuable-features-from-the-most-important-customers')}
         largePoints
@@ -429,12 +453,12 @@ export function Landing() {
           t('validate-ideas'),
           t('prioritize-roadmap'),
         ]}
-        alignItems='center'
-        demoFixedWidth='100%'
+        alignItems="center"
+        demoFixedWidth="100%"
         demo={(
           <Stack
             contentSpacingVertical={200}
-            float='right' // overflow left
+            float="right" // overflow left
             items={[{
               content: (<ImgIso img={DemoDashboardRoadmapImg} />),
               height: 'max-content',
@@ -445,10 +469,10 @@ export function Landing() {
           />
         )}
         buttonTitle={t('learn-more')}
-        buttonLink='/product/analyze'
+        buttonLink="/product/analyze"
       />
       <Block
-        type='headingMain'
+        type="headingMain"
         title={t('share-progress-with-your-community')}
         description={t('become-a-customer-centric-organization-with')}
         largePoints
@@ -457,8 +481,8 @@ export function Landing() {
           t('announcements'),
           t('subscribe-to-updates'),
         ]}
-        alignItems='center'
-        demoFixedWidth='100%'
+        alignItems="center"
+        demoFixedWidth="100%"
         // demoFixedHeight={500}
         demo={(
           <Stack
@@ -491,7 +515,7 @@ export function Landing() {
           />
         )}
         buttonTitle={t('learn-more')}
-        buttonLink='/product/act'
+        buttonLink="/product/act"
       />
       <LandingPricingOptions />
 
@@ -601,7 +625,7 @@ export function LandingCustomers() {
   return (
     <Block
       className={classes.textAlignCenter}
-      type='headingOnly'
+      type="headingOnly"
       title={(
         <div className={classes.customers}>
           <ImgIso img={CustomerDekra} />
@@ -621,39 +645,39 @@ export function LandingGraveyard() {
   return (
     <>
       <div style={{ height: '100vh' }} />
-      <Hero title='Landing components graveyard' />
+      <Hero title="Landing components graveyard" />
 
-      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={0}>
+      <HorizontalPanels wrapBelow="lg" maxWidth="lg" maxContentWidth="sm" staggerHeight={0}>
         <Block
-          type='column'
-          title='Spark discussions'
-          description=''
-          icon={(<CustomerFeedbackIcon fontSize='inherit' />)}
+          type="column"
+          title="Spark discussions"
+          description=""
+          icon={(<CustomerFeedbackIcon fontSize="inherit" />)}
         />
         <Block
-          type='column'
-          title='show off future ideas'
-          description='post status demom Maybe put this in Analyze -> validate'
-          icon={(<CustomerFeedbackIcon fontSize='inherit' />)}
+          type="column"
+          title="show off future ideas"
+          description="post status demom Maybe put this in Analyze -> validate"
+          icon={(<CustomerFeedbackIcon fontSize="inherit" />)}
         />
       </HorizontalPanels>
-      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={0}>
+      <HorizontalPanels wrapBelow="lg" maxWidth="lg" maxContentWidth="sm" staggerHeight={0}>
         {/* Collect feedback right from your website or app */}
         {/* Prioritize based on customer value */}
         {/* Keep your users updated */}
         {/* Explore */}
         <BlockContent
-          variant='content'
-          title='Capture feedback publicly, internally, or on-behalf'
-          description='Enable feedback from your internal teams or make it publicly accessible. Capture feedback directly from your audience or on-behalf from other channels.'
-          icon={(<CustomerFeedbackIcon fontSize='inherit' />)}
+          variant="content"
+          title="Capture feedback publicly, internally, or on-behalf"
+          description="Enable feedback from your internal teams or make it publicly accessible. Capture feedback directly from your audience or on-behalf from other channels."
+          icon={(<CustomerFeedbackIcon fontSize="inherit" />)}
         />
         <BlockContent
-          variant='content'
-          title='Customer segmentation and Analytics'
-          description='Analyze your data with search, segment and filter to summarize feedback from target customers.'
-          icon={(<AnalyticsIcon fontSize='inherit' />)}
-          postStatusId='customer-segmentation-and-analytics-pgi'
+          variant="content"
+          title="Customer segmentation and Analytics"
+          description="Analyze your data with search, segment and filter to summarize feedback from target customers."
+          icon={(<AnalyticsIcon fontSize="inherit" />)}
+          postStatusId="customer-segmentation-and-analytics-pgi"
         />
         {/* <Demo
             variant='content'
@@ -682,68 +706,68 @@ export function LandingGraveyard() {
             }}
           /> */}
         <BlockContent
-          variant='content'
-          title='Integrate with your product or tools'
-          description='Provide your sales, support, engineering team an opportunity to voice their suggestions. Capture feedback from other channels and record it on-behalf of users.'
-          icon={(<WidgetIcon fontSize='inherit' />)}
-          buttonTitle='See integrations'
-          buttonLink='/product/integrations'
+          variant="content"
+          title="Integrate with your product or tools"
+          description="Provide your sales, support, engineering team an opportunity to voice their suggestions. Capture feedback from other channels and record it on-behalf of users."
+          icon={(<WidgetIcon fontSize="inherit" />)}
+          buttonTitle="See integrations"
+          buttonLink="/product/integrations"
         />
       </HorizontalPanels>
       <Block
-        title='Collect'
-        description='collect, embed in iframe, use API, internal feedback'
+        title="Collect"
+        description="collect, embed in iframe, use API, internal feedback"
       />
-      <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs' staggerHeight={150}>
+      <HorizontalPanels wrapBelow="md" maxWidth="lg" maxContentWidth="xs" staggerHeight={150}>
         <Block
-          type='column'
-          title='Feature Request Tracking'
-          description='Tool to keep organized and drive your product forward'
+          type="column"
+          title="Feature Request Tracking"
+          description="Tool to keep organized and drive your product forward"
           image={FeatureRequestImg}
-          imageLocation='above'
-          buttonTitle='Learn more'
-          buttonLink='/solutions/feature-request-tracking'
+          imageLocation="above"
+          buttonTitle="Learn more"
+          buttonLink="/solutions/feature-request-tracking"
           mirror
         />
         <Block
-          type='column'
-          title='Internal Feedback'
-          description='Collect feedback from within your organization or customer-base'
+          type="column"
+          title="Internal Feedback"
+          description="Collect feedback from within your organization or customer-base"
           image={InternalFeedbackImg}
-          imageLocation='above'
-          buttonTitle='Learn more'
-          buttonLink='/solutions/internal-feedback'
+          imageLocation="above"
+          buttonTitle="Learn more"
+          buttonLink="/solutions/internal-feedback"
         />
         <Block
-          type='column'
-          title='Idea management'
-          description='Collect and organize ideas from your users, customers or coworkers'
+          type="column"
+          title="Idea management"
+          description="Collect and organize ideas from your users, customers or coworkers"
           image={IdeasImg}
-          imageLocation='above'
-          buttonTitle='Learn more'
-          buttonLink='/solutions/idea-management'
+          imageLocation="above"
+          buttonTitle="Learn more"
+          buttonLink="/solutions/idea-management"
           mirror
         />
       </HorizontalPanels>
       <Block
-        title='Feature Crowdfunding'
-        description='Credit-system to reward your paying customers with a voice to shape your product.'
+        title="Feature Crowdfunding"
+        description="Credit-system to reward your paying customers with a voice to shape your product."
         image={CrowdfundImg}
-        imageLocation='above'
-        buttonTitle='Learn more'
-        buttonLink='/solutions/feature-crowdfunding'
+        imageLocation="above"
+        buttonTitle="Learn more"
+        buttonLink="/solutions/feature-crowdfunding"
       />
       <LandingLoop />
       <LandingCustomizeHero />
       <Demo
-        type='mediumDemo'
-        title='Stay on the same page'
-        description='Keep everyone on the same page with your product development roadmap'
+        type="mediumDemo"
+        title="Stay on the same page"
+        description="Keep everyone on the same page with your product development roadmap"
         mirror
         image={Roadmap2Img}
-        imageLocation='above'
-        initialSubPath='/embed/demo'
-        alignItems='center'
+        imageLocation="above"
+        initialSubPath="/embed/demo"
+        alignItems="center"
         template={templater => templater.demoBoard('Product roadmap', [
           { title: 'Planned' }, { title: 'Completed' },
         ])}
@@ -755,65 +779,65 @@ export function LandingGraveyard() {
           demoBlurryShadow: true,
           demoDisablePostOpen: true,
         }}
-        buttonTitle='See a Roadmap'
-        buttonLink='/solutions/product-roadmap'
+        buttonTitle="See a Roadmap"
+        buttonLink="/solutions/product-roadmap"
       />
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' padRight={1}>
+      <HorizontalPanels wrapBelow="md" maxContentWidth="xs" maxWidth="lg" padRight={1}>
         <Block
-          type='column'
-          icon={(<LinkIcon fontSize='inherit' />)}
-          title='Link your existing accounts'
-          description='Link accounts with your existing service using Single Sign-On, OAuth, or email domain whitelist. SSO is the ideal seamless experience with no sign-up steps.'
+          type="column"
+          icon={(<LinkIcon fontSize="inherit" />)}
+          title="Link your existing accounts"
+          description="Link accounts with your existing service using Single Sign-On, OAuth, or email domain whitelist. SSO is the ideal seamless experience with no sign-up steps."
         />
         <Block
-          type='column'
+          type="column"
           icon={(
             <div className={classes.iconsContainer}>
               <GoogleIcon />
-              <GithubIcon fontSize='inherit' className={classes.githubIcon} />
+              <GithubIcon fontSize="inherit" className={classes.githubIcon} />
               <FacebookIcon />
             </div>
           )}
-          title='Sign in with ...'
-          description='Use any OAuth provider to auto-create an account for your users. Ideal if your users are coming in from specific services or to simply ease sign-up friction.'
+          title="Sign in with ..."
+          description="Use any OAuth provider to auto-create an account for your users. Ideal if your users are coming in from specific services or to simply ease sign-up friction."
         />
       </HorizontalPanels>
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' padLeft={1}>
+      <HorizontalPanels wrapBelow="md" maxContentWidth="xs" maxWidth="lg" padLeft={1}>
         <Block
-          type='column'
-          icon={(<EmailIcon fontSize='inherit' />)}
-          title='Email sign-up'
-          description='Let your users sign-up with an email. Optionally require email verification, passwordless login, or password required.'
+          type="column"
+          icon={(<EmailIcon fontSize="inherit" />)}
+          title="Email sign-up"
+          description="Let your users sign-up with an email. Optionally require email verification, passwordless login, or password required."
         />
         <Block
-          type='column'
-          icon={(<NotificationIcon fontSize='inherit' />)}
-          title='Browser Notifications'
-          description='To ease friction with users providing an email, allow your users to sign-up by allowing Browser Web Push Notifications. This allows you to engage your users wiht little friction. Non-supporting browsers can fall-back to Guest access.'
+          type="column"
+          icon={(<NotificationIcon fontSize="inherit" />)}
+          title="Browser Notifications"
+          description="To ease friction with users providing an email, allow your users to sign-up by allowing Browser Web Push Notifications. This allows you to engage your users wiht little friction. Non-supporting browsers can fall-back to Guest access."
         />
       </HorizontalPanels>
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' padLeft={2}>
+      <HorizontalPanels wrapBelow="md" maxContentWidth="xs" maxWidth="lg" padLeft={2}>
         <Block
-          type='column'
-          icon={(<GuestIcon fontSize='inherit' />)}
-          title='Guest accounts'
-          description='Ideal in some use cases, allows your users to sign-up without providing any contact information. Use as a last resort as it attracts spam and leaves you with no engagement opportunity.'
+          type="column"
+          icon={(<GuestIcon fontSize="inherit" />)}
+          title="Guest accounts"
+          description="Ideal in some use cases, allows your users to sign-up without providing any contact information. Use as a last resort as it attracts spam and leaves you with no engagement opportunity."
         />
       </HorizontalPanels>
       <Block
-        type='headingMain'
-        title='Give your most-valuable customers a proportionate voice'
-        description='Assign voting power based on customer value and let them prioritize your suggestion box. Your users will love knowing their voice has been heard.'
-        alignItems='flex-start'
+        type="headingMain"
+        title="Give your most-valuable customers a proportionate voice"
+        description="Assign voting power based on customer value and let them prioritize your suggestion box. Your users will love knowing their voice has been heard."
+        alignItems="flex-start"
         image={ValueImg}
-        imageStyleOuter={{ maxWidth: 350, padding: 0, }}
+        imageStyleOuter={{ maxWidth: 350, padding: 0 }}
       />
-      <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs'>
+      <HorizontalPanels wrapBelow="md" maxWidth="lg" maxContentWidth="xs">
         <Demo
-          type='column'
-          title='Keep it simple with voting'
-          description='Most common and simplest to understand by users. Customer value and segmentation can be applied behind the scenes.'
-          initialSubPath='/embed/demo'
+          type="column"
+          title="Keep it simple with voting"
+          description="Most common and simplest to understand by users. Customer value and segmentation can be applied behind the scenes."
+          initialSubPath="/embed/demo"
           template={templater => templater.demoPrioritization('vote')}
           // controls={project => (<PrioritizationControlsVoting templater={project.templater} />)}
           mock={mocker => mocker.demoPrioritization()}
@@ -828,10 +852,10 @@ export function LandingGraveyard() {
           containerPortal
         />
         <Demo
-          type='column'
-          title='Expressions for a wider range of feedback'
-          description='When you cannnot accurately express your feelings with simple upvotes, weighted emoji expressions are here to help.'
-          initialSubPath='/embed/demo'
+          type="column"
+          title="Expressions for a wider range of feedback"
+          description="When you cannnot accurately express your feelings with simple upvotes, weighted emoji expressions are here to help."
+          initialSubPath="/embed/demo"
           template={templater => templater.demoPrioritization('express')}
           // controls={project => (<PrioritizationControlsExpressions templater={project.templater} />)}
           mock={mocker => mocker.demoPrioritization()}
@@ -840,17 +864,20 @@ export function LandingGraveyard() {
             demoBlurryShadow: true,
             demoVotingExpressionsAnimate: [
               { type: 'express', update: { expression: '👍', action: Client.IdeaVoteUpdateExpressionsActionEnum.Set } },
-              { type: 'express', update: { expression: '👍', action: Client.IdeaVoteUpdateExpressionsActionEnum.Remove } },
+              {
+                type: 'express',
+                update: { expression: '👍', action: Client.IdeaVoteUpdateExpressionsActionEnum.Remove },
+              },
             ],
           }}
           demoFixedHeight={420}
           containerPortal
         />
         <Demo
-          type='column'
-          title='Credit System for advanced prioritization'
-          description='Distribute credits to your users based on their value as a customer or monetary contribution. Let them fine-tune prioritization on their own.'
-          initialSubPath='/embed/demo'
+          type="column"
+          title="Credit System for advanced prioritization"
+          description="Distribute credits to your users based on their value as a customer or monetary contribution. Let them fine-tune prioritization on their own."
+          initialSubPath="/embed/demo"
           template={templater => templater.demoPrioritization('fund')}
           // controls={project => (<PrioritizationControlsCredits templater={project.templater} />)}
           mock={mocker => mocker.demoPrioritization()}
@@ -865,13 +892,14 @@ export function LandingGraveyard() {
               { index: 2, fundDiff: 20 },
             ],
           }}
-          buttonTitle='See Feature Crowdfunding'
-          buttonLink='/solutions/feature-crowdfunding'
+          buttonTitle="See Feature Crowdfunding"
+          buttonLink="/solutions/feature-crowdfunding"
         />
       </HorizontalPanels>
       <div className={classes.demoEmbedButtons}>
-        <LandingDemoEmbed path='embed/feedback'><FeedbackIcon /></LandingDemoEmbed>
-        <LandingDemoEmbed path='embed/roadmap'><RoadmapIcon style={{ transform: 'rotate(180deg)' }} /></LandingDemoEmbed>
+        <LandingDemoEmbed path="embed/feedback"><FeedbackIcon /></LandingDemoEmbed>
+        <LandingDemoEmbed path="embed/roadmap"><RoadmapIcon
+          style={{ transform: 'rotate(180deg)' }} /></LandingDemoEmbed>
       </div>
     </>
   );
@@ -895,16 +923,35 @@ export function LandingHero() {
         }}
         mirror
         buttonTitle={t('get-started')}
-        buttonLink='/signup'
+        buttonLink="/signup"
         // buttonRemark={(<div>{t('free-14-day-trial')}</div>)}
         // buttonAddOauth
         button2Title={t('source-code')}
-        button2LinkExt='https://github.com/clearflask/clearflask'
+        button2LinkExt="https://github.com/clearflask/clearflask"
         button2Icon={(<GithubIcon />)}
         // button2Title={t('see-demo')}
         // button2Link='/product/demo'
       />
     </Background>
+  );
+}
+
+export function LandingAi() {
+  const classes = useStyles();
+  return (
+    <Block
+      spacingTop={0}
+      spacingBottom={0}
+      className={classNames(classes.textAlignCenter, classes.landingAi)}
+      type="headingOnly"
+      title={(
+        <>
+          Now with AI
+          <AiIcon className={classes.aiIcon} />
+        </>
+      )}
+      description="Talk to ClearFlask AI powered with all of your customer feedback"
+    />
   );
 }
 
@@ -921,8 +968,8 @@ export function LandingClearFlaskDemo(props: {
       <iframe
         title={t('demo-clearflask-feedback')}
         src={`${windowIso.location.protocol}//product.${windowIso.location.host}${props.path || ''}`}
-        width='100%'
-        height='100%'
+        width="100%"
+        height="100%"
         frameBorder={0}
       />
     </FakeBrowser>
@@ -942,20 +989,20 @@ export function LandingDemoEmbed(props: { path?: string, children: any }) {
         {props.children}
       </IconButton>
       <ClosablePopper
-        anchorType='ref'
+        anchorType="ref"
         anchor={anchorRef}
         open={!!demoOpen}
         onClose={() => setDemoOpen(false)}
-        placement='top'
+        placement="top"
         arrow
         clickAway
         paperClassName={classes.demoEmbedPopper}
       >
         <iframe
-          title='Demo: ClearFlask Feedback'
+          title="Demo: ClearFlask Feedback"
           src={`${windowIso.location.protocol}//product.${windowIso.location.host}/${props.path || ''}`}
-          width='100%'
-          height='100%'
+          width="100%"
+          height="100%"
           frameBorder={0}
         />
       </ClosablePopper>
@@ -971,70 +1018,71 @@ export function LandingLoop() {
         <div className={classes.textCircleItemContainer}>
           <BlockContent
             className={classNames(classes.textCircleItemOne, classes.textCircleItem)}
-            variant='content'
-            titleCmpt='div'
-            title='Collect feedback'
+            variant="content"
+            titleCmpt="div"
+            title="Collect feedback"
             description={(
               <div className={classNames(classes.pointsContainer, classes.pointsContainerMinor)}>
                 <div>Ask your customer to influence your product decisions.</div>
                 <div className={classes.point}>
-                  <WidgetIcon fontSize='inherit' className={classes.pointIconSmall} />
+                  <WidgetIcon fontSize="inherit" className={classes.pointIconSmall} />
                   <div>Seamless integration with your product</div>
                 </div>
                 <div className={classes.point}>
-                  <AnalyticsIcon fontSize='inherit' className={classes.pointIconSmall} />
+                  <AnalyticsIcon fontSize="inherit" className={classes.pointIconSmall} />
                   <div>Customer segmentation and Analytics</div>
                 </div>
               </div>
             )}
-          // buttonTitle='Learn more'
-          // buttonOnClick={() => this.setState({ scrollTo: 'collect' })}
+            // buttonTitle='Learn more'
+            // buttonOnClick={() => this.setState({ scrollTo: 'collect' })}
           />
         </div>
         <div className={classes.textCircleItemContainer}>
           <BlockContent
             className={classNames(classes.textCircleItemTwo, classes.textCircleItem)}
-            variant='content'
-            titleCmpt='div'
-            title='Give a proportionate voice'
+            variant="content"
+            titleCmpt="div"
+            title="Give a proportionate voice"
             description={(
               <div className={classNames(classes.pointsContainer, classes.pointsContainerMinor)}>
                 <div>Prioritize your roadmap based on customer's value</div>
                 <div className={classes.point}>
-                  <VoteIcon fontSize='inherit' className={classes.pointIconSmall} />
+                  <VoteIcon fontSize="inherit" className={classes.pointIconSmall} />
                   <div>User vote</div>
                 </div>
                 <div className={classes.point}>
-                  <PaymentIcon fontSize='inherit' className={classes.pointIconSmall} />
+                  <PaymentIcon fontSize="inherit" className={classes.pointIconSmall} />
                   <div>Credit System</div>
                 </div>
               </div>
             )}
-          // buttonTitle='Learn more'
-          // buttonOnClick={() => this.setState({ scrollTo: 'prioritize' })}
+            // buttonTitle='Learn more'
+            // buttonOnClick={() => this.setState({ scrollTo: 'prioritize' })}
           />
         </div>
         <div className={classNames(classes.textCircleItemContainer, classes.textCircleItemThreeContainer)}>
           <BlockContent
             className={classNames(classes.textCircleItemThree, classes.textCircleItem)}
-            variant='content'
-            titleCmpt='div'
-            title='Engage your customer'
+            variant="content"
+            titleCmpt="div"
+            title="Engage your customer"
             description={(
               <div className={classNames(classes.pointsContainer, classes.pointsContainerMinor)}>
                 <div>Build a community around your product development</div>
                 <div className={classes.point}>
-                  <RoadmapIcon fontSize='inherit' className={classes.pointIconSmall} style={{ transform: 'rotate(180deg)' }} />
+                  <RoadmapIcon fontSize="inherit" className={classes.pointIconSmall}
+                               style={{ transform: 'rotate(180deg)' }} />
                   <div>Show off your Product Roadmap</div>
                 </div>
                 <div className={classes.point}>
-                  <NotificationIcon fontSize='inherit' className={classes.pointIconSmall} />
+                  <NotificationIcon fontSize="inherit" className={classes.pointIconSmall} />
                   <div>Directly respond to your customers</div>
                 </div>
               </div>
             )}
-          // buttonTitle='Learn more'
-          // buttonOnClick={() => this.setState({ scrollTo: 'engage' })}
+            // buttonTitle='Learn more'
+            // buttonOnClick={() => this.setState({ scrollTo: 'engage' })}
           />
           <div style={{ width: '10%' }} />
         </div>
@@ -1056,41 +1104,43 @@ export function LandingCollectFeedback() {
       <Background svg={{
         d: 'm 269 57 c -155 -7 -211 73 -180 144 C 135 297 50 378 119 519 c 64 58 463 65 569 -10 c 119 -87 483 103 528 -47 c 52 -187 137 -305 -104 -351 C 809 75 878 198 765 122 C 544 -30 434.3333 78.6667 269 57',
         viewBox: '0 0 1400 500',
-      }} offsetY='-50px' width={1700} height={700}>
+      }} offsetY="-50px" width={1700} height={700}>
         <Demo
-          type='hero'
-          title='Ask for feedback'
-          description='Collect customer feedback all in one place from all your support channels'
+          type="hero"
+          title="Ask for feedback"
+          description="Collect customer feedback all in one place from all your support channels"
           image={ListenImg}
-          imageLocation='above'
+          imageLocation="above"
           demoImage={DemoPortalFeedbackVid}
-          demoWrap='browser'
+          demoWrap="browser"
         />
       </Background>
       <Block
         className={classes.textAlignCenter}
-        type='headingOnly'
-        title='Optimizing your strategy'
-        description='There are many ways to configure your portal for your particular needs'
+        type="headingOnly"
+        title="Optimizing your strategy"
+        description="There are many ways to configure your portal for your particular needs"
         spacingBottom={0}
       />
-      <HorizontalPanels wrapBelow='md' maxWidth='xl' staggerHeight={200}>
+      <HorizontalPanels wrapBelow="md" maxWidth="xl" staggerHeight={200}>
         <Block
           iconAbove
-          icon={(<CustomerFeedbackIcon fontSize='inherit' />)}
-          titleVariant='h3'
-          type='column'
-          title='Customer-first'
-          subtitle='Hands-on and detail-oriented'
+          icon={(<CustomerFeedbackIcon fontSize="inherit" />)}
+          titleVariant="h3"
+          type="column"
+          title="Customer-first"
+          subtitle="Hands-on and detail-oriented"
           description={(
             <>
-              To extract unbiased and informative feedback, a simple feedback box is the ideal approach to capture customers' own words.
-              <p>Intended for detail-oriented product managers, customer-first approach is the best way to understand your customers.</p>
+              To extract unbiased and informative feedback, a simple feedback box is the ideal approach to capture
+              customers' own words.
+              <p>Intended for detail-oriented product managers, customer-first approach is the best way to understand
+                your customers.</p>
             </>
           )}
-          demoWrap='browser'
+          demoWrap="browser"
           demoImage={DemoPageFeedbackImg}
-          alignItems='center'
+          alignItems="center"
           points={[
             'Customer-centric product',
             'Large community',
@@ -1099,21 +1149,23 @@ export function LandingCollectFeedback() {
         />
         <Block
           iconAbove
-          icon={(<OpenCommunityIcon fontSize='inherit' />)}
-          titleVariant='h3'
-          type='column'
-          title='Community-first'
-          subtitle='Community-driven and transparent'
+          icon={(<OpenCommunityIcon fontSize="inherit" />)}
+          titleVariant="h3"
+          type="column"
+          title="Community-first"
+          subtitle="Community-driven and transparent"
           description={(
             <>
-              Feedback as a public forum is adopted by many organizations. This approach focuses on your customers ability to discuss features amongst themselves.
-              <p>Although managing feedback is more hands-off in this approach, the feedback you receive will mostly be in the form of votes on existing ideas that will amplify the loudest customers.</p>
+              Feedback as a public forum is adopted by many organizations. This approach focuses on your customers
+              ability to discuss features amongst themselves.
+              <p>Although managing feedback is more hands-off in this approach, the feedback you receive will mostly be
+                in the form of votes on existing ideas that will amplify the loudest customers.</p>
             </>
           )}
           // description='A publicly explorable feedback is adopted by many organizations. It is primarily suitable for open, trusted, or small communities as feedback tends to accumulate votes rather than expressing.'
-          demoWrap='browser'
+          demoWrap="browser"
           demoImage={DemoPageFeedbackClassigImg}
-          alignItems='center'
+          alignItems="center"
           points={[
             'Low-effort hands-off feedback',
             'Open community',
@@ -1193,24 +1245,24 @@ export function LandingCollectFeedback() {
         demo={LandingCommentListDemo}
       /> */}
       <Block
-        title='Easily integrates with your website or app'
-        description='Use a custom domain to host your ClearFlask portal or embed it directly on your site or app. Use your own logo, branding, palette and typography.'
+        title="Easily integrates with your website or app"
+        description="Use a custom domain to host your ClearFlask portal or embed it directly on your site or app. Use your own logo, branding, palette and typography."
         image={LoopImg}
-        imageLocation='above'
+        imageLocation="above"
         points={[
           { text: (<>Portal (<b>brand</b>.clearflask.com)</>) },
           { text: (<>Custom domain (feedback.<b>yoursite</b>.com)</>) },
           'Embed widget within your website',
         ]}
-        alignItems='center'
+        alignItems="center"
         demo={(
           <FakeBrowser
             fixedWidth={200}
             fixedHeight={200}
-            addressBarContent='yoursite.com'
+            addressBarContent="yoursite.com"
           >
             <div className={classes.demoEmbedButtons}>
-              <LandingDemoEmbed path='embed/feedback'>
+              <LandingDemoEmbed path="embed/feedback">
                 <FeedbackIcon />
               </LandingDemoEmbed>
             </div>
@@ -1218,17 +1270,17 @@ export function LandingCollectFeedback() {
         )}
       />
       <FooterHorizontalPanels
-        svgD='M 0 49.98 C 229 45 327 -37 500 49.98 L 500 150 L 0 150 Z'
+        svgD="M 0 49.98 C 229 45 327 -37 500 49.98 L 500 150 L 0 150 Z"
       >
         <GetStartedColumn />
         <Block
-          title='Analyze feedback'
-          type='column'
-          description='Organize all the data you collected to make the right decision'
+          title="Analyze feedback"
+          type="column"
+          description="Organize all the data you collected to make the right decision"
           image={AnalyzeImg}
           mirror
-          buttonTitle='Continue'
-          buttonLink='/product/analyze'
+          buttonTitle="Continue"
+          buttonLink="/product/analyze"
           {...FooterHorizontalPanelsBlockProps}
         />
       </FooterHorizontalPanels>
@@ -1242,9 +1294,9 @@ export function LandingPrioritization() {
     <>
       <Block
         mirror
-        type='hero'
-        title='Analyze feedback effectively'
-        description='Organize all the data you collected to make the right decision'
+        type="hero"
+        title="Analyze feedback effectively"
+        description="Organize all the data you collected to make the right decision"
         image={AnalyzeImg}
       />
       {/* <Demo
@@ -1272,38 +1324,38 @@ export function LandingPrioritization() {
       /> */}
       <Block
         mirror
-        type='mediumDemo'
-        title='Manage incoming feedback'
-        description='Quickly address incoming feedback in your Feedback Dashboard page.'
+        type="mediumDemo"
+        title="Manage incoming feedback"
+        description="Quickly address incoming feedback in your Feedback Dashboard page."
         points={[
           'Convert to task',
           'Quickly respond',
           'Merge duplicates',
           'Shelve it for later',
         ]}
-        alignItems='center'
+        alignItems="center"
         demoImage={DemoDashboardFeedbackVid}
-        demoWrap='browser'
+        demoWrap="browser"
       />
       <Block
-        type='mediumDemo'
-        title='Prioritize your roadmap'
-        description='Plan out your tasks in your Roadmap Dashboard page.'
+        type="mediumDemo"
+        title="Prioritize your roadmap"
+        description="Plan out your tasks in your Roadmap Dashboard page."
         points={[
           'Drag & drop Kanban style',
           'Customize status workflow',
           'Automatically notify subscribers of updates',
         ]}
-        alignItems='center'
+        alignItems="center"
         demoImage={DemoDashboardRoadmapVid}
-        demoWrap='browser'
+        demoWrap="browser"
       />
-      <HorizontalPanels wrapBelow='lg' maxContentWidth='sm' maxWidth='lg' staggerHeight={0}>
-        <Container maxWidth='xs'>
+      <HorizontalPanels wrapBelow="lg" maxContentWidth="sm" maxWidth="lg" staggerHeight={0}>
+        <Container maxWidth="xs">
           <Demo
-            type='column'
-            title='Match your product Workflow'
-            description='Customize states, transitions, and behavior of each content type to match your workflow. Each state can also alter different behavior and accessibility.'
+            type="column"
+            title="Match your product Workflow"
+            description="Customize states, transitions, and behavior of each content type to match your workflow. Each state can also alter different behavior and accessibility."
             template={templater => {
               templater.workflowFeatures(templater.demoCategory(), false, false);
               templater.styleWhite();
@@ -1316,71 +1368,71 @@ export function LandingPrioritization() {
                 categoryIndex={0}
                 isVertical
                 hideCorner
-                height='100%'
+                height="100%"
               />
             )}
           />
         </Container>
-        <Container maxWidth='xs'>
+        <Container maxWidth="xs">
           <Block
-            title='Tagging'
-            description='Organize content into defined set of tags. Create tag groups and define rules how tags can be used.'
+            title="Tagging"
+            description="Organize content into defined set of tags. Create tag groups and define rules how tags can be used."
             imageStyleOuter={{ padding: 'unset' }}
             image={DemoTaggingImg}
-            type='column'
+            type="column"
           />
         </Container>
-        <Container maxWidth='xs'>
+        <Container maxWidth="xs">
           <Block
-            title='Export and analyze externally'
-            description='Export your data and feed it into your own analytics engine for insights.'
-            type='column'
+            title="Export and analyze externally"
+            description="Export your data and feed it into your own analytics engine for insights."
+            type="column"
             imageStyleOuter={{ padding: 'unset' }}
             image={DemoExportedDataImg}
           />
         </Container>
       </HorizontalPanels>
       <Block
-        type='headingMain'
-        icon={(<LightbulbIcon fontSize='inherit' />)}
-        title='Idea Validation'
-        description='Get a sense of how successful a feature will be prior to any development work'
+        type="headingMain"
+        icon={(<LightbulbIcon fontSize="inherit" />)}
+        title="Idea Validation"
+        description="Get a sense of how successful a feature will be prior to any development work"
         image={IdeasImg}
-        imageStyleOuter={{ maxWidth: 350, padding: 0, }}
-        alignItems='flex-start'
+        imageStyleOuter={{ maxWidth: 350, padding: 0 }}
+        alignItems="flex-start"
       />
-      <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs'>
+      <HorizontalPanels wrapBelow="md" maxWidth="lg" maxContentWidth="xs">
         <Block
-          type='column'
-          icon={(<ForumIcon fontSize='inherit' />)}
-          title='Market audience at your fingertips'
-          description='Reach out to customers that are directly interested in your particular idea.'
+          type="column"
+          icon={(<ForumIcon fontSize="inherit" />)}
+          title="Market audience at your fingertips"
+          description="Reach out to customers that are directly interested in your particular idea."
         />
         <Block
-          type='column'
-          icon={(<BuildIcon fontSize='inherit' />)}
-          title='Recruit BETA users'
-          description='Partially roll-out your feature to customers that you know will use it and provide you feedback.'
+          type="column"
+          icon={(<BuildIcon fontSize="inherit" />)}
+          title="Recruit BETA users"
+          description="Partially roll-out your feature to customers that you know will use it and provide you feedback."
         />
         <Block
-          type='column'
-          icon={(<MoodBadIcon fontSize='inherit' />)}
+          type="column"
+          icon={(<MoodBadIcon fontSize="inherit" />)}
           title="Gauge customer reactions"
-          description='Analyze feedback to shape your idea for success.'
+          description="Analyze feedback to shape your idea for success."
         />
       </HorizontalPanels>
       <FooterHorizontalPanels
-        svgD='M 0 49.98 C 65 4 191 104 500 49.98 L 500 150 L 0 150 Z'
+        svgD="M 0 49.98 C 65 4 191 104 500 49.98 L 500 150 L 0 150 Z"
       >
         <GetStartedColumn />
         <Block
-          title='Keep everyone informed'
-          description='Take action on what your users are telling you.'
+          title="Keep everyone informed"
+          description="Take action on what your users are telling you."
           image={NotifyImg}
-          imageLocation='above'
+          imageLocation="above"
           mirror
-          buttonTitle='Continue'
-          buttonLink='/product/act'
+          buttonTitle="Continue"
+          buttonLink="/product/act"
           {...FooterHorizontalPanelsBlockProps}
         />
       </FooterHorizontalPanels>
@@ -1393,39 +1445,39 @@ export function LandingOpenSource() {
   return (
     <>
       <Block
-        type='hero'
+        type="hero"
         title={t('were-open-source')}
         description={t('build-software-with-us-for')}
         iconAbove
-        icon={<OpenSourceIcon fontSize='inherit' />}
+        icon={<OpenSourceIcon fontSize="inherit" />}
         image={VersionControlImg}
         buttonTitle={t('source-code')}
-        buttonLinkExt='https://github.com/clearflask/clearflask'
-        buttonVariant='contained'
+        buttonLinkExt="https://github.com/clearflask/clearflask"
+        buttonVariant="contained"
         buttonIcon={(<GithubIcon />)}
       />
       <Block
-        title='Why open source?'
+        title="Why open source?"
         spacingBottom={0}
       />
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg' staggerHeight={100}>
+      <HorizontalPanels wrapBelow="md" maxContentWidth="xs" maxWidth="lg" staggerHeight={100}>
         <Block
-          type='column'
-          icon={(<CustomerFeedbackIcon fontSize='inherit' />)}
-          title='Open product development'
-          description='We are targetting companies that are not afraid to open up their product development. It makes sense for us to follow the same path.'
+          type="column"
+          icon={(<CustomerFeedbackIcon fontSize="inherit" />)}
+          title="Open product development"
+          description="We are targetting companies that are not afraid to open up their product development. It makes sense for us to follow the same path."
         />
         <Block
-          type='column'
-          icon={(<AccessibilityIcon fontSize='inherit' />)}
-          title='Accessibility'
-          description='Some individuals or organizations cannot afford a product financially, but they do have developers to host their own instance and even contribute fixes and features back to the project.'
+          type="column"
+          icon={(<AccessibilityIcon fontSize="inherit" />)}
+          title="Accessibility"
+          description="Some individuals or organizations cannot afford a product financially, but they do have developers to host their own instance and even contribute fixes and features back to the project."
         />
         <Block
-          type='column'
-          icon={(<LockSimpleIcon fontSize='inherit' />)}
-          title='Lock-in'
-          description='Open-source ensures your feet are not swept under you by a vendor if they raise their prices unreasonably, stop maintenance, or keep your data hostage.'
+          type="column"
+          icon={(<LockSimpleIcon fontSize="inherit" />)}
+          title="Lock-in"
+          description="Open-source ensures your feet are not swept under you by a vendor if they raise their prices unreasonably, stop maintenance, or keep your data hostage."
         />
       </HorizontalPanels>
     </>
@@ -1434,27 +1486,27 @@ export function LandingOpenSource() {
 
 export function LandingCaseStudies() {
   return (
-    <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='xs'>
+    <HorizontalPanels wrapBelow="md" maxWidth="lg" maxContentWidth="xs">
       <BlockContent
-        variant='content'
-        title='SAAS product support and feedback'
-        description='asdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf ad'
-        buttonTitle='See case study and demo'
-        buttonLink='/case-study#saas'
+        variant="content"
+        title="SAAS product support and feedback"
+        description="asdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf adasdfasfdsa fasd fdas fads ads asdf ad"
+        buttonTitle="See case study and demo"
+        buttonLink="/case-study#saas"
       />
       <BlockContent
-        variant='content'
-        title='Open-Source community-funded product'
-        description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
-        buttonTitle='See case study and demo'
-        buttonLink='/case-study#open-source'
+        variant="content"
+        title="Open-Source community-funded product"
+        description="asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf "
+        buttonTitle="See case study and demo"
+        buttonLink="/case-study#open-source"
       />
       <BlockContent
-        variant='content'
-        title='Mobile App monetization strategy'
-        description='asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf '
-        buttonTitle='See case study and demo'
-        buttonLink='/case-study#mobile-social-media'
+        variant="content"
+        title="Mobile App monetization strategy"
+        description="asdftqegr tre qrg rw gwer grg ewg erg reg rg ewg weg re greg r we sg gwe er ge ger edfg dfs gsdf "
+        buttonTitle="See case study and demo"
+        buttonLink="/case-study#mobile-social-media"
       />
     </HorizontalPanels>
   );
@@ -1464,17 +1516,19 @@ function LandingCommentListDemo(project) {
   return (
     <Provider store={project.server.getStore()}>
       <AppThemeProvider
-        seed='demo-community'
+        seed="demo-community"
         isInsideContainer
       >
         <CommentList
           server={project.server}
-          ideaId='ideaId'
+          ideaId="ideaId"
           expectedCommentCount={1}
           logIn={() => Promise.resolve()}
           newCommentsAllowed
           loggedInUser={project.server.getStore().getState().users.loggedIn.user}
-          onAuthorClick={(c, u) => { console.log("AHA clicked", c, u) }}
+          onAuthorClick={(c, u) => {
+            console.log('AHA clicked', c, u);
+          }}
         />
       </AppThemeProvider>
     </Provider>
@@ -1484,15 +1538,15 @@ function LandingCommentListDemo(project) {
 export function LandingEngagementRoadmap() {
   return (
     <Demo
-      title='Show off your progress with a product roadmap'
-      description='Customizable roadmaps lets you organize your process. Get your users excited about upcoming improvements.'
+      title="Show off your progress with a product roadmap"
+      description="Customizable roadmaps lets you organize your process. Get your users excited about upcoming improvements."
       mirror
-      initialSubPath='/embed/demo'
-      alignItems='flex-start'
+      initialSubPath="/embed/demo"
+      alignItems="flex-start"
       image={RoadmapImg}
-      imageLocation='above'
-      imageStyle={{ maxWidth: 500, padding: 0, }}
-      type='largeDemo'
+      imageLocation="above"
+      imageStyle={{ maxWidth: 500, padding: 0 }}
+      type="largeDemo"
       // demoWrap='browser'
       // demoWrapPadding={40}
       template={templater => templater.demoBoardPreset('development')}
@@ -1511,7 +1565,7 @@ export function LandingEngagementRoadmap() {
         demoBlurryShadow: true,
         demoDisablePostOpen: true,
       }}
-    // controls={project => (<RoadmapControls templater={project.templater} />)}
+      // controls={project => (<RoadmapControls templater={project.templater} />)}
     />
   );
 }
@@ -1526,64 +1580,64 @@ export function LandingEngagement() {
         flexible: true,
       }}>
         <Block
-          type='hero'
-          title='Keep everyone informed'
+          type="hero"
+          title="Keep everyone informed"
           description="Let your community and stakeholders know what you're up to."
           image={PublicDiscussionImg}
         />
       </Background>
       <Demo
-        icon={(<RoadmapIcon fontSize='inherit' style={{ transform: 'rotate(180deg)' }} />)}
-        title='Stay on the same page'
-        description='Keep everyone on the same page with your product development'
+        icon={(<RoadmapIcon fontSize="inherit" style={{ transform: 'rotate(180deg)' }} />)}
+        title="Stay on the same page"
+        description="Keep everyone on the same page with your product development"
         image={RoadmapImg}
-        imageLocation='above'
+        imageLocation="above"
         points={[
           'Publicly accessible or privately shared',
           'Customize columns, titles and style',
           'Gather insights along the way',
         ]}
-        alignItems='center'
+        alignItems="center"
         demoImage={DemoRoadmapImg}
-        demoWrap='browser'
+        demoWrap="browser"
       />
       <Demo
         mirror
-        icon={(<ChangeIcon fontSize='inherit' />)}
-        title='Release an update'
-        description='Let everyone know when you release a new feature.'
+        icon={(<ChangeIcon fontSize="inherit" />)}
+        title="Release an update"
+        description="Let everyone know when you release a new feature."
         image={SupportImg}
-        imageLocation='above'
+        imageLocation="above"
         points={[
           'Discuss changes within your community',
           'Subscribe to new updates',
         ]}
-        alignItems='center'
+        alignItems="center"
         demoImage={DemoChangelog2Img}
-        demoWrap='browser'
+        demoWrap="browser"
       />
-      <HorizontalPanels wrapBelow='md' maxWidth='md' maxContentWidth='xs'>
+      <HorizontalPanels wrapBelow="md" maxWidth="md" maxContentWidth="xs">
         <Block
-          type='column'
-          title='Respond to suggestions'
-          description='Directly respond to customers regarding their requests and keep them updated with the current status quo'
-          icon={(<RespondIcon fontSize='inherit' />)}
+          type="column"
+          title="Respond to suggestions"
+          description="Directly respond to customers regarding their requests and keep them updated with the current status quo"
+          icon={(<RespondIcon fontSize="inherit" />)}
           image={DemoPinnedResponseImg}
           imageStyleOuter={{ padding: 'unset' }}
         />
         <Block
-          type='column'
-          title='Status updates'
-          description='Let customers subscribe to updates on specific feature requests.'
-          icon={(<NotificationIcon fontSize='inherit' />)}
+          type="column"
+          title="Status updates"
+          description="Let customers subscribe to updates on specific feature requests."
+          icon={(<NotificationIcon fontSize="inherit" />)}
           image={DemoEmailNotificationImg}
           imageStyleOuter={{ padding: 'unset' }}
           imageScale={0.3}
         />
       </HorizontalPanels>
       <Block
-        alignItems='flex-start'
-        title='Maintain a two-way communication'
+        alignItems="flex-start"
+        title="Maintain a two-way communication"
         description={(
           <>
             Feedback from a customer you can reach out to is important for addressing their needs.
@@ -1592,67 +1646,67 @@ export function LandingEngagement() {
         )}
         demoFixedWidth={420}
         image={InternalFeedbackImg}
-        imageLocation='above'
+        imageLocation="above"
         demo={(
           <>
             <div className={classes.point}>
-              <KeyIcon fontSize='inherit' className={classes.pointIcon} />
+              <KeyIcon fontSize="inherit" className={classes.pointIcon} />
               <div>
-                <Typography variant='h6' component='div'>
+                <Typography variant="h6" component="div">
                   Single Sign-On
                 </Typography>
-                <Typography variant='body1' component='div' color='textSecondary'>
+                <Typography variant="body1" component="div" color="textSecondary">
                   Link existing user accounts
                 </Typography>
               </div>
             </div>
             <div className={classes.point}>
-              <OpenInNewIcon fontSize='inherit' className={classes.pointIcon} />
+              <OpenInNewIcon fontSize="inherit" className={classes.pointIcon} />
               <div>
-                <Typography variant='h6' component='div'>
+                <Typography variant="h6" component="div">
                   OAuth
                 </Typography>
-                <Typography variant='body1' component='div' color='textSecondary'>
+                <Typography variant="body1" component="div" color="textSecondary">
                   External sign-in including
                   &nbsp;
-                  <GoogleIcon fontSize='inherit' />
+                  <GoogleIcon fontSize="inherit" />
                   &nbsp;
-                  <GithubIcon fontSize='inherit' />
+                  <GithubIcon fontSize="inherit" />
                   &nbsp;
-                  <FacebookIcon fontSize='inherit' />
+                  <FacebookIcon fontSize="inherit" />
                 </Typography>
               </div>
             </div>
             <div className={classes.point}>
-              <EmailIcon fontSize='inherit' className={classes.pointIcon} />
+              <EmailIcon fontSize="inherit" className={classes.pointIcon} />
               <div>
-                <Typography variant='h6' component='div'>
+                <Typography variant="h6" component="div">
                   Email
                 </Typography>
-                <Typography variant='body1' component='div' color='textSecondary'>
+                <Typography variant="body1" component="div" color="textSecondary">
                   Signup with email
                   <br />(Magic link, Domain-whitelist)
                 </Typography>
               </div>
             </div>
             <div className={classes.point}>
-              <NotificationIcon fontSize='inherit' className={classes.pointIcon} />
+              <NotificationIcon fontSize="inherit" className={classes.pointIcon} />
               <div>
-                <Typography variant='h6' component='div'>
+                <Typography variant="h6" component="div">
                   Browser push
                 </Typography>
-                <Typography variant='body1' component='div' color='textSecondary'>
+                <Typography variant="body1" component="div" color="textSecondary">
                   Receive a notification right in your browser
                 </Typography>
               </div>
             </div>
             <div className={classes.point}>
-              <GuestIcon fontSize='inherit' className={classes.pointIcon} />
+              <GuestIcon fontSize="inherit" className={classes.pointIcon} />
               <div>
-                <Typography variant='h6' component='div'>
+                <Typography variant="h6" component="div">
                   Guest
                 </Typography>
-                <Typography variant='body1' component='div' color='textSecondary'>
+                <Typography variant="body1" component="div" color="textSecondary">
                   Guests with in-app notifications
                 </Typography>
               </div>
@@ -1662,44 +1716,44 @@ export function LandingEngagement() {
       />
       <Block
         mirror
-        title='Create trust in your community'
-        description=''
+        title="Create trust in your community"
+        description=""
         image={TeamImg}
-        imageStyleOuter={{ maxWidth: 400, padding: 0, }}
-        alignItems='flex-start'
+        imageStyleOuter={{ maxWidth: 400, padding: 0 }}
+        alignItems="flex-start"
       />
-      <HorizontalPanels wrapBelow='md' maxWidth='lg' maxContentWidth='sm'>
+      <HorizontalPanels wrapBelow="md" maxWidth="lg" maxContentWidth="sm">
         <Block
-          type='column'
-          icon={(<TransparentIcon fontSize='inherit' />)}
-          title='Embrace a transparent culture'
-          description='Customers are loyal to brands they trust and understand.'
+          type="column"
+          icon={(<TransparentIcon fontSize="inherit" />)}
+          title="Embrace a transparent culture"
+          description="Customers are loyal to brands they trust and understand."
         />
         <Block
-          type='column'
-          icon={(<FeedbackIcon fontSize='inherit' />)}
-          title='Understand potential and churned customers'
-          description='Receive feedback from potential customers to steer your product towards the market gap and understand the reasons why your customers are leaving.'
+          type="column"
+          icon={(<FeedbackIcon fontSize="inherit" />)}
+          title="Understand potential and churned customers"
+          description="Receive feedback from potential customers to steer your product towards the market gap and understand the reasons why your customers are leaving."
         />
         <Block
-          type='column'
-          icon={(<CommunityIcon fontSize='inherit' />)}
-          title='Get involved'
-          description='Embrace community discussions with threaded comments, rich editor, and a powerful search to find the right discussion'
+          type="column"
+          icon={(<CommunityIcon fontSize="inherit" />)}
+          title="Get involved"
+          description="Embrace community discussions with threaded comments, rich editor, and a powerful search to find the right discussion"
         />
       </HorizontalPanels>
       <FooterHorizontalPanels
-        svgD='M 0 49.98 C 229 45 327 -37 500 49.98 L 500 150 L 0 150 Z'
+        svgD="M 0 49.98 C 229 45 327 -37 500 49.98 L 500 150 L 0 150 Z"
       >
         <GetStartedColumn />
         <Block
-          title='Integrations'
-          type='column'
-          description='Bring in your own tools and connect with ClearFlask'
+          title="Integrations"
+          type="column"
+          description="Bring in your own tools and connect with ClearFlask"
           image={IntegrationImg}
           mirror
-          buttonTitle='Continue'
-          buttonLink='/product/integrations'
+          buttonTitle="Continue"
+          buttonLink="/product/integrations"
           {...FooterHorizontalPanelsBlockProps}
         />
       </FooterHorizontalPanels>
@@ -1711,8 +1765,8 @@ export function LandingCustomizeHero(props: { isHero?: boolean }) {
   return (
     <Block
       type={props.isHero ? 'hero' : 'headingMain'}
-      title='Make it your own'
-      description='Our solution can be customized out of the box to fit your specific needs.'
+      title="Make it your own"
+      description="Our solution can be customized out of the box to fit your specific needs."
       image={CustomizeImg}
       mirror
       imageStyle={{ paddingBottom: 0, maxWidth: 700 }}
@@ -1730,44 +1784,44 @@ export function LandingCustomize() {
   return (
     <>
       <LandingCustomizeHero isHero />
-      <HorizontalPanels wrapBelow='lg' maxContentWidth='sm' maxWidth='lg' staggerHeight={0}>
-        <Container maxWidth='xs'>
+      <HorizontalPanels wrapBelow="lg" maxContentWidth="sm" maxWidth="lg" staggerHeight={0}>
+        <Container maxWidth="xs">
           <Block
-            type='column'
-            title='Define Custom content'
-            description='Define a content type to hold a particular set of data. Each type can have different behavior and accessibility by users and moderators.'
+            type="column"
+            title="Define Custom content"
+            description="Define a content type to hold a particular set of data. Each type can have different behavior and accessibility by users and moderators."
           />
           <div className={classNames(classes.pointsContainer, classes.pointsContainerMinor)}>
             <div className={classes.pointSmall}>
-              <FeedbackIcon fontSize='inherit' className={classes.pointIconSmall} />
+              <FeedbackIcon fontSize="inherit" className={classes.pointIconSmall} />
               <div>User feedback</div>
             </div>
             <div className={classes.pointSmall}>
-              <BlogIcon fontSize='inherit' className={classes.pointIconSmall} />
+              <BlogIcon fontSize="inherit" className={classes.pointIconSmall} />
               <div>Blog entry</div>
             </div>
             <div className={classes.pointSmall}>
-              <QuestionIcon fontSize='inherit' className={classes.pointIconSmall} />
+              <QuestionIcon fontSize="inherit" className={classes.pointIconSmall} />
               <div>Question &amp; Answer</div>
             </div>
             <div className={classes.pointSmall}>
-              <KnowledgeIcon fontSize='inherit' className={classes.pointIconSmall} />
+              <KnowledgeIcon fontSize="inherit" className={classes.pointIconSmall} />
               <div>Knowledge Base article</div>
             </div>
             <div className={classes.pointSmall}>
-              <CareersIcon fontSize='inherit' className={classes.pointIconSmall} />
+              <CareersIcon fontSize="inherit" className={classes.pointIconSmall} />
               <div>Job postings</div>
             </div>
             <div className={classes.pointSmall}>
-              <MoreIcon fontSize='inherit' className={classes.pointIconSmall} />
+              <MoreIcon fontSize="inherit" className={classes.pointIconSmall} />
             </div>
           </div>
         </Container>
-        <Container maxWidth='xs'>
+        <Container maxWidth="xs">
           <Demo
-            type='column'
-            title='Match your product Workflow'
-            description='Customize states, transitions, and behavior of each content type to match your workflow. Each state can also alter different behavior and accessibility.'
+            type="column"
+            title="Match your product Workflow"
+            description="Customize states, transitions, and behavior of each content type to match your workflow. Each state can also alter different behavior and accessibility."
             template={templater => {
               templater.workflowFeatures(templater.demoCategory(), false, false);
               templater.styleWhite();
@@ -1780,30 +1834,30 @@ export function LandingCustomize() {
                 categoryIndex={0}
                 isVertical
                 hideCorner
-                height='100%'
+                height="100%"
               />
             )}
           />
         </Container>
-        <Container maxWidth='xs'>
+        <Container maxWidth="xs">
           <Block
-            title='Customize each page'
-            description='Create custom pages and menus to fit the content your product needs. Use our page editor or inject your own HTML using Liquid template engine.'
+            title="Customize each page"
+            description="Create custom pages and menus to fit the content your product needs. Use our page editor or inject your own HTML using Liquid template engine."
             imageStyleOuter={{ padding: 'unset' }}
             image={HtmlImg}
-            type='column'
+            type="column"
           />
         </Container>
         {/* {this.renderCustomizeOther()} */}
       </HorizontalPanels>
-      <HorizontalPanels wrapBelow='lg' maxContentWidth='sm' maxWidth='lg'>
-        <Container maxWidth='xs'>
+      <HorizontalPanels wrapBelow="lg" maxContentWidth="sm" maxWidth="lg">
+        <Container maxWidth="xs">
           <Demo
-            title='Prioritization'
-            description='Choose between voting, emoji expressions and crowd-funding for each of your content types.'
-            type='column'
-            alignItems='center'
-            initialSubPath='/embed/demo'
+            title="Prioritization"
+            description="Choose between voting, emoji expressions and crowd-funding for each of your content types."
+            type="column"
+            alignItems="center"
+            initialSubPath="/embed/demo"
             template={templater => templater.demoPrioritization('all')}
             mock={mocker => mocker.demoPrioritization()}
             settings={{
@@ -1813,22 +1867,22 @@ export function LandingCustomize() {
             }}
           />
         </Container>
-        <Container maxWidth='xs'>
+        <Container maxWidth="xs">
           <Block
-            title='Tagging'
-            description='Organize content into defined set of tags. Create tag groups and define rules how tags can be used.'
+            title="Tagging"
+            description="Organize content into defined set of tags. Create tag groups and define rules how tags can be used."
             imageStyleOuter={{ padding: 'unset' }}
             image={DemoTaggingImg}
-            type='column'
+            type="column"
           />
         </Container>
-        <Container maxWidth='xs'>
+        <Container maxWidth="xs">
           <Demo
-            type='column'
-            title='Look and feel'
-            description='Match your product style with a custom palette, typography and branding.'
-            initialSubPath='/embed/demo'
-            demoWrap='browser-dark'
+            type="column"
+            title="Look and feel"
+            description="Match your product style with a custom palette, typography and branding."
+            initialSubPath="/embed/demo"
+            demoWrap="browser-dark"
             demoPreventInteraction
             template={templater => {
               templater.demoPrioritization('none');
@@ -1843,23 +1897,23 @@ export function LandingCustomize() {
         </Container>
       </HorizontalPanels>
       <Block
-        title='Page elements'
-        description='Each page can consist of several display elements. Choose between simple horizontal panels, Explorer or Board to present your content.'
+        title="Page elements"
+        description="Each page can consist of several display elements. Choose between simple horizontal panels, Explorer or Board to present your content."
       />
-      <HorizontalPanels wrapBelow='lg' maxContentWidth='sm' maxWidth='lg'>
+      <HorizontalPanels wrapBelow="lg" maxContentWidth="sm" maxWidth="lg">
         <Block
-          title='Explorer'
+          title="Explorer"
           description="Interactive vertical panel of content with a 'Create' and/or 'Search' corner. The Create corner allows users to add content while viewing similar content to minimize duplicates."
           image={DemoExplorerImg}
           imageStyleOuter={{ padding: 'unset' }}
-          type='column'
+          type="column"
         />
         <Block
-          title='Board'
-          description='Series of vertical panels allowing a Kanban style of content display. Typically used for a Roadmap view or state progression.'
+          title="Board"
+          description="Series of vertical panels allowing a Kanban style of content display. Typically used for a Roadmap view or state progression."
           image={DemoRoadmapImg}
           imageStyleOuter={{ padding: 'unset' }}
-          type='column'
+          type="column"
         />
         {/* <Block
           title='Vertical Panels'
@@ -1878,99 +1932,99 @@ export function LandingIntegrations() {
   return (
     <>
       <Hero
-        title='Integrations'
-        description='Use with your existing tools.'
+        title="Integrations"
+        description="Use with your existing tools."
         image={IntegrationImg}
       />
-      <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={200}>
+      <HorizontalPanels wrapBelow="sm" maxContentWidth="sm" maxWidth="md" staggerHeight={200}>
         <BlockContent
-          variant='content'
-          title='API and Webhooks'
-          description='Integrate any service directly with our API'
+          variant="content"
+          title="API and Webhooks"
+          description="Integrate any service directly with our API"
           icon={(
             <Typography className={classes.apiText}>{'{ }'}</Typography>
           )}
           className={classes.smallBlock}
-          buttonTitle='See docs'
+          buttonTitle="See docs"
           buttonLinkExt={`${windowIso.location.protocol}//${windowIso.location.host}/api`}
         />
         <BlockContent
-          variant='content'
-          title='GitHub'
-          description='Mirror GitHub issues and comments with ClearFlask, respond to feedback all from a single place.'
+          variant="content"
+          title="GitHub"
+          description="Mirror GitHub issues and comments with ClearFlask, respond to feedback all from a single place."
           icon={(
             <img
-              alt=''
+              alt=""
               className={classes.integrationImage}
-              src='/img/landing/github.png'
+              src="/img/landing/github.png"
             />
           )}
           className={classes.smallBlock}
-          buttonTitle='Setup'
-          buttonLink='/dashboard/settings/project/github'
+          buttonTitle="Setup"
+          buttonLink="/dashboard/settings/project/github"
         />
       </HorizontalPanels>
-      <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={200}>
+      <HorizontalPanels wrapBelow="sm" maxContentWidth="sm" maxWidth="md" staggerHeight={200}>
         <BlockContent
-          variant='content'
-          title='Google Analytics'
-          description='Extend your Analytics reach to feedback pages'
+          variant="content"
+          title="Google Analytics"
+          description="Extend your Analytics reach to feedback pages"
           icon={(
             <img
-              alt=''
+              alt=""
               className={classes.integrationImage}
-              src='/img/landing/googleanalytics.svg'
+              src="/img/landing/googleanalytics.svg"
             />
           )}
           className={classes.smallBlock}
-          buttonTitle='Setup'
-          buttonLink='/dashboard/settings/project/google-analytics'
+          buttonTitle="Setup"
+          buttonLink="/dashboard/settings/project/google-analytics"
         />
         <BlockContent
-          variant='content'
-          title='Hotjar'
-          description='Analyze how your users are providing feedback to you.'
+          variant="content"
+          title="Hotjar"
+          description="Analyze how your users are providing feedback to you."
           icon={(
             <img
-              alt=''
+              alt=""
               className={classes.integrationImage}
-              src='/img/landing/hotjar.png'
+              src="/img/landing/hotjar.png"
             />
           )}
           className={classes.smallBlock}
-          buttonTitle='Setup'
-          buttonLink='/dashboard/settings/project/hotjar'
+          buttonTitle="Setup"
+          buttonLink="/dashboard/settings/project/hotjar"
         />
       </HorizontalPanels>
-      <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={200}>
+      <HorizontalPanels wrapBelow="sm" maxContentWidth="sm" maxWidth="md" staggerHeight={200}>
         <BlockContent
-          variant='content'
-          title='Intercom Messenger'
-          description='Show the Intercom messenger across feedback pages'
+          variant="content"
+          title="Intercom Messenger"
+          description="Show the Intercom messenger across feedback pages"
           icon={(
             <img
-              alt=''
+              alt=""
               className={classes.integrationImage}
-              src='/img/landing/intercom.png'
+              src="/img/landing/intercom.png"
             />
           )}
           className={classes.smallBlock}
-          buttonTitle='Setup'
-          buttonLink='/dashboard/settings/project/intercom'
+          buttonTitle="Setup"
+          buttonLink="/dashboard/settings/project/intercom"
         />
         <BlockContent
-          variant='content'
-          title='Zapier'
-          description='Easily connect with 2000+ apps without any coding.'
+          variant="content"
+          title="Zapier"
+          description="Easily connect with 2000+ apps without any coding."
           icon={(
             <img
-              alt=''
+              alt=""
               className={classes.integrationImage}
-              src='/img/landing/zapier.png'
+              src="/img/landing/zapier.png"
             />
           )}
           className={classes.smallBlock}
-          postStatusId='zapier-integration-ldt'
+          postStatusId="zapier-integration-ldt"
         />
       </HorizontalPanels>
       {/* <HorizontalPanels wrapBelow='sm' maxContentWidth='sm' maxWidth='md' staggerHeight={-200}>
@@ -2040,81 +2094,81 @@ export function LandingFeatureRequestTracking() {
   return (
     <>
       <Hero
-        title='Feature Request Tracking'
-        description='Tool to keep organized and drive your product forward'
+        title="Feature Request Tracking"
+        description="Tool to keep organized and drive your product forward"
         image={FeatureRequestImg}
       />
       <Block
-        title='Centralize all your feature requests'
-        description='A dedicated portal for users to share and discuss new and upcoming product features. Easily collect feedback on-behalf of your users arriving from other channels.'
+        title="Centralize all your feature requests"
+        description="A dedicated portal for users to share and discuss new and upcoming product features. Easily collect feedback on-behalf of your users arriving from other channels."
         image={CentralizeImg}
-        alignItems='center'
+        alignItems="center"
       />
       <Block
-        title='Prioritize features'
-        description='Give customers a voice to tell you the importance of a particular feature.'
+        title="Prioritize features"
+        description="Give customers a voice to tell you the importance of a particular feature."
         image={ValueImg}
         imageStyleOuter={{ paddingBottom: 'unset' }}
-        alignItems='flex-start'
+        alignItems="flex-start"
         mirror
       />
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
+      <HorizontalPanels wrapBelow="md" maxContentWidth="xs" maxWidth="lg">
         <BlockContent
-          icon={(<LightbulbIcon fontSize='inherit' />)}
-          title='Idea validation'
-          description='Get a sense of how successful a feature will be prior to any development work.'
+          icon={(<LightbulbIcon fontSize="inherit" />)}
+          title="Idea validation"
+          description="Get a sense of how successful a feature will be prior to any development work."
         />
         <BlockContent
-          icon={(<BuildIcon fontSize='inherit' />)}
-          title='Recruit Beta users'
-          description='Easily find users that are willing to test out your upcoming feature before you roll it out.'
+          icon={(<BuildIcon fontSize="inherit" />)}
+          title="Recruit Beta users"
+          description="Easily find users that are willing to test out your upcoming feature before you roll it out."
         />
         <BlockContent
-          icon={(<ForumIcon fontSize='inherit' />)}
-          title='Just talk'
-          description='Discuss the ins and outs of any topic directly with your customers. They will appreciate interacting with a human behind the product.'
+          icon={(<ForumIcon fontSize="inherit" />)}
+          title="Just talk"
+          description="Discuss the ins and outs of any topic directly with your customers. They will appreciate interacting with a human behind the product."
         />
       </HorizontalPanels>
       <Block
-        title='Close the loop with customers'
-        description='The important part of collecting feedback is responding back to your customer ideas.'
+        title="Close the loop with customers"
+        description="The important part of collecting feedback is responding back to your customer ideas."
         image={LoopImg}
         imageStyleOuter={{ paddingBottom: 'unset' }}
-        alignItems='flex-start'
+        alignItems="flex-start"
       />
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='md'>
+      <HorizontalPanels wrapBelow="md" maxContentWidth="xs" maxWidth="md">
         <BlockContent
-          icon={(<EngageIcon fontSize='inherit' />)}
-          title='Keep users engaged'
+          icon={(<EngageIcon fontSize="inherit" />)}
+          title="Keep users engaged"
           description="An update to customer's feedback shows good customer relations and may even bring back churned customers."
         />
         <BlockContent
-          icon={(<RoadmapIcon fontSize='inherit' style={{ transform: 'rotate(180deg)' }} />)}
-          title='Visualize with a Roadmap'
-          description='High-level overview of the features currently in your pipeline for users to get an idea of what is going on.'
-          buttonTitle='See a Roadmap'
-          buttonLink='/solutions/product-roadmap'
+          icon={(<RoadmapIcon fontSize="inherit" style={{ transform: 'rotate(180deg)' }} />)}
+          title="Visualize with a Roadmap"
+          description="High-level overview of the features currently in your pipeline for users to get an idea of what is going on."
+          buttonTitle="See a Roadmap"
+          buttonLink="/solutions/product-roadmap"
         />
       </HorizontalPanels>
       <Block />
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
+      <HorizontalPanels wrapBelow="md" maxContentWidth="xs" maxWidth="lg">
         <Block
-          type='column'
-          title='Internal feedback'
-          description='Collect feedback from a closed-group of people within your organization or customer-base'
+          type="column"
+          title="Internal feedback"
+          description="Collect feedback from a closed-group of people within your organization or customer-base"
           image={InternalFeedbackImg}
-          imageLocation='above'
-          buttonTitle='See how'
-          buttonLink='/solutions/internal-feedback'
+          imageLocation="above"
+          buttonTitle="See how"
+          buttonLink="/solutions/internal-feedback"
         />
         <Block
-          type='column'
-          title='Feature Crowdfunding'
-          description='Bring in your own tools and connect with ClearFlask'
+          type="column"
+          title="Feature Crowdfunding"
+          description="Bring in your own tools and connect with ClearFlask"
           image={CrowdfundImg}
-          imageLocation='above'
-          buttonTitle='Learn more'
-          buttonLink='/solutions/feature-crowdfunding'
+          imageLocation="above"
+          buttonTitle="Learn more"
+          buttonLink="/solutions/feature-crowdfunding"
         />
       </HorizontalPanels>
     </>
@@ -2131,19 +2185,19 @@ export function LandingDemo() {
         d: 'M 0 49.98 C 2 97 124 189 249 86 C 320 36 492 166 500 49.98 L 500 0 L 0 0 Z',
         viewBox: '0 0 500 150',
         flexible: true,
-      }} height={500} align='top'>
+      }} height={500} align="top">
         <Hero
           title={t('sandbox-demo')}
           description={t('pre-packaged-with-feedback')}
           image={ProudImg}
         />
-        <ButtonGroup disableElevation variant='outlined' className={classes.demoCustomizeControl}>
+        <ButtonGroup disableElevation variant="outlined" className={classes.demoCustomizeControl}>
           <Button disabled={!customized} onClick={() => setCustomize(false)}>{t('out-of-the-box')}</Button>
           <Button disabled={customized} onClick={() => setCustomize(true)}>{t('customized')}</Button>
         </ButtonGroup>
         <Demo
           key={customized ? 'custom' : 'not-custom'}
-          type='demoOnly'
+          type="demoOnly"
           spacingTop={0}
           template={async templater => {
             await templater.createTemplateV2({
@@ -2153,7 +2207,7 @@ export function LandingDemo() {
               templateRoadmap: !customized,
               templateChangelog: !customized,
               infoName: 'GreatProduct',
-              infoLogo: `${windowIso.location.protocol}//${windowIso.location.host}/img/landing/GreatProductLogo.png`
+              infoLogo: `${windowIso.location.protocol}//${windowIso.location.host}/img/landing/GreatProductLogo.png`,
             });
             if (customized) templater.styleDark();
             if (customized) templater.templateBlog(true);
@@ -2162,12 +2216,12 @@ export function LandingDemo() {
             const userMe = await mocker.mockLoggedIn(1000, false);
             await mocker.mockItems(userMe);
           }}
-          initialSubPath='/'
-          demoFixedWidth='min(100%, 1024px)'
+          initialSubPath="/"
+          demoFixedWidth="min(100%, 1024px)"
           demoFixedHeight={vh(80)}
           demoWrap={!customized ? 'browser' : 'browser-dark'}
-          demoWrapBrowserShowProjectUrlWithPrefix='https://feedback.yoursite.com'
-          controlsLocation='top'
+          demoWrapBrowserShowProjectUrlWithPrefix="https://feedback.yoursite.com"
+          controlsLocation="top"
           settings={{
             demoScrollY: true,
             suppressSetTitle: true,
@@ -2176,20 +2230,20 @@ export function LandingDemo() {
       </Background>
       <Block
         mirror
-        type='mediumDemo'
+        type="mediumDemo"
         title={t('feedback')}
         description={t('quickly-address-incoming-feedback-respond')}
-        alignItems='center'
+        alignItems="center"
         demoImage={DemoDashboardFeedbackVid}
-        demoWrap='browser'
+        demoWrap="browser"
       />
       <Block
-        type='mediumDemo'
+        type="mediumDemo"
         title={t('roadmap')}
         description={t('plan-out-your-roadmap-with-a-kanban')}
-        alignItems='center'
+        alignItems="center"
         demoImage={DemoDashboardRoadmapVid}
-        demoWrap='browser'
+        demoWrap="browser"
       />
       <Background svg={{
         d: 'M 0 49.98 C 366 -97 79 227 500 49.98 L 500 150 L 0 150 Z',
@@ -2201,8 +2255,8 @@ export function LandingDemo() {
           title={t('love-it')}
           description={t('try-it-out-yourself-for-free-and')}
           buttonTitle={t('try-it')}
-          buttonLink='/signup'
-          buttonVariant='contained'
+          buttonLink="/signup"
+          buttonVariant="contained"
           buttonSuppressIcon
         />
       </Background>
@@ -2219,13 +2273,13 @@ export function LandingPublicRoadmap() {
   return (
     <>
       <Hero
-        title='Product Roadmap'
-        description='Transparency between development and customers for stronger ties with your community.'
+        title="Product Roadmap"
+        description="Transparency between development and customers for stronger ties with your community."
         image={Roadmap2Img}
       />
       <Demo
-        initialSubPath='/embed/demo'
-        type='demoOnly'
+        initialSubPath="/embed/demo"
+        type="demoOnly"
         template={templater => templater.demoBoardPreset('development')}
         mock={mocker => mocker.demoBoard([
           { status: '0' }, { status: '0' }, { status: '0' }, { status: '0' },
@@ -2237,43 +2291,43 @@ export function LandingPublicRoadmap() {
           demoDisablePostOpen: true,
         }}
       />
-      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={0}>
+      <HorizontalPanels wrapBelow="lg" maxWidth="lg" maxContentWidth="sm" staggerHeight={0}>
         <BlockContent
-          variant='content'
-          icon={(<LightbulbIcon fontSize='inherit' />)}
-          title='Clear and concise'
+          variant="content"
+          icon={(<LightbulbIcon fontSize="inherit" />)}
+          title="Clear and concise"
           description="Simple view of your current progress and future plans. That's it!"
         />
         <BlockContent
-          variant='content'
-          icon={(<TransparentIcon fontSize='inherit' />)}
-          title='Transparency for customers and stakeholders'
-          description='Commit to a customer-driven product development and keep your audience informed.'
+          variant="content"
+          icon={(<TransparentIcon fontSize="inherit" />)}
+          title="Transparency for customers and stakeholders"
+          description="Commit to a customer-driven product development and keep your audience informed."
         />
         <BlockContent
-          variant='content'
-          icon={(<UpcomingFeaturesIcon fontSize='inherit' />)}
-          title='Upcoming features'
-          description='Let your community get excited about what you are working on. Keep them in-the-know of your hard work behind the scenes.'
+          variant="content"
+          icon={(<UpcomingFeaturesIcon fontSize="inherit" />)}
+          title="Upcoming features"
+          description="Let your community get excited about what you are working on. Keep them in-the-know of your hard work behind the scenes."
         />
       </HorizontalPanels>
       <Block />
-      <HorizontalPanels wrapBelow='lg' maxWidth='md' maxContentWidth='xs'>
+      <HorizontalPanels wrapBelow="lg" maxWidth="md" maxContentWidth="xs">
         <Block
-          type='column'
-          title='Subscribe to updates'
-          description='Keep users engaged with feature updates.'
+          type="column"
+          title="Subscribe to updates"
+          description="Keep users engaged with feature updates."
           image={DemoEmailNotificationImg}
           imageScale={0.3}
           mirror
-          alignItems='center'
+          alignItems="center"
         />
         <Demo
-          type='column'
-          title='Embrace discussions'
-          description='Shape your features by directly communicating with your customer base.'
-          alignItems='center'
-          initialSubPath='/embed/demo'
+          type="column"
+          title="Embrace discussions"
+          description="Shape your features by directly communicating with your customer base."
+          alignItems="center"
+          initialSubPath="/embed/demo"
           demoFixedHeight={450}
           scale={0.7}
           template={templater => {
@@ -2289,22 +2343,22 @@ export function LandingPublicRoadmap() {
         />
       </HorizontalPanels>
       <Demo
-        title='Customize'
-        description='Change the columns, content, and labels. You can even create multiple roadmaps for different stakeholders.'
-        initialSubPath='/embed/demo'
-        type='mediumDemo'
+        title="Customize"
+        description="Change the columns, content, and labels. You can even create multiple roadmaps for different stakeholders."
+        initialSubPath="/embed/demo"
+        type="mediumDemo"
         template={templater => templater.demoBoardPreset('design')}
         mock={mocker => mocker.demoBoard([
           { status: '1' }, { status: '1' }, { status: '1' }, { status: '1' },
           { status: '2', extra: { expressions: { '👍': 7, '❤️': 4 } } },
-          { status: '2', extra: { expressions: { '👍': 2, } } },
+          { status: '2', extra: { expressions: { '👍': 2 } } },
         ])}
         settings={{
           demoBlurryShadow: true,
           demoDisablePostOpen: true,
         }}
-        buttonTitle='See more customizations'
-        buttonLink='/product/customize'
+        buttonTitle="See more customizations"
+        buttonLink="/product/customize"
       />
     </>
   );
@@ -2314,91 +2368,91 @@ export function LandingCrowdFunding() {
   return (
     <>
       <Hero
-        title='Feature Crowdfunding'
-        description='Credit-system to reward your paying customers with a voice to shape your product.'
+        title="Feature Crowdfunding"
+        description="Credit-system to reward your paying customers with a voice to shape your product."
         image={CrowdfundImg}
       />
       <Block
-        title='Link with your credit system'
-        description='You can continue to use your existing payment platform. Link it with our system and decide when users will be issued credits.'
-        alignItems='center'
+        title="Link with your credit system"
+        description="You can continue to use your existing payment platform. Link it with our system and decide when users will be issued credits."
+        alignItems="center"
         demo={(<LandingCreditSystemLinkOptions />)}
       />
       <Block
-        title='Issue credits and spend'
-        description='When a customer makes a payment on your site, issue them ClearFlask credits. They will be able to spend those credits on feature requests.'
-        alignItems='center'
+        title="Issue credits and spend"
+        description="When a customer makes a payment on your site, issue them ClearFlask credits. They will be able to spend those credits on feature requests."
+        alignItems="center"
         mirror
         demo={(
           <LandingTransactionHistory items={[
             { description: 'Credits for May 2021', amount: 5000 },
             { description: 'Credits for June 2021', amount: 5000 },
-            { description: "Fund 'Jira Integration'", amount: -8000 },
+            { description: 'Fund \'Jira Integration\'', amount: -8000 },
             { description: 'Credits for July 2021', amount: 5000 },
           ]} />
         )}
       />
       <Block
-        title='Let them prioritize'
-        description='Sit back and watch your users fund your ideas and decide where to spend their credits.'
-        alignItems='center'
+        title="Let them prioritize"
+        description="Sit back and watch your users fund your ideas and decide where to spend their credits."
+        alignItems="center"
         image={DemoCrowdfundImg}
       />
       <Block
-        title='Works best with'
-        description='Products with a paid subscription are most suitable for using a credit-system.'
+        title="Works best with"
+        description="Products with a paid subscription are most suitable for using a credit-system."
         image={ComparisonImg}
         imageStyleOuter={{ paddingBottom: 'unset' }}
-        alignItems='flex-start'
+        alignItems="flex-start"
         mirror
       />
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
+      <HorizontalPanels wrapBelow="md" maxContentWidth="xs" maxWidth="lg">
         <BlockContent
-          icon={(<ApiIcon fontSize='inherit' />)}
-          title='SAAS Products'
-          description='Most common use case is to give SAAS customers credits based on their subscription'
+          icon={(<ApiIcon fontSize="inherit" />)}
+          title="SAAS Products"
+          description="Most common use case is to give SAAS customers credits based on their subscription"
         />
         <BlockContent
-          icon={(<DonationIcon fontSize='inherit' />)}
-          title='Donation-based / Freemium'
-          description='Let users with the highest contributions dictate where your product should go.'
+          icon={(<DonationIcon fontSize="inherit" />)}
+          title="Donation-based / Freemium"
+          description="Let users with the highest contributions dictate where your product should go."
         />
         <BlockContent
-          icon={(<ContentCreatorIcon fontSize='inherit' />)}
-          title='Content Creator'
-          description='Reward your fans with a voice proportional to their contributions. Let your biggest fans shape your future creations.'
-          buttonTitle='Learn more'
-          buttonLink='/solutions/content-creator-forum'
+          icon={(<ContentCreatorIcon fontSize="inherit" />)}
+          title="Content Creator"
+          description="Reward your fans with a voice proportional to their contributions. Let your biggest fans shape your future creations."
+          buttonTitle="Learn more"
+          buttonLink="/solutions/content-creator-forum"
         />
       </HorizontalPanels>
       <Block
-        alignItems='center'
-        title='Credits as a selling point'
-        description='Include credits as value-added to your paid plan or product. Let them know your product is driven by paying customers.'
+        alignItems="center"
+        title="Credits as a selling point"
+        description="Include credits as value-added to your paid plan or product. Let them know your product is driven by paying customers."
         mirror
         image={DemoAdvertiseCreditsImg}
       />
       <Block
-        alignItems='center'
-        title='Purchase additional credits'
-        description='Entice your users to purchase additional credits to get a particular feature implemented or to support your product in general.'
+        alignItems="center"
+        title="Purchase additional credits"
+        description="Entice your users to purchase additional credits to get a particular feature implemented or to support your product in general."
         image={DemoNoBalanceImg}
       />
       <Block
-        alignItems='center'
-        title='Transparency in feature prioritization'
-        description='Make it clear your product is actively supported and shaped by paying customers.'
+        alignItems="center"
+        title="Transparency in feature prioritization"
+        description="Make it clear your product is actively supported and shaped by paying customers."
         mirror
         image={DemoFundingRoadmapImg}
       />
       <Block
-        title='Feature request tracking'
-        description='Tool to keep organized and drive your product forward'
+        title="Feature request tracking"
+        description="Tool to keep organized and drive your product forward"
         image={FeatureRequestImg}
-        imageLocation='above'
+        imageLocation="above"
         mirror
-        buttonTitle='See how'
-        buttonLink='/solutions/feature-request-tracking'
+        buttonTitle="See how"
+        buttonLink="/solutions/feature-request-tracking"
       />
     </>
   );
@@ -2418,9 +2472,9 @@ function LandingTransactionHistory(props: {
     currAmt += item.amount;
     return (
       <TableRow>
-        <TableCell key='description'>{item.description}</TableCell>
-        <TableCell key='amount'><CreditView val={item.amount} credits={credits} /></TableCell>
-        <TableCell key='balance'><CreditView val={currAmt} credits={credits} /></TableCell>
+        <TableCell key="description">{item.description}</TableCell>
+        <TableCell key="amount"><CreditView val={item.amount} credits={credits} /></TableCell>
+        <TableCell key="balance"><CreditView val={currAmt} credits={credits} /></TableCell>
       </TableRow>
     );
   });
@@ -2428,13 +2482,13 @@ function LandingTransactionHistory(props: {
     transactions = transactions.reverse();
   }
   return (
-    <DividerCorner title='Transaction history' height='100%'>
+    <DividerCorner title="Transaction history" height="100%">
       <Table size={props.size}>
         <TableHead>
           <TableRow>
-            <TableCell key='description'>Description</TableCell>
-            <TableCell key='amount' align='right'>Amount</TableCell>
-            <TableCell key='balance' align='right'>Account balance</TableCell>
+            <TableCell key="description">Description</TableCell>
+            <TableCell key="amount" align="right">Amount</TableCell>
+            <TableCell key="balance" align="right">Account balance</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -2449,18 +2503,24 @@ function LandingCreditSystemLinkOptions(props: { donationFirst?: boolean }) {
   const classes = useStyles();
   const paymentProcessor = (
     <div className={classes.point}>
-      <PaymentIcon fontSize='inherit' className={classes.pointIcon} />
+      <PaymentIcon fontSize="inherit" className={classes.pointIcon} />
       <div>
-        <Typography variant='h6' component='div'>
+        <Typography variant="h6" component="div">
           Payment processor
           &nbsp;
           <PostStatusIframe
-            postId='payment-providers-integration-bgu'
+            postId="payment-providers-integration-bgu"
             height={14}
-            config={{ color: 'grey', fontSize: '0.8em', alignItems: 'end', justifyContent: 'start', textTransform: 'uppercase', }}
+            config={{
+              color: 'grey',
+              fontSize: '0.8em',
+              alignItems: 'end',
+              justifyContent: 'start',
+              textTransform: 'uppercase',
+            }}
           />
         </Typography>
-        <Typography variant='body1' component='div' color='textSecondary'>
+        <Typography variant="body1" component="div" color="textSecondary">
           Stripe, Apple Store, Play Store
         </Typography>
       </div>
@@ -2468,18 +2528,24 @@ function LandingCreditSystemLinkOptions(props: { donationFirst?: boolean }) {
   );
   const donationFramework = (
     <div className={classes.point}>
-      <DonationIcon fontSize='inherit' className={classes.pointIcon} />
+      <DonationIcon fontSize="inherit" className={classes.pointIcon} />
       <div>
-        <Typography variant='h6' component='div'>
+        <Typography variant="h6" component="div">
           Donation Framework
           &nbsp;
           <PostStatusIframe
-            postId='donation-frameworks-integration-hvn'
+            postId="donation-frameworks-integration-hvn"
             height={14}
-            config={{ color: 'grey', fontSize: '0.8em', alignItems: 'end', justifyContent: 'start', textTransform: 'uppercase', }}
+            config={{
+              color: 'grey',
+              fontSize: '0.8em',
+              alignItems: 'end',
+              justifyContent: 'start',
+              textTransform: 'uppercase',
+            }}
           />
         </Typography>
-        <Typography variant='body1' component='div' color='textSecondary'>
+        <Typography variant="body1" component="div" color="textSecondary">
           Patreon, OpenCollective
         </Typography>
       </div>
@@ -2487,12 +2553,12 @@ function LandingCreditSystemLinkOptions(props: { donationFirst?: boolean }) {
   );
   const apiZapier = (
     <div className={classes.point}>
-      <ApiIcon fontSize='inherit' className={classes.pointIcon} />
+      <ApiIcon fontSize="inherit" className={classes.pointIcon} />
       <div>
-        <Typography variant='h6' component='div'>
+        <Typography variant="h6" component="div">
           Custom source
         </Typography>
-        <Typography variant='body1' component='div' color='textSecondary'>
+        <Typography variant="body1" component="div" color="textSecondary">
           Integrate via API, Zapier
         </Typography>
       </div>
@@ -2511,17 +2577,17 @@ export function LandingInternalFeedback() {
   return (
     <>
       <Hero
-        title='Internal Feedback'
-        description='Collect feedback from within your organization or customer-base'
+        title="Internal Feedback"
+        description="Collect feedback from within your organization or customer-base"
         image={InternalFeedbackImg}
       />
       <Demo
-        title='All your feedback in one place'
-        description='Eliminate the mess of keeping track of feedback via starred emails, post-it notes, and text documents. Keep it all in one place.'
-        alignItems='flex-end'
+        title="All your feedback in one place"
+        description="Eliminate the mess of keeping track of feedback via starred emails, post-it notes, and text documents. Keep it all in one place."
+        alignItems="flex-end"
         demoFixedHeight={350}
         demoInsetFade
-        initialSubPath='/embed/demo'
+        initialSubPath="/embed/demo"
         template={templater => templater.demoExplorer({
           allowCreate: { actionTitle: 'Suggest', actionTitleLong: 'Suggest an idea' },
           display: {
@@ -2554,35 +2620,35 @@ export function LandingInternalFeedback() {
           },
         }}
       />
-      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={0}>
+      <HorizontalPanels wrapBelow="lg" maxWidth="lg" maxContentWidth="sm" staggerHeight={0}>
         <Block
-          type='column'
-          icon={(<NotificationIcon fontSize='inherit' />)}
-          title='Keep your stakeholders informed'
-          description='Keep your stakeholders up-to-date with notifications over email or web-push.'
+          type="column"
+          icon={(<NotificationIcon fontSize="inherit" />)}
+          title="Keep your stakeholders informed"
+          description="Keep your stakeholders up-to-date with notifications over email or web-push."
           image={DemoEmailNotificationImg}
           imageScale={0.4}
-          alignItems='center'
+          alignItems="center"
           mirror
         />
         <Block
-          type='column'
-          icon={(<PrivacyIcon fontSize='inherit' />)}
-          title='Keep all your data private'
-          description='Setup privacy settings so only your users can see and post feedback. Authenticate via Single Sign-On, OAuth or whitelist your email domain.'
+          type="column"
+          icon={(<PrivacyIcon fontSize="inherit" />)}
+          title="Keep all your data private"
+          description="Setup privacy settings so only your users can see and post feedback. Authenticate via Single Sign-On, OAuth or whitelist your email domain."
           image={DemoProjectPrivateImg}
           imageScale={0.5}
-          alignItems='center'
+          alignItems="center"
         />
       </HorizontalPanels>
       <Demo
-        type='mediumDemo'
-        title='Transparency in your workload'
-        description='Let your co-workers see your work in order to understand your prioritization of their requests.'
-        initialSubPath='/embed/demo'
+        type="mediumDemo"
+        title="Transparency in your workload"
+        description="Let your co-workers see your work in order to understand your prioritization of their requests."
+        initialSubPath="/embed/demo"
         image={Roadmap2Img}
-        imageLocation='above'
-        alignItems='center'
+        imageLocation="above"
+        alignItems="center"
         template={templater => templater.demoBoard('Ticket queue', [
           { title: 'In Review' }, { title: 'In progress' },
         ])}
@@ -2594,8 +2660,8 @@ export function LandingInternalFeedback() {
           demoBlurryShadow: true,
           demoDisablePostOpen: true,
         }}
-        buttonTitle='See a Roadmap'
-        buttonLink='/solutions/product-roadmap'
+        buttonTitle="See a Roadmap"
+        buttonLink="/solutions/product-roadmap"
       />
     </>
   );
@@ -2605,16 +2671,16 @@ export function LandingIdeaManagement() {
   return (
     <>
       <Hero
-        title='Idea Management'
-        description='Collect and organize ideas from your users, customers or coworkers'
+        title="Idea Management"
+        description="Collect and organize ideas from your users, customers or coworkers"
         image={IdeasImg}
       />
       <Demo
-        title='Embrace transparency'
+        title="Embrace transparency"
         description="Allow your contributors to see each others' ideas and discuss in an open forum. Let them see what you're working on and see your prioritized backlog."
-        initialSubPath='/embed/demo'
-        type='mediumDemo'
-        alignItems='center'
+        initialSubPath="/embed/demo"
+        type="mediumDemo"
+        alignItems="center"
         template={templater => templater.demoBoardPreset('ideas')}
         mock={mocker => mocker.demoBoard([
           { status: '0' }, { status: '0' }, { status: '0' }, { status: '0' },
@@ -2624,44 +2690,44 @@ export function LandingIdeaManagement() {
           demoBlurryShadow: true,
           demoDisablePostOpen: true,
         }}
-        buttonTitle='See a Roadmap'
-        buttonLink='/solutions/product-roadmap'
+        buttonTitle="See a Roadmap"
+        buttonLink="/solutions/product-roadmap"
       />
-      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={0}>
+      <HorizontalPanels wrapBelow="lg" maxWidth="lg" maxContentWidth="sm" staggerHeight={0}>
         <Block
-          type='column'
-          title='Keep all ideas in one place'
-          description='Keep forgetting what people asked you in-person or over email? Combine all your feedback channels into a single place to keep tidy and organized.'
+          type="column"
+          title="Keep all ideas in one place"
+          description="Keep forgetting what people asked you in-person or over email? Combine all your feedback channels into a single place to keep tidy and organized."
           image={CentralizeImg}
-          alignItems='center'
+          alignItems="center"
           mirror
         />
         <Block
-          type='column'
-          title='Vote or submit an idea on behalf'
-          description='Received an idea from a customer? Quickly create an account for them and vote/create the idea on behalf of them. They will be automatically notified when the idea is resolved.'
+          type="column"
+          title="Vote or submit an idea on behalf"
+          description="Received an idea from a customer? Quickly create an account for them and vote/create the idea on behalf of them. They will be automatically notified when the idea is resolved."
           image={DemoAsUserImg}
           imageScale={0.5}
-          alignItems='center'
+          alignItems="center"
         />
       </HorizontalPanels>
-      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm' staggerHeight={0}>
+      <HorizontalPanels wrapBelow="lg" maxWidth="lg" maxContentWidth="sm" staggerHeight={0}>
         <Block
-          type='column'
-          icon={(<CategoryIcon fontSize='inherit' />)}
-          title='Organize ideas into buckets'
-          description='With custom tags, organize ideas and assign to different teammates. You can also allow users to directly select the relevant tags themselves.'
+          type="column"
+          icon={(<CategoryIcon fontSize="inherit" />)}
+          title="Organize ideas into buckets"
+          description="With custom tags, organize ideas and assign to different teammates. You can also allow users to directly select the relevant tags themselves."
           image={DemoTagging2Img}
           imageScale={0.4}
           mirror
-          alignItems='center'
+          alignItems="center"
         />
         <Demo
-          type='column'
-          icon={(<LifecycleIcon fontSize='inherit' />)}
-          title='Give your ideas a life cycle'
-          description='Define custom stages for your ideas and transitions between them.'
-          alignItems='center'
+          type="column"
+          icon={(<LifecycleIcon fontSize="inherit" />)}
+          title="Give your ideas a life cycle"
+          description="Define custom stages for your ideas and transitions between them."
+          alignItems="center"
           template={templater => {
             templater.workflowIdea(templater.demoCategory());
             templater.styleWhite();
@@ -2674,27 +2740,27 @@ export function LandingIdeaManagement() {
               categoryIndex={0}
               isVertical
               hideCorner
-              height='100%'
+              height="100%"
             />
           )}
         />
         <Block
-          type='column'
-          icon={(<EditIcon fontSize='inherit' />)}
-          title='Make it your own'
+          type="column"
+          icon={(<EditIcon fontSize="inherit" />)}
+          title="Make it your own"
           description="our tool can be customized to your needs whether you are collecting students' opinions, employee suggestion box, or product feedback."
-          buttonTitle='See more customizations'
-          buttonLink='/product/customize'
+          buttonTitle="See more customizations"
+          buttonLink="/product/customize"
         />
       </HorizontalPanels>
       <Block
-        title='Act'
-        description='Take action based on what you have learnt.'
+        title="Act"
+        description="Take action based on what you have learnt."
         image={LoopImg}
         mirror
-        alignItems='center'
-        buttonTitle='See how'
-        buttonLink='/product/act'
+        alignItems="center"
+        buttonTitle="See how"
+        buttonLink="/product/act"
       />
     </>
   );
@@ -2704,24 +2770,24 @@ export function LandingContentCreator() {
   return (
     <>
       <Hero
-        title='Content Creator Forum'
-        description='Reward your fans with a voice proportional to their contributions. Let your biggest fans shape your future creations.'
+        title="Content Creator Forum"
+        description="Reward your fans with a voice proportional to their contributions. Let your biggest fans shape your future creations."
         image={CreatorImg}
       />
       <Block
-        title='Establish a community'
+        title="Establish a community"
       />
-      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='md'>
+      <HorizontalPanels wrapBelow="lg" maxWidth="lg" maxContentWidth="md">
         <Demo
-          type='column'
+          type="column"
           icon={<CustomerFeedbackIcon />}
-          title='Idea brainstorm'
+          title="Idea brainstorm"
           description="Understand your community's opinion to make the right next step."
-          alignItems='flex-start'
+          alignItems="flex-start"
           demoFixedHeight={350}
           scale={0.7}
           demoInsetFade
-          initialSubPath='/embed/demo'
+          initialSubPath="/embed/demo"
           template={templater => templater.demoExplorer({
             allowCreate: { actionTitle: 'Suggest', actionTitleLong: 'Suggest an idea' },
             display: {
@@ -2756,12 +2822,12 @@ export function LandingContentCreator() {
           }}
         />
         <Demo
-          type='column'
+          type="column"
           icon={<ForumIcon />}
-          title='Discussion forum'
-          description='Nurture a community in forum discussions with customized categories and threaded comments that bubble up the best comments to the top.'
-          alignItems='center'
-          initialSubPath='/embed/demo'
+          title="Discussion forum"
+          description="Nurture a community in forum discussions with customized categories and threaded comments that bubble up the best comments to the top."
+          alignItems="center"
+          initialSubPath="/embed/demo"
           demoFixedHeight={420}
           scale={0.7}
           template={templater => {
@@ -2780,19 +2846,19 @@ export function LandingContentCreator() {
         // variant='content'
         // type='column'
         icon={<PrivacyIcon />}
-        title='Fans-only'
-        description='You can choose to only allow fans to suggest ideas or to see your private content. You can ask them to sign in using their existing account on platforms such as Patreon or YouTube.'
+        title="Fans-only"
+        description="You can choose to only allow fans to suggest ideas or to see your private content. You can ask them to sign in using their existing account on platforms such as Patreon or YouTube."
         image={SupportImg}
       />
       <Block
-        title='Prioritize your work'
+        title="Prioritize your work"
       />
-      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='md' staggerHeight={100}>
+      <HorizontalPanels wrapBelow="lg" maxWidth="lg" maxContentWidth="md" staggerHeight={100}>
         <Demo
-          type='column'
-          title='Simple voting'
-          description='Let your fans vote up or down which ideas they like so you can concentrate on what your fanbase wants.'
-          initialSubPath='/embed/demo'
+          type="column"
+          title="Simple voting"
+          description="Let your fans vote up or down which ideas they like so you can concentrate on what your fanbase wants."
+          initialSubPath="/embed/demo"
           template={templater => templater.demoPrioritization('vote')}
           mock={mocker => mocker.demoPrioritization()}
           settings={{
@@ -2806,10 +2872,10 @@ export function LandingContentCreator() {
           containerPortal
         />
         <Demo
-          type='column'
-          title='Feedback from your most valued fans, Credit based prioritization'
-          description='Give your fans credits every time they give you a donation or make a subscription payment. Use those credits to prioritize ideas. Infographic: show Patreon/Ko-fi -> ClearFlask issues credits -> Fan prioritizes ideas'
-          initialSubPath='/embed/demo'
+          type="column"
+          title="Feedback from your most valued fans, Credit based prioritization"
+          description="Give your fans credits every time they give you a donation or make a subscription payment. Use those credits to prioritize ideas. Infographic: show Patreon/Ko-fi -> ClearFlask issues credits -> Fan prioritizes ideas"
+          initialSubPath="/embed/demo"
           template={templater => templater.demoPrioritization('fund')}
           controls={project => (<PrioritizationControlsCredits forContentCreator templater={project.templater} />)}
           mock={mocker => mocker.demoPrioritization()}
@@ -2822,62 +2888,62 @@ export function LandingContentCreator() {
           }}
         />
       </HorizontalPanels>
-      <HorizontalPanels wrapBelow='lg' maxWidth='lg' maxContentWidth='sm'>
+      <HorizontalPanels wrapBelow="lg" maxWidth="lg" maxContentWidth="sm">
         <Block
-          type='column'
-          title='1# Link with your platform'
-          description='If you are taking donations or payments for your content, link your platform to automatically issue'
+          type="column"
+          title="1# Link with your platform"
+          description="If you are taking donations or payments for your content, link your platform to automatically issue"
           demo={(<LandingCreditSystemLinkOptions donationFirst />)}
         />
         <Block
-          type='column'
-          title='2# Issue credits'
-          description='When a donation is made or a user completes an action, give them credits proportional to their loyalty.'
+          type="column"
+          title="2# Issue credits"
+          description="When a donation is made or a user completes an action, give them credits proportional to their loyalty."
           demo={(
-            <LandingTransactionHistory size='small' items={[
+            <LandingTransactionHistory size="small" items={[
               { description: 'Credits for donation', amount: 5000 },
-              { description: "Fund 'Microphone upgrade'", amount: -2000 },
-              { description: "Fund 'Upcoming album'", amount: -2500 },
+              { description: 'Fund \'Microphone upgrade\'', amount: -2000 },
+              { description: 'Fund \'Upcoming album\'', amount: -2500 },
             ]} />
           )}
         />
         <Block
-          type='column'
-          title='3# Let them spend it'
-          description=''
+          type="column"
+          title="3# Let them spend it"
+          description=""
           image={DemoCrowdfund2Img}
           imageStyleOuter={{ padding: 'unset' }}
         />
       </HorizontalPanels>
       <Demo
-        type='mediumDemo'
-        title='Roadmap'
-        description=''
-        initialSubPath='/embed/demo'
-        alignItems='center'
+        type="mediumDemo"
+        title="Roadmap"
+        description=""
+        initialSubPath="/embed/demo"
+        alignItems="center"
         template={templater => templater.demoBoard('Plan to fame', [
-          { title: 'Gathering ideas', },
+          { title: 'Gathering ideas' },
           { title: 'Up next', display: { showExpression: true } },
         ])}
         mock={mocker => mocker.demoBoard([
           { status: '0' }, { status: '0' }, { status: '0' },
           { status: '1', extra: { expressions: { '👍': 14, '❤️': 5 } } },
-          { status: '1', extra: { expressions: { '👍': 6, } } },
+          { status: '1', extra: { expressions: { '👍': 6 } } },
         ])}
         settings={{
           demoBlurryShadow: true,
           demoDisablePostOpen: true,
         }}
-        buttonTitle='See a Roadmap'
-        buttonLink='/solutions/product-roadmap'
+        buttonTitle="See a Roadmap"
+        buttonLink="/solutions/product-roadmap"
       />
       <Block
-        title='Let your fans know'
-        description='Your fans will be thrilled their particular idea came to life.'
+        title="Let your fans know"
+        description="Your fans will be thrilled their particular idea came to life."
         image={DemoEmailNotification2Img}
         imageScale={0.4}
         mirror
-        alignItems='center'
+        alignItems="center"
       />
     </>
   );
@@ -2887,90 +2953,90 @@ export function LandingGrowWithUs() {
   return (
     <>
       <Hero
-        title='Scale with us'
-        description='Built on scalable infrastructure to grow with your needs.'
+        title="Scale with us"
+        description="Built on scalable infrastructure to grow with your needs."
         image={ArchitectureImg}
       />
       <Block
-        title='Reliability and scalability'
-        description='Our automated systems are continuously monitoring the health to scale up resources as needed or to notify our engineers of an issue.'
+        title="Reliability and scalability"
+        description="Our automated systems are continuously monitoring the health to scale up resources as needed or to notify our engineers of an issue."
       />
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
+      <HorizontalPanels wrapBelow="md" maxContentWidth="xs" maxWidth="lg">
         <BlockContent
-          icon={(<OncallIcon fontSize='inherit' />)}
-          title='On-call'
-          description='Our engineers are on-call 24/7 to resolve any elevated issues brought up by our automatic monitoring.'
+          icon={(<OncallIcon fontSize="inherit" />)}
+          title="On-call"
+          description="Our engineers are on-call 24/7 to resolve any elevated issues brought up by our automatic monitoring."
         />
         <BlockContent
-          icon={(<ServerIcon fontSize='inherit' />)}
-          variant='content'
-          title='Compute'
-          description='All of our server infrastructure is auto-scaled to meet your traffic demand.'
+          icon={(<ServerIcon fontSize="inherit" />)}
+          variant="content"
+          title="Compute"
+          description="All of our server infrastructure is auto-scaled to meet your traffic demand."
         />
         <BlockContent
-          icon={(<StorageIcon fontSize='inherit' />)}
-          variant='content'
-          title='Storage'
-          description='Data is stored on a NoSQL Dynamo database and distributed Object Storage S3 that allows us to scale with ease.'
+          icon={(<StorageIcon fontSize="inherit" />)}
+          variant="content"
+          title="Storage"
+          description="Data is stored on a NoSQL Dynamo database and distributed Object Storage S3 that allows us to scale with ease."
         />
         <BlockContent
-          icon={(<BackupIcon fontSize='inherit' />)}
-          variant='content'
-          title='Backups'
-          description='All of our data is continuously backed up in case of an incident to protect your data.'
+          icon={(<BackupIcon fontSize="inherit" />)}
+          variant="content"
+          title="Backups"
+          description="All of our data is continuously backed up in case of an incident to protect your data."
         />
       </HorizontalPanels>
       <Block
-        title='Responsiveness'
-        description='Bringing together the right tools for the best User Experience'
+        title="Responsiveness"
+        description="Bringing together the right tools for the best User Experience"
       />
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
+      <HorizontalPanels wrapBelow="md" maxContentWidth="xs" maxWidth="lg">
         <BlockContent
-          icon={(<ContentDeliveryIcon fontSize='inherit' />)}
-          variant='content'
-          title='Content Delivery Network'
-          description='ClearFlask is hosted by CloudFront: a large network of globally distributed PoPs that deliver low-latency performance and high-availability.'
+          icon={(<ContentDeliveryIcon fontSize="inherit" />)}
+          variant="content"
+          title="Content Delivery Network"
+          description="ClearFlask is hosted by CloudFront: a large network of globally distributed PoPs that deliver low-latency performance and high-availability."
         />
         <BlockContent
-          icon={(<SearchIcon fontSize='inherit' />)}
-          variant='content'
-          title='Search engine'
-          description='We use ElasticSearch: a powerful search engine to provide you relevant results within large datasets.'
+          icon={(<SearchIcon fontSize="inherit" />)}
+          variant="content"
+          title="Search engine"
+          description="We use ElasticSearch: a powerful search engine to provide you relevant results within large datasets."
         />
         <BlockContent
-          icon={(<ClientIcon fontSize='inherit' />)}
-          variant='content'
-          title='Client-side Framework'
-          description='Once you load our page, we use React to deliver a responsive interface to your users with a Material design that is pleasing to use.'
+          icon={(<ClientIcon fontSize="inherit" />)}
+          variant="content"
+          title="Client-side Framework"
+          description="Once you load our page, we use React to deliver a responsive interface to your users with a Material design that is pleasing to use."
         />
         <BlockContent
-          icon={(<ServerIcon fontSize='inherit' />)}
-          variant='content'
-          title='Server-Side Rendering'
-          description='Web pages are pre-rendered server-side to minimize the first page load on the client and improve SEO.'
+          icon={(<ServerIcon fontSize="inherit" />)}
+          variant="content"
+          title="Server-Side Rendering"
+          description="Web pages are pre-rendered server-side to minimize the first page load on the client and improve SEO."
         />
       </HorizontalPanels>
       <Block
-        title='Security and Privacy'
-        description='Both Security and Privacy is critically important to us. We are thoughtful about the personal information we ask you to provide and we are building our systems with security in mind.'
+        title="Security and Privacy"
+        description="Both Security and Privacy is critically important to us. We are thoughtful about the personal information we ask you to provide and we are building our systems with security in mind."
       />
-      <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
+      <HorizontalPanels wrapBelow="md" maxContentWidth="xs" maxWidth="lg">
         <BlockContent
-          icon={(<EncryptionIcon fontSize='inherit' />)}
-          variant='content'
-          title='Encryption'
-          description='All pages are only accessible over encrypted channels. If you use a custom domain, we automatically generate a certificate for you via LetsEncrypt.'
+          icon={(<EncryptionIcon fontSize="inherit" />)}
+          variant="content"
+          title="Encryption"
+          description="All pages are only accessible over encrypted channels. If you use a custom domain, we automatically generate a certificate for you via LetsEncrypt."
         />
         <BlockContent
-          icon={(<AntiSpamIcon fontSize='inherit' />)}
-          variant='content'
-          title='Anti-Spam'
-          description='Our backend system is monitoring unusual behavior and will issue Anti-Spam measures. Our team has past experience working on Anti-spam at a popular messenger.' />
+          icon={(<AntiSpamIcon fontSize="inherit" />)}
+          variant="content"
+          title="Anti-Spam"
+          description="Our backend system is monitoring unusual behavior and will issue Anti-Spam measures. Our team has past experience working on Anti-spam at a popular messenger." />
         <BlockContent
-          icon={(<BillingIcon fontSize='inherit' />)}
-          variant='content'
-          title='Billing system'
-          description='For reliable billing, we use KillBill to handle managing your final invoice and processing your payments.'
+          icon={(<BillingIcon fontSize="inherit" />)}
+          variant="content"
+          title="Billing system"
+          description="For reliable billing, we use KillBill to handle managing your final invoice and processing your payments."
         />
       </HorizontalPanels>
     </>
@@ -3011,40 +3077,41 @@ export function LandingCompare() {
 export function LandingSales() {
   return (
     <Block
-      title='Every customer is different'
-      description='Talk to our sales for a demo walkthrough and to determine how our solution can be customized for your needs.'
-      buttonTitle='Get in touch'
-      buttonLink='/contact/sales'
+      title="Every customer is different"
+      description="Talk to our sales for a demo walkthrough and to determine how our solution can be customized for your needs."
+      buttonTitle="Get in touch"
+      buttonLink="/contact/sales"
       image={SalesImg}
     />
   );
 }
+
 export function LandingPricingOptions() {
   const { t } = useTranslation('site');
   return (
     <FooterHorizontalPanels
       title={t('lets-get-started')}
-      svgD='M 0 49.98 C 411 265 386 -17 500 49.98 L 500 150 L 0 150 Z'
+      svgD="M 0 49.98 C 411 265 386 -17 500 49.98 L 500 150 L 0 150 Z"
     >
       <Block
-        icon={(<ServerIcon fontSize='inherit' />)}
+        icon={(<ServerIcon fontSize="inherit" />)}
         title={t('cloud-offering')}
         description={t('hassle-free-scalable-solution-with')}
         buttonTitle={t('try-for-free')}
-        buttonLink='/signup'
+        buttonLink="/signup"
         button2Title={t('pricing')}
-        button2Link='/pricing'
+        button2Link="/pricing"
         buttonSuppressIcon
         image={Server2Img}
         {...FooterHorizontalPanelsBlockProps}
       />
       <Block
-        icon={(<OpenSourceIcon fontSize='inherit' />)}
+        icon={(<OpenSourceIcon fontSize="inherit" />)}
         title={t('self-hosting')}
         description={t('open-source-with-no-limitations-own')}
         buttonTitle={t('install-it')}
-        buttonLinkExt='https://github.com/clearflask/clearflask#self-hosting'
-        buttonVariant='contained'
+        buttonLinkExt="https://github.com/clearflask/clearflask#self-hosting"
+        buttonVariant="contained"
         buttonSuppressIcon
         image={Server3Img}
         {...FooterHorizontalPanelsBlockProps}
@@ -3052,12 +3119,14 @@ export function LandingPricingOptions() {
     </FooterHorizontalPanels>
   );
 }
+
 const FooterHorizontalPanelsBlockProps: Partial<React.ComponentProps<typeof Block>> = {
   type: 'column',
   titleVariant: 'h4',
   imageLocation: 'above',
   imageStyleOuter: { minHeight: 300 },
 };
+
 export function FooterHorizontalPanels(props: {
   title?: string;
   svgD: string;
@@ -3073,12 +3142,12 @@ export function FooterHorizontalPanels(props: {
       }}>
         <Block
           className={classes.textAlignCenter}
-          type='headingOnly'
+          type="headingOnly"
           title={props.title}
         />
       </Background>
       <Background backgroundColor={fade('#218774', 0.05)}>
-        <HorizontalPanels wrapBelow='md' maxContentWidth='xs' maxWidth='lg'>
+        <HorizontalPanels wrapBelow="md" maxContentWidth="xs" maxWidth="lg">
           {props.children}
         </HorizontalPanels>
         <br />
@@ -3089,6 +3158,7 @@ export function FooterHorizontalPanels(props: {
     </>
   );
 }
+
 export function LandingPricing() {
   return (
     <>
@@ -3096,18 +3166,19 @@ export function LandingPricing() {
     </>
   );
 }
+
 export function GetStartedColumn() {
   const { t } = useTranslation('site');
   return (
     <>
       <Block
-        type='column'
+        type="column"
         title={t('get-started')}
-        description='Try out all the features during your trial period.'
-        buttonTitle='Try for free'
-        buttonLink='/signup'
-        button2Title='Pricing'
-        button2Link='/pricing'
+        description="Try out all the features during your trial period."
+        buttonTitle="Try for free"
+        buttonLink="/signup"
+        button2Title="Pricing"
+        button2Link="/pricing"
         buttonSuppressIcon
         image={TeamImg}
         {...FooterHorizontalPanelsBlockProps}
@@ -3128,7 +3199,7 @@ export function LandingPromo() {
             <Logo scale={5} />
           </div>
           <div style={{ margin: '0px 0px 30px' }}>
-            <Typography variant='h3' color='textSecondary'>
+            <Typography variant="h3" color="textSecondary">
               Open-source feedback tool<br /> to build better products.
             </Typography>
           </div>
@@ -3153,21 +3224,21 @@ export function LandingPromo() {
         </div>
       </Background>
       <Block
-        title='Product feedback'
-        type='headingMain'
+        title="Product feedback"
+        type="headingMain"
         xlargePoints
         points={[
           'Ask for feedback',
           'Validate new ideas',
           'Easy integration',
         ]}
-        alignItems='center'
-        demoFixedWidth='100%'
+        alignItems="center"
+        demoFixedWidth="100%"
         demoFixedHeight={500}
         spacingTop={0}
         demo={(
           <Stack
-            float='right'
+            float="right"
             contentSpacingVertical={200}
             items={[{
               height: 'max-content',
@@ -3176,7 +3247,7 @@ export function LandingPromo() {
                 <FakeBrowser>
                   <ImgIso img={DemoFeedbackWhatElseImg} />
                 </FakeBrowser>
-              )
+              ),
             }, {
               height: 'max-content',
               width: 330,
@@ -3184,7 +3255,7 @@ export function LandingPromo() {
                 <FakeBrowser>
                   <ImgIso img={DemoFeedbackImg} />
                 </FakeBrowser>
-              )
+              ),
             }]}
           />
         )}
@@ -3192,7 +3263,7 @@ export function LandingPromo() {
 
       <Hr margins={300} />
 
-      <Background align='top' svg={{
+      <Background align="top" svg={{
         d: 'M 0 177 Q 130 27 287 139 C 362 182 408 258 501 229 L 500 0 L 0 0 Z',
         viewBox: '0 0 500 200',
       }} width={2400} height={1000}>
@@ -3203,21 +3274,21 @@ export function LandingPromo() {
         </div>
         <Block
           mirror
-          title='Analyze ideas'
-          type='headingMain'
+          title="Analyze ideas"
+          type="headingMain"
           xlargePoints
           points={[
             'Convert ideas to tasks',
             'Prioritize your roadmap',
             'Estimate value/effort',
           ]}
-          alignItems='center'
-          demoFixedWidth='100%'
+          alignItems="center"
+          demoFixedWidth="100%"
           spacingTop={0}
           demo={(
             <Stack
               contentSpacingVertical={200}
-              float='right' // overflow left
+              float="right" // overflow left
               items={[{
                 content: (<ImgIso img={DemoDashboardRoadmapImg} />),
                 height: 'max-content',
@@ -3232,7 +3303,7 @@ export function LandingPromo() {
 
       <Hr margins={300} />
 
-      <Background align='top' svg={{
+      <Background align="top" svg={{
         d: 'M 0 177 Q 166 -61 287 139 C 351 239 408 258 501 229 L 500 0 L 0 0 Z',
         viewBox: '0 0 500 200',
       }} width={2400} height={1000}>
@@ -3242,21 +3313,21 @@ export function LandingPromo() {
           </div>
         </div>
         <Block
-          title='Keep everyone informed'
-          type='headingMain'
+          title="Keep everyone informed"
+          type="headingMain"
           xlargePoints
           points={[
             'Public Roadmap',
             'Announcements',
           ]}
-          alignItems='center'
-          demoFixedWidth='100%'
+          alignItems="center"
+          demoFixedWidth="100%"
           spacingTop={0}
           demo={(
             <Stack
               // topLeftToBottomRight
               // ascendingLevel
-              float='right'
+              float="right"
               contentSpacingVertical={280}
               items={[{
                 content: (
@@ -3282,7 +3353,7 @@ export function LandingPromo() {
 
       <Hr margins={600} />
 
-      <Background align='top' svg={{
+      <Background align="top" svg={{
         d: 'M 0 145 Q 174 20 322 123 C 434 201 499 27 501 229 L 500 0 L 0 0 Z',
         viewBox: '0 0 500 200',
       }} width={1200} height={260}>
@@ -3292,10 +3363,10 @@ export function LandingPromo() {
           </div>
         </div>
         <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <CustomerFeedbackIcon fontSize='inherit' color='inherit' style={{
+          <CustomerFeedbackIcon fontSize="inherit" color="inherit" style={{
             margin: 'auto',
             fontSize: '7em',
-            color: 'rgba(200,200,200,0.8)'
+            color: 'rgba(200,200,200,0.8)',
           }} />
         </div>
       </Background>
@@ -3314,14 +3385,14 @@ export function LandingEmbedFeedbackPage(props: {
 
   return (
     <IframeWithUrlSync
-      redirectOnDirectAccess=''
+      redirectOnDirectAccess=""
       browserPathPrefix={props.browserPathPrefix}
       srcWithoutPathname={isProd() ? 'https://product.clearflask.com' : `${windowIso.location.protocol}//product.${windowIso.location.host}`}
       pathnamePrefix={props.embed ? '/embed' : undefined}
       initialQuery={account?.cfJwt ? `?${SSO_TOKEN_PARAM_NAME}=${account.cfJwt}` : undefined}
-      frameBorder='0'
+      frameBorder="0"
       height={vh(100)}
-      width='100%'
+      width="100%"
     />
   );
 }

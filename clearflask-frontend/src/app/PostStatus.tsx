@@ -22,7 +22,9 @@ export class PostStatusConfigDef {
   justifyContent?: string;
   textTransform?: string;
 }
-export interface PostStatusConfig extends PostStatusConfigDef { };
+
+export interface PostStatusConfig extends PostStatusConfigDef {
+};
 
 const styles = (theme: Theme) => createStyles({
   linkContainer: {
@@ -40,11 +42,14 @@ const styles = (theme: Theme) => createStyles({
     alignItems: 'center',
   },
 });
+
 interface Props {
   postId: string;
 }
+
 interface State {
 }
+
 class PostStatus extends Component<Props & RouteComponentProps & WithStyles<typeof styles, true>, State> {
   state: State = {};
   dataPromise: Promise<[Client.VersionedConfig, Client.UserMeWithBalance | undefined, Client.IdeaWithVote]>;
@@ -70,8 +75,8 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
   }
 
   async mockData(props: Props): Promise<Server> {
-    const mocker = await import(/* webpackChunkName: "mocker" */'../mocker')
-    const serverMock = await import(/* webpackChunkName: "serverMock" */'../api/serverMock')
+    const mocker = await import(/* webpackChunkName: "mocker" */'../mocker');
+    const serverMock = await import(/* webpackChunkName: "serverMock" */'../api/serverMock');
     const projectId = (await mocker.mock()).config.projectId;
     await mocker.mockIdea(projectId, props.postId);
     return new Server(projectId, { suppressSetTitle: true }, serverMock.default.get());
@@ -94,7 +99,7 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
       });
     }
 
-    if (!configAndUserBind.config) {
+    if (!configAndUserBind?.config) {
       throw new Error('Permission denied');
     }
 
@@ -132,12 +137,13 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
               disableExpressions: false,
               disableVoting: false,
               disableComments: false,
-              disableIdeaEdits: true
+              disableIdeaEdits: true,
             };
           }
           if (!status) {
             return null;
-          };
+          }
+          ;
 
           const src = `${windowIso.location.origin}/post/${post.ideaId}`;
 
@@ -157,13 +163,13 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
             >
               <a // eslint-disable-line react/jsx-no-target-blank
                 href={src}
-                target='_blank'
-                rel='noopener nofollow'
+                target="_blank"
+                rel="noopener nofollow"
                 className={this.props.classes.link}
               >
                 {status.name}
                 &nbsp;
-                <OpenIcon fontSize='inherit' />
+                <OpenIcon fontSize="inherit" />
               </a>
             </div>
           );

@@ -37,7 +37,7 @@ export const DashboardTalkNewConvo = (props: {
       <Table size="medium" className={classes.inner}>
         <Typography variant="h4">Ask me anything</Typography>
         <p>
-          <Typography variant="body2">I am trained on your users' feedback daily.</Typography>
+          <Typography variant="body2">I am trained on your users' feedback.</Typography>
         </p>
         <TableBody>
           {PredefinedQuestions.map(question => (

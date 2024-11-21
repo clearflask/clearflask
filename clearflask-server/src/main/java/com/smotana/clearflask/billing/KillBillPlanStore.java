@@ -81,6 +81,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     private static final String TERMS_POSTS = "Delete older posts to keep your project tidy and stay within the limits.";
     private static final String TERMS_PROJECTS = "You can create separate projects each having their own set of users and content";
     private static final String TERMS_ADMINS = "Amount of administrators, product managers or support team members you can have on each project including yourself.";
+    private static final String TERMS_CLEARFLASK_AI = "ClearFlask AI is a way to talk to your customers through AI powered with all of your customer feedback. This feature is currently in preview and may become a paid feature in the future.";
     private static final String TERMS_CREDIT_SYSTEM = "Credit System allows fine-grained prioritization of value for each idea.";
     private static final String TERMS_PRIVATE_PROJECTS = "Create a private project so only authorized users can view and provide feedback";
     private static final String TERMS_AI = "Talk to your customers via AI";
@@ -336,6 +337,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     new FeaturesTableFeatures("Users", ImmutableList.of("No limit", "No limit", "No limit"), null),
                     new FeaturesTableFeatures("Posts", ImmutableList.of("100 Max", "No limit", "No limit"), TERMS_POSTS),
                     new FeaturesTableFeatures("Teammates", ImmutableList.of("3 Max", "All Free", "All Free"), TERMS_ADMINS),
+                    new FeaturesTableFeatures("ClearFlask AI", ImmutableList.of("Limited preview", "Limited preview", "Limited preview"), TERMS_CLEARFLASK_AI),
                     new FeaturesTableFeatures("Credit System", ImmutableList.of("Yes", "Yes", "Yes"), TERMS_CREDIT_SYSTEM),
                     new FeaturesTableFeatures("Roadmap", ImmutableList.of("Yes", "Yes", "Yes"), null),
                     new FeaturesTableFeatures("Content customization", ImmutableList.of("Yes", "Yes", "Yes"), null),

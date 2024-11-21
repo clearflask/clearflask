@@ -9,7 +9,7 @@ import { DashboardTalkInput } from './dashboardTalkInput';
 import { DashboardTalkNewConvo } from './dashboardTalkNewConvo';
 import { DashboardTalkConvo } from './dashboardTalkConvo';
 import CreateIcon from '@material-ui/icons/Create';
-import { Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@material-ui/core';
+import { Button, Chip, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@material-ui/core';
 import classNames from 'classnames';
 import SubmitButton from '../../common/SubmitButton';
 import SettingsIcon from '@material-ui/icons/Settings';
@@ -78,7 +78,17 @@ export async function renderTalk(this: Dashboard, context: DashboardPageContext)
     name: 'list',
     size: { breakWidth: 350, flexGrow: 20, maxWidth: 1024 },
     header: {
-      title: { title: 'Talk' },
+      title: {
+        title: 'Talk',
+      },
+      left: (
+        <Chip
+          className={this.props.classes.talkFeaturePreview}
+          variant="outlined"
+          label="Feature preview"
+          size="small"
+        />
+      ),
       action: (!this.state.talkSelectedConvoId || !!this.state.talkPromptEditShow) ? undefined : {
         label: 'New',
         icon: CreateIcon,

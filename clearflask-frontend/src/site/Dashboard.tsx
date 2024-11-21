@@ -69,7 +69,7 @@ import windowIso from '../common/windowIso';
 import { LanguageSelect } from '../LanguageSelect';
 import { ADMIN_LOGIN_REDIRECT_TO } from './AccountEnterPage';
 import ContactPage from './ContactPage';
-import { AddonAi, BillingPaymentActionRedirect, BillingPaymentActionRedirectPath } from './dashboard/BillingPage';
+import { BillingPaymentActionRedirect, BillingPaymentActionRedirectPath } from './dashboard/BillingPage';
 import CreatePage from './dashboard/CreatePage';
 import { renderChangelog } from './dashboard/dashboardChangelog';
 import { dashboardOnDragEnd, OnDndHandled, OnDndPreHandling } from './dashboard/dashboardDndActionHandler';
@@ -86,6 +86,7 @@ import { LandingEmbedFeedbackPage } from './LandingPages';
 import Logo from './Logo';
 import VisitIcon from '../common/icon/VisitIcon';
 import { DashboardEmptyPlaceholder } from './DashboardEmptyPlaceholder';
+import AiIcon from '../common/icon/AiIcon';
 
 export interface ShowSnackbarProps {
   message: string;
@@ -216,6 +217,17 @@ const styles = (theme: Theme) => createStyles({
       padding: '6px 24px',
     },
     ...(tabHoverApplyStyles(theme)),
+  },
+  tabTalk: {
+    display: 'flex',
+  },
+  tabTalkIcon: {
+    margin: theme.spacing(0, 0, 0, 0.5),
+    fontSize: '1em',
+  },
+  talkFeaturePreview: {
+    alignSelf: 'center',
+    marginLeft: theme.spacing(2),
   },
   unsavedChangesBar: {
     display: 'flex',
@@ -718,14 +730,19 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                     root: this.props.classes.tabRoot,
                   }}
                 />
-                {!context.isSelfhostServiceOnly && (this.props.account.isSuperAdmin || this.props.account.addons?.[AddonAi]) && (
+                {!context.isSelfhostServiceOnly && (
                   <Tab
                     className={this.props.classes.tab}
                     component={Link}
                     to="/dashboard/talk"
                     value="talk"
                     disableRipple
-                    label={this.props.t('talk')}
+                    label={(
+                      <div className={this.props.classes.tabTalk}>
+                        {this.props.t('talk')}
+                        <AiIcon color="inherit" className={this.props.classes.tabTalkIcon} />
+                      </div>
+                    )}
                     classes={{
                       root: this.props.classes.tabRoot,
                     }}
