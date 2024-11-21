@@ -14,6 +14,7 @@ import classNames from 'classnames';
 import SubmitButton from '../../common/SubmitButton';
 import SettingsIcon from '@material-ui/icons/Settings';
 import { DashboardTalkEditPrompt } from './dashboardTalkEditPrompt';
+import ServerAdmin from '../../api/serverAdmin';
 
 export async function renderTalk(this: Dashboard, context: DashboardPageContext) {
   setTitle('Talk - Dashboard');
@@ -63,7 +64,7 @@ export async function renderTalk(this: Dashboard, context: DashboardPageContext)
     ),
   });
 
-  const settingsButton = (
+  const promptButton = !ServerAdmin.get().isSuperAdminLoggedIn() ? null : (
     <Button
       endIcon={<SettingsIcon />}
       className={classNames(this.props.classes.headerAction)}
@@ -97,7 +98,7 @@ export async function renderTalk(this: Dashboard, context: DashboardPageContext)
           talkSelectedConvoId: undefined,
         }),
       },
-      right: (!this.state.talkSelectedConvoId || !!this.state.talkPromptEditShow) ? settingsButton : (
+      right: (!this.state.talkSelectedConvoId || !!this.state.talkPromptEditShow) ? promptButton : (
         <>
           <Button
             className={classNames(this.props.classes.headerAction, this.props.classes.buttonRed)}
@@ -111,7 +112,7 @@ export async function renderTalk(this: Dashboard, context: DashboardPageContext)
           >
             DELETE
           </Button>
-          {settingsButton}
+          {promptButton}
           <Dialog
             open={!!this.state.talkDeleteConvoShowDialog && !!this.state.talkSelectedConvoId}
             onClose={() => this.setState({ talkDeleteConvoShowDialog: false })}
