@@ -12,7 +12,6 @@ import com.google.inject.name.Names;
 import com.smotana.clearflask.api.LlmAdminApi;
 import com.smotana.clearflask.api.LlmSuperAdminApi;
 import com.smotana.clearflask.api.model.*;
-import com.smotana.clearflask.billing.KillBillPlanStore;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
 import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
@@ -122,9 +121,7 @@ public class LlmResource extends AbstractResource implements LlmAdminApi, LlmSup
         String accountId = getAuthenticatedAccountId();
         Account account = accountStore.getAccount(accountId, true).orElseThrow();
 
-        if (Environment.PRODUCTION_SELF_HOST.equals(env)
-                || (!"true".equals(account.getAddons().get(KillBillPlanStore.ADDON_AI))
-                && !superAdminPredicate.isEmailSuperAdmin(account.getEmail()))) {
+        if (Environment.PRODUCTION_SELF_HOST.equals(env)) {
             throw new ApiException(Response.Status.PAYMENT_REQUIRED, "AI not enabled");
         }
 
