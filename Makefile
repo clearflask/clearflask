@@ -118,7 +118,7 @@ deploy-singlehost-%: get-project-version
 	echo "Deploying to $*"
 	scp ./clearflask-server/target/clearflask-server-$(PROJECT_VERSION).war $*:/home/ec2-user/clearflask-server-$(TIMESTAMP)-$(PROJECT_VERSION).war
 	ssh $* "sudo cp /home/ec2-user/clearflask-server-$(TIMESTAMP)-$(PROJECT_VERSION).war /var/lib/tomcat/webapps/150clearflask/ROOT##$(TIMESTAMP)-$(PROJECT_VERSION).war && \
-		ls -tp /home/ec2-user | grep '^clearflask-server-' | grep -v '/$' | tail -n +6 | xargs -I {} rm -- {}"
+		ls -tp /home/ec2-user | grep '^clearflask-server-' | tail -n +6 | xargs -I {} rm -- {}"
 	scp ./clearflask-frontend/target/clearflask-frontend-$(PROJECT_VERSION)-connect.tar.gz $*:/home/ec2-user/clearflask-frontend-0.1-connect.tar.gz
 	ssh $* "sudo service connect stop && sudo rm -fr /srv/clearflask-connect/* && sudo tar -xzf /home/ec2-user/clearflask-frontend-0.1-connect.tar.gz -C /srv/clearflask-connect && sudo chmod go-rwx -R /srv/clearflask-connect && sudo chown connect:connect -R /srv/clearflask-connect && sudo service connect start"
 
