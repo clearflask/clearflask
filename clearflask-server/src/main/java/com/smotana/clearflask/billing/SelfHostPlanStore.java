@@ -21,7 +21,7 @@ public class SelfHostPlanStore implements PlanStore {
 
     public static final Plan SELF_HOST_UNLIMITED_PLAN = new Plan(
             "self-host",
-            "Selfhost Unlimited (Grandfathered)",
+            "Selfhost Open-Source",
             null,
             ImmutableList.of(),
             false,
@@ -33,9 +33,13 @@ public class SelfHostPlanStore implements PlanStore {
             ImmutableList.of(),
             false,
             false);
+    /**
+     * This plan is no longer necessary, by default the unlimited plan is available.
+     */
+    @Deprecated
     public static final Plan SELF_HOST_FREE_PLAN = new Plan(
             "selfhost-free",
-            "Selfhost Free",
+            "Selfhost Limited (Deprecated)",
             null,
             ImmutableList.of(),
             false,
@@ -51,8 +55,8 @@ public class SelfHostPlanStore implements PlanStore {
 
         return new PlansGetResponse(
                 remoteLicenseStore.validateLicenseRemotely(true).isPresent()
-                        ? ImmutableList.of(SELF_HOST_FREE_PLAN, SELF_HOST_LICENSED_PLAN)
-                        : ImmutableList.of(SELF_HOST_FREE_PLAN),
+                        ? ImmutableList.of(SELF_HOST_LICENSED_PLAN, SELF_HOST_UNLIMITED_PLAN)
+                        : ImmutableList.of(SELF_HOST_UNLIMITED_PLAN),
                 new FeaturesTable(
                         ImmutableList.of(),
                         ImmutableList.of(),
@@ -70,7 +74,7 @@ public class SelfHostPlanStore implements PlanStore {
 
     @Override
     public ImmutableSet<Plan> getAccountChangePlanOptions(String accountId) {
-        return ImmutableSet.of(SELF_HOST_LICENSED_PLAN, SELF_HOST_FREE_PLAN);
+        return ImmutableSet.of(SELF_HOST_LICENSED_PLAN, SELF_HOST_UNLIMITED_PLAN);
     }
 
     @Override

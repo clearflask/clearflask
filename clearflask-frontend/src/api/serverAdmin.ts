@@ -611,31 +611,36 @@ function reducerInvitations(state: StateInvitations = stateInvitationsDefault, a
 export interface llmSetMessageAction {
   type: 'llmSetMessage';
   payload: {
+    projectId: string;
     convoId: string;
     message: Admin.ConvoMessage;
   };
 }
 
 export interface StateLlm {
-  convoList?: {
-    status?: Status;
-    convos?: Array<Admin.Convo>;
-  };
-  convoDetailsByConvoId: {
-    [convoId: string]: {
-      status?: Status;
-      messages?: Admin.ConvoMessage[];
-      upcomingMessageId?: string;
-    };
-  };
-  prompt?: {
-    status?: Status;
-    prompt?: string;
+  byProjectId: {
+    [projectId: string]: {
+      convoList?: {
+        status?: Status;
+        convos?: Array<Admin.Convo>;
+      };
+      convoDetailsByConvoId?: {
+        [convoId: string]: {
+          status?: Status;
+          messages?: Admin.ConvoMessage[];
+          upcomingMessageId?: string;
+        };
+      };
+      prompt?: {
+        status?: Status;
+        prompt?: string;
+      };
+    }
   };
 }
 
 const stateLlmDefault: StateLlm = {
-  convoDetailsByConvoId: {},
+  byProjectId: {},
 };
 
 function reducerLlm(state: StateLlm = stateLlmDefault, action: AllActionsAdmin): StateLlm {
@@ -643,144 +648,216 @@ function reducerLlm(state: StateLlm = stateLlmDefault, action: AllActionsAdmin):
     case Admin.convoListAdminActionStatus.Fulfilled:
       return {
         ...state,
-        convoList: {
-          status: Status.FULFILLED,
-          convos: action.payload.results.sort((l, r) => l.created.valueOf() - r.created.valueOf()),
+        byProjectId: {
+          ...state.byProjectId,
+          [action.meta.request.projectId]: {
+            ...state.byProjectId[action.meta.request.projectId],
+            convoList: {
+              status: Status.FULFILLED,
+              convos: action.payload.results.sort((l, r) => l.created.valueOf() - r.created.valueOf()),
+            },
+          },
         },
       };
     case Admin.convoListAdminActionStatus.Pending:
       return {
         ...state,
-        convoList: {
-          ...state.convoList,
-          status: Status.PENDING,
+        byProjectId: {
+          ...state.byProjectId,
+          [action.meta.request.projectId]: {
+            ...state.byProjectId[action.meta.request.projectId],
+            convoList: {
+              ...state.byProjectId[action.meta.request.projectId]?.convoList,
+              status: Status.PENDING,
+            },
+          },
         },
       };
     case Admin.convoListAdminActionStatus.Rejected:
       return {
         ...state,
-        convoList: {
-          ...state.convoList,
-          status: Status.REJECTED,
+        byProjectId: {
+          ...state.byProjectId,
+          [action.meta.request.projectId]: {
+            ...state.byProjectId[action.meta.request.projectId],
+            convoList: {
+              ...state.byProjectId[action.meta.request.projectId]?.convoList,
+              status: Status.REJECTED,
+            },
+          },
         },
       };
     case Admin.convoDetailsAdminActionStatus.Fulfilled:
       return {
         ...state,
-        convoDetailsByConvoId: {
-          ...state.convoDetailsByConvoId,
-          [action.meta.request.convoId]: {
-            ...state.convoDetailsByConvoId[action.meta.request.convoId],
-            status: Status.FULFILLED,
-            messages: action.payload.results.sort((l, r) => l.created.valueOf() - r.created.valueOf()),
+        byProjectId: {
+          ...state.byProjectId,
+          [action.meta.request.projectId]: {
+            ...state.byProjectId[action.meta.request.projectId],
+            convoDetailsByConvoId: {
+              ...state.byProjectId[action.meta.request.projectId]?.convoDetailsByConvoId,
+              [action.meta.request.convoId]: {
+                ...state.byProjectId[action.meta.request.projectId]?.convoDetailsByConvoId?.[action.meta.request.convoId],
+                status: Status.FULFILLED,
+                messages: action.payload.results.sort((l, r) => l.created.valueOf() - r.created.valueOf()),
+              },
+            },
           },
         },
       };
     case Admin.convoDetailsAdminActionStatus.Pending:
       return {
         ...state,
-        convoDetailsByConvoId: {
-          ...state.convoDetailsByConvoId,
-          [action.meta.request.convoId]: {
-            ...state.convoDetailsByConvoId[action.meta.request.convoId],
-            status: Status.PENDING,
+        byProjectId: {
+          ...state.byProjectId,
+          [action.meta.request.projectId]: {
+            ...state.byProjectId[action.meta.request.projectId],
+            convoDetailsByConvoId: {
+              ...state.byProjectId[action.meta.request.projectId]?.convoDetailsByConvoId,
+              [action.meta.request.convoId]: {
+                ...state.byProjectId[action.meta.request.projectId]?.convoDetailsByConvoId?.[action.meta.request.convoId],
+                status: Status.PENDING,
+              },
+            },
           },
         },
       };
     case Admin.convoDetailsAdminActionStatus.Rejected:
       return {
         ...state,
-        convoDetailsByConvoId: {
-          ...state.convoDetailsByConvoId,
-          [action.meta.request.convoId]: {
-            ...state.convoDetailsByConvoId[action.meta.request.convoId],
-            status: Status.REJECTED,
+        byProjectId: {
+          ...state.byProjectId,
+          [action.meta.request.projectId]: {
+            ...state.byProjectId[action.meta.request.projectId],
+            convoDetailsByConvoId: {
+              ...state.byProjectId[action.meta.request.projectId]?.convoDetailsByConvoId,
+              [action.meta.request.convoId]: {
+                ...state.byProjectId[action.meta.request.projectId]?.convoDetailsByConvoId?.[action.meta.request.convoId],
+                status: Status.REJECTED,
+              },
+            },
           },
         },
       };
     case Admin.convoDeleteAdminActionStatus.Fulfilled:
       return {
         ...state,
-        convoList: {
-          ...state.convoList,
-          convos: state.convoList?.convos?.filter(convo => convo.convoId !== action.meta.request.convoId),
-        },
-        convoDetailsByConvoId: {
-          ...state.convoDetailsByConvoId,
-          [action.meta.request.convoId]: {
-            ...state.convoDetailsByConvoId[action.meta.request.convoId],
-            status: Status.FULFILLED,
-            messages: [],
+        byProjectId: {
+          ...state.byProjectId,
+          [action.meta.request.projectId]: {
+            ...state.byProjectId[action.meta.request.projectId],
+            convoList: {
+              ...state.byProjectId[action.meta.request.projectId]?.convoList,
+              convos: state.byProjectId[action.meta.request.projectId]?.convoList?.convos?.filter(convo => convo.convoId !== action.meta.request.convoId),
+            },
+            convoDetailsByConvoId: {
+              ...state.byProjectId[action.meta.request.projectId]?.convoDetailsByConvoId,
+              [action.meta.request.convoId]: {
+                ...state.byProjectId[action.meta.request.projectId]?.convoDetailsByConvoId?.[action.meta.request.convoId],
+                status: Status.FULFILLED,
+                messages: [],
+              },
+            },
           },
         },
       };
     case Admin.messageCreateAdminActionStatus.Fulfilled:
       return {
         ...state,
-        convoList: action.meta.request.convoId !== 'new' ? state.convoList : {
-          ...state.convoList,
-          convos: [
-            {
-              ...state.convoList?.convos?.[action.payload.convoId],
-              convoId: action.payload.convoId,
-              created: action.payload.message.created,
-              title: action.payload.message.content,
+        byProjectId: {
+          ...state.byProjectId,
+          [action.meta.request.projectId]: {
+            ...state.byProjectId[action.meta.request.projectId],
+            convoList: action.meta.request.convoId !== 'new' ? state.byProjectId[action.meta.request.projectId]?.convoList : {
+              ...state.byProjectId[action.meta.request.projectId]?.convoList,
+              convos: [
+                {
+                  ...state.byProjectId[action.meta.request.projectId]?.convoList?.convos?.[action.payload.convoId],
+                  convoId: action.payload.convoId,
+                  created: action.payload.message.created,
+                  title: action.payload.message.content,
+                },
+                ...state.byProjectId[action.meta.request.projectId]?.convoList?.convos || [],
+              ],
             },
-            ...state.convoList?.convos || [],
-          ],
-        },
-        convoDetailsByConvoId: {
-          ...state.convoDetailsByConvoId,
-          [action.payload.convoId]: {
-            ...state.convoDetailsByConvoId[action.meta.request.convoId],
-            messages: [
-              ...(state.convoDetailsByConvoId[action.payload.convoId]?.messages || []),
-              action.payload.message,
-            ],
-            upcomingMessageId: action.payload.responseMessageId,
+            convoDetailsByConvoId: {
+              ...state.byProjectId[action.meta.request.projectId]?.convoDetailsByConvoId,
+              [action.payload.convoId]: {
+                ...state.byProjectId[action.meta.request.projectId]?.convoDetailsByConvoId?.[action.meta.request.convoId],
+                messages: [
+                  ...(state.byProjectId[action.meta.request.projectId]?.convoDetailsByConvoId?.[action.payload.convoId]?.messages || []),
+                  action.payload.message,
+                ],
+                upcomingMessageId: action.payload.responseMessageId,
+              },
+            },
           },
         },
       };
     case 'llmSetMessage':
       return {
         ...state,
-        convoDetailsByConvoId: {
-          ...state.convoDetailsByConvoId,
-          [action.payload.convoId]: {
-            ...state.convoDetailsByConvoId[action.payload.convoId],
-            messages: [
-              ...(state.convoDetailsByConvoId[action.payload.convoId]?.messages || []),
-              action.payload.message,
-            ],
-            upcomingMessageId: action.payload.message.messageId === state.convoDetailsByConvoId[action.payload.convoId]?.upcomingMessageId
-              ? undefined
-              : state.convoDetailsByConvoId[action.payload.convoId]?.upcomingMessageId,
+        byProjectId: {
+          ...state.byProjectId,
+          [action.payload.projectId]: {
+            ...state.byProjectId[action.payload.projectId],
+            convoDetailsByConvoId: {
+              ...state.byProjectId[action.payload.projectId]?.convoDetailsByConvoId,
+              [action.payload.convoId]: {
+                ...state.byProjectId[action.payload.projectId]?.convoDetailsByConvoId?.[action.payload.convoId],
+                messages: [
+                  ...(state.byProjectId[action.payload.projectId]?.convoDetailsByConvoId?.[action.payload.convoId]?.messages || []),
+                  action.payload.message,
+                ],
+                upcomingMessageId: action.payload.message.messageId === state.byProjectId[action.payload.projectId]?.convoDetailsByConvoId?.[action.payload.convoId]?.upcomingMessageId
+                  ? undefined
+                  : state.byProjectId[action.payload.projectId]?.convoDetailsByConvoId?.[action.payload.convoId]?.upcomingMessageId,
+              },
+            },
           },
         },
       };
     case Admin.promptGetSuperAdminActionStatus.Pending:
       return {
         ...state,
-        prompt: {
-          ...state.prompt,
-          status: Status.PENDING,
+        byProjectId: {
+          ...state.byProjectId,
+          [action.meta.request.projectId]: {
+            ...state.byProjectId[action.meta.request.projectId],
+            prompt: {
+              ...state.byProjectId[action.meta.request.projectId]?.prompt,
+              status: Status.PENDING,
+            },
+          },
         },
       };
     case Admin.promptGetSuperAdminActionStatus.Rejected:
       return {
         ...state,
-        prompt: {
-          ...state.prompt,
-          status: Status.REJECTED,
+        byProjectId: {
+          ...state.byProjectId,
+          [action.meta.request.projectId]: {
+            ...state.byProjectId[action.meta.request.projectId],
+            prompt: {
+              ...state.byProjectId[action.meta.request.projectId]?.prompt,
+              status: Status.REJECTED,
+            },
+          },
         },
       };
     case Admin.promptGetSuperAdminActionStatus.Fulfilled:
       return {
         ...state,
-        prompt: {
-          ...state.prompt,
-          status: Status.FULFILLED,
-          prompt: action.payload.prompt,
+        byProjectId: {
+          ...state.byProjectId,
+          [action.meta.request.projectId]: {
+            ...state.byProjectId[action.meta.request.projectId],
+            prompt: {
+              ...state.byProjectId[action.meta.request.projectId]?.prompt,
+              status: Status.FULFILLED,
+              prompt: action.payload.prompt,
+            },
+          },
         },
       };
     default:

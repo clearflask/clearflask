@@ -64,7 +64,8 @@ const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
     body: (
       <>
         <p>
-          A customer feedback, roadmap task or an announcement counts towards your Post Limit. Once you reach your limit,
+          A customer feedback, roadmap task or an announcement counts towards your Post Limit. Once you reach your
+          limit,
           your account will be temporarily limited until you delete older posts or upgrade your plan.
         </p>
       </>
@@ -211,8 +212,8 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
       title: 'Free & Open-source',
       pricing: { basePrice: 0, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Monthly },
       perks: [
-        { desc: 'Open-source Apache 2.0' },
-        { desc: 'Deploy via Docker' },
+        { desc: 'All features' },
+        { desc: 'Community support' },
       ],
     };
     const communityPlanCmpt = (
@@ -293,9 +294,9 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
           ] : undefined}
           plan={plan}
           selected={this.state.highlightedBasePlanid === plan.basePlanId}
-            actionTitle={SelfhostServicePlans.includes(plan.basePlanId) ? 'Buy license' : 'Get started'}
-            remark={SelfhostServicePlans.includes(plan.basePlanId)
-              ? 'Automatic renewal'
+          actionTitle={SelfhostServicePlans.includes(plan.basePlanId) ? 'Buy license' : 'Get started'}
+          remark={SelfhostServicePlans.includes(plan.basePlanId)
+            ? 'Automatic renewal'
             : (plan.pricing
               ? this.props.t('free-14-day-trial')
               : this.props.t('free-forever'))}
@@ -328,7 +329,7 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
     const plansGroupedSelfhost = this.groupPlans([
       communityPlanCmpt,
       ...plansSelfHost,
-    ])
+    ]);
     const plansGroupedCloud = this.groupPlans([
       ...plansCloud,
       // talkPlanCmpt,
@@ -347,7 +348,7 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
             <div className={this.props.classes.header}>
               <div>
                 <Typography component="h2" variant="h2"
-                  color="textPrimary">{this.props.t('pricing')}</Typography>
+                            color="textPrimary">{this.props.t('pricing')}</Typography>
               </div>
               <ImgIso
                 alt=""
@@ -364,13 +365,13 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
           <Loader loaded={!!this.props.plans} skipFade>
             <Tabs
               centered
-              variant='standard'
-              scrollButtons='off'
+              variant="standard"
+              scrollButtons="off"
               value={this.state.tab}
               onChange={(e, newTab) => this.setState({ tab: newTab as any })}
             >
-              <Tab value='selfhost' label='Self-hosted' className={this.props.classes.tab} />
-              <Tab value='cloud' label='Cloud' className={this.props.classes.tab} />
+              <Tab value="selfhost" label="Self-hosted" className={this.props.classes.tab} />
+              <Tab value="cloud" label="Cloud" className={this.props.classes.tab} />
             </Tabs>
             <div className={classNames(this.props.classes.section, this.props.classes.sectionPlans)}>
               {this.state.tab === 'selfhost' && plansGroupedSelfhost}
@@ -395,7 +396,7 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
               {featuresTable.extraTerms && (
                 <Box display="flex" justifyContent="center">
                   <Typography variant="caption"
-                    component="div">{featuresTable.extraTerms}</Typography>
+                              component="div">{featuresTable.extraTerms}</Typography>
                 </Box>
               )}
             </div>

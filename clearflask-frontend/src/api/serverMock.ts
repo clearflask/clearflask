@@ -3,19 +3,19 @@
 import jsonwebtoken from 'jsonwebtoken';
 import cloneDeep from 'lodash.clonedeep';
 import * as ConfigEditor from '../common/config/configEditor';
-import { Action, RestrictedActions, TeammatePlanId } from '../common/config/settings/UpgradeWrapper';
+import {Action, RestrictedActions, TeammatePlanId} from '../common/config/settings/UpgradeWrapper';
 import WebNotification from '../common/notification/webNotification';
-import { notEmpty } from '../common/util/arrayUtil';
-import { isProd } from '../common/util/detectEnv';
+import {notEmpty} from '../common/util/arrayUtil';
+import {isProd} from '../common/util/detectEnv';
 import stringToSlug from '../common/util/slugger';
 import randomUuid from '../common/util/uuid';
 import windowIso from '../common/windowIso';
-import { mock } from '../mocker';
+import {mock} from '../mocker';
 import * as Admin from './admin';
 import * as Client from './client';
 import ServerAdmin from './serverAdmin';
-import { capitalize } from '../common/util/stringUtil';
-import { loremIpsum } from 'lorem-ipsum';
+import {capitalize} from '../common/util/stringUtil';
+import {loremIpsum} from 'lorem-ipsum';
 
 /** Not really a secret, don't bother stealing this */
 export const SSO_SECRET_KEY = '63195fc1-d8c0-4909-9039-e15ce3c96dce';
@@ -70,6 +70,11 @@ const adminPlanResult = {
     'basePlanId': 'selfhost-yearly',
     'title': 'Yearly',
     'pricing': { 'basePrice': 180, 'baseMau': 0, 'unitMau': 0, 'unitPrice': 0, 'period': 'Yearly' },
+    'perks': [{ 'desc': 'No limits' }, { 'desc': '2-Month Discount' }],
+  }, {
+    'basePlanId': 'selfhost-yearly2',
+    'title': 'Yearly',
+    'pricing': { 'basePrice': 450, 'baseMau': 0, 'unitMau': 0, 'unitPrice': 0, 'period': 'Yearly' },
     'perks': [{ 'desc': 'No limits' }, { 'desc': '2-Month Discount' }],
   }], 'featuresTable': {
     'plans': ['Starter', 'Growth', 'Pro'],

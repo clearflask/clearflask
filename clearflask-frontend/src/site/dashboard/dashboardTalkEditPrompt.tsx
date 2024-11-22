@@ -31,21 +31,22 @@ export const DashboardTalkEditPrompt = (props: {
 }) => {
   const classes = useStyles();
 
-  const promptOriginal = useSelector<ReduxStateAdmin, string | undefined>(state => state.llm.prompt?.prompt, shallowEqual);
+  const projectId = props.server.getProjectId();
+  const promptOriginal = useSelector<ReduxStateAdmin, string | undefined>(state => state.llm.byProjectId[projectId]?.prompt?.prompt, shallowEqual);
   const [prompt, setPrompt, setPromptInitial] = useDebounceProp<string | undefined>(
     props.overridePrompt !== undefined ? props.overridePrompt : promptOriginal,
     newValue => props.setOverridePrompt(newValue));
 
-  const promptStatus = useSelector<ReduxStateAdmin, string | undefined>(state => state.llm.prompt?.status, shallowEqual);
+  const promptStatus = useSelector<ReduxStateAdmin, string | undefined>(state => state.llm.byProjectId[projectId]?.prompt?.status, shallowEqual);
   useEffect(() => {
     if (promptStatus !== undefined) return;
     props.server.dispatchAdmin().then(d => d.promptGetSuperAdmin({
-      projectId: props.server.getProjectId(),
+      projectId,
     })).then(result => {
       setPromptInitial(result.prompt);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [promptStatus]);
+  }, [projectId, promptStatus]);
 
   return (
     <div className={classes.outer}>

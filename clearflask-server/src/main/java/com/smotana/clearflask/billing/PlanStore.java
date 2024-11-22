@@ -68,7 +68,8 @@ public interface PlanStore {
             "pitchground-e-lifetime",
             "cloud-free",
             "selfhost-monthly",
-            "selfhost-yearly");
+            "selfhost-yearly",
+            "selfhost-yearly2");
 
     PlansGetResponse getPublicPlans();
 

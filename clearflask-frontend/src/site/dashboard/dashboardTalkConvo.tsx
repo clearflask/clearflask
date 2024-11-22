@@ -72,11 +72,12 @@ export const DashboardTalkConvo = (props: {
   server: Server;
   convoId: string;
 }) => {
+  const projectId = props.server.getProjectId();
   const classes = useStyles();
-  const status = useSelector<ReduxStateAdmin, Status | undefined>(state => state.llm.convoDetailsByConvoId[props.convoId]?.status, shallowEqual);
-  const messages = useSelector<ReduxStateAdmin, Admin.ConvoMessage[] | undefined>(state => state.llm.convoDetailsByConvoId[props.convoId]?.messages, shallowEqual);
+  const status = useSelector<ReduxStateAdmin, Status | undefined>(state => state.llm.byProjectId[projectId]?.convoDetailsByConvoId?.[props.convoId]?.status, shallowEqual);
+  const messages = useSelector<ReduxStateAdmin, Admin.ConvoMessage[] | undefined>(state => state.llm.byProjectId[projectId]?.convoDetailsByConvoId?.[props.convoId]?.messages, shallowEqual);
   const [upcomingMessageStr, setUpcomingMessageStr] = React.useState<string>('');
-  const upcomingMessageId = useSelector<ReduxStateAdmin, string | undefined>(state => state.llm.convoDetailsByConvoId[props.convoId]?.upcomingMessageId, shallowEqual);
+  const upcomingMessageId = useSelector<ReduxStateAdmin, string | undefined>(state => state.llm.byProjectId[projectId]?.convoDetailsByConvoId?.[props.convoId]?.upcomingMessageId, shallowEqual);
   const chatScrollRef = useChatScroll([messages?.length, upcomingMessageStr]);
 
   useEffect(() => {
@@ -84,10 +85,10 @@ export const DashboardTalkConvo = (props: {
       return;
     }
     props.server.dispatchAdmin().then(d => d.convoDetailsAdmin({
-      projectId: props.server.getProjectId(),
+      projectId,
       convoId: props.convoId,
     }));
-  }, [props.convoId, props.server, status]);
+  }, [projectId, props.convoId, props.server, status]);
 
   useEffect(() => {
     if (!upcomingMessageId) {
@@ -99,7 +100,7 @@ export const DashboardTalkConvo = (props: {
 
     const eventSourcePromise = props.server.dispatchAdmin().then(d => {
       let eventSource = d.messageStreamGetAdmin({
-        projectId: props.server.getProjectId(),
+        projectId,
         convoId,
         messageId,
       });
@@ -114,6 +115,7 @@ export const DashboardTalkConvo = (props: {
         ServerAdmin.get().getStore().dispatch({
           type: 'llmSetMessage',
           payload: {
+            projectId,
             convoId,
             message: newMessage,
           },
@@ -125,6 +127,7 @@ export const DashboardTalkConvo = (props: {
         ServerAdmin.get().getStore().dispatch({
           type: 'llmSetMessage',
           payload: {
+            projectId,
             convoId,
             message: {
               messageId,
@@ -162,7 +165,7 @@ export const DashboardTalkConvo = (props: {
             <>
               <div className={classes.messageHeader}>
                 {message.authorType === Admin.ConvoMessageAuthorTypeEnum.USER ? (
-                  <Provider key={props.server.getProjectId()} store={props.server.getStore()}>
+                  <Provider key={projectId} store={props.server.getStore()}>
                     <MeWithAvatarDisplay />
                   </Provider>
                 ) : (

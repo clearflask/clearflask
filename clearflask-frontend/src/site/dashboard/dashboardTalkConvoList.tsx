@@ -29,17 +29,18 @@ export const DashboardTalkConvoList = (props: {
   setSelectedConvoId: (convoId: string | undefined) => void;
 }) => {
   const classes = useStyles();
-  const status = useSelector<ReduxStateAdmin, Status | undefined>(state => state.llm.convoList?.status, shallowEqual);
-  const convos = useSelector<ReduxStateAdmin, Admin.Convo[] | undefined>(state => state.llm.convoList?.convos, shallowEqual);
+  const projectId = props.server.getProjectId();
+  const status = useSelector<ReduxStateAdmin, Status | undefined>(state => state.llm.byProjectId[projectId]?.convoList?.status, shallowEqual);
+  const convos = useSelector<ReduxStateAdmin, Admin.Convo[] | undefined>(state => state.llm.byProjectId[projectId]?.convoList?.convos, shallowEqual);
   useEffect(() => {
     if (status !== undefined) {
       return;
     }
 
     props.server.dispatchAdmin().then(d => d.convoListAdmin({
-      projectId: props.server.getProjectId(),
+      projectId,
     }));
-  }, [props.server, status]);
+  }, [props.server, status, projectId]);
 
   if (!convos?.length) {
     return (

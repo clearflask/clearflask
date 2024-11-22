@@ -21,6 +21,7 @@ export const SelfhostServicePlans: string[] = [
     // It does not include the selfhost-free plan used in SelfHostPlanStore.java
     'selfhost-monthly',
     'selfhost-yearly',
+    'selfhost-yearly2',
 ];
 /** If changed, also change in KillBillPlanStore.java */
 const UnrestrictedProperties: Path[] = [];
@@ -106,6 +107,7 @@ const RestrictedPropertiesByPlan: { [basePlanId: string]: Path[] } = {
     'cloud-90day-yearly': UnrestrictedProperties,
     'selfhost-monthly': GrowthWithNoDomainRestrictedProperties,
     'selfhost-yearly': GrowthWithNoDomainRestrictedProperties,
+    'selfhost-yearly2': GrowthWithNoDomainRestrictedProperties,
     'selfhost-licensed': UnrestrictedProperties,
     "selfhost-free": GrowthRestrictedProperties
 };

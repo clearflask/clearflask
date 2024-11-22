@@ -95,8 +95,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     private static final String TERMS_WHITELABEL = "Remove ClearFlask branding";
     private static final String TERMS_ELASTICSEARCH = "Search powered by ElasticSearch for fast and accurate search capability";
     public static final ImmutableSet<String> SELFHOST_SERVICE_PLANS = ImmutableSet.<String>builder()
-            .add("selfhost-monthly")
-            .add("selfhost-yearly")
+            .add("selfhost-yearly2")
             .build();
     public static final ImmutableSet<String> AVAILABLE_PLAN_NAMES = ImmutableSet.<String>builder()
             .addAll(SELFHOST_SERVICE_PLANS)
@@ -290,10 +289,15 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     new PlanPerk("Private projects", TERMS_PRIVATE_PROJECTS),
                     new PlanPerk("Whitelabel & SSO & API", null)),
                     null, null))
-            .put("selfhost-yearly", pp -> new Plan("selfhost-yearly", "Yearly License",
+            .put("selfhost-yearly", pp -> new Plan("selfhost-yearly", "Yearly License (Grandfathered)",
                     pp, ImmutableList.of(
-                    new PlanPerk("Same as Monthly", null),
-                    new PlanPerk("50% Discount", null)),
+                    new PlanPerk("All features", null),
+                    new PlanPerk("Basic support", null)),
+                    null, null))
+            .put("selfhost-yearly2", pp -> new Plan("selfhost-yearly2", "Support License",
+                    pp, ImmutableList.of(
+                    new PlanPerk("All features", null),
+                    new PlanPerk("Enterprise support", null)),
                     null, null))
             .build();
     private static final ImmutableList<Plan> PLANS_STATIC = ImmutableList.of(
@@ -332,27 +336,27 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     new FeaturesTableFeatures("Priority support", ImmutableList.of("No", "Yes", "Yes"), null)
             ), null);
     private static final FeaturesTable FEATURES_TABLE_SELFHOST = new FeaturesTable(
-            ImmutableList.of("Free", "Month", "Year"),
+            ImmutableList.of("Free", "Licensed"),
             ImmutableList.of(
-                    new FeaturesTableFeatures("Projects", ImmutableList.of("No limit", "No limit", "No limit"), TERMS_PROJECTS),
-                    new FeaturesTableFeatures("Users", ImmutableList.of("No limit", "No limit", "No limit"), null),
-                    new FeaturesTableFeatures("Posts", ImmutableList.of("100 Max", "No limit", "No limit"), TERMS_POSTS),
-                    new FeaturesTableFeatures("Teammates", ImmutableList.of("3 Max", "All Free", "All Free"), TERMS_ADMINS),
-                    new FeaturesTableFeatures("ClearFlask AI", ImmutableList.of("Coming soon", "Coming soon", "Coming soon"), TERMS_CLEARFLASK_AI),
-                    new FeaturesTableFeatures("Credit System", ImmutableList.of("Yes", "Yes", "Yes"), TERMS_CREDIT_SYSTEM),
-                    new FeaturesTableFeatures("Roadmap", ImmutableList.of("Yes", "Yes", "Yes"), null),
-                    new FeaturesTableFeatures("Content customization", ImmutableList.of("Yes", "Yes", "Yes"), null),
-                    new FeaturesTableFeatures("Custom domain", ImmutableList.of("Yes", "Yes", "Yes"), null),
-                    new FeaturesTableFeatures("Private projects", ImmutableList.of("No", "Yes", "Yes"), TERMS_PRIVATE_PROJECTS),
-                    new FeaturesTableFeatures("SSO and OAuth", ImmutableList.of("No", "Yes", "Yes"), TERMS_SSO_AND_OAUTH),
-                    new FeaturesTableFeatures("GitHub integration", ImmutableList.of("No", "Yes", "Yes"), TERMS_GITHUB),
-                    new FeaturesTableFeatures("Intercom integration", ImmutableList.of("No", "Yes", "Yes"), TERMS_INTERCOM),
-                    new FeaturesTableFeatures("Tracking integrations", ImmutableList.of("No", "Yes", "Yes"), TERMS_TRACKING),
-                    new FeaturesTableFeatures("Site template", ImmutableList.of("No", "Yes", "Yes"), TERMS_SITE_TEMPLATE),
-                    new FeaturesTableFeatures("API", ImmutableList.of("No", "Yes", "Yes"), TERMS_API),
-                    new FeaturesTableFeatures("Whitelabel", ImmutableList.of("No", "Yes", "Yes"), TERMS_WHITELABEL),
-                    new FeaturesTableFeatures("Search engine", ImmutableList.of("Yes", "Yes", "Yes"), TERMS_ELASTICSEARCH),
-                    new FeaturesTableFeatures("Priority support", ImmutableList.of("No", "Yes", "Yes"), null)
+                    new FeaturesTableFeatures("Projects", ImmutableList.of("No limit", "No limit"), TERMS_PROJECTS),
+                    new FeaturesTableFeatures("Users", ImmutableList.of("No limit", "No limit"), null),
+                    new FeaturesTableFeatures("Posts", ImmutableList.of("No limit", "No limit"), TERMS_POSTS),
+                    new FeaturesTableFeatures("Teammates", ImmutableList.of("All Free", "All Free"), TERMS_ADMINS),
+                    new FeaturesTableFeatures("ClearFlask AI", ImmutableList.of("Coming soon", "Coming soon"), TERMS_CLEARFLASK_AI),
+                    new FeaturesTableFeatures("Credit System", ImmutableList.of("Yes", "Yes"), TERMS_CREDIT_SYSTEM),
+                    new FeaturesTableFeatures("Roadmap", ImmutableList.of("Yes", "Yes"), null),
+                    new FeaturesTableFeatures("Content customization", ImmutableList.of("Yes", "Yes"), null),
+                    new FeaturesTableFeatures("Custom domain", ImmutableList.of("Yes", "Yes"), null),
+                    new FeaturesTableFeatures("Private projects", ImmutableList.of("Yes", "Yes"), TERMS_PRIVATE_PROJECTS),
+                    new FeaturesTableFeatures("SSO and OAuth", ImmutableList.of("Yes", "Yes"), TERMS_SSO_AND_OAUTH),
+                    new FeaturesTableFeatures("GitHub integration", ImmutableList.of("Yes", "Yes"), TERMS_GITHUB),
+                    new FeaturesTableFeatures("Intercom integration", ImmutableList.of("Yes", "Yes"), TERMS_INTERCOM),
+                    new FeaturesTableFeatures("Tracking integrations", ImmutableList.of("Yes", "Yes"), TERMS_TRACKING),
+                    new FeaturesTableFeatures("Site template", ImmutableList.of("Yes", "Yes"), TERMS_SITE_TEMPLATE),
+                    new FeaturesTableFeatures("API", ImmutableList.of("Yes", "Yes"), TERMS_API),
+                    new FeaturesTableFeatures("Whitelabel", ImmutableList.of("Yes", "Yes"), TERMS_WHITELABEL),
+                    new FeaturesTableFeatures("Search engine", ImmutableList.of("Yes", "Yes"), TERMS_ELASTICSEARCH),
+                    new FeaturesTableFeatures("Support & SLA", ImmutableList.of("No", "Yes"), null)
             ), null);
 
     @Inject

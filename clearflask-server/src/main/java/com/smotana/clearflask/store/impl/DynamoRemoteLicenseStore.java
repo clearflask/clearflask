@@ -12,6 +12,7 @@ import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
+import com.smotana.clearflask.billing.SelfHostPlanStore;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.RemoteLicenseStore;
 import com.smotana.clearflask.util.Extern;
@@ -94,10 +95,6 @@ public class DynamoRemoteLicenseStore extends ManagedService implements RemoteLi
     }
 
     private boolean validateInternal(String license) {
-        if ("FREEFORNOW".equals(license)) {
-            log.info("License is free for now");
-            return true;
-        }
         try (CloseableHttpClient client = HttpClientBuilder.create().build(); CloseableHttpResponse res = client.execute(new HttpPost("https://clearflask.com/api/v1/license/check?license=" + license))) {
             if (res.getStatusLine().getStatusCode() >= 200 && res.getStatusLine().getStatusCode() <= 299) {
                 log.info("License is valid");
@@ -121,7 +118,7 @@ public class DynamoRemoteLicenseStore extends ManagedService implements RemoteLi
     }
 
     private SubscriptionStatus getSelfhostEntitlementStatus(String planId, Optional<Boolean> licenseValidation) {
-        boolean requireLicense = !"selfhost-free".equals(planId) && !"self-host".equals(planId);
+        boolean requireLicense = SelfHostPlanStore.SELF_HOST_LICENSED_PLAN.getBasePlanId().equals(planId);
         if (!requireLicense) {
             return ACTIVE;
         } else if (!licenseValidation.isPresent()) {

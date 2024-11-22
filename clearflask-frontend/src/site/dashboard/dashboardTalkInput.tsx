@@ -34,9 +34,10 @@ export const DashboardTalkInput = (props: {
   onSubmitMessage: (message: string) => Promise<Admin.CreateMessageResponse>;
 }) => {
   const classes = useStyles();
+  const projectId = props.server.getProjectId();
   const [value, setValue] = React.useState('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const hasUpcomingMessage = useSelector<ReduxStateAdmin, boolean>(state => !!props.convoId && !!state.llm.convoDetailsByConvoId[props.convoId]?.upcomingMessageId, shallowEqual);
+  const hasUpcomingMessage = useSelector<ReduxStateAdmin, boolean>(state => !!props.convoId && !!state.llm.byProjectId[projectId]?.convoDetailsByConvoId?.[props.convoId]?.upcomingMessageId, shallowEqual);
 
   const onSubmit = useCallback(async () => {
     if (!value.trim().length) {
