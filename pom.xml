@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.smotana.clearflask</groupId>
     <artifactId>clearflask-parent</artifactId>
-    <version>1.7.11-SNAPSHOT</version>
+    <version>2.0.0</version>
     <packaging>pom</packaging>
 
     <name>clearflask-parent</name>
@@ -51,8 +50,8 @@
         <bytebuddy.version>1.10.22</bytebuddy.version>
         <bouncycastle.version>1.70</bouncycastle.version>
         <githubReleaseVersion>${project.version}</githubReleaseVersion>
-        <skipTests/>
-        <skipITs/>
+        <skipTests />
+        <skipITs />
         <skipLicenseUpdate>true</skipLicenseUpdate>
         <!-- For HTTPS, use "scm:git:https://github.com/clearflask/clearflask.git" -->
         <scmConnection>scm:git:git@github.com:clearflask/clearflask.git</scmConnection>
@@ -72,7 +71,7 @@
         <url>https://github.com/clearflask/clearflask</url>
         <connection>${scmConnection}</connection>
         <developerConnection>${scmConnection}</developerConnection>
-        <tag>HEAD</tag>
+        <tag>2.0.0</tag>
     </scm>
 
     <distributionManagement>
