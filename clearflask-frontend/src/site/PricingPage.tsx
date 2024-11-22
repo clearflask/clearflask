@@ -47,14 +47,12 @@ const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
     ),
   },
   {
-    heading: 'Why is there a license for self-hosting?',
+    heading: 'Why is there an option for a license for self-hosting?',
     body: (
       <>
         <p>
-          The license for self-hosted installations allows us to fund continued development of this project.
-          Although the license unlocks extra functionality, this functionality is also open-source.
-          If you feel adventurous, you can remove the licensing restrictions and build ClearFlask yourself as we are
-          open-source after all.
+          Self-hosting is free and includes all functionality. If you wish to get additional support, you may purchase
+          a license to get additional support.
         </p>
       </>
     ),
