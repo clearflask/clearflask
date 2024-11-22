@@ -136,7 +136,8 @@ public class LangChainLlmAgentStore implements LlmAgentStore {
 
         AtomicLong recursionCounter = new AtomicLong(0);
 
-        log.info("User message request: {}", question);
+        log.info("User message request, project {} account {}: {}",
+                projectId, accountId, question);
 
         this.model.generate(messages, llmToolingStore.getTools(), new StreamingResponseHandler<>() {
             @Override
