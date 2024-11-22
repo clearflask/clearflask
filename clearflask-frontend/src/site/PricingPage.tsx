@@ -208,7 +208,7 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
 
     // Community self-hosted plan
     const communityPlan: Admin.Plan = {
-      basePlanId: 'selfhost-free',
+      basePlanId: 'self-host',
       title: 'Free & Open-source',
       pricing: { basePrice: 0, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Monthly },
       perks: [
@@ -223,7 +223,7 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
         selected={this.state.highlightedBasePlanid === communityPlan.basePlanId}
         actionIcon={(<GithubIcon />)}
         actionTitle="Deploy"
-        remark="Community supported"
+        remark="Free forever"
         actionOnClick={() => {
           trackingBlock(() => {
             [ReactGA4, ReactGA].forEach(ga =>

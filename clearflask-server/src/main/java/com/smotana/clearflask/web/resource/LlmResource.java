@@ -121,10 +121,6 @@ public class LlmResource extends AbstractResource implements LlmAdminApi, LlmSup
         String accountId = getAuthenticatedAccountId();
         Account account = accountStore.getAccount(accountId, true).orElseThrow();
 
-        if (Environment.PRODUCTION_SELF_HOST.equals(env)) {
-            throw new ApiException(Response.Status.PAYMENT_REQUIRED, "AI not enabled");
-        }
-
         Optional<String> promptOverrideOpt = Optional.ofNullable(Strings.emptyToNull(convoMessageCreate.getOverridePrompt()));
         if (promptOverrideOpt.isPresent() && !superAdminPredicate.isEmailSuperAdmin(account.getEmail())) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Override prompt is only allowed for super admins");

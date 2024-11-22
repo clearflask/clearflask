@@ -1,5 +1,6 @@
 package com.smotana.clearflask.store.impl;
 
+import com.google.common.base.Strings;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableList;
@@ -15,6 +16,7 @@ import com.smotana.clearflask.api.model.CreateMessageResponse;
 import com.smotana.clearflask.store.*;
 import com.smotana.clearflask.store.LlmHistoryStore.MessageModel;
 import com.smotana.clearflask.util.LogUtil;
+import com.smotana.clearflask.web.ApiException;
 import dev.langchain4j.data.message.*;
 import dev.langchain4j.model.StreamingResponseHandler;
 import dev.langchain4j.model.openai.OpenAiChatModelName;
@@ -111,6 +113,10 @@ public class LangChainLlmAgentStore implements LlmAgentStore {
 
     @Override
     public CreateMessageResponse ask(String projectId, String accountId, String convoId, String question, Optional<String> promptOverrideOpt) {
+
+        if (Strings.isNullOrEmpty(config.openAiApiKey()) || "none".equals(config.openAiApiKey())) {
+            throw new ApiException(javax.ws.rs.core.Response.Status.PAYMENT_REQUIRED, "AI not enabled");
+        }
 
         UserMessage newMessage = UserMessage.from(question);
         MessageModel questionMessageModel = llmHistoryStore.putMessage(llmHistoryStore.genMessageId(), convoId, ConvoMessage.AuthorTypeEnum.USER, question);
