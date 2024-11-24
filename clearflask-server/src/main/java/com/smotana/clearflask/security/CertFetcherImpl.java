@@ -38,6 +38,7 @@ import org.shredzone.acme4j.*;
 import org.shredzone.acme4j.challenge.Challenge;
 import org.shredzone.acme4j.challenge.Dns01Challenge;
 import org.shredzone.acme4j.challenge.Http01Challenge;
+import org.shredzone.acme4j.exception.AcmeRateLimitedException;
 import org.shredzone.acme4j.toolbox.AcmeUtils;
 import org.shredzone.acme4j.util.CSRBuilder;
 import org.shredzone.acme4j.util.KeyPairUtils;
@@ -155,10 +156,14 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
             }
 
             Optional<CertModel> certModelOpt = certStore.getCert(domainToRequest);
-            if (certModelOpt.isPresent() && Instant.now().isAfter(certModelOpt.get().getExpiresAt().minus(renewWithExpiry))) {
+            if (certModelOpt.isPresent()
+                    && Instant.now().isAfter(certModelOpt.get().getExpiresAt().minus(renewWithExpiry))
+                    && (certModelOpt.get().getRetryAfter() == null || Instant.now().isAfter(certModelOpt.get().getRetryAfter()))) {
                 executor.submit(() -> {
                     try {
                         createCert(domainToRequest);
+                    } catch (AcmeRateLimitedException ex) {
+                        certStore.setCertRetryAfter(domainToRequest, ex.getRetryAfter());
                     } catch (Exception ex) {
                         log.warn("Failed to renew cert for domain {}", domain, ex);
                     }
@@ -282,7 +287,8 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
                 domains.asList(),
                 certificate.getCertificate().getNotBefore().toInstant(),
                 certificate.getCertificate().getNotAfter().toInstant(),
-                certificate.getCertificate().getNotAfter().toInstant().getEpochSecond());
+                certificate.getCertificate().getNotAfter().toInstant().getEpochSecond(),
+                null);
 
         certStore.setCert(certModel);
 

@@ -342,7 +342,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     new FeaturesTableFeatures("Users", ImmutableList.of("No limit", "No limit"), null),
                     new FeaturesTableFeatures("Posts", ImmutableList.of("No limit", "No limit"), TERMS_POSTS),
                     new FeaturesTableFeatures("Teammates", ImmutableList.of("All Free", "All Free"), TERMS_ADMINS),
-                    new FeaturesTableFeatures("ClearFlask AI", ImmutableList.of("Coming soon", "Coming soon"), TERMS_CLEARFLASK_AI),
+                    new FeaturesTableFeatures("ClearFlask AI", ImmutableList.of("Yes", "Yes"), TERMS_CLEARFLASK_AI),
                     new FeaturesTableFeatures("Credit System", ImmutableList.of("Yes", "Yes"), TERMS_CREDIT_SYSTEM),
                     new FeaturesTableFeatures("Roadmap", ImmutableList.of("Yes", "Yes"), null),
                     new FeaturesTableFeatures("Content customization", ImmutableList.of("Yes", "Yes"), null),

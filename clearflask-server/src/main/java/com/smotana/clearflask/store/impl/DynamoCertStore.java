@@ -5,6 +5,7 @@ package com.smotana.clearflask.store.impl;
 import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.route53.AmazonRoute53;
 import com.amazonaws.services.route53.model.*;
 import com.google.common.collect.ImmutableList;
@@ -18,6 +19,7 @@ import com.smotana.clearflask.store.CertStore;
 import com.smotana.clearflask.store.CertStore.KeypairModel.KeypairType;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.web.ApiException;
+import io.dataspray.singletable.Expression;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
 import lombok.extern.slf4j.Slf4j;
@@ -184,6 +186,20 @@ public class DynamoCertStore implements CertStore {
     public void setCert(CertModel cert) {
         certSchema.table().putItem(new PutItemSpec()
                 .withItem(certSchema.toItem(cert)));
+    }
+
+    @Override
+    public void setCertRetryAfter(String domain, Instant retryAfter) {
+        Expression expression = certSchema.expressionBuilder()
+                .conditionExists()
+                .build();
+        certSchema.table().updateItem(new UpdateItemSpec()
+                .withPrimaryKey(certSchema.primaryKey(Map.of(
+                        "domain", domain)))
+                .withUpdateExpression(expression.updateExpression().orElse(null))
+                .withConditionExpression(expression.conditionExpression().orElse(null))
+                .withNameMap(expression.nameMap().orElse(null))
+                .withValueMap(expression.valMap().orElse(null)));
     }
 
     @Extern

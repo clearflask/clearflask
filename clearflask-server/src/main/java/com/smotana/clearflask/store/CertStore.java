@@ -47,6 +47,11 @@ public interface CertStore {
 
     void setCert(CertModel cert);
 
+    /**
+     * For cert creation rate limiting back-off, set the next retry time.
+     */
+    void setCertRetryAfter(String domain, Instant retryAfter);
+
     void deleteCert(String domain);
 
 
@@ -137,6 +142,8 @@ public interface CertStore {
 
         @NonNull
         long ttlInEpochSec;
+
+        Instant retryAfter;
 
         public Cert toCert() {
             return new Cert(
