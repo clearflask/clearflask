@@ -163,6 +163,7 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
                     try {
                         createCert(domainToRequest);
                     } catch (AcmeRateLimitedException ex) {
+                        log.warn("Acme rate limit for domain {}", domain, ex);
                         certStore.setCertRetryAfter(domainToRequest, ex.getRetryAfter());
                     } catch (Exception ex) {
                         log.warn("Failed to renew cert for domain {}", domain, ex);
