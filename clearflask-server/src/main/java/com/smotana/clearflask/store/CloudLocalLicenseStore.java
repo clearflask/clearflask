@@ -25,6 +25,11 @@ public class CloudLocalLicenseStore implements LocalLicenseStore {
 
     @Override
     public boolean validateLicenseLocally(String license, String clientIp, Optional<Account> accountKbOpt) {
+        if ("FREEFOREVER".equals(license)) {
+            log.info("License Check: license {} is free forever, ip {}", license, clientIp);
+            return true;
+        }
+
         String accountId = getAccountId(license);
         Optional<AccountStore.Account> accountOpt = accountStore.getAccount(accountId, true);
         if (accountOpt.isEmpty()) {
