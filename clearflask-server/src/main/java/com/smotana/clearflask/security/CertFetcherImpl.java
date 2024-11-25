@@ -163,7 +163,7 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
                         createCert(domainToRequest);
                     } catch (AcmeRateLimitedException ex) {
                         log.warn("Acme rate limit for domain {}", domain, ex);
-                        certStore.setCertRetryAfter(domainToRequest, ex.getRetryAfter());
+                        ex.getRetryAfter().ifPresent(retryAfter -> certStore.setCertRetryAfter(domainToRequest, retryAfter));
                     } catch (Exception ex) {
                         log.warn("Failed to renew cert for domain {}", domain, ex);
                     }
@@ -358,16 +358,16 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
 
     @SneakyThrows
     private Challenge challengeSetup(Authorization authorization) {
-        Http01Challenge httpChallenge = authorization.findChallenge(Http01Challenge.TYPE);
-        if (httpChallenge != null) {
-            httpChallengeSetup(authorization, httpChallenge);
-            return httpChallenge;
+        Optional<Http01Challenge> httpChallengeOpt = authorization.findChallenge(Http01Challenge.TYPE);
+        if (httpChallengeOpt.isPresent()) {
+            httpChallengeSetup(authorization, httpChallengeOpt.get());
+            return httpChallengeOpt.get();
         }
 
-        Dns01Challenge dnsChallenge = authorization.findChallenge(Dns01Challenge.TYPE);
-        if (dnsChallenge != null) {
-            dnsChallengeSetup(authorization, dnsChallenge);
-            return dnsChallenge;
+        Optional<Dns01Challenge> dnsChallengeOpt = authorization.findChallenge(Dns01Challenge.TYPE);
+        if (dnsChallengeOpt.isPresent()) {
+            dnsChallengeSetup(authorization, dnsChallengeOpt.get());
+            return dnsChallengeOpt.get();
         }
 
         throw new RuntimeException("No appropriate challenges found, available ones: "

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.smotana.clearflask</groupId>
@@ -48,10 +49,10 @@
         <batik.version>1.14</batik.version>
         <!-- Kik Ice fails with 1.11+ due to InvocationHandlerAdapter method signature change -->
         <bytebuddy.version>1.10.22</bytebuddy.version>
-        <bouncycastle.version>1.70</bouncycastle.version>
+        <bouncycastle.version>1.79</bouncycastle.version>
         <githubReleaseVersion>${project.version}</githubReleaseVersion>
-        <skipTests />
-        <skipITs />
+        <skipTests/>
+        <skipITs/>
         <skipLicenseUpdate>true</skipLicenseUpdate>
         <!-- For HTTPS, use "scm:git:https://github.com/clearflask/clearflask.git" -->
         <scmConnection>scm:git:git@github.com:clearflask/clearflask.git</scmConnection>
@@ -735,14 +736,14 @@
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk15on</artifactId>
+                <artifactId>bcprov-jdk18on</artifactId>
                 <!-- Also required for acme4j-utils -->
                 <version>${bouncycastle.version}</version>
             </dependency>
             <dependency>
                 <!-- Required for acme4j-utils -->
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk15on</artifactId>
+                <artifactId>bcpkix-jdk18on</artifactId>
                 <version>${bouncycastle.version}</version>
             </dependency>
 
@@ -837,6 +838,16 @@
                 <groupId>org.kohsuke</groupId>
                 <artifactId>github-api</artifactId>
                 <version>1.326</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.squareup.okhttp3</groupId>
+                        <artifactId>okhttp</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.squareup.okhttp3</groupId>
+                        <artifactId>okhttp-urlconnection</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <!-- For github-api -->
@@ -991,12 +1002,7 @@
             <dependency>
                 <groupId>org.shredzone.acme4j</groupId>
                 <artifactId>acme4j-client</artifactId>
-                <version>2.12</version>
-            </dependency>
-            <dependency>
-                <groupId>org.shredzone.acme4j</groupId>
-                <artifactId>acme4j-utils</artifactId>
-                <version>2.12</version>
+                <version>3.4.0</version>
             </dependency>
 
             <!-- test-only deps -->
