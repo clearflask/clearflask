@@ -95,6 +95,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     private static final String TERMS_WHITELABEL = "Remove ClearFlask branding";
     private static final String TERMS_ELASTICSEARCH = "Search powered by ElasticSearch for fast and accurate search capability";
     public static final ImmutableSet<String> SELFHOST_SERVICE_PLANS = ImmutableSet.<String>builder()
+            .add("selfhost-yearly")
             .add("selfhost-yearly2")
             .build();
     public static final ImmutableSet<String> AVAILABLE_PLAN_NAMES = ImmutableSet.<String>builder()
