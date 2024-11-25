@@ -41,8 +41,6 @@ public class CloudLocalLicenseStore implements LocalLicenseStore {
 
         switch (account.getStatus()) {
             case ACTIVENORENEWAL:
-                log.info("License Check: account {} with email {} allowing with status {}, ip {}",
-                        accountId, account.getEmail(), account.getStatus(), clientIp);
             case ACTIVETRIAL:
             case ACTIVE:
                 break;
@@ -65,6 +63,8 @@ public class CloudLocalLicenseStore implements LocalLicenseStore {
             }
         }
 
+        log.info("License Check: account {} with email {} allowing with status {}, ip {}",
+                accountId, account.getEmail(), account.getStatus(), clientIp);
         return true;
     }
 
