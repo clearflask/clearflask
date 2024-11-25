@@ -4,10 +4,10 @@ package com.smotana.clearflask.security.limiter;
 
 import com.smotana.clearflask.core.ServiceInjector;
 import com.smotana.clearflask.util.IpUtil;
+import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.security.RolesAllowed;
-import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.Priorities;

@@ -188,6 +188,10 @@ public class SanitizerTest extends AbstractTest {
     }
 
     void assertSanitize(String message, String expHtml, String inpHtml) {
-        assertEquals(message, expHtml, sanitizer.richHtml(inpHtml, "msg", "'" + message + "'", PROJECT_ID, false));
+        assertEquals(message,
+                expHtml.replaceAll("noreferrer|noopener|ugc", "{REL}"),
+                sanitizer.richHtml(inpHtml, "msg", "'" + message + "'", PROJECT_ID, false)
+                        // rel attribute is returned in random order
+                        .replaceAll("noreferrer|noopener|ugc", "{REL}"));
     }
 }
