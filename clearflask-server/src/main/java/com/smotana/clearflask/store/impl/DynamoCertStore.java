@@ -192,6 +192,7 @@ public class DynamoCertStore implements CertStore {
     @Override
     public void setCertRetryAfter(String domain, Instant retryAfter) {
         Expression expression = certSchema.expressionBuilder()
+                .set("retryAfter", retryAfter)
                 .conditionExists()
                 .build();
         certSchema.table().updateItem(new UpdateItemSpec()
