@@ -68,7 +68,6 @@ import java.util.stream.Collectors;
 public class CertFetcherImpl extends ManagedService implements CertFetcher {
 
     public static final String KEYPAIR_ID_INTERNAL_WILD = "clearflask-wildcard";
-    public static final Instant CHECK_PRIVATE_PUBLIC_CREATED_PRIOR_TO = Instant.ofEpochMilli(/* May 7, 2022 */1651932425000L);
 
     public interface Config {
         @DefaultValue("true")
@@ -155,7 +154,7 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
                 domainToRequest = domain;
             }
 
-            Optional<CertModel> certModelOpt = certStore.getCert(domainToRequest);
+            Optional<CertModel> certModelOpt = certStore.getCert(domainToRequest, false);
             if (certModelOpt.isPresent()
                     && Instant.now().isAfter(certModelOpt.get().getExpiresAt().minus(renewWithExpiry))
                     && (certModelOpt.get().getRetryAfter() == null || Instant.now().isAfter(certModelOpt.get().getRetryAfter()))) {
@@ -171,40 +170,31 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
                 });
             }
             if (certModelOpt.isEmpty()) {
-                try {
-                    return Optional.of(createCert(domainToRequest))
-                            .map(CertAndKeypair::toCertGetOrCreateResponse);
-                } catch (Exception ex) {
-                    log.warn("Failed to create cert for domain {}", domain, ex);
-                    return Optional.empty();
-                }
-            } else {
-                Optional<KeypairModel> keypairModelOpt = certStore.getKeypair(KeypairType.CERT, domainToRequest);
-                if (keypairModelOpt.isEmpty()) {
-                    log.warn("No keypair found matching cert for domain {}, re-creating both", domainToRequest);
-                    certStore.deleteCert(domainToRequest);
-                    return Optional.of(createCert(domainToRequest))
-                            .map(CertAndKeypair::toCertGetOrCreateResponse);
-                }
-
-                // Because there were a few certs we created with the wrong private key,
-                // Ensure the private key matches the cert otherwise throw it away
-                if (certModelOpt.get().getIssuedAt().isBefore(CHECK_PRIVATE_PUBLIC_CREATED_PRIOR_TO)) {
-                    boolean privatePublicMatches = checkPrivatePublicMatches(certModelOpt.get(), keypairModelOpt.get());
-                    if (!privatePublicMatches) {
-                        log.warn("Keypair doesn't match cert for domain {}, re-creating both", domainToRequest);
-                        certStore.deleteKeypair(KeypairType.CERT, domainToRequest);
-                        certStore.deleteCert(domainToRequest);
-                        return Optional.of(createCert(domainToRequest))
-                                .map(CertAndKeypair::toCertGetOrCreateResponse);
+                synchronized (this) {
+                    certModelOpt = certStore.getCert(domainToRequest, true);
+                    if (certModelOpt.isEmpty()) {
+                        try {
+                            return Optional.of(createCert(domainToRequest))
+                                    .map(CertAndKeypair::toCertGetOrCreateResponse);
+                        } catch (Exception ex) {
+                            log.warn("Failed to create cert for domain {}", domain, ex);
+                            return Optional.empty();
+                        }
                     }
                 }
-
-                return Optional.of(new CertAndKeypair(
-                                certModelOpt.get(),
-                                keypairModelOpt.get()))
+            }
+            Optional<KeypairModel> keypairModelOpt = certStore.getKeypair(KeypairType.CERT, domainToRequest);
+            if (keypairModelOpt.isEmpty()) {
+                log.warn("No keypair found matching cert for domain {}, re-creating both", domainToRequest);
+                certStore.deleteCert(domainToRequest);
+                return Optional.of(createCert(domainToRequest))
                         .map(CertAndKeypair::toCertGetOrCreateResponse);
             }
+
+            return Optional.of(new CertAndKeypair(
+                            certModelOpt.get(),
+                            keypairModelOpt.get()))
+                    .map(CertAndKeypair::toCertGetOrCreateResponse);
         } catch (Exception ex) {
             if (LogUtil.rateLimitAllowLog("WildCertFetcherImpl-failed-get-create-wildcart-cert")) {
                 log.warn("Failed to get/create wildcard cert for domain {}", domain, ex);

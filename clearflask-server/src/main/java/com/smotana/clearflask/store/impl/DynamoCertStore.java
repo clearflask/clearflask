@@ -174,10 +174,11 @@ public class DynamoCertStore implements CertStore {
 
     @Extern
     @Override
-    public Optional<CertModel> getCert(String domain) {
+    public Optional<CertModel> getCert(String domain, boolean consistentRead) {
         return Optional.ofNullable(certSchema.fromItem(certSchema.table().getItem(new GetItemSpec()
                         .withPrimaryKey(certSchema.primaryKey(Map.of(
-                                "domain", domain))))))
+                                "domain", domain)))
+                        .withConsistentRead(consistentRead))))
                 .filter(cert -> cert.getExpiresAt().isAfter(Instant.now()));
     }
 
