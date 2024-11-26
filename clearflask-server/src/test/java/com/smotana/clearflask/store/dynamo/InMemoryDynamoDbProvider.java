@@ -24,7 +24,6 @@ public class InMemoryDynamoDbProvider extends ManagedService implements Provider
 
     @Override
     public AmazonDynamoDB get() {
-        System.setProperty("sqlite4java.library.path", "target/native-lib");
         amazonDynamoDBLocalOpt = Optional.of(DynamoDBEmbedded.create());
         amazonDynamoDBOpt = Optional.of(amazonDynamoDBLocalOpt.get().amazonDynamoDB());
         return amazonDynamoDBOpt.get();

@@ -1,13 +1,13 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
-import * as Sentry from "@sentry/react";
+import * as Sentry from '@sentry/react';
 import { shallowEqual, useSelector } from 'react-redux';
 import * as Admin from '../api/admin';
 import * as Client from '../api/client';
-import { ReduxState } from "../api/server";
+import { ReduxState } from '../api/server';
 import { ReduxStateAdmin } from '../api/serverAdmin';
-import { trackingBlock } from "../common/util/trackingDelay";
-import windowIso from "../common/windowIso";
+import { trackingBlock } from '../common/util/trackingDelay';
+import windowIso from '../common/windowIso';
 
 export const SentryIdentifyAccount = () => {
   const account = useSelector<ReduxStateAdmin, Admin.AccountAdmin | undefined>(state => state.account.account.account, shallowEqual);
@@ -22,10 +22,10 @@ export const SentryIdentifyAccount = () => {
       });
     });
   } else {
-    Sentry.configureScope(scope => scope.setUser(null));
+    Sentry.getCurrentScope().setUser(null);
   }
   return null;
-}
+};
 
 export const SentryIdentifyUser = () => {
   const user = useSelector<ReduxState, Client.UserMe | undefined>(state => state.users.loggedIn.user, shallowEqual);
@@ -40,7 +40,7 @@ export const SentryIdentifyUser = () => {
       });
     });
   } else {
-    Sentry.configureScope(scope => scope.setUser(null));
+    Sentry.getCurrentScope()?.setUser(null);
   }
   return null;
-}
+};

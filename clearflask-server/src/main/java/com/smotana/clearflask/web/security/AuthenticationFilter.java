@@ -18,10 +18,10 @@ import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.util.IpUtil;
 import com.smotana.clearflask.web.resource.AccountResource;
 import com.smotana.clearflask.web.resource.UserResource;
+import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.annotation.Priority;
-import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Priorities;

@@ -1,6 +1,6 @@
 package com.smotana.clearflask.security;
 
-import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -11,8 +11,8 @@ import com.smotana.clearflask.api.model.CertGetOrCreateResponse;
 import com.smotana.clearflask.api.model.Keypair;
 import com.smotana.clearflask.store.CertStore;
 import com.smotana.clearflask.store.ProjectStore;
-import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.testutil.AbstractTest;
+import io.dataspray.singletable.SingleTable;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
@@ -194,11 +194,11 @@ public class CertFetcherImplTest extends AbstractTest {
 
         bindMock(CertStore.class);
         bindMock(ProjectStore.class);
-        bindMock(DynamoDB.class);
+        bindMock(AmazonDynamoDB.class);
+        bindMock(SingleTable.class);
 
         install(Modules.override(
-                CertFetcherImpl.module(),
-                SingleTableProvider.module()
+                CertFetcherImpl.module()
         ).with(new AbstractModule() {
             @Override
             protected void configure() {

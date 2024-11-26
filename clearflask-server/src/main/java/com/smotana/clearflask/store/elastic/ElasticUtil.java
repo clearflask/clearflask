@@ -321,7 +321,9 @@ public class ElasticUtil {
                 .collect(ImmutableList.toImmutableList());
 
         return new HistogramResponse(points,
-                new Hits(
+                search.getHits().getTotalHits() == null
+                        ? new Hits((long) points.size(), true)
+                        : new Hits(
                         search.getHits().getTotalHits().value,
                         search.getHits().getTotalHits().relation == TotalHits.Relation.GREATER_THAN_OR_EQUAL_TO
                                 ? true : null));
