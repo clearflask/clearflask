@@ -11,6 +11,18 @@ sudo yum install -y mc telnet
 sudo yum install -y java-11-amazon-corretto
 
 sudo amazon-linux-extras install -y tomcat8.5
+
+# List of required libs
+libFiles=(
+  "/user/share/java/tomcat/bcpkix-jdk18on-1.79.jar"
+  "/user/share/java/tomcat/bcprov-jdk18on-1.79.jar"
+  "/user/share/java/tomcat/bcutil-jdk18on-1.79.jar"
+)
+# Loop through the files and check if they exist
+for libFile in "${libFiles[@]}"; do
+  [ -e "$libFile" ] || { echo "Have to add tomcat lib $(basename "$libFile")"; exit 1; }
+done
+
 ln -s /usr/share/tomcat ~/tomcat
 sudo ln -s /usr/share/tomcat ~/tomcat
 sudo tee /etc/tomcat/conf.d/jmx.conf <<"EOF"
