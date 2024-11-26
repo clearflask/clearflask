@@ -18,6 +18,7 @@ import com.smotana.clearflask.util.CacheUtil;
 import com.smotana.clearflask.util.LogUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.kohsuke.github.GHAppInstallationToken;
 import org.kohsuke.github.GHPermissionType;
 import org.kohsuke.github.GitHub;
@@ -27,6 +28,7 @@ import rx.Observable;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.Security;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -74,6 +76,10 @@ public class GitHubClientProviderImpl implements GitHubClientProvider {
 
     @Inject
     private void setup() {
+        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+
         installationCache = CacheBuilder.newBuilder()
                 // Expires after one hour
                 // https://docs.github.com/en/developers/apps/building-github-apps/authenticating-with-github-apps#authenticating-as-an-installation

@@ -57,11 +57,8 @@
         <!-- Kik Ice fails with 1.11+ due to InvocationHandlerAdapter method signature change -->
         <bytebuddy.version>1.10.22</bytebuddy.version>
         <mockito.version>4.0.0</mockito.version>
-        <!--
-            Higher versions have issues:
-            OAuth fails with: NoClassDefFoundError: ECUtils in SignatureSpi.engineInitVerify
-        -->
-        <bouncycastle.version>1.70</bouncycastle.version>
+        <!-- Don't jump on the bouncy castle -->
+        <bouncycastle.version>1.79</bouncycastle.version>
         <githubReleaseVersion>${project.version}</githubReleaseVersion>
         <skipTests/>
         <skipITs/>
@@ -430,16 +427,9 @@
                 <groupId>org.glassfish.jersey.connectors</groupId>
                 <artifactId>jersey-apache-connector</artifactId>
                 <version>${jersey.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <!-- Exclude and upgrade due to https://github.com/aws/aws-sdk-java/issues/1919 -->
-                        <groupId>org.apache.httpcomponents</groupId>
-                        <artifactId>httpclient</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
-                <!-- Exclude and upgrade due to https://github.com/aws/aws-sdk-java/issues/1919 -->
+                <!-- Upgrade due to https://github.com/aws/aws-sdk-java/issues/1919 -->
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
                 <version>4.5.14</version>
@@ -726,6 +716,11 @@
                 <artifactId>bcpkix-jdk18on</artifactId>
                 <version>${bouncycastle.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcutil-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>javax.ws.rs</groupId>
@@ -817,7 +812,7 @@
             <dependency>
                 <groupId>org.kohsuke</groupId>
                 <artifactId>github-api</artifactId>
-                <version>2.0.0-alpha-2</version>
+                <version>1.326</version>
                 <exclusions>
                     <exclusion>
                         <groupId>com.squareup.okhttp3</groupId>
