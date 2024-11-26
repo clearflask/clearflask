@@ -56,7 +56,11 @@
         <!-- Kik Ice fails with 1.11+ due to InvocationHandlerAdapter method signature change -->
         <bytebuddy.version>1.10.22</bytebuddy.version>
         <mockito.version>4.0.0</mockito.version>
-        <bouncycastle.version>1.79</bouncycastle.version>
+        <!--
+            Higher versions have issues:
+            OAuth fails with: NoClassDefFoundError: ECUtils in SignatureSpi.engineInitVerify
+        -->
+        <bouncycastle.version>1.70</bouncycastle.version>
         <githubReleaseVersion>${project.version}</githubReleaseVersion>
         <skipTests />
         <skipITs />
