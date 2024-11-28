@@ -98,8 +98,11 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             .add("selfhost-yearly")
             .add("selfhost-yearly2")
             .build();
+    public static final ImmutableSet<String> AVAILABLE_SELFHOST_SERVICE_PLANS = ImmutableSet.<String>builder()
+            .add("selfhost-yearly2")
+            .build();
     public static final ImmutableSet<String> AVAILABLE_PLAN_NAMES = ImmutableSet.<String>builder()
-            .addAll(SELFHOST_SERVICE_PLANS)
+            .addAll(AVAILABLE_SELFHOST_SERVICE_PLANS)
             .add("cloud-starter-monthly")
             .add("cloud-monthly")
             .add("cloud-yearly")
@@ -545,7 +548,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
         Plan currentPlan = getPlan(planToChangeFrom, Optional.empty()).get();
         Set<Plan> planOptions = Sets.newHashSet();
         if (SELFHOST_SERVICE_PLANS.contains(currentPlan.getBasePlanId())) {
-            SELFHOST_SERVICE_PLANS.stream()
+            AVAILABLE_SELFHOST_SERVICE_PLANS.stream()
                     .map(availablePlans::get)
                     .forEach(planOptions::add);
         } else {
