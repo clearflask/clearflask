@@ -106,8 +106,6 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             .build();
     public static final ImmutableSet<String> AVAILABLE_PLAN_NAMES = ImmutableSet.<String>builder()
             .addAll(AVAILABLE_SELFHOST_SERVICE_PLANS)
-            // Disabling for now, replacing with enterprise plan
-            // .add("cloud-starter-monthly")
             .add("cloud-monthly")
             .add("cloud-yearly")
             .build();
@@ -583,7 +581,6 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 case "cloud-monthly":
                 case "cloud-yearly":
                 case "cloud-90day-yearly":
-                    planOptions.add(availablePlans.get("cloud-starter-monthly"));
                     planOptions.add(availablePlans.get("cloud-monthly"));
                     planOptions.add(availablePlans.get("cloud-yearly"));
                     break;
