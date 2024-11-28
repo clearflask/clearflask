@@ -42,6 +42,7 @@ import org.shredzone.acme4j.exception.AcmeRateLimitedException;
 import org.shredzone.acme4j.toolbox.AcmeUtils;
 import org.shredzone.acme4j.util.CSRBuilder;
 import org.shredzone.acme4j.util.KeyPairUtils;
+import org.xbill.DNS.Cache;
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.TXTRecord;
 import org.xbill.DNS.Type;
@@ -388,8 +389,19 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
                 challengeDomain,
                 challenge.getDigest());
 
+        // Disable JVM DNS caching
+        try {
+            java.security.Security.setProperty("networkaddress.cache.ttl", "0");
+        } catch (Exception ignored) {
+        }
+
         // Poll to verify DNS entry.
+        Cache cache = new Cache();
+        cache.setMaxCache(0);
+        cache.setMaxNCache(0);
+        cache.setMaxEntries(0);
         Lookup lookup = new Lookup(challengeDomain, Type.TXT);
+        lookup.setCache(cache);
         ImmutableList<String> txtStrings = ImmutableList.of();
         int attempts = 10;
         for (int i = 0; i < 10; i++) {
