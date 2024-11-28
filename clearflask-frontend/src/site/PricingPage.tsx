@@ -16,6 +16,7 @@ import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import PricingImg from '../../public/img/landing/pricing.svg';
 import * as Admin from '../api/admin';
+import { PlanPricingPeriodEnum } from '../api/admin';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import Loader from '../app/utils/Loader';
 import HelpPopper from '../common/HelpPopper';
@@ -51,30 +52,33 @@ const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
     body: (
       <>
         <p>
-          Self-hosting is free and includes all functionality. If you wish to get additional support, you may purchase
+          Self-hosting is free and includes all functionality. If you wish to get additional support, you may
+          purchase
           a license to get additional support.
         </p>
       </>
     ),
   },
-  {
-    heading: 'How does the Post limit work?',
-    body: (
-      <>
-        <p>
-          A customer feedback, roadmap task or an announcement counts towards your Post Limit. Once you reach your
-          limit,
-          your account will be temporarily limited until you delete older posts or upgrade your plan.
-        </p>
-      </>
-    ),
-  },
+  // {
+  //   heading: 'How does the Post limit work?',
+  //   body: (
+  //     <>
+  //       <p>
+  //         A customer feedback, roadmap task or an announcement counts towards your Post Limit. Once you reach
+  //         your
+  //         limit,
+  //         your account will be temporarily limited until you delete older posts or upgrade your plan.
+  //       </p>
+  //     </>
+  //   ),
+  // },
   {
     heading: 'Can I import/export data?',
     body: (
       <>
         <p>
-          Yes, we provide both import and export functionality via CSV format. You can switch between our cloud-hosting
+          Yes, we provide both import and export functionality via CSV format. You can switch between our
+          cloud-hosting
           to a self-hosting installation.
         </p>
       </>
@@ -207,9 +211,10 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
     // Community self-hosted plan
     const communityPlan: Admin.Plan = {
       basePlanId: 'self-host',
-      title: 'Free & Open-source',
+      title: 'Open-source',
       pricing: { basePrice: 0, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Monthly },
       perks: [
+        { desc: 'Open-source Apache 2.0' },
         { desc: 'All features' },
         { desc: 'Community support' },
       ],
@@ -237,41 +242,83 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
       />
     );
 
-    // Extra features talk to us plan
-    // const talkPlan: Admin.Plan = {
-    //   basePlanId: 'talk',
-    //   title: 'Enterprise',
-    //   perks: [
-    //     { desc: 'Support & SLA' },
-    //     { desc: 'Whitelabel' },
-    //     { desc: 'Search engine' },
-    //   ],
-    // };
-    // const talkPlanCmpt = (
-    //   <PricingPlan
-    //     key={talkPlan.basePlanId}
-    //     customPrice='200+'
-    //     plan={talkPlan}
-    //     selected={this.state.highlightedBasePlanid === talkPlan.basePlanId}
-    //     overrideMauTerms={[
-    //       'Self-hosted',
-    //       'Own your data',
-    //     ]}
-    //     actionTitle='Talk to us'
-    //     actionTo='/contact/sales'
-    //     actionOnClick={() => {
-    //       trackingBlock(() => {
-    //         [ReactGA4, ReactGA].forEach(ga =>
-    //           ga.event({
-    //             category: 'pricing',
-    //             action: 'click-plan',
-    //             label: talkPlan.basePlanId,
-    //           })
-    //         );
-    //       });
-    //     }}
-    //   />
-    // );
+    const talkPlanSelfHost: Admin.Plan = {
+      basePlanId: 'talk',
+      title: 'Enterprise',
+      perks: [
+        { desc: 'Dedicated expert agent' },
+        { desc: 'Custom SLA & Support' },
+        { desc: 'Features & Customization' },
+      ],
+      pricing: {
+        basePrice: 0,
+        baseMau: 0,
+        unitMau: 0,
+        unitPrice: 0,
+        period: PlanPricingPeriodEnum.Yearly,
+      },
+    };
+    const talkPlanSelfHostCmpt = (
+      <PricingPlan
+        key={talkPlanSelfHost.basePlanId}
+        customPrice="#"
+        plan={talkPlanSelfHost}
+        selected={this.state.highlightedBasePlanid === talkPlanSelfHost.basePlanId}
+        remark={this.props.t('let-us-help-you')}
+        actionTitle="Talk to us"
+        actionTo="/contact/sales"
+        actionOnClick={() => {
+          trackingBlock(() => {
+            [ReactGA4, ReactGA].forEach(ga =>
+              ga.event({
+                category: 'pricing',
+                action: 'click-plan',
+                label: talkPlanSelfHost.basePlanId,
+              }),
+            );
+          });
+        }}
+      />
+    );
+
+    const talkPlanCloud: Admin.Plan = {
+      basePlanId: 'talk',
+      title: 'Enterprise',
+      perks: [
+        { desc: 'Dedicated expert agent' },
+        { desc: 'Custom SLA & Support' },
+        { desc: 'Features & Customization' },
+      ],
+      pricing: {
+        basePrice: 0,
+        baseMau: 0,
+        unitMau: 0,
+        unitPrice: 0,
+        period: PlanPricingPeriodEnum.Yearly,
+      },
+    };
+    const talkPlanCloudCmpt = (
+      <PricingPlan
+        key={talkPlanCloud.basePlanId}
+        customPrice="#"
+        plan={talkPlanCloud}
+        selected={this.state.highlightedBasePlanid === talkPlanCloud.basePlanId}
+        remark={this.props.t('let-us-help-you')}
+        actionTitle="Talk to us"
+        actionTo="/contact/sales"
+        actionOnClick={() => {
+          trackingBlock(() => {
+            [ReactGA4, ReactGA].forEach(ga =>
+              ga.event({
+                category: 'pricing',
+                action: 'click-plan',
+                label: talkPlanCloud.basePlanId,
+              }),
+            );
+          });
+        }}
+      />
+    );
 
     const plansSelfHost: JSX.Element[] = [];
     const plansCloud: JSX.Element[] = [];
@@ -327,10 +374,11 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
     const plansGroupedSelfhost = this.groupPlans([
       communityPlanCmpt,
       ...plansSelfHost,
+      talkPlanSelfHostCmpt,
     ]);
     const plansGroupedCloud = this.groupPlans([
       ...plansCloud,
-      // talkPlanCmpt,
+      talkPlanCloudCmpt,
     ]);
 
     const featuresTable = this.state.tab === 'cloud' ? this.props.featuresTable : this.props.featuresTableSelfhost;

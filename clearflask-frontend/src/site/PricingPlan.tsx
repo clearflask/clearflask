@@ -1,7 +1,16 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
-import { Button, Card, CardActions, CardContent, CardHeader, FormControlLabel, Radio, Typography } from '@material-ui/core';
-import { Theme, WithStyles, createStyles, withStyles } from '@material-ui/core/styles';
+import {
+  Button,
+  Card,
+  CardActions,
+  CardContent,
+  CardHeader,
+  FormControlLabel,
+  Radio,
+  Typography,
+} from '@material-ui/core';
+import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
 import CheckIcon from '@material-ui/icons/CheckRounded';
 import classNames from 'classnames';
 import React, { Component } from 'react';
@@ -67,6 +76,8 @@ const styles = (theme: Theme) => createStyles({
   customInput: {
     color: theme.palette.text.disabled,
     borderBottom: '1px dashed ' + theme.palette.text.disabled,
+    minWidth: 20,
+    minHeight: 30,
   },
 });
 
@@ -89,7 +100,8 @@ interface Props {
 class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
   render() {
     return (
-      <Card elevation={0} className={classNames(this.props.className, this.props.classes.box, this.props.selected && this.props.classes.boxSelected)}>
+      <Card elevation={0}
+            className={classNames(this.props.className, this.props.classes.box, this.props.selected && this.props.classes.boxSelected)}>
         <CardHeader
           title={(
             <div className={this.props.classes.title}>
@@ -107,9 +119,9 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
           {this.renderPriceTag()}
           {(this.props.overridePerks || this.props.plan.perks).map(perk => (
             <div key={perk.desc} style={{ display: 'flex', alignItems: 'baseline' }}>
-              <CheckIcon fontSize='inherit' />
+              <CheckIcon fontSize="inherit" />
               &nbsp;
-              <Typography variant='subtitle1'>
+              <Typography variant="subtitle1">
                 {perk.desc}
                 {!!perk.terms && (<>
                   &nbsp;
@@ -128,7 +140,7 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
                   control={(
                     <Radio
                       checked={this.props.selected}
-                      color='primary'
+                      color="primary"
                       onChange={e => this.props.actionOnClick && this.props.actionOnClick()}
                       disabled={!this.props.actionOnClick}
                     />
@@ -136,8 +148,8 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
                 />
               ) : (
                 <Button
-                  color='primary'
-                  variant='contained'
+                  color="primary"
+                  variant="contained"
                   disableElevation
                   style={{ fontWeight: 900 }}
                   onClick={this.props.actionOnClick}
@@ -165,54 +177,37 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
         }
         {this.props.remark && (
           <div className={this.props.classes.remark}>
-            <Typography variant='caption' component='div' color='textSecondary'>{this.props.remark}</Typography>
+            <Typography variant="caption" component="div"
+                        color="textSecondary">{this.props.remark}</Typography>
           </div>
         )}
-      </Card >
+      </Card>
     );
   }
 
   renderPriceTag() {
-    if (typeof this.props.customPrice === 'string') {
-      return (
-        <>
-          <div className={this.props.classes.cardPricing}>
-            <Typography component='div' variant='subtitle2' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
-            &nbsp;&nbsp;
-            <Typography component='h2' variant='h4' className={this.props.classes.customInput}>{this.props.customPrice || 'Custom'}</Typography>
-            &nbsp;&nbsp;
-            <Typography component='div' variant='subtitle2' color='textSecondary'>/&nbsp;mo</Typography>
-          </div>
-          {/* <div className={this.props.classes.cardPricingTerms}>
-            <Typography component='div' variant='subtitle2' color='textSecondary'>{`High-volume`}</Typography>
-            <Typography component='div' variant='subtitle2' color='textSecondary'>{`Discounted rate`}</Typography>
-          </div> */}
-        </>
-      );
-    } else if (this.props.customPrice !== undefined) {
-      return this.props.customPrice;
-    }
 
     var monthlyPrice = this.props.plan.pricing?.basePrice || 0;
     var billed: any = null;
-    if (this.props.plan.pricing?.basePrice !== 0) {
+    if (!!this.props.plan.pricing && this.props.plan.pricing.period !== Admin.PlanPricingPeriodEnum.Monthly) {
       switch (this.props.plan.pricing?.period) {
-        case Admin.PlanPricingPeriodEnum.Monthly:
-          // No need to show anything
-          break;
+        default:
         case Admin.PlanPricingPeriodEnum.Quarterly:
-          monthlyPrice = Math.ceil(this.props.plan.pricing.basePrice / 3);
-          billed = `$${this.props.plan.pricing.basePrice} billed ${this.props.plan.pricing.period.toLowerCase()}`;
+          monthlyPrice = Math.ceil(monthlyPrice / 3);
           break;
         case Admin.PlanPricingPeriodEnum.Yearly:
-          monthlyPrice = Math.ceil(this.props.plan.pricing.basePrice / 12);
-          billed = `$${this.props.plan.pricing.basePrice} billed ${this.props.plan.pricing.period.toLowerCase()}`;
+          monthlyPrice = Math.ceil(monthlyPrice / 12);
+          billed = `${this.props.plan.pricing?.basePrice || ''} billed ${this.props.plan.pricing.period.toLowerCase()}`;
           break;
-        }
+      }
+      billed = `billed ${this.props.plan.pricing.period.toLowerCase()}`;
+      if (this.props.plan.pricing?.basePrice) {
+        billed = `$${this.props.plan.pricing?.basePrice || ''} ${billed}`;
+      }
+      billed = (
+        <Typography component="div" variant="subtitle1">{billed}</Typography>
+      );
     }
-    if (billed) billed = (
-      <Typography component='div' variant='subtitle1'>{billed}</Typography>
-    );
 
     // NOTE: Simplified menus were confusing when shown alongside a yearly option
     // const simplifiedMaus: boolean = this.props.plan.pricing.basePrice === this.props.plan.pricing.unitPrice
@@ -235,7 +230,8 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
       extraMau = (
         <>
           {this.props.overrideMauTerms.map(overrideMauTerm => (
-            <Typography key={overrideMauTerm} component='div' variant='subtitle2' color='textSecondary'>{overrideMauTerm}</Typography>
+            <Typography key={overrideMauTerm} component="div" variant="subtitle2"
+                        color="textSecondary">{overrideMauTerm}</Typography>
           ))}
         </>
       );
@@ -244,8 +240,10 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
         extraMau = (
           <>
             {extraMau}
-            <Typography component='div' variant='subtitle2' color='textSecondary'>{`${this.props.plan.pricing.baseMau} tracked users`}</Typography>
-            <Typography component='div' variant='subtitle2' color='textSecondary'>{`+ $${this.props.plan.pricing.unitPrice} / ${this.props.plan.pricing.unitMau} tracked users`}</Typography>
+            <Typography component="div" variant="subtitle2"
+                        color="textSecondary">{`${this.props.plan.pricing.baseMau} tracked users`}</Typography>
+            <Typography component="div" variant="subtitle2"
+                        color="textSecondary">{`+ $${this.props.plan.pricing.unitPrice} / ${this.props.plan.pricing.unitMau} tracked users`}</Typography>
           </>
         );
       }
@@ -255,9 +253,11 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
         extraMau = (
           <>
             {extraMau}
-            <Typography component='div' variant='subtitle2' color='textSecondary'>{`${adminsAmountIncluded} Teammate${(!Number.isInteger(adminsAmountIncluded) || adminsAmountIncluded > 1) ? 's' : ''}`}</Typography>
+            <Typography component="div" variant="subtitle2"
+                        color="textSecondary">{`${adminsAmountIncluded} Teammate${(!Number.isInteger(adminsAmountIncluded) || adminsAmountIncluded > 1) ? 's' : ''}`}</Typography>
             {adminsAdditionalPrice !== undefined && (
-              <Typography component='div' variant='subtitle2' color='textSecondary'>{`+ $${adminsAdditionalPrice} / Teammate`}</Typography>
+              <Typography component="div" variant="subtitle2"
+                          color="textSecondary">{`+ $${adminsAdditionalPrice} / Teammate`}</Typography>
             )}
           </>
         );
@@ -267,7 +267,8 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
         extraMau = (
           <>
             {extraMau}
-            <Typography component='div' variant='subtitle2' color='textSecondary'>{`${postsMax} Posts`}</Typography>
+            <Typography component="div" variant="subtitle2"
+                        color="textSecondary">{`${postsMax} Posts`}</Typography>
           </>
         );
       }
@@ -276,7 +277,8 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
           <>
             {extraMau}
             {this.props.plan.basePlanId === 'lifetime-lifetime' && (
-              <Typography component='div' variant='subtitle2' color='textSecondary'>{`Unlimited teammates`}</Typography>
+              <Typography component="div" variant="subtitle2"
+                          color="textSecondary">{`Unlimited teammates`}</Typography>
             )}
             {/*<Typography component='div' variant='subtitle2' color='textSecondary'>{`One-time purchase`}</Typography>*/}
           </>
@@ -284,14 +286,36 @@ class PricingPlan extends Component<Props & WithStyles<typeof styles, true>> {
       }
     }
 
+    var priceInner: any = null;
+    if (typeof this.props.customPrice === 'string') {
+      priceInner = (
+        <>
+          &nbsp;&nbsp;
+          <Typography component="h2" variant="h4"
+                      className={this.props.classes.customInput}>{this.props.customPrice}</Typography>
+          &nbsp;&nbsp;
+          <Typography component="div" variant="subtitle2" color="textSecondary">/&nbsp;mo</Typography>
+        </>
+      );
+    } else if (this.props.customPrice !== undefined) {
+      priceInner = this.props.customPrice;
+    } else {
+      priceInner = (
+        <>
+          <Typography component="h2" variant="h4">{monthlyPrice}</Typography>
+          {this.props.plan.pricing?.period !== Admin.PlanPricingPeriodEnum.Lifetime && (
+            <Typography component="h2" variant="subtitle2" color="textSecondary">{'/ mo'}</Typography>
+          )}
+        </>
+      );
+    }
+
     return (
       <>
         <div className={this.props.classes.cardPricing}>
-          <Typography component='h2' variant='subtitle2' color='textSecondary' style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
-          <Typography component='h2' variant='h4'>{monthlyPrice}</Typography>
-          {this.props.plan.pricing?.period !== Admin.PlanPricingPeriodEnum.Lifetime && (
-            <Typography component='h2' variant='subtitle2' color='textSecondary'>{'/ mo'}</Typography>
-          )}
+          <Typography component="h2" variant="subtitle2" color="textSecondary"
+                      style={{ alignSelf: 'flex-start' }}>{'$'}</Typography>
+          {priceInner}
         </div>
         {(extraMau || billed) && (
           <div className={this.props.classes.cardPricingTerms}>

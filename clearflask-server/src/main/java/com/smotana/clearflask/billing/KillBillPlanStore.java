@@ -94,6 +94,9 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     private static final String TERMS_BILLING = "Custom billing and invoicing";
     private static final String TERMS_WHITELABEL = "Remove ClearFlask branding";
     private static final String TERMS_ELASTICSEARCH = "Search powered by ElasticSearch for fast and accurate search capability";
+    private static final String TERMS_INSTALLATION_GUIDANCE = "Expert guidance on installation of self-hosted instance.";
+    private static final String TERMS_SUPPORT_ALLOCATION = "The plan provides up to 10 support hours each month, offering you consistent access to expert assistance.";
+    private static final String TERMS_NON_URGENT_SLA = "This SLA ensures that any non-critical support requests or planned interventions are addressed within 72 hours. It is designed for situations where immediate action is not necessary. This timeframe helps manage client expectations by providing a clear response window, reducing uncertainty and ensuring that non-urgent issues are handled efficiently.";
     public static final ImmutableSet<String> SELFHOST_SERVICE_PLANS = ImmutableSet.<String>builder()
             .add("selfhost-yearly")
             .add("selfhost-yearly2")
@@ -103,7 +106,8 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             .build();
     public static final ImmutableSet<String> AVAILABLE_PLAN_NAMES = ImmutableSet.<String>builder()
             .addAll(AVAILABLE_SELFHOST_SERVICE_PLANS)
-            .add("cloud-starter-monthly")
+            // Disabling for now, replacing with enterprise plan
+            // .add("cloud-starter-monthly")
             .add("cloud-monthly")
             .add("cloud-yearly")
             .build();
@@ -300,8 +304,9 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     null, null))
             .put("selfhost-yearly2", pp -> new Plan("selfhost-yearly2", "Support License",
                     pp, ImmutableList.of(
-                    new PlanPerk("All features", null),
-                    new PlanPerk("Enterprise support", null)),
+                    new PlanPerk("Installation guidance", TERMS_INSTALLATION_GUIDANCE),
+                    new PlanPerk("Support allocation", TERMS_SUPPORT_ALLOCATION),
+                    new PlanPerk("Non-urgent SLA", TERMS_NON_URGENT_SLA)),
                     null, null))
             .build();
     private static final ImmutableList<Plan> PLANS_STATIC = ImmutableList.of(
