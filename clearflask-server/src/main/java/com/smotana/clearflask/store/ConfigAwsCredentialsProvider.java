@@ -20,6 +20,10 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class ConfigAwsCredentialsProvider extends AWSCredentialsProviderChain {
 
+    static {
+        System.setProperty("aws.java.v1.disableDeprecationAnnouncement", "true");
+    }
+
     public interface Config {
         @DefaultValue("")
         String awsAccessKeyId();
