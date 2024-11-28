@@ -216,7 +216,7 @@ public class WeeklyDigestService extends ManagedService {
                 SearchAccountsResponse searchAccountsResponse = accountStore.searchAccounts(AccountSearchSuperAdmin.builder()
                         .filterStatus(ImmutableList.of(SubscriptionStatus.ACTIVE, SubscriptionStatus.ACTIVETRIAL))
                         // Pre-filtering by planid, will be checked again below
-                        .filterPlanid(CommonPlanVerifyStore.PLANS_WITHOUT_DIGEST.asList())
+                        .filterPlanid(CommonPlanVerifyStore.PLANS_WITHOUT_WEEKLY_DIGEST.asList())
                         .invertPlanid(true)
                         .build(), true, cursorOpt, Optional.empty());
                 cursorOpt = searchAccountsResponse.getCursorOpt();
