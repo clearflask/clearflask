@@ -63,6 +63,7 @@
     <logger name="org.reflections.Reflections" level="INFO"/>
     <logger name="org.jooq" level="WARN"/>
     <logger name="org.apache.catalina.core.StandardWrapperValve" level="OFF"/>
+    <logger name="org.jooq.impl.DefaultExecuteContext.logVersionSupport" level="OFF"/>
 
     <root level="TRACE">
         <appender-ref ref="FILE"/>
