@@ -60,6 +60,13 @@ public class Application extends ResourceConfig {
          */
         @NoDefaultValue(innerType = SearchEngine.class)
         Optional<SearchEngine> forceSearchEngine();
+
+        /**
+         * Determines whether telemetry is sent back to ClearFlask for usage and support purposes.
+         * Intended for self-hosted instances.
+         */
+        @DefaultValue("true")
+        boolean enableTelemetry();
     }
 
     @Inject
@@ -68,14 +75,17 @@ public class Application extends ResourceConfig {
 
         Injector injector = ServiceInjector.INSTANCE.get();
 
-        log.info("Initializing Sentry");
+        Config config = injector.getInstance(Config.class);
         ServiceInjector.Environment env = injector.getInstance(ServiceInjector.Environment.class);
-        Sentry.init(options -> {
-            options.setEnvironment(env.name());
-            options.setSampleRate(1d);
-            options.setTracesSampleRate(1d);
-            options.setDsn("https://600460a790e34b3e884ebe25ed26944d@o934836.ingest.sentry.io/5884409");
-        });
+        if (config.enableTelemetry()) {
+            log.info("Initializing Sentry");
+            Sentry.init(options -> {
+                options.setEnvironment(env.name());
+                options.setSampleRate(1d);
+                options.setTracesSampleRate(1d);
+                options.setDsn("https://600460a790e34b3e884ebe25ed26944d@o934836.ingest.sentry.io/5884409");
+            });
+        }
 
         log.info("Initializing Application");
         // Register specific resources that are enabled via Guice bindings

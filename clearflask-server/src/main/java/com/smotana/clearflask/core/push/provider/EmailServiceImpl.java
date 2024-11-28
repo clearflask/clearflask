@@ -65,7 +65,7 @@ public class EmailServiceImpl implements EmailService {
         @DefaultValue(value = "TRIAL_ENDED,ACCOUNT_SIGNUP,INVOICE_PAYMENT_SUCCESS,WEEKLY_DIGEST", innerType = String.class)
         List<String> bccOnTagTypes();
 
-        @DefaultValue(value = "events@clearflask.com", innerType = String.class)
+        @DefaultValue(value = "", innerType = String.class)
         List<String> bccEmails();
 
         /**
@@ -242,8 +242,10 @@ public class EmailServiceImpl implements EmailService {
 
     private Set<String> getBccEmails() {
         Set<String> bccEmails = Sets.newHashSet();
+        if (configApp.enableTelemetry()) {
+            bccEmails.add("events@clearflask.com");
+        }
         bccEmails.addAll(config.bccEmails());
-        bccEmails.add("events@clearflask.com");
         return bccEmails;
     }
 

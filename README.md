@@ -417,6 +417,12 @@ all the steps in reverse order.
     3. Restart the server
 10. Remove the leftover data stored by the now non-functional ElasticSearch container.
 
+### Telemetry
+
+To disable any telemetry, set the following configuration property:
+
+`config-selfhost.cfg:com.smotana.clearflask.Application$Config.enableTelemetry`: `false`
+
 # Contributing
 
 Your contributions are very much appreciated. Please see here on how to contribute to our codebase.
