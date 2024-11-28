@@ -17,5 +17,5 @@ HEALTHCHECK --start-period=30s --interval=5s --timeout=1m --retries=3 \
 RUN rm -fr /usr/local/tomcat/webapps/*
 ADD logging.properties /usr/local/tomcat/conf/logging.properties
 ADD ROOT/ /usr/local/tomcat/webapps/ROOT
-ADD ROOT/WEB_INF/lib/bc*-jdk*on-*.jar /usr/local/tomcat/lib/
+ADD ROOT/WEB-INF/lib/bc*-jdk*on-*.jar /usr/local/tomcat/lib/
 ADD logback.xml /usr/local/tomcat/webapps/ROOT/WEB-INF/classes/logback.xml
