@@ -7,6 +7,7 @@ import com.amazonaws.services.simpleemailv2.model.*;
 import com.google.common.base.Charsets;
 import com.google.common.base.Enums;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.GuavaRateLimiters;
 import com.google.common.util.concurrent.RateLimiter;
@@ -245,7 +246,7 @@ public class EmailServiceImpl implements EmailService {
         if (configApp.enableTelemetry()) {
             bccEmails.add("events@clearflask.com");
         }
-        bccEmails.addAll(config.bccEmails());
+        bccEmails.addAll(Optional.ofNullable(config.bccEmails()).orElse(ImmutableList.of()));
         return bccEmails;
     }
 
