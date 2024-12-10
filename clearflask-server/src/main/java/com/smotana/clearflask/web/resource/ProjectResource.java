@@ -178,6 +178,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 10)
     @Override
     public UserBindResponse userBindSlug(String slug, UserBind userBind) {
+        Optional<UserBind> userBindOpt = Optional.ofNullable(userBind);
         Project project = projectStore.getProjectBySlug(slug, true)
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         Optional<UserStore.UserModel> loggedInUserOpt = userBindUtil.userBind(
@@ -185,10 +186,10 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 response,
                 project.getProjectId(),
                 getExtendedPrincipal(),
-                Optional.ofNullable(Strings.emptyToNull(userBind.getSsoToken())),
-                Optional.ofNullable(Strings.emptyToNull(userBind.getAuthToken())),
-                Optional.ofNullable(userBind.getOauthToken()),
-                Optional.ofNullable(Strings.emptyToNull(userBind.getBrowserPushToken())));
+                userBindOpt.flatMap(ub -> Optional.ofNullable(Strings.emptyToNull(ub.getSsoToken()))),
+                userBindOpt.flatMap(ub -> Optional.ofNullable(Strings.emptyToNull(ub.getAuthToken()))),
+                userBindOpt.flatMap(ub -> Optional.ofNullable(ub.getOauthToken())),
+                userBindOpt.flatMap(ub -> Optional.ofNullable(Strings.emptyToNull(ub.getBrowserPushToken()))));
 
         return new UserBindResponse(loggedInUserOpt
                 .map(loggedInUser -> loggedInUser.toUserMeWithBalance(project.getIntercomEmailToIdentityFun()))
@@ -199,6 +200,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 10)
     @Override
     public ConfigAndUserBindSlugResult configAndUserBindSlug(String slug, UserBind userBind) {
+        Optional<UserBind> userBindOpt = Optional.ofNullable(userBind);
         Project project = projectStore.getProjectBySlug(slug, true)
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         Optional<UserModel> loggedInUserOpt = userBindUtil.userBind(
@@ -206,10 +208,10 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 response,
                 project.getProjectId(),
                 getExtendedPrincipal(),
-                Optional.ofNullable(Strings.emptyToNull(userBind.getSsoToken())),
-                Optional.ofNullable(Strings.emptyToNull(userBind.getAuthToken())),
-                Optional.ofNullable(userBind.getOauthToken()),
-                Optional.ofNullable(Strings.emptyToNull(userBind.getBrowserPushToken())));
+                userBindOpt.flatMap(ub -> Optional.ofNullable(Strings.emptyToNull(ub.getSsoToken()))),
+                userBindOpt.flatMap(ub -> Optional.ofNullable(Strings.emptyToNull(ub.getAuthToken()))),
+                userBindOpt.flatMap(ub -> Optional.ofNullable(ub.getOauthToken())),
+                userBindOpt.flatMap(ub -> Optional.ofNullable(Strings.emptyToNull(ub.getBrowserPushToken()))));
 
         if (!loggedInUserOpt.isPresent() && !Onboarding.VisibilityEnum.PUBLIC.equals(project.getVersionedConfigAdmin()
                 .getConfig()
