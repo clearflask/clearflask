@@ -39,7 +39,7 @@
     <logger name="org.reflections.Reflections" level="INFO"/>
     <logger name="org.jooq.Constants" level="WARN"/>
 
-    <root level="TRACE">
+    <root level="DEBUG">
         <!-- Log to STDERR also for docker to pick up -->
         <appender-ref ref="STDERR"/>
         <appender-ref ref="FILE"/>

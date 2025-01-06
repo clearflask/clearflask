@@ -50,6 +50,7 @@ import com.smotana.clearflask.store.s3.DefaultS3ClientProvider;
 import com.smotana.clearflask.util.*;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.filter.ApiExceptionMapperFilter;
+import com.smotana.clearflask.web.filter.UmbrellaFilterProvider;
 import com.smotana.clearflask.web.resource.*;
 import com.smotana.clearflask.web.security.*;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
@@ -191,6 +192,7 @@ public enum ServiceInjector {
 
                 // Security
                 install(AuthenticationFilter.module());
+                install(UmbrellaFilterProvider.module());
                 install(SuperAdminPredicate.module());
                 install(TieredWebLimiter.module());
                 install(LocalRateLimiter.module());
