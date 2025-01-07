@@ -360,7 +360,7 @@
             <dependency>
                 <groupId>io.dataspray.umbrella.integration</groupId>
                 <artifactId>umbrella-tomcat-javax</artifactId>
-                <version>0.0.6</version>
+                <version>0.0.7</version>
             </dependency>
 
             <dependency>
