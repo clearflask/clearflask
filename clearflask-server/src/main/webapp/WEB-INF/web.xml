@@ -25,6 +25,7 @@
         <filter-name>UmbrellaFilter</filter-name>
         <filter-class>io.dataspray.umbrella.integration.tomcat.UmbrellaFilter</filter-class>
         <!-- Properties are set in com.smotana.clearflask.web.filter.UmbrellaFilterProvider -->
+        <async-supported>true</async-supported>
     </filter>
     <filter-mapping>
         <filter-name>UmbrellaFilter</filter-name>
