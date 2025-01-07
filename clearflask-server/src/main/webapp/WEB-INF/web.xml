@@ -26,6 +26,10 @@
         <filter-class>io.dataspray.umbrella.integration.tomcat.UmbrellaFilter</filter-class>
         <!-- Properties are set in com.smotana.clearflask.web.filter.UmbrellaFilterProvider -->
     </filter>
+    <filter-mapping>
+        <filter-name>ExceptionMapperFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
 
     <filter>
         <filter-name>HttpRedirector</filter-name>
