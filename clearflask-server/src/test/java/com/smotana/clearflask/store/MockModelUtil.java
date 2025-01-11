@@ -36,7 +36,7 @@ public class MockModelUtil {
                         .findAny()
                         .orElseThrow(),
                 Instant.now().minus(Duration.ofDays(4)),
-                IdUtil.randomId(),
+                IdUtil.randomId(5),
                 IdUtil.randomId(),
                 ImmutableSet.of(),
                 ImmutableSet.of(),

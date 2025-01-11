@@ -5,7 +5,6 @@ package com.smotana.clearflask.core.push;
 import com.google.common.collect.ImmutableList;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.NotifySubscribers;
-import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.ProjectStore.InvitationModel;
@@ -16,7 +15,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Value;
 
+import java.time.Instant;
 import java.util.Optional;
+
+import static com.smotana.clearflask.store.AccountStore.Account;
 
 public interface NotificationService {
 
@@ -28,9 +30,11 @@ public interface NotificationService {
 
     void onForgotPassword(ConfigAdmin configAdmin, UserModel user);
 
-    void onAccountSignup(AccountStore.Account account);
+    void onAccountSignup(Account account);
 
-    void onTrialEnded(String accountId, String accountEmail, boolean hasPaymentMethod);
+    void onTrialEnding(Account account, Instant trialEnd);
+
+    void onTrialEnded(Account account, boolean hasPaymentMethod);
 
     void onInvoicePaymentSuccess(String accountId, String accountEmail, String invoiceIdStr);
 
@@ -48,7 +52,7 @@ public interface NotificationService {
 
     void onPostCreated(Project project, IdeaModel idea, NotifySubscribers notifySubscribers, UserModel author);
 
-    void onDigest(AccountStore.Account account, Digest projects);
+    void onDigest(Account account, Digest projects);
 
     @Value
     @Builder(toBuilder = true)

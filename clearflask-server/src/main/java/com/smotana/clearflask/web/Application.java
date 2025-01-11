@@ -67,6 +67,12 @@ public class Application extends ResourceConfig {
          */
         @DefaultValue("true")
         boolean enableTelemetry();
+
+        /**
+         * Average customer's timezone.
+         */
+        @DefaultValue("America/New_York")
+        String zoneId();
     }
 
     @Inject

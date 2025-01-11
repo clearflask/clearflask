@@ -175,6 +175,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 WebhookServiceImpl.module(),
                 OnCommentReply.module(),
                 OnStatusOrResponseChange.module(),
+                OnTrialEnding.module(),
                 OnTrialEnded.module(),
                 OnPaymentFailed.module(),
                 OnInvoicePaymentSuccess.module(),

@@ -67,12 +67,6 @@ public class WeeklyDigestService extends ManagedService {
         boolean enabled();
 
         /**
-         * Will consider this timezone during all operations
-         */
-        @DefaultValue("America/New_York")
-        String zoneId();
-
-        /**
          * Will try to send emails on Monday at this time
          */
         @DefaultValue("9")
@@ -277,9 +271,9 @@ public class WeeklyDigestService extends ManagedService {
                     account.getEmail(), account.getAccountId());
             return false;
         }
-        String from = digestRun.getStart().atZone(ZoneId.of(config.zoneId()))
+        String from = digestRun.getStart().atZone(ZoneId.of(configApp.zoneId()))
                 .format(DateTimeFormatter.ofPattern("MMM d"));
-        String to = digestRun.getEnd().atZone(ZoneId.of(config.zoneId()))
+        String to = digestRun.getEnd().atZone(ZoneId.of(configApp.zoneId()))
                 .format(DateTimeFormatter.ofPattern("MMM d"));
 
         log.info("Weekly digest: sending to account {} {} projects {}",
@@ -421,7 +415,7 @@ public class WeeklyDigestService extends ManagedService {
 
     @VisibleForTesting
     Optional<WeeklyDigestWork> checkLock(Instant now) {
-        DigestRun digestRun = new DigestRun(ZonedDateTime.ofInstant(now, ZoneId.of(config.zoneId())));
+        DigestRun digestRun = new DigestRun(ZonedDateTime.ofInstant(now, ZoneId.of(configApp.zoneId())));
         return Optional.ofNullable(weeklyDigestWorkSchema.fromItem(weeklyDigestWorkSchema.table().getItem(new GetItemSpec()
                 .withPrimaryKey(weeklyDigestWorkSchema.primaryKey(Map.of(
                         "weekStart", digestRun.getStart()))
@@ -430,7 +424,7 @@ public class WeeklyDigestService extends ManagedService {
 
     @VisibleForTesting
     boolean lock(Instant now) {
-        DigestRun digestRun = new DigestRun(ZonedDateTime.ofInstant(now, ZoneId.of(config.zoneId())));
+        DigestRun digestRun = new DigestRun(ZonedDateTime.ofInstant(now, ZoneId.of(configApp.zoneId())));
         return lock(digestRun);
     }
 
@@ -461,7 +455,7 @@ public class WeeklyDigestService extends ManagedService {
 
     @VisibleForTesting
     void complete(Instant now) {
-        DigestRun digestRun = new DigestRun(ZonedDateTime.ofInstant(now, ZoneId.of(config.zoneId())));
+        DigestRun digestRun = new DigestRun(ZonedDateTime.ofInstant(now, ZoneId.of(configApp.zoneId())));
         complete(digestRun);
     }
 
@@ -475,7 +469,7 @@ public class WeeklyDigestService extends ManagedService {
     }
 
     private ZonedDateTime now() {
-        return ZonedDateTime.now(ZoneId.of(config.zoneId()));
+        return ZonedDateTime.now(ZoneId.of(configApp.zoneId()));
     }
 
     @VisibleForTesting

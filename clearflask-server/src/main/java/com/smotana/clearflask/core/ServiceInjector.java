@@ -183,6 +183,7 @@ public enum ServiceInjector {
                 install(OnTeammateInvite.module());
                 install(OnEmailChanged.module());
                 install(OnDigest.module());
+                install(OnTrialEnding.module());
                 install(OnTrialEnded.module());
                 install(OnPaymentFailed.module());
                 install(OnInvoicePaymentSuccess.module());

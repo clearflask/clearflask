@@ -600,7 +600,8 @@ public class KillBilling extends ManagedService implements Billing {
                 // Trial ends email notification
                 if (accountStore.shouldSendTrialEndedNotification(account.getExternalKey(), subscription.getPlanName())) {
                     Optional<PaymentMethodDetails> paymentOpt = getDefaultPaymentMethodDetails(account.getAccountId());
-                    notificationService.onTrialEnded(account.getExternalKey(), account.getEmail(), paymentOpt.isPresent());
+                    AccountStore.Account accountInDyn = accountStore.getAccount(account.getExternalKey(), false).get();
+                    notificationService.onTrialEnded(accountInDyn, paymentOpt.isPresent());
                 }
             } else if (BLOCKED.equals(currentStatus)) {
                 // Delete all projects to free up resources

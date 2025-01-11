@@ -98,6 +98,7 @@ public class NotificationServiceTest extends AbstractTest {
         install(EmailTemplates.module());
         install(OnCommentReply.module());
         install(OnStatusOrResponseChange.module());
+        install(OnTrialEnding.module());
         install(OnTrialEnded.module());
         install(OnPaymentFailed.module());
         install(OnInvoicePaymentSuccess.module());
@@ -483,6 +484,58 @@ public class NotificationServiceTest extends AbstractTest {
                                                 )).build()
                                 )).build()
                 )).build());
+
+        Email email = mockEmailService.sent.take();
+        log.info("email {}", email);
+        assertNotNull(email);
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
+    }
+
+    @Test(timeout = 10_000L)
+    public void testOnTrialEnding() throws Exception {
+        Instant trialEnd = Instant.now();
+        Account account = MockModelUtil.getRandomAccount().toBuilder()
+                .email("user@email.com")
+                .build();
+        when(this.mockPlanStore.prettifyPlanName(any())).thenReturn("Starter");
+
+        service.onTrialEnding(account, trialEnd);
+
+        Email email = mockEmailService.sent.take();
+        log.info("email {}", email);
+        assertNotNull(email);
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
+    }
+
+    @Test(timeout = 10_000L)
+    public void testOnTrialEndedHasPayment() throws Exception {
+        Account account = MockModelUtil.getRandomAccount().toBuilder()
+                .email("user@email.com")
+                .build();
+        when(this.mockPlanStore.prettifyPlanName(any())).thenReturn("Starter");
+
+        service.onTrialEnded(account, true);
+
+        Email email = mockEmailService.sent.take();
+        log.info("email {}", email);
+        assertNotNull(email);
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
+    }
+
+    @Test(timeout = 10_000L)
+    public void testOnTrialEndedNoPayment() throws Exception {
+        Account account = MockModelUtil.getRandomAccount().toBuilder()
+                .email("user@email.com")
+                .build();
+        when(this.mockPlanStore.prettifyPlanName(any())).thenReturn("Starter");
+
+        service.onTrialEnded(account, false);
 
         Email email = mockEmailService.sent.take();
         log.info("email {}", email);

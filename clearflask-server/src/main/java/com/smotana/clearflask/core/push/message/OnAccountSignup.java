@@ -32,7 +32,7 @@ public class OnAccountSignup {
                 + "<li>Start setting up your Product Roadmap and let your users see what you're up to.</li>"
                 + "<li>Turn on email notifications so you don’t miss important feedback, or wait for the weekly summary digest email.</li>"
                 + "</ul>"
-                + "<p>If you have any questions or need assistance at any time, reach out to <a href=\"mailto:support@clearflask.com\">support@clearflask.com</a></p>")
+                + "<p>If you have any questions or need assistance at any time, simply reply to this email to get in touch.</p>")
         String contentHtml();
 
         @DefaultValue("Hello __NAME__,\n\n"
@@ -41,7 +41,7 @@ public class OnAccountSignup {
                 + " - Share a link to ClearFlask with your users and watch the new ideas roll in!\n"
                 + " - Start setting up your Product Roadmap and let your users see what you're up to.\n"
                 + " - Turn on email notifications so you don’t miss important feedback, or wait for the weekly summary digest email.\n"
-                + "\nIf you have any questions or need assistance at any time, reach out to support@clearflask.com")
+                + "\nIf you have any questions or need assistance at any time, simply reply to this email to get in touch.")
         String contentText();
     }
 

@@ -105,6 +105,8 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     @Inject
     private OnCommentReply onCommentReply;
     @Inject
+    private OnTrialEnding onTrialEnding;
+    @Inject
     private OnTrialEnded onTrialEnded;
     @Inject
     private OnAccountSignup accountSignup;
@@ -377,7 +379,25 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     }
 
     @Override
-    public void onTrialEnded(String accountId, String accountEmail, boolean hasPaymentMethod) {
+    public void onTrialEnding(Account account, Instant trialEnd) {
+        if (!config.enabled()) {
+            log.debug("Not enabled, skipping");
+            return;
+        }
+        submit(() -> {
+            String link = "https://" + configApp.domain() + "/dashboard/billing";
+            checkState(!Strings.isNullOrEmpty(account.getEmail()));
+
+            try {
+                emailService.send(onTrialEnding.email(account, link, trialEnd));
+            } catch (Exception ex) {
+                log.warn("Failed to send email notification", ex);
+            }
+        });
+    }
+
+    @Override
+    public void onTrialEnded(Account account, boolean hasPaymentMethod) {
         if (!config.enabled()) {
             log.debug("Not enabled, skipping");
             return;
@@ -387,10 +407,10 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
             if (!hasPaymentMethod) {
                 link += "/billing";
             }
-            checkState(!Strings.isNullOrEmpty(accountEmail));
+            checkState(!Strings.isNullOrEmpty(account.getEmail()));
 
             try {
-                emailService.send(onTrialEnded.email(link, accountId, accountEmail, hasPaymentMethod));
+                emailService.send(onTrialEnded.email(account, link, hasPaymentMethod));
             } catch (Exception ex) {
                 log.warn("Failed to send email notification", ex);
             }
