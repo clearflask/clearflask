@@ -1057,6 +1057,24 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         return account;
     }
 
+    @Override
+    public Account setTrialReminderSent(String accountId) {
+        Expression expression = accountSchema.expressionBuilder()
+                .conditionExists()
+                .set("trialEndingReminderSent", true)
+                .build();
+        Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+                        .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
+                        .withConditionExpression(expression.conditionExpression().orElse(null))
+                        .withUpdateExpression(expression.updateExpression().orElse(null))
+                        .withNameMap(expression.nameMap().orElse(null))
+                        .withValueMap(expression.valMap().orElse(null))
+                        .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem());
+        accountCache.put(accountId, Optional.of(account));
+        return account;
+    }
+
     @Extern
     @Override
     public ListenableFuture<Void> deleteAccount(String accountId) {

@@ -472,8 +472,7 @@ public class WeeklyDigestService extends ManagedService {
         return ZonedDateTime.now(ZoneId.of(configApp.zoneId()));
     }
 
-    @VisibleForTesting
-    static Duration getNextRuntime(ZonedDateTime now, int sendAtTime, int jitterSeconds) {
+    public static Duration getNextRuntime(ZonedDateTime now, int sendAtTime, int jitterSeconds) {
         ZonedDateTime next = now.withHour(sendAtTime)
                 .withMinute(0)
                 .withSecond(0)
