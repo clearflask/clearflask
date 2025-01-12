@@ -457,7 +457,8 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
                 ImmutableMap.of(),
                 ImmutableMap.of(),
                 preferredPriceOpt.orElse(null),
-                ImmutableSet.of());
+                ImmutableSet.of(),
+                null);
         account = accountStore.createAccount(account).getAccount();
 
         // Create customer in KillBill asynchronously because:

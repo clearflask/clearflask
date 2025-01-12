@@ -44,7 +44,8 @@ public class MockModelUtil {
                 ImmutableMap.of(),
                 ImmutableMap.of(),
                 null,
-                ImmutableSet.of());
+                ImmutableSet.of(),
+                null);
     }
 
     public static UserModel getRandomUser() {

@@ -86,7 +86,8 @@ public class LlmPromptStoreTest extends AbstractTest {
                 null,
                 null,
                 null,
-                ImmutableSet.of())));
+                ImmutableSet.of(),
+                null)));
         projectStore.createProject(accountId, projectId, new VersionedConfigAdmin(config, "0"));
 
         ZonedDateTime now = ZonedDateTime.parse("2024-10-05T01:30:09.146844-04:00[America/Toronto]");
