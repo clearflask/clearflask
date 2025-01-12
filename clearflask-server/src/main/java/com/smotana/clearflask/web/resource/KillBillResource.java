@@ -51,6 +51,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -282,7 +284,7 @@ public class KillBillResource extends ManagedService {
             throw new ApiException(Response.Status.BAD_REQUEST);
         }
 
-        Invoice invoice = null;
+        Invoice invoice;
         try {
             invoice = kbInvoice.getInvoice(event.objectId, KillBillUtil.roDefault());
         } catch (KillBillClientException ex) {
@@ -297,11 +299,20 @@ public class KillBillResource extends ManagedService {
             return;
         }
 
+        boolean isCardExpiringSoon = Optional.ofNullable(event.getAccountId())
+                .flatMap(billing::getDefaultPaymentMethodDetails)
+                .map(paymentMethod -> isCardExpiringSoon(
+                        paymentMethod.getCardExpiryYear(),
+                        paymentMethod.getCardExpiryMonth(),
+                        30))
+                .orElse(false);
+
         // Invoice payment notification
         notificationService.onInvoicePaymentSuccess(
                 account.getAccountId(),
                 account.getEmail(),
-                invoice.getInvoiceId().toString());
+                invoice.getInvoiceId().toString(),
+                isCardExpiringSoon);
 
         // Credit sync
         Optional<String> planNameOpt = invoice.getItems().stream()
@@ -321,6 +332,17 @@ public class KillBillResource extends ManagedService {
                     event.objectId, event.getEventType(), ex);
             throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, ex);
         }
+    }
+
+    public static boolean isCardExpiringSoon(Optional<Long> cardExpiryYear, Optional<Long> cardExpiryMonth, int daysThreshold) {
+        if (cardExpiryYear.isEmpty() || cardExpiryMonth.isEmpty()) {
+            return false;
+        }
+        LocalDate expiryDate = YearMonth.of(cardExpiryYear.get().intValue(), cardExpiryMonth.get().intValue())
+                .atEndOfMonth();
+        return LocalDate.now()
+                .plusDays(daysThreshold)
+                .isAfter(expiryDate);
     }
 
     private void updateEventsToListenFor(Set<String> eventsToListenForStr, boolean doThrow) {

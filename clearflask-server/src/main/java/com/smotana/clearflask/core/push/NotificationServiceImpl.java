@@ -418,7 +418,7 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     }
 
     @Override
-    public void onInvoicePaymentSuccess(String accountId, String accountEmail, String invoiceIdStr) {
+    public void onInvoicePaymentSuccess(String accountId, String accountEmail, String invoiceIdStr, boolean isCardExpiringSoon) {
         if (!config.enabled()) {
             log.debug("Not enabled, skipping");
             return;
@@ -428,7 +428,7 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
             checkState(!Strings.isNullOrEmpty(accountEmail));
 
             try {
-                emailService.send(onInvoicePaymentSuccess.email(link, accountId, accountEmail));
+                emailService.send(onInvoicePaymentSuccess.email(link, accountId, accountEmail, isCardExpiringSoon));
             } catch (Exception ex) {
                 log.warn("Failed to send email notification", ex);
             }

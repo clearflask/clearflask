@@ -36,7 +36,7 @@ public interface NotificationService {
 
     void onTrialEnded(Account account, boolean hasPaymentMethod);
 
-    void onInvoicePaymentSuccess(String accountId, String accountEmail, String invoiceIdStr);
+    void onInvoicePaymentSuccess(String accountId, String accountEmail, String invoiceIdStr, boolean isCardExpiringSoon);
 
     void onPaymentFailed(String accountId, String accountEmail, long amount, boolean requiresAction, boolean hasPaymentMethod);
 

@@ -63,7 +63,7 @@ public class EmailServiceImpl implements EmailService {
 
         Observable<Duration> rateLimitCapacityObservable();
 
-        @DefaultValue(value = "TRIAL_ENDED,ACCOUNT_SIGNUP,INVOICE_PAYMENT_SUCCESS,WEEKLY_DIGEST", innerType = String.class)
+        @DefaultValue(value = "TRIAL_ENDING,TRIAL_ENDED,ACCOUNT_SIGNUP,INVOICE_PAYMENT_SUCCESS,PAYMENT_FAILURE,WEEKLY_DIGEST", innerType = String.class)
         List<String> bccOnTagTypes();
 
         @DefaultValue(value = "", innerType = String.class)
