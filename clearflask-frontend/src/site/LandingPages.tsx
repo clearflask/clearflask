@@ -8,6 +8,7 @@ import {
   ButtonGroup,
   Container,
   IconButton,
+  Link as MuiLink,
   Size,
   Table,
   TableBody,
@@ -30,6 +31,7 @@ import BlogIcon from '@material-ui/icons/Description';
 import ClientIcon from '@material-ui/icons/Devices';
 import ServerIcon from '@material-ui/icons/Dns';
 import EditIcon from '@material-ui/icons/Edit';
+import LinkedinIcon from '@material-ui/icons/LinkedIn';
 import EmailIcon from '@material-ui/icons/Email';
 import LightbulbIcon from '@material-ui/icons/EmojiObjectsOutlined';
 import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
@@ -57,6 +59,8 @@ import BillingIcon from '@material-ui/icons/Receipt';
 import CustomerFeedbackIcon from '@material-ui/icons/RecordVoiceOver';
 import RespondIcon from '@material-ui/icons/ReplyAll';
 import SearchIcon from '@material-ui/icons/Search';
+import BusinessIcon from '@material-ui/icons/Business';
+import WorkIcon from '@material-ui/icons/Work';
 import AnalyticsIcon from '@material-ui/icons/ShowChart';
 import StorageIcon from '@material-ui/icons/Storage';
 import VoteIcon from '@material-ui/icons/ThumbsUpDown';
@@ -65,11 +69,12 @@ import PrivacyIcon from '@material-ui/icons/VisibilityOff';
 import TransparentIcon from '@material-ui/icons/VisibilityOutlined';
 import KeyIcon from '@material-ui/icons/VpnKey';
 import WidgetIcon from '@material-ui/icons/Widgets';
-import CareersIcon from '@material-ui/icons/Work';
 import classNames from 'classnames';
 import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Provider, shallowEqual, useSelector } from 'react-redux';
+import MatusFaroImg from '../../public/img/landing/team/Matus Faro.png';
+import KellyRuskImg from '../../public/img/landing/team/Kelly Rusk.png';
 import AnalyzeImg from '../../public/img/landing/analyze.svg';
 import ArchitectureImg from '../../public/img/landing/architecture.svg';
 import CentralizeImg from '../../public/img/landing/centralize.svg';
@@ -1440,6 +1445,107 @@ export function LandingPrioritization() {
   );
 }
 
+export function LandingCompany() {
+  return (
+    <>
+      <Block
+        type="hero"
+        title="Who we are"
+        description="ClearFlask exists to help product managers create amazing products with the power of feedback"
+        iconAbove
+        icon={<WorkIcon fontSize="inherit" />}
+        image={TeamImg}
+      />
+      <Block
+        icon={<BusinessIcon fontSize="inherit" />}
+        spacingTop={0}
+        title="Company"
+        description={(
+          <>
+            <p>
+              ClearFlask was built on the idea that product development is best with collaboration from your customers.
+              While a vision and leadership is important, growth depends on the ability to be open to and willing to act
+              on feedback. ClearFlask is a simple tool that can unlock powerful growth for your product and business.
+            </p>
+            <p>
+              ClearFlask is a lean but growing company. We are passionate innovators dedicated to taking the guesswork
+              out of product development by empowering Product Managers to take ownership of their development decisions
+              by leveraging customer feedback and turning it into useful data.
+            </p>
+          </>
+        )}
+      />
+      <HorizontalPanels wrapBelow="md" maxContentWidth="md" maxWidth="lg">
+        <Block
+          type="column"
+          image={MatusFaroImg}
+          imageLocation='above'
+          imageScale={0.6}
+          imageStyle={{paddingBottom: 32}}
+          title={(
+            <>
+              <b>Matus Faro</b>
+              <br />
+              Founder & Technology Leader
+            </>
+          )}
+          description={(
+            <>
+              Matus Faro is a technology leader with global experience as a software engineer, lead architect, head of
+              Anti-Spam and Infrastructure Engineering Specialist. He’s honed his skills and process in Silicon Valley
+              with companies like LinkedIn, Blackberry and Kik, as well as internationally with AndGlobal, Upwave and
+              Shunkhlai Group LLC. Matus is the founder and builder of ClearFlask and is passionate
+              about the product and its vision.
+              <p />
+              <MuiLink
+                color="inherit"
+                href="https://linkedin.com/in/matus-faro"
+                target="_blank"
+                underline="none"
+                rel="noopener nofollow"
+              >
+                <LinkedinIcon/>
+              </MuiLink>
+            </>
+          )}
+        />
+        <Block
+          type="column"
+          image={KellyRuskImg}
+          imageLocation='above'
+          imageScale={0.6}
+          imageStyle={{paddingBottom: 32}}
+          title={(
+            <>
+              <b>Kelly Rusk</b>
+              <br />
+              CoFounder & Growth Leader
+            </>
+          )}
+          description={(
+            <>
+              Kelly Rusk joined in 2024 after meeting Matus at an industry event and buying into the product. As a
+              marketing and communications leader with almost 20 years experience, she’s worked in agencies, startups
+              and a brief stint in municipal government. She runs KRC Digital and acts as a fractional CMO for startups
+              in Canada and the US.
+              <p />
+              <MuiLink
+                color="inherit"
+                href="https://linkedin.com/in/karusk"
+                target="_blank"
+                underline="none"
+                rel="noopener nofollow"
+              >
+                <LinkedinIcon/>
+              </MuiLink>
+            </>
+          )}
+        />
+      </HorizontalPanels>
+    </>
+  );
+}
+
 export function LandingOpenSource() {
   const { t } = useTranslation('site');
   return (
@@ -1809,7 +1915,7 @@ export function LandingCustomize() {
               <div>Knowledge Base article</div>
             </div>
             <div className={classes.pointSmall}>
-              <CareersIcon fontSize="inherit" className={classes.pointIconSmall} />
+              <WorkIcon fontSize="inherit" className={classes.pointIconSmall} />
               <div>Job postings</div>
             </div>
             <div className={classes.pointSmall}>
