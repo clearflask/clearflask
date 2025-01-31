@@ -20,6 +20,7 @@ import com.kik.config.ice.source.FileDynamicConfigSource;
 import com.kik.config.ice.source.JmxDynamicConfigSource;
 import com.smotana.clearflask.billing.*;
 import com.smotana.clearflask.core.email.AmazonSimpleEmailServiceProvider;
+import com.smotana.clearflask.core.email.TrialEndingReminderService;
 import com.smotana.clearflask.core.email.WeeklyDigestService;
 import com.smotana.clearflask.core.image.ImageNormalizationImpl;
 import com.smotana.clearflask.core.push.NotificationServiceImpl;
@@ -173,6 +174,7 @@ public enum ServiceInjector {
                 install(EmailTemplates.module());
                 install(EmailServiceImpl.module());
                 install(WeeklyDigestService.module());
+                install(TrialEndingReminderService.module());
                 install(BrowserPushServiceImpl.module());
                 install(OnCommentReply.module());
                 install(OnCreditChange.module());
