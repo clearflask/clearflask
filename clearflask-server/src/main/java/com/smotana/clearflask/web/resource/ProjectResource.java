@@ -374,6 +374,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         Project project = projectStore.getProject(projectId, true).get();
         ImmutableList<ProjectAdmin> admins = Stream.concat(Stream.of(project.getAccountId()), project.getModel().getAdminsAccountIds().stream())
                 .map(accountId -> accountStore.getAccount(accountId, true))
+                .filter(Optional::isPresent)
                 .map(Optional::get)
                 .map(account -> account.toProjectAdmin(account.getAccountId().equals(project.getAccountId())
                         ? ProjectAdmin.RoleEnum.OWNER : ProjectAdmin.RoleEnum.ADMIN))
