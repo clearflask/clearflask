@@ -4,7 +4,7 @@
 
     <groupId>com.smotana.clearflask</groupId>
     <artifactId>clearflask-parent</artifactId>
-    <version>2.1.5-SNAPSHOT</version>
+    <version>2.1.6</version>
     <packaging>pom</packaging>
 
     <name>clearflask-parent</name>
@@ -80,7 +80,7 @@
         <url>https://github.com/clearflask/clearflask</url>
         <connection>${scmConnection}</connection>
         <developerConnection>${scmConnection}</developerConnection>
-        <tag>HEAD</tag>
+        <tag>2.1.6</tag>
     </scm>
 
     <distributionManagement>
