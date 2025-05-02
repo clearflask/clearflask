@@ -379,7 +379,7 @@ sudo tee /usr/share/tomcat/webapps/100killbill/ROOT/WEB-INF/classes/logback.xml 
             <evaluator>
                 <matcher>
                     <Name>regex</Name>
-                    <regex>falling back to SQLDialect|The scratchDir you specified|Unable to find the JRuby bundle|Timed out while shutting down entitlement-service</regex>
+                    <regex>falling back to SQLDialect|The scratchDir you specified|Unable to find the JRuby bundle|Timed out while shutting down entitlement-service|doesn't have a default payment method</regex>
                 </matcher>
                 <expression>regex.matches(formattedMessage)</expression>
             </evaluator>
