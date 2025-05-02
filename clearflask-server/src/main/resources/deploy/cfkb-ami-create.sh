@@ -375,6 +375,16 @@ sudo tee /usr/share/tomcat/webapps/100killbill/ROOT/WEB-INF/classes/logback.xml 
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>WARN</level>
         </filter>
+        <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
+            <evaluator>
+                <matcher>
+                    <Name>regex</Name>
+                    <regex>falling back to SQLDialect|The scratchDir you specified|Unable to find the JRuby bundle|Timed out while shutting down entitlement-service</regex>
+                </matcher>
+                <expression>regex.matches(formattedMessage)</expression>
+            </evaluator>
+            <OnMatch>DENY</OnMatch>
+        </filter>
     </appender>
 
     <!-- Logs only SQL. SQL executed within a prepared statement is automatically shown with its bind arguments replaced with the data bound at that position, for greatly increased readability. -->
