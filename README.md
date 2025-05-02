@@ -292,6 +292,10 @@ This approach is not recommended as you will have to update this certificate man
 
 ##### Self-managed behind reverse proxy
 
+ClearFlask wasn't designed to be deployed on a subpath (e.g. `example.com/clearflask/`), rather it is
+intended to be deployed either directly on a domain or a subdomain. (e.g. `examplefeedback.com` or
+`feedback.example.com`)
+
 If you are managing TLS certificates behind a reverse proxy, redirect all `http` requests to `https`, set the following
 config:
 
@@ -311,7 +315,8 @@ Although discouraged, you can run ClearFlask over HTTP only. Ensure these settin
 
 For you to manage the dashboard, you need to whitelist an email to be able to create a super-admin account:
 
-`config-selfhost.cfg:com.smotana.clearflask.web.security.SuperAdminPredicate$Config.superAdminEmailRegex`: `^admin@yoursite.com$`
+`config-selfhost.cfg:com.smotana.clearflask.web.security.SuperAdminPredicate$Config.superAdminEmailRegex`:
+`^admin@yoursite.com$`
 
 After you sign-up, disable further signups using:
 
@@ -389,7 +394,8 @@ all the steps in reverse order.
 #### Migrate from ElasticSearch to Mysql
 
 1. Double check you are using ElasticSearch, you may have this property
-   set: `config-selfhost.cfg:com.smotana.clearflask.web.Application$Config.defaultSearchEngine`: `READWRITE_ELASTICSEARCH`
+   set: `config-selfhost.cfg:com.smotana.clearflask.web.Application$Config.defaultSearchEngine`:
+   `READWRITE_ELASTICSEARCH`
    . If it is missing, the default is ElasticSearch
 2. Edit `docker-compose.yml`:
     1. Uncomment `clearflask-server` container's JMX ports `9950:9950` and `9951:9951`
