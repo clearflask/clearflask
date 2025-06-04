@@ -123,7 +123,7 @@ public class KillBilling extends ManagedService implements Billing {
         @DefaultValue("P7D")
         Duration scanUncommitedInvoicesCommitYoungerThan();
 
-        @DefaultValue("true")
+        @DefaultValue("false")
         boolean enableDeleteProjectForBlockedAccount();
     }
 
