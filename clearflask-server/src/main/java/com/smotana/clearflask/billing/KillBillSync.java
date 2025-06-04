@@ -9,8 +9,8 @@ import com.google.common.collect.Maps;
 import com.google.common.io.Resources;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.google.inject.Module;
 import com.google.inject.*;
+import com.google.inject.Module;
 import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
@@ -82,9 +82,9 @@ public class KillBillSync extends ManagedService {
                     .setCondition(new OverdueCondition()
                             .setTimeSinceEarliestUnpaidInvoiceEqualsOrExceeds(new Duration()
                                     .setUnit(TimeUnit.DAYS)
-                                    .setNumber(21)))
+                                    .setNumber(90)))
                     .setExternalMessage("Plan cancelled")
-                    .setIsBlockChanges(true)
+                    .setIsBlockChanges(false)
                     .setIsClearState(false)
                     .setIsDisableEntitlement(false)
                     .setSubscriptionCancellationPolicy(OverdueCancellationPolicy.END_OF_TERM))
