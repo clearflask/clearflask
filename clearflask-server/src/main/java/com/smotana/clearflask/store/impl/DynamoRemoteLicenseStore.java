@@ -49,7 +49,7 @@ public class DynamoRemoteLicenseStore implements RemoteLicenseStore {
     }
 
     @Extern
-    private String getLicenseExtern() {
+    public String getLicenseExtern() {
         return getLicense().orElse("<empty>");
     }
 

@@ -98,7 +98,7 @@ public class ProjectDeletionService extends ManagedService {
     }
 
     @Extern
-    private void processAll() {
+    public void processAll() {
         synchronized (this) {
             if (!config.enabled()) {
                 return;

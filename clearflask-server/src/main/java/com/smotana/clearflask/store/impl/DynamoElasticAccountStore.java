@@ -570,7 +570,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     }
 
     @Extern
-    private String setPlan(String accountId, String planid) {
+    public String setPlan(String accountId, String planid) {
         return setPlan(accountId, planid, Optional.empty()).getAccount().toString();
     }
 

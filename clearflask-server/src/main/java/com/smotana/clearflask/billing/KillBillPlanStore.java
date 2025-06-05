@@ -11,8 +11,8 @@ import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
-import com.smotana.clearflask.api.model.Plan;
 import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.Plan;
 import com.smotana.clearflask.api.model.PlanPricing.PeriodEnum;
 import com.smotana.clearflask.billing.CouponStore.CouponModel;
 import com.smotana.clearflask.core.ManagedService;
@@ -26,8 +26,8 @@ import org.killbill.billing.catalog.api.BillingPeriod;
 import org.killbill.billing.catalog.api.PhaseType;
 import org.killbill.billing.client.api.gen.CatalogApi;
 import org.killbill.billing.client.model.Catalogs;
-import org.killbill.billing.client.model.gen.Subscription;
 import org.killbill.billing.client.model.gen.*;
+import org.killbill.billing.client.model.gen.Subscription;
 
 import javax.annotation.Nullable;
 import javax.ws.rs.core.Response;
@@ -593,7 +593,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     }
 
     @Extern
-    private Optional<Plan> getPlanExternOnly(String planId, @Nullable String accountIdOpt) {
+    public Optional<Plan> getPlanExternOnly(String planId, @Nullable String accountIdOpt) {
         return getPlan(planId, Optional.ofNullable(Strings.emptyToNull(accountIdOpt)), Optional.empty())
                 .map(PlanWithAddons::getPlan);
     }

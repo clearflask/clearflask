@@ -204,7 +204,7 @@ public class KillBilling extends ManagedService implements Billing {
     }
 
     @Extern
-    private Account createAccount(AccountStore.Account accountInDyn) {
+    public Account createAccount(AccountStore.Account accountInDyn) {
         Account account;
         try {
             log.trace("Creating account {}", accountInDyn);
@@ -275,7 +275,7 @@ public class KillBilling extends ManagedService implements Billing {
     }
 
     @Extern
-    private Subscription createSubscription(AccountStore.Account accountInDyn, Account account) {
+    public Subscription createSubscription(AccountStore.Account accountInDyn, Account account) {
         Subscription subscription;
         try {
             subscription = kbSubscription.createSubscription(new Subscription()

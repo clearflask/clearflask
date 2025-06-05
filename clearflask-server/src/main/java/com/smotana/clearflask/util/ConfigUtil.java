@@ -53,7 +53,7 @@ public class ConfigUtil extends ManagedService {
     }
 
     @Extern
-    private void runner() {
+    public void runner() {
         try {
             Set<String> emails = findEmails();
             if (emails.isEmpty()) {

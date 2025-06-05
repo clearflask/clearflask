@@ -53,7 +53,7 @@ public class ConfigurableLlmPromptStore implements LlmPromptStore {
     }
 
     @Extern
-    private String getPromptExtern(String projectId) {
+    public String getPromptExtern(String projectId) {
         String accountId = projectStore.getProject(projectId, true).orElseThrow().getAccountId();
         return getPrompt(projectId, accountId).text();
     }
