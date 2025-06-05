@@ -105,45 +105,57 @@ public class ProjectDeletionService extends ManagedService {
             }
             log.info("Starting project deletion task");
 
-            // Iterate all accounts
-            Optional<String> cursorOpt = Optional.empty();
-            do {
-                SearchAccountsResponse searchAccountsResponse = accountStore.searchAccounts(AccountSearchSuperAdmin.builder()
-                        .filterStatus(ImmutableList.of(
-                                // Accounts after trial end become ACTIVE, but they are really NOPAYMENTMETHOD
-                                // When you check them, billing reconcilliation will mark them as NOPAYMENTMETHOD
-                                // so we need to include them here.
-                                SubscriptionStatus.ACTIVE,
-                                SubscriptionStatus.NOPAYMENTMETHOD,
-                                SubscriptionStatus.BLOCKED))
-                        .build(), true, cursorOpt, Optional.empty());
-                cursorOpt = searchAccountsResponse.getCursorOpt();
-                for (Account account : searchAccountsResponse.getAccounts()) {
-                    // Process each account individually
-                    try {
-                        processAccount(account);
-                    } catch (Exception ex) {
-                        log.warn("Project deletion: Failed to process account {} {}",
-                                account.getEmail(), account.getAccountId(), ex);
+            ImmutableList.of(
+                    AccountSearchSuperAdmin.builder()
+                            // Accounts after trial end become ACTIVE, but they are really NOPAYMENTMETHOD
+                            // When you check them, billing reconcilliation will mark them as NOPAYMENTMETHOD
+                            // so we need to include them here.
+                            .filterStatus(ImmutableList.of(SubscriptionStatus.ACTIVE))
+                            .filterCreatedStart(Instant.now().minus(30, ChronoUnit.DAYS))
+                            .filterCreatedEnd(Instant.now().minus(5, ChronoUnit.DAYS))
+                            .build(),
+                    AccountSearchSuperAdmin.builder()
+                            .filterStatus(ImmutableList.of(
+                                    SubscriptionStatus.NOPAYMENTMETHOD,
+                                    SubscriptionStatus.BLOCKED))
+                            .build()
+            ).forEach(accountSearchSuperAdmin -> {
+                // Iterate all accounts
+                Optional<String> cursorOpt = Optional.empty();
+
+                do {
+                    SearchAccountsResponse searchAccountsResponse = accountStore.searchAccounts(
+                            accountSearchSuperAdmin,
+                            true,
+                            cursorOpt,
+                            Optional.empty());
+                    cursorOpt = searchAccountsResponse.getCursorOpt();
+                    for (Account account : searchAccountsResponse.getAccounts()) {
+                        // Process each account individually
+                        try {
+                            processAccount(account);
+                        } catch (Exception ex) {
+                            log.warn("Project deletion: Failed to process account {} {}",
+                                    account.getEmail(), account.getAccountId(), ex);
+                        }
                     }
-                }
-            } while (cursorOpt.isPresent());
+                } while (cursorOpt.isPresent());
+            });
         }
     }
 
     @SneakyThrows
     private void processAccount(Account account) {
         if (account.getProjectIds().isEmpty()) {
-            log.debug("Project deletion: Account {} has no projects, skipping", account.getEmail());
+            // TODO switch to debug
+            log.info("Project deletion: Account {} has no projects, skipping", account.getEmail());
             return;
         }
 
         // Check if account is ACTIVE, but really should be NOPAYMENTMETHOD
         Instant now = Instant.now();
         SubscriptionStatus status = account.getStatus();
-        if (SubscriptionStatus.ACTIVE.equals(status)
-                && account.getCreated().isBefore(Instant.now().plus(14, ChronoUnit.DAYS))
-                && account.getCreated().isAfter(now.minus(30, ChronoUnit.DAYS))) {
+        if (SubscriptionStatus.ACTIVE.equals(status)) {
             status = billing.updateAndGetEntitlementStatus(
                     status,
                     billing.getAccount(account.getAccountId()),
@@ -154,11 +166,12 @@ public class ProjectDeletionService extends ManagedService {
         Instant deletionEligibility;
         switch (status) {
             case ACTIVE:
-                // If account is still ACTIVE, no need to continue
+                // TODO switch to debug
+                log.info("Project deletion: Account {} still active status, skipping", account.getEmail());
                 return;
             case NOPAYMENTMETHOD:
-                // Although this is decided by the KillBilling overdue system, we just assume it will be after
-                // number of days after NOPAYMENTMETHOD status.
+                // Although this is decided by the KillBilling overdue system, we just assume deletion can occur
+                // after number of days after NOPAYMENTMETHOD status.
                 deletionEligibility = now.plus(CANCEL_AFTER_DURATION_IN_DAYS, ChronoUnit.DAYS);
                 break;
             case BLOCKED:
@@ -204,7 +217,16 @@ public class ProjectDeletionService extends ManagedService {
             return;
         }
 
+        // One last check, deletion can only occur after account is blocked
+        if (status != SubscriptionStatus.BLOCKED) {
+            // TODO switch to debug
+            log.info("Project deletion: Account {} already sent deletion reminder, but not yet in blocked status, found {} status",
+                    account.getEmail(), status);
+            return;
+        }
+
         // Delete all projects to free up resources
+        log.info("Project deletion: Account {} eligible for deletion", account.getEmail());
         account.getProjectIds().forEach(projectId -> {
             if (config.deletionEnabled()) {
                 log.info("Project deletion: Account {} eligible for project deletion, deleting project {}",
