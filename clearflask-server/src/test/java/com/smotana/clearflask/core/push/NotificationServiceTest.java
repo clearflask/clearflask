@@ -99,6 +99,7 @@ public class NotificationServiceTest extends AbstractTest {
         install(OnCommentReply.module());
         install(OnStatusOrResponseChange.module());
         install(OnTrialEnding.module());
+        install(OnProjectDeletionImminent.module());
         install(OnTrialEnded.module());
         install(OnPaymentFailed.module());
         install(OnInvoicePaymentSuccess.module());
@@ -519,6 +520,22 @@ public class NotificationServiceTest extends AbstractTest {
         when(this.mockPlanStore.prettifyPlanName(any())).thenReturn("Starter");
 
         service.onTrialEnded(account, true);
+
+        Email email = mockEmailService.sent.take();
+        log.info("email {}", email);
+        assertNotNull(email);
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
+    }
+
+    @Test(timeout = 10_000L)
+    public void testOnProjectDeletionImminent() throws Exception {
+        Account account = MockModelUtil.getRandomAccount().toBuilder()
+                .email("user@email.com")
+                .build();
+
+        service.onProjectDeletionImminent(account);
 
         Email email = mockEmailService.sent.take();
         log.info("email {}", email);

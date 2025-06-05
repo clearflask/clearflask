@@ -87,6 +87,7 @@ public class LlmPromptStoreTest extends AbstractTest {
                 null,
                 null,
                 ImmutableSet.of(),
+                null,
                 null)));
         projectStore.createProject(accountId, projectId, new VersionedConfigAdmin(config, "0"));
 

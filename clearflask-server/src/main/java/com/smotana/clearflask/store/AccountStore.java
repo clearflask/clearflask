@@ -95,6 +95,8 @@ public interface AccountStore {
 
     Account setTrialReminderSent(String accountId);
 
+    Account setProjectDeletionReminderSent(String accountId);
+
     ListenableFuture<Void> deleteAccount(String accountId);
 
     default String genSessionId() {
@@ -216,6 +218,8 @@ public interface AccountStore {
         ImmutableSet<String> digestOptOutForProjectIds;
 
         Boolean trialEndingReminderSent;
+
+        Instant projectDeletionReminderSent;
 
         /**
          * Workaround for Self-Hosted ClearFlask to get the status of the subscription on-deman

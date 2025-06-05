@@ -45,6 +45,7 @@ public class MockModelUtil {
                 ImmutableMap.of(),
                 null,
                 ImmutableSet.of(),
+                null,
                 null);
     }
 

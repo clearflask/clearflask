@@ -458,6 +458,7 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
                 ImmutableMap.of(),
                 preferredPriceOpt.orElse(null),
                 ImmutableSet.of(),
+                null,
                 null);
         account = accountStore.createAccount(account).getAccount();
 

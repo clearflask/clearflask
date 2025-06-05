@@ -122,9 +122,6 @@ public class KillBilling extends ManagedService implements Billing {
 
         @DefaultValue("P7D")
         Duration scanUncommitedInvoicesCommitYoungerThan();
-
-        @DefaultValue("false")
-        boolean enableDeleteProjectForBlockedAccount();
     }
 
     @Inject
@@ -574,7 +571,7 @@ public class KillBilling extends ManagedService implements Billing {
                     status, subscription.getSubscriptionId(), account.getAccountId(), account.getExternalKey(), account, subscription, overdueState, hasPaymentMethod.get(), isLimited.get());
         }
         if (log.isTraceEnabled()) {
-            log.trace("Calculated subscription status to be {} from:\n -- account {}\n -- subscription {}\n -- overdueState {}\n -- hasPaymentMethod {}",
+            log.info("Calculated subscription status to be {} from:\n -- account {}\n -- subscription {}\n -- overdueState {}\n -- hasPaymentMethod {}",
                     status, account, subscription, overdueState, hasPaymentMethod.get());
         }
         return status;
@@ -602,16 +599,6 @@ public class KillBilling extends ManagedService implements Billing {
                     Optional<PaymentMethodDetails> paymentOpt = getDefaultPaymentMethodDetails(account.getAccountId());
                     AccountStore.Account accountInDyn = accountStore.getAccount(account.getExternalKey(), false).get();
                     notificationService.onTrialEnded(accountInDyn, paymentOpt.isPresent());
-                }
-            } else if (BLOCKED.equals(currentStatus)) {
-                // Delete all projects to free up resources
-                if (config.enableDeleteProjectForBlockedAccount()) {
-                    AccountStore.Account accountInDyn = accountStore.getAccount(account.getExternalKey(), false).get();
-                    accountInDyn.getProjectIds()
-                            .forEach(projectId -> projectResource.projectDeleteAdmin(accountInDyn, projectId));
-                } else {
-                    log.error("ACTION REQUIRED: Project not deleted for blocked account, status {} account {} email {} reason {}",
-                            currentStatus, account.getExternalKey(), account.getEmail(), reason);
                 }
             }
         }

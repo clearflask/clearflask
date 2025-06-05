@@ -66,11 +66,6 @@ public class TrialEndingReminderService extends ManagedService {
         int sendDaysBeforeEnd();
     }
 
-    public enum Status {
-        PROCESSING,
-        COMPLETE,
-    }
-
     @Inject
     private Config config;
     @Inject

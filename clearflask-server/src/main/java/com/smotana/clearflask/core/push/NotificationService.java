@@ -54,6 +54,8 @@ public interface NotificationService {
 
     void onDigest(Account account, Digest projects);
 
+    void onProjectDeletionImminent(Account account);
+
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor

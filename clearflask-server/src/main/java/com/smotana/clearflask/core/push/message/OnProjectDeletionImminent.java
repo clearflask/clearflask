@@ -8,34 +8,29 @@ import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
-import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.core.push.provider.EmailService.Email;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
 
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-
 @Slf4j
 @Singleton
-public class OnTrialEnding {
+public class OnProjectDeletionImminent {
 
     public interface Config {
-        @DefaultValue("Free Trial Ending – Subscribe Now")
+        @DefaultValue("Account deletion imminent")
         String subjectTemplate();
 
         @DefaultValue("<p>Hi __NAME__,</p>"
-                + "<p>Your free trial of ClearFlask __PLAN_NAME__ is coming to an end on __TRIAL_END_DATE__.</p>"
-                + "<p>Upgrade now to continue to use ClearFlask.</p>"
+                + "<p>We are sad to see you go and we just wanted to let you know we will be deleting your projects soon unless you take action.</p>"
+                + "<p>Please complete setting up your billing if you wish to continue to use ClearFlask.</p>"
                 + "<p><b>Need Assistance or considering a different ClearFlask Solution?</b> We’d love to help — reply to this email to get in touch with us.</p>"
                 + "<p>ClearFlask Team</p>")
         String contentHtml();
 
         @DefaultValue("Hi __NAME__,"
-                + "\n\nYour free trial of ClearFlask __PLAN_NAME__ is coming to an end on __TRIAL_END_DATE__."
-                + "\n\nUpgrade now to continue to use ClearFlask."
+                + "<p>We are sad to see you go and we just wanted to let you know we will be deleting your projects soon unless you take action.</p>"
+                + "<p>Please complete setting up your billing if you wish to continue to use ClearFlask.</p>"
                 + "\n\nNeed Assistance or considering a different ClearFlask Solution? We’d love to help — reply to this email to get in touch with us."
                 + "\n\nClearFlask Team")
         String contentText();
@@ -47,10 +42,8 @@ public class OnTrialEnding {
     private Application.Config configApp;
     @Inject
     private EmailTemplates emailTemplates;
-    @Inject
-    private PlanStore planStore;
 
-    public Email email(Account account, String link, Instant trialEnd) {
+    public Email email(Account account, String link) {
 
         String subject = config.subjectTemplate();
         String contentHtml = config.contentHtml();
@@ -59,15 +52,6 @@ public class OnTrialEnding {
         String nameSanitized = emailTemplates.sanitize(account.getName());
         contentHtml = contentHtml.replace("__NAME__", nameSanitized);
         contentText = contentText.replace("__NAME__", nameSanitized);
-
-        String planName = planStore.prettifyPlanName(account.getPlanid());
-        contentHtml = contentHtml.replace("__PLAN_NAME__", planName);
-        contentText = contentText.replace("__PLAN_NAME__", planName);
-
-        String trialEndStr = trialEnd.atZone(ZoneId.of(configApp.zoneId()))
-                .format(DateTimeFormatter.ofPattern("MMM d"));
-        contentHtml = contentHtml.replace("__TRIAL_END_DATE__", trialEndStr);
-        contentText = contentText.replace("__TRIAL_END_DATE__", trialEndStr);
 
         String templateHtml = emailTemplates.getNotificationNoUnsubLargeTemplateHtml();
         String templateText = emailTemplates.getNotificationNoUnsubTemplateText();
@@ -88,7 +72,7 @@ public class OnTrialEnding {
                 templateHtml,
                 templateText,
                 account.getAccountId(),
-                "TRIAL_ENDING"
+                "PROJECT_DELETION_IMMINENT"
         );
     }
 
@@ -96,7 +80,7 @@ public class OnTrialEnding {
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(OnTrialEnding.class).asEagerSingleton();
+                bind(OnProjectDeletionImminent.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
             }
         };

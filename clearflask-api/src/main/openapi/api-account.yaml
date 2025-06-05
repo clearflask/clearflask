@@ -136,6 +136,12 @@ components:
             type: string
         invertPlanid:
           type: boolean
+        filterCreatedStart:
+          type: string
+          format: date-time
+        filterCreatedEnd:
+          type: string
+          format: date-time
     ProjectOwnerSwapSuperAdmin:
       type: object
       properties:

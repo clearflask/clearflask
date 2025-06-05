@@ -20,8 +20,8 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.gson.Gson;
-import com.google.inject.Module;
 import com.google.inject.*;
+import com.google.inject.Module;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
@@ -459,6 +459,12 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
             if (accountSearchSuperAdmin.getFilterStatus() != null && !accountSearchSuperAdmin.getFilterStatus().isEmpty()) {
                 log.error("searchAccounts filtering by status is not supported in elastic search");
             }
+            if (accountSearchSuperAdmin.getFilterCreatedStart() != null) {
+                log.error("searchAccounts filtering by created start is not supported in elastic search");
+            }
+            if (accountSearchSuperAdmin.getFilterCreatedEnd() != null) {
+                log.error("searchAccounts filtering by created end is not supported in elastic search");
+            }
             QueryBuilder queryBuilder;
             if (searchTextOpt.isPresent()) {
                 queryBuilder = QueryBuilders.multiMatchQuery(searchTextOpt.get(),
@@ -493,6 +499,10 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                                     JooqAccount.ACCOUNT.EMAIL.likeIgnoreCase("%" + searchTextOpt.get() + "%")
                                             .or(JooqAccount.ACCOUNT.NAME.likeIgnoreCase("%" + searchTextOpt.get() + "%"))
                                             .or(JooqAccount.ACCOUNT.PLANID.likeIgnoreCase("%" + searchTextOpt.get() + "%"))),
+                            Optional.ofNullable(accountSearchSuperAdmin.getFilterCreatedStart())
+                                    .map(JooqAccount.ACCOUNT.CREATED::greaterOrEqual),
+                            Optional.ofNullable(accountSearchSuperAdmin.getFilterCreatedEnd())
+                                    .map(JooqAccount.ACCOUNT.CREATED::lessOrEqual),
                             Optional.ofNullable(accountSearchSuperAdmin.getFilterPlanid())
                                     .filter(Predicate.not(List::isEmpty))
                                     .map(Boolean.TRUE.equals(accountSearchSuperAdmin.getInvertPlanid())
@@ -1062,6 +1072,24 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         Expression expression = accountSchema.expressionBuilder()
                 .conditionExists()
                 .set("trialEndingReminderSent", true)
+                .build();
+        Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+                        .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
+                        .withConditionExpression(expression.conditionExpression().orElse(null))
+                        .withUpdateExpression(expression.updateExpression().orElse(null))
+                        .withNameMap(expression.nameMap().orElse(null))
+                        .withValueMap(expression.valMap().orElse(null))
+                        .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem());
+        accountCache.put(accountId, Optional.of(account));
+        return account;
+    }
+
+    @Override
+    public Account setProjectDeletionReminderSent(String accountId) {
+        Expression expression = accountSchema.expressionBuilder()
+                .conditionExists()
+                .set("projectDeletionReminderSent", Instant.now())
                 .build();
         Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
                         .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))

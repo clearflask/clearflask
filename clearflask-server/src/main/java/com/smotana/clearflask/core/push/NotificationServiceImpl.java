@@ -136,6 +136,8 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     private Sanitizer sanitizer;
     @Inject
     private OnDigest onDigest;
+    @Inject
+    private OnProjectDeletionImminent onProjectDeletionImminent;
 
     private ListeningExecutorService executor;
 
@@ -658,6 +660,24 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
                 emailService.send(onDigest.email(account, projects));
             } catch (Exception ex) {
                 log.warn("Failed to send email digest", ex);
+            }
+        });
+    }
+
+    @Override
+    public void onProjectDeletionImminent(Account account) {
+        if (!config.enabled()) {
+            log.debug("Not enabled, skipping");
+            return;
+        }
+        submit(() -> {
+            String link = "https://" + configApp.domain() + "/dashboard/billing";
+            checkState(!Strings.isNullOrEmpty(account.getEmail()));
+
+            try {
+                emailService.send(onProjectDeletionImminent.email(account, link));
+            } catch (Exception ex) {
+                log.warn("Failed to send email notification", ex);
             }
         });
     }

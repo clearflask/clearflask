@@ -176,6 +176,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 OnCommentReply.module(),
                 OnStatusOrResponseChange.module(),
                 OnTrialEnding.module(),
+                OnProjectDeletionImminent.module(),
                 OnTrialEnded.module(),
                 OnPaymentFailed.module(),
                 OnInvoicePaymentSuccess.module(),

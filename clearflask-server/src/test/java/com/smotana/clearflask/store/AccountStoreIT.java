@@ -129,6 +129,7 @@ public class AccountStoreIT extends AbstractIT {
                 null,
                 null,
                 ImmutableSet.of(),
+                null,
                 null);
         store.createAccount(account).getIndexingFuture().get();
         assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
@@ -252,6 +253,7 @@ public class AccountStoreIT extends AbstractIT {
                 null,
                 null,
                 ImmutableSet.of(),
+                null,
                 null);
         store.createAccount(account).getIndexingFuture().get();
 
@@ -309,6 +311,7 @@ public class AccountStoreIT extends AbstractIT {
                 null,
                 null,
                 ImmutableSet.of(),
+                null,
                 null);
 
         HashMap<String, String> attrsExpected = null;
@@ -392,6 +395,7 @@ public class AccountStoreIT extends AbstractIT {
                 null,
                 null,
                 ImmutableSet.of(),
+                null,
                 null);
 
         ImmutableSet<String> digestOptOutExpected = ImmutableSet.of();
@@ -430,6 +434,7 @@ public class AccountStoreIT extends AbstractIT {
                 null,
                 null,
                 ImmutableSet.of(),
+                null,
                 null);
         String accountId2 = store.genAccountId("POIPLMQWPEEBQWNBENWQMNVEM");
         Account account2 = new Account(
@@ -448,6 +453,7 @@ public class AccountStoreIT extends AbstractIT {
                 null,
                 null,
                 ImmutableSet.of(),
+                null,
                 null);
 
         store.createAccount(account1).getIndexingFuture().get();
@@ -512,6 +518,7 @@ public class AccountStoreIT extends AbstractIT {
                 null,
                 null,
                 ImmutableSet.of(),
+                null,
                 null);
         account = store.createAccount(account).getAccount();
 
