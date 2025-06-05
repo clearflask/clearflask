@@ -141,7 +141,7 @@ public class ProjectDeletionService extends ManagedService {
         // Check if account is ACTIVE, but really should be NOPAYMENTMETHOD
         Instant now = Instant.now();
         SubscriptionStatus status = account.getStatus();
-        if (!SubscriptionStatus.ACTIVE.equals(status)
+        if (SubscriptionStatus.ACTIVE.equals(status)
                 && account.getCreated().isBefore(Instant.now().plus(14, ChronoUnit.DAYS))
                 && account.getCreated().isAfter(now.minus(30, ChronoUnit.DAYS))) {
             status = billing.updateAndGetEntitlementStatus(

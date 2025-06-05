@@ -571,7 +571,7 @@ public class KillBilling extends ManagedService implements Billing {
                     status, subscription.getSubscriptionId(), account.getAccountId(), account.getExternalKey(), account, subscription, overdueState, hasPaymentMethod.get(), isLimited.get());
         }
         if (log.isTraceEnabled()) {
-            log.info("Calculated subscription status to be {} from:\n -- account {}\n -- subscription {}\n -- overdueState {}\n -- hasPaymentMethod {}",
+            log.trace("Calculated subscription status to be {} from:\n -- account {}\n -- subscription {}\n -- overdueState {}\n -- hasPaymentMethod {}",
                     status, account, subscription, overdueState, hasPaymentMethod.get());
         }
         return status;
