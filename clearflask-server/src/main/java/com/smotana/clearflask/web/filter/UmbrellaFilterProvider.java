@@ -1,5 +1,6 @@
 package com.smotana.clearflask.web.filter;
 
+import com.google.common.base.Strings;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -16,14 +17,14 @@ public class UmbrellaFilterProvider extends ManagedService {
         @DefaultValue("false")
         boolean enabled();
 
-        @DefaultValue(value = "dataspray", innerType = String.class)
-        Optional<String> organizationName();
+        @DefaultValue("dataspray")
+        String organizationName();
 
-        @DefaultValue(value = "", innerType = String.class)
-        Optional<String> apiKey();
+        @DefaultValue("")
+        String apiKey();
 
-        @DefaultValue(value = "", innerType = String.class)
-        Optional<String> endpointUrl();
+        @DefaultValue("")
+        String endpointUrl();
     }
 
     @Inject
@@ -32,9 +33,9 @@ public class UmbrellaFilterProvider extends ManagedService {
     @Override
     protected void serviceStart() throws Exception {
         System.setProperty("umbrella.enabled", Boolean.toString(config.enabled()));
-        config.organizationName().ifPresent(org -> System.setProperty("umbrella.org", org));
-        config.apiKey().ifPresent(apiKey -> System.setProperty("umbrella.api.key", apiKey));
-        config.endpointUrl().ifPresent(endpointUrl -> System.setProperty("umbrella.endpoint.url", endpointUrl));
+        Optional.ofNullable(Strings.emptyToNull(config.organizationName())).ifPresent(org -> System.setProperty("umbrella.org", org));
+        Optional.ofNullable(Strings.emptyToNull(config.apiKey())).ifPresent(apiKey -> System.setProperty("umbrella.api.key", apiKey));
+        Optional.ofNullable(Strings.emptyToNull(config.endpointUrl())).ifPresent(endpointUrl -> System.setProperty("umbrella.endpoint.url", endpointUrl));
     }
 
     public static Module module() {
