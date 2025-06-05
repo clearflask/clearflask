@@ -11,8 +11,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.GuavaRateLimiters;
 import com.google.common.util.concurrent.RateLimiter;
-import com.google.inject.Module;
 import com.google.inject.*;
+import com.google.inject.Module;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.util.LogUtil;
@@ -63,7 +63,7 @@ public class EmailServiceImpl implements EmailService {
 
         Observable<Duration> rateLimitCapacityObservable();
 
-        @DefaultValue(value = "TRIAL_ENDING,TRIAL_ENDED,ACCOUNT_SIGNUP,INVOICE_PAYMENT_SUCCESS,PAYMENT_FAILURE,WEEKLY_DIGEST", innerType = String.class)
+        @DefaultValue(value = "TRIAL_ENDING,TRIAL_ENDED,ACCOUNT_SIGNUP,INVOICE_PAYMENT_SUCCESS,PAYMENT_FAILURE,WEEKLY_DIGEST,PROJECT_DELETION_IMMINENT", innerType = String.class)
         List<String> bccOnTagTypes();
 
         @DefaultValue(value = "", innerType = String.class)
