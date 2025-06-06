@@ -18,11 +18,12 @@ import lombok.extern.slf4j.Slf4j;
 public class OnProjectDeletionImminent {
 
     public interface Config {
-        @DefaultValue("Inactive project(s) deletion")
+        @DefaultValue("Inactive account deletion")
         String subjectTemplate();
 
         @DefaultValue("<p>Hi __NAME__,</p>"
-                + "<p>We are sad to see you go and we just wanted to let you know we will be deleting your projects soon unless you take action.</p>"
+                + "<p>We just wanted to let you know we will be deleting your projects soon unless you take action.</p>"
+                + "<p>If you do not wish to continue using ClearFlask, there is nothing you need to do and you will not receive any more reminders.</p>"
                 + "<p>Please complete setting up your billing if you wish to continue using ClearFlask.</p>"
                 + "<p><b>Need Assistance or considering a different ClearFlask Solution?</b> We’d love to help — reply to this email to get in touch with us.</p>"
                 + "<p>ClearFlask Team</p>")
@@ -30,6 +31,7 @@ public class OnProjectDeletionImminent {
 
         @DefaultValue("Hi __NAME__,"
                 + "<p>We are sad to see you go and we just wanted to let you know we will be deleting your projects soon unless you take action.</p>"
+                + "<p>If you do not wish to continue using ClearFlask, there is nothing you need to do and you will not receive any more reminders.</p>"
                 + "<p>Please complete setting up your billing if you wish to continue using ClearFlask.</p>"
                 + "\n\nNeed Assistance or considering a different ClearFlask Solution? We’d love to help — reply to this email to get in touch with us."
                 + "\n\nClearFlask Team")
