@@ -131,9 +131,20 @@ public class TrialEndingReminderService extends ManagedService {
             return;
         }
 
+        // Sanity check, some old accounts have subscription already blocked but account status is not updated
         Subscription subscription = billing.getSubscription(account.getAccountId());
         if (subscription.getPhaseType() != PhaseType.TRIAL) {
-            log.warn("Trial Ending Reminder: Account {} indicates {} but subscription in {}", account.getAccountId(), account.getStatus(), subscription.getPhaseType());
+            SubscriptionStatus newStatus = billing.updateAndGetEntitlementStatus(
+                    account.getStatus(),
+                    billing.getAccount(account.getAccountId()),
+                    billing.getSubscription(account.getAccountId()),
+                    "project deletion check");
+            if (!SubscriptionStatus.ACTIVETRIAL.equals(account.getStatus())) {
+                log.info("Trial Ending Reminder: Account {} was in {} status not matching subscription status {}, but after entitlement refresh is now {} status, skipping",
+                        account.getAccountId(), account.getStatus(), subscription.getPhaseType(), newStatus);
+            } else {
+                log.warn("Trial Ending Reminder: Account {} indicates {} but subscription in {}", account.getAccountId(), account.getStatus(), subscription.getPhaseType());
+            }
             return;
         }
 
