@@ -15,8 +15,9 @@
         <module name="clearflask-i18n" />
         <module name="clearflask-logging" />
         <module name="clearflask-legal" />
-        <module name="clearflask-release" />
         <module name="clearflask-frontend" />
+        <module name="clearflask-release" />
+        <module name="clearflask-api" />
       </profile>
       <profile name="Annotation profile for clearflask-server" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />

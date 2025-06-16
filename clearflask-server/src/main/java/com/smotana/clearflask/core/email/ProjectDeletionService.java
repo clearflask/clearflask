@@ -201,10 +201,18 @@ public class ProjectDeletionService extends ManagedService {
                 return;
             }
 
-            log.info("Project deletion: Sending reminder of imminent project deletion for account {} status {} created {} deletionEligibility {}",
-                    account.getEmail(), status, account.getCreated(), deletionEligibility);
+            log.info("Project deletion: Sending reminder of imminent project deletion for account {} status {} created {} deletionEligibility {} previous reminder sent {}",
+                    account.getEmail(), status, account.getCreated(), deletionEligibility, Optional.ofNullable(account.getProjectDeletionReminderSent()));
             notificationService.onProjectDeletionImminent(account);
             accountStore.setProjectDeletionReminderSent(account.getAccountId());
+            return;
+        }
+
+        // Now make sure after a reminder is sent, we wait at least reminderDaysBeforeDeletion
+        if (account.getProjectDeletionReminderSent().isAfter(now.minus(config.reminderDaysBeforeDeletion(), ChronoUnit.DAYS))) {
+            // TODO switch to debug
+            log.info("Project deletion: Account {} sent deletion reminder, but need to wait for some time after reminder; status {} created {} deletionEligibility {} reminderSent {}",
+                    account.getEmail(), status, account.getCreated(), deletionEligibility, account.getProjectDeletionReminderSent());
             return;
         }
 
