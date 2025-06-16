@@ -3,16 +3,33 @@
 package com.smotana.clearflask.core.push.provider;
 
 import com.amazonaws.services.simpleemailv2.AmazonSimpleEmailServiceV2;
-import com.amazonaws.services.simpleemailv2.model.*;
+import com.amazonaws.services.simpleemailv2.model.AccountSuspendedException;
+import com.amazonaws.services.simpleemailv2.model.BadRequestException;
+import com.amazonaws.services.simpleemailv2.model.Body;
+import com.amazonaws.services.simpleemailv2.model.Content;
+import com.amazonaws.services.simpleemailv2.model.Destination;
+import com.amazonaws.services.simpleemailv2.model.EmailContent;
+import com.amazonaws.services.simpleemailv2.model.LimitExceededException;
+import com.amazonaws.services.simpleemailv2.model.MailFromDomainNotVerifiedException;
+import com.amazonaws.services.simpleemailv2.model.Message;
+import com.amazonaws.services.simpleemailv2.model.MessageRejectedException;
+import com.amazonaws.services.simpleemailv2.model.MessageTag;
+import com.amazonaws.services.simpleemailv2.model.NotFoundException;
+import com.amazonaws.services.simpleemailv2.model.SendEmailRequest;
+import com.amazonaws.services.simpleemailv2.model.SendEmailResult;
+import com.amazonaws.services.simpleemailv2.model.SendingPausedException;
+import com.amazonaws.services.simpleemailv2.model.TooManyRequestsException;
 import com.google.common.base.Charsets;
 import com.google.common.base.Enums;
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.GuavaRateLimiters;
 import com.google.common.util.concurrent.RateLimiter;
-import com.google.inject.*;
+import com.google.inject.AbstractModule;
+import com.google.inject.Inject;
 import com.google.inject.Module;
+import com.google.inject.Provider;
+import com.google.inject.Singleton;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.util.LogUtil;
@@ -246,7 +263,10 @@ public class EmailServiceImpl implements EmailService {
         if (configApp.enableTelemetry()) {
             bccEmails.add("events@clearflask.com");
         }
-        bccEmails.addAll(Optional.ofNullable(config.bccEmails()).orElse(ImmutableList.of()));
+        Optional.ofNullable(config.bccEmails())
+                .ifPresent(configBccEmails -> configBccEmails.stream()
+                        .filter(email -> !Strings.isNullOrEmpty(email))
+                        .forEach(bccEmails::add));
         return bccEmails;
     }
 
