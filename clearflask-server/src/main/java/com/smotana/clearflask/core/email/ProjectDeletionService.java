@@ -161,6 +161,10 @@ public class ProjectDeletionService extends ManagedService {
                     billing.getAccount(account.getAccountId()),
                     billing.getSubscription(account.getAccountId()),
                     "project deletion check");
+            if (!SubscriptionStatus.ACTIVE.equals(status)) {
+                // TODO switch to debug
+                log.info("Project deletion: Account {} has switched status from ACTIVE to {}", account.getEmail(), status);
+            }
         }
 
         Instant deletionEligibility;
@@ -178,7 +182,7 @@ public class ProjectDeletionService extends ManagedService {
                 deletionEligibility = now;
                 break;
             default:
-                log.warn("Project deletion: unexpected status {}", status);
+                log.warn("Project deletion: unexpected status {} for account {}", status, account.getEmail());
                 return;
         }
 
