@@ -55,13 +55,12 @@ class BasePage extends Component<Props & ConnectProps & WithTranslation<'app'> &
             </div>
           </div>
         </div>
-        {!!this.props.showFooter && (
-          <Footer
-            customPageSlug={this.props.customPageSlug}
-            isFrontPage={this.props.isFrontPage}
-            pageSlug={this.props.pageSlug}
-          />
-        )}
+        <Footer
+          hideFooterContent={!this.props.showFooter}
+          customPageSlug={this.props.customPageSlug}
+          isFrontPage={this.props.isFrontPage}
+          pageSlug={this.props.pageSlug}
+        />
       </>
     );
   }

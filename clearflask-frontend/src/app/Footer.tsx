@@ -36,24 +36,28 @@ const styles = (theme: Theme) => createStyles({
     justifyContent: 'center',
   },
 });
+
 interface Props {
   customPageSlug?: string;
+  hideFooterContent?: boolean;
   isFrontPage?: boolean;
   pageSlug?: string;
 }
+
 interface ConnectProps {
   configver?: string;
   config?: Client.Config;
   page?: Client.Page;
   isMod: boolean;
 }
+
 class Footer extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
   render() {
     const isSelfHost = detectEnv() === Environment.PRODUCTION_SELF_HOST;
     var footerTemplate = (this.props.config?.style.templates?.pageFooters || []).find(p => !!p && p.pageId === this.props.page?.pageId)?.template
       || this.props.config?.style.templates?.footer;
     var footer;
-    if (footerTemplate) {
+    if (!this.props.hideFooterContent && footerTemplate) {
       footer = (
         <TemplateLiquid
           template={footerTemplate}
@@ -68,7 +72,7 @@ class Footer extends Component<Props & ConnectProps & WithStyles<typeof styles, 
     return (
       <>
         {footer}
-        {(!hidePoweredBy || isSelfHost) && !this.props.isMod && (
+        {!hidePoweredBy && (
           <div className={this.props.classes.footerSpacing}>
             <div className={classNames(this.props.classes.footerWrapper, this.props.classes.poweredBy)}>
               <PoweredBy />
