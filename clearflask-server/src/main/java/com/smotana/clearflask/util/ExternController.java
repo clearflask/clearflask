@@ -6,8 +6,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
+import com.google.inject.AbstractModule;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import com.google.inject.Key;
 import com.google.inject.Module;
-import com.google.inject.*;
+import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
@@ -80,9 +84,11 @@ public class ExternController extends ManagedService {
 
     @Override
     protected void serviceStop() throws Exception {
-        for (ObjectName objectName : registeredObjectNames) {
-            mBeanServer.unregisterMBean(objectName);
-        }
+        // With Tomcat WAR reloading, the previous service stop occurs after new service start so this ends up
+        // deregistering the new beans.
+        //        for (ObjectName objectName : registeredObjectNames) {
+        //            mBeanServer.unregisterMBean(objectName);
+        //        }
     }
 
     public static Module module() {
