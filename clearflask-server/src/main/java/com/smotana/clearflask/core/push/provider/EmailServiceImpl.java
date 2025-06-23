@@ -250,7 +250,10 @@ public class EmailServiceImpl implements EmailService {
                     .withPlainText(email.getContentText());
             if (config.bccOnTagTypes() != null
                     && config.bccOnTagTypes().contains(email.getTypeTag())) {
-                emailBuilder.bcc(String.join(",", getBccEmails()));
+                Set<String> bccEmails = getBccEmails();
+                if (!bccEmails.isEmpty()) {
+                    emailBuilder.bcc(String.join(",", bccEmails));
+                }
             }
             this.smtpOpt.get().sendMail(emailBuilder.buildEmail(), true);
             log.info("Sending email to {} subject '{}' project/account id {} ",
