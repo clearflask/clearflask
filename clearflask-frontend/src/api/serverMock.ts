@@ -479,6 +479,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater(undefined);
   }
 
+  accountDeleteSuperAdmin(request: Admin.AccountDeleteSuperAdminRequest): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+
   accountUpdateAdmin(request: Admin.AccountUpdateAdminRequest): Promise<Admin.AccountAdmin> {
     if (!this.account) return this.throwLater(403, 'Not logged in');
     if (request.accountUpdateAdmin.name) this.account.name = request.accountUpdateAdmin.name;

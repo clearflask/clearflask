@@ -16,24 +16,73 @@ import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.annotations.NoDefaultValue;
-import com.smotana.clearflask.api.*;
-import com.smotana.clearflask.api.model.*;
-import com.smotana.clearflask.billing.*;
+import com.smotana.clearflask.api.AccountAdminApi;
+import com.smotana.clearflask.api.AccountApi;
+import com.smotana.clearflask.api.AccountSuperAdminApi;
+import com.smotana.clearflask.api.PlanAdminApi;
+import com.smotana.clearflask.api.PlanSuperAdminApi;
+import com.smotana.clearflask.api.model.AccountAcceptInvitationResponse;
+import com.smotana.clearflask.api.model.AccountAdmin;
+import com.smotana.clearflask.api.model.AccountAttrsUpdateAdmin;
+import com.smotana.clearflask.api.model.AccountBilling;
+import com.smotana.clearflask.api.model.AccountBillingPayment;
+import com.smotana.clearflask.api.model.AccountBillingPaymentActionRequired;
+import com.smotana.clearflask.api.model.AccountBindAdmin;
+import com.smotana.clearflask.api.model.AccountBindAdminResponse;
+import com.smotana.clearflask.api.model.AccountCreditAdjustment;
+import com.smotana.clearflask.api.model.AccountDeleteSuperAdmin;
+import com.smotana.clearflask.api.model.AccountLogin;
+import com.smotana.clearflask.api.model.AccountLoginAs;
+import com.smotana.clearflask.api.model.AccountSearchResponse;
+import com.smotana.clearflask.api.model.AccountSearchSuperAdmin;
+import com.smotana.clearflask.api.model.AccountSignupAdmin;
+import com.smotana.clearflask.api.model.AccountUpdateAdmin;
+import com.smotana.clearflask.api.model.AccountUpdateSuperAdmin;
+import com.smotana.clearflask.api.model.AllPlansGetResponse;
+import com.smotana.clearflask.api.model.AvailableRepos;
+import com.smotana.clearflask.api.model.CouponGenerateSuperAdmin;
+import com.smotana.clearflask.api.model.InvitationResult;
+import com.smotana.clearflask.api.model.InvoiceHtmlResponse;
+import com.smotana.clearflask.api.model.Invoices;
+import com.smotana.clearflask.api.model.LegalResponse;
+import com.smotana.clearflask.api.model.Plan;
+import com.smotana.clearflask.api.model.PlanPricingAdmins;
+import com.smotana.clearflask.api.model.PlansGetResponse;
+import com.smotana.clearflask.api.model.ProjectOwnerSwapSuperAdmin;
+import com.smotana.clearflask.api.model.SubscriptionStatus;
+import com.smotana.clearflask.api.model.ViewCouponResponse;
+import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.Billing.Gateway;
+import com.smotana.clearflask.billing.CouponStore;
 import com.smotana.clearflask.billing.CouponStore.CouponModel;
+import com.smotana.clearflask.billing.KillBillPlanStore;
+import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.billing.PlanStore.PlanWithAddons;
+import com.smotana.clearflask.billing.PlanVerifyStore;
+import com.smotana.clearflask.billing.RequiresUpgradeException;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.security.EmailValidator;
 import com.smotana.clearflask.security.limiter.Limit;
-import com.smotana.clearflask.store.*;
+import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.AccountStore.SearchAccountsResponse;
+import com.smotana.clearflask.store.GitHubStore;
+import com.smotana.clearflask.store.LegalStore;
+import com.smotana.clearflask.store.LocalLicenseStore;
+import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.InvitationModel;
 import com.smotana.clearflask.store.ProjectStore.Project;
-import com.smotana.clearflask.util.*;
+import com.smotana.clearflask.store.RemoteLicenseStore;
+import com.smotana.clearflask.store.UserStore;
+import com.smotana.clearflask.util.ChatwootUtil;
+import com.smotana.clearflask.util.IntercomUtil;
+import com.smotana.clearflask.util.IpUtil;
+import com.smotana.clearflask.util.LogUtil;
+import com.smotana.clearflask.util.OAuthUtil;
+import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.AuthCookie;
@@ -815,6 +864,21 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
                 .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
                 .flatMap(accountId -> accountStore.getAccount(accountId, false))
                 .get();
+        deleteAccount(account);
+    }
+
+    @RolesAllowed({Role.SUPER_ADMIN})
+    @Override
+    public void accountDeleteSuperAdmin(AccountDeleteSuperAdmin accountDeleteSuperAdmin) {
+        for (String accountOrEmailId : accountDeleteSuperAdmin.getAccountOrEmailIds()) {
+            Account account = accountStore.getAccount(accountOrEmailId, true)
+                    .or(() -> accountStore.getAccountByEmail(accountOrEmailId))
+                    .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Account not found: " + accountOrEmailId));
+            deleteAccount(account);
+        }
+    }
+
+    private void deleteAccount(Account account) {
         account.getProjectIds().forEach(projectId -> projectResource.projectDeleteAdmin(account, projectId));
         account.getExternalProjectIds().forEach(projectId -> projectStore.removeAdmin(projectId, account.getAccountId()));
         accountStore.deleteAccount(account.getAccountId());

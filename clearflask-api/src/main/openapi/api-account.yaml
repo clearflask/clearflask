@@ -457,6 +457,15 @@ components:
           format: int64
         description:
           type: string
+    AccountDeleteSuperAdmin:
+      type: object
+      required:
+        - accountOrEmailIds
+      properties:
+        accountOrEmailIds:
+          type: array
+          items:
+            type: string
 
 /support/message:
   post:
@@ -943,6 +952,19 @@ components:
   delete:
     operationId: accountDeleteAdmin
     tags: [ AccountAdmin ]
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
+/superadmin/account/delete:
+  delete:
+    operationId: accountDeleteSuperAdmin
+    tags: [ AccountSuperAdmin ]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-account.yaml#/components/schemas/AccountDeleteSuperAdmin'
     responses:
       '200':
         $ref: 'api-client.yaml#/components/responses/Ok'
