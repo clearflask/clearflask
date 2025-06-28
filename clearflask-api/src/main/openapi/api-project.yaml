@@ -69,7 +69,7 @@ components:
               items:
                 type: string
         noIndex:
-          x-clearflask-prop: { order: 6, name: 'Search indexing', description: 'Whether you want to have your page indexed and shown publicly on search results including Google Search. For private projects, no content behind the login page will be indexed. Keep in mind this is simply an indication to crawler bots and we do not have final control over whether they respect it.', falseAsUndefined: true, trueLabel: 'Not indexed', falseLabel: 'Indexed' }
+          x-clearflask-prop: { order: 6, name: 'Disable search indexing', description: 'Whether you want to have your page indexed and shown publicly on search results including Google Search. For private projects, no content behind the login page will be indexed. Keep in mind this is simply an indication to crawler bots and we do not have final control over whether they respect it.', falseAsUndefined: true, trueLabel: 'Indexing disabled', falseLabel: 'Indexing enabled' }
           type: boolean
         cookieConsent:
           $ref: 'api-project.yaml#/components/schemas/cookieConsent'
