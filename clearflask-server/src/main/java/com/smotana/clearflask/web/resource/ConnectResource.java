@@ -12,6 +12,7 @@ import com.smotana.clearflask.api.model.CertGetOrCreateResponse;
 import com.smotana.clearflask.api.model.Challenge;
 import com.smotana.clearflask.api.model.RobotsResult;
 import com.smotana.clearflask.security.CertFetcher;
+import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.CertStore;
 import com.smotana.clearflask.store.CertStore.ChallengeModel;
 import com.smotana.clearflask.store.ProjectStore;
@@ -36,6 +37,8 @@ public class ConnectResource extends AbstractResource implements SniConnectApi, 
 
     @Inject
     private ProjectStore projectStore;
+    @Inject
+    private AccountStore accountStore;
     @Inject
     private CertStore certStore;
     @Inject
@@ -63,7 +66,25 @@ public class ConnectResource extends AbstractResource implements SniConnectApi, 
 
         boolean doIndex = false;
         if (projectOpt.isPresent()) {
+            // Do not index if project explicitly says so
             doIndex = projectOpt.get().getVersionedConfigAdmin().getConfig().getNoIndex() != Boolean.TRUE;
+
+            // Do not index if account is in trial or blocked
+            if (doIndex) {
+                Optional<AccountStore.Account> accountOpt = accountStore.getAccount(projectOpt.get().getAccountId(), true);
+                if (accountOpt.isEmpty()) {
+                    doIndex = false;
+                    log.error("No account with id {} found for project {}, allowing indexing",
+                            projectOpt.get().getAccountId(), projectOpt.get().getProjectId());
+                } else {
+                    switch (accountOpt.get().getStatus()) {
+                        case BLOCKED:
+                        case ACTIVETRIAL:
+                            doIndex = false;
+                            break;
+                    }
+                }
+            }
         }
 
         return new RobotsResult(doIndex);
