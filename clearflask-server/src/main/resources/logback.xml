@@ -64,11 +64,13 @@
     <logger name="org.jooq" level="WARN"/>
     <logger name="org.apache.catalina.core.StandardWrapperValve" level="OFF"/>
     <logger name="org.jooq.impl.DefaultExecuteContext.logVersionSupport" level="OFF"/>
+    <!-- Suppress "Event Subject was not initialized" not playing nice with Tomcat reload -->
+    <logger name="com.kik.config.ice.source.AbstractDynamicConfigSource" level="ERROR"/>
 
     <root level="TRACE">
         <appender-ref ref="FILE"/>
         <appender-ref ref="ASYNC_EMAIL_SES"/>
         <appender-ref ref="SENTRY"/>
     </root>
-
+    
 </configuration>
