@@ -37,8 +37,7 @@ services:
       retries: 2
   # MySQL (enabled by default as an alternative to ElasticSearch)
   mysql-db:
-    image: mysql:5.7@sha256:2c23f254c6b9444ecda9ba36051a9800e8934a2f5828ecc8730531db8142af83
-    platform: linux/amd64
+    image: mariadb:10.5
     command:
       - 'mysqld'
       - '--port=3306'
