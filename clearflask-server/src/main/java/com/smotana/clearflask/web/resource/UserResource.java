@@ -12,9 +12,33 @@ import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.smotana.clearflask.antispam.AntiSpam;
 import com.smotana.clearflask.api.UserAdminApi;
 import com.smotana.clearflask.api.UserApi;
-import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.ConfigAdmin;
+import com.smotana.clearflask.api.model.Credits;
+import com.smotana.clearflask.api.model.CreditsCreditOnSignup;
+import com.smotana.clearflask.api.model.EmailSignup;
+import com.smotana.clearflask.api.model.ForgotPassword;
+import com.smotana.clearflask.api.model.HistogramResponse;
+import com.smotana.clearflask.api.model.HistogramSearchAdmin;
+import com.smotana.clearflask.api.model.Hits;
+import com.smotana.clearflask.api.model.NotificationMethods;
+import com.smotana.clearflask.api.model.SubscriptionListenerUser;
+import com.smotana.clearflask.api.model.User;
+import com.smotana.clearflask.api.model.UserAdmin;
+import com.smotana.clearflask.api.model.UserBind;
+import com.smotana.clearflask.api.model.UserBindResponse;
+import com.smotana.clearflask.api.model.UserCreate;
+import com.smotana.clearflask.api.model.UserCreateAdmin;
+import com.smotana.clearflask.api.model.UserCreateResponse;
+import com.smotana.clearflask.api.model.UserLogin;
+import com.smotana.clearflask.api.model.UserMe;
+import com.smotana.clearflask.api.model.UserMeWithBalance;
+import com.smotana.clearflask.api.model.UserSearchAdmin;
+import com.smotana.clearflask.api.model.UserSearchResponse;
+import com.smotana.clearflask.api.model.UserUpdate;
+import com.smotana.clearflask.api.model.UserUpdateAdmin;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
@@ -90,6 +114,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     private Billing billing;
     @Inject
     private UserBindUtil userBindUtil;
+    @Inject
+    private AntiSpam antiSpam;
 
     @PermitAll
     @Limit(requiredPermits = 100, challengeAfter = 3)
@@ -139,6 +165,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 100)
     @Override
     public UserCreateResponse userCreate(String projectId, UserCreate userCreate) {
+        antiSpam.onUserSignup(request, projectId, userCreate);
         if (!Strings.isNullOrEmpty(userCreate.getName())) {
             sanitizer.userName(userCreate.getName());
         }

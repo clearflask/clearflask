@@ -16,6 +16,7 @@ import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.annotations.NoDefaultValue;
+import com.smotana.clearflask.antispam.AntiSpam;
 import com.smotana.clearflask.api.AccountAdminApi;
 import com.smotana.clearflask.api.AccountApi;
 import com.smotana.clearflask.api.AccountSuperAdminApi;
@@ -202,6 +203,8 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
     private RemoteLicenseStore remoteLicenseStore;
     @Inject
     private LocalLicenseStore localLicenseStore;
+    @Inject
+    private AntiSpam antiSpam;
 
     @PermitAll
     @Limit(requiredPermits = 10)
@@ -418,6 +421,7 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
     @Limit(requiredPermits = 10, challengeAfter = 3)
     @Override
     public AccountAdmin accountSignupAdmin(AccountSignupAdmin signup) {
+        antiSpam.onAccountSignup(request, signup);
         Account account = createAccount(
                 signup.getEmail(),
                 signup.getName(),

@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
-import windowIso from "../windowIso";
-import { isProd } from "./detectEnv";
-import randomUuid from "./uuid";
+import windowIso from '../windowIso';
+import { isProd } from './detectEnv';
+import randomUuid from './uuid';
 
 const SUCCESS_LOCALSTORAGE_EVENT_KEY_PREFIX = 'login-success';
 export const OAUTH_CODE_PARAM_NAME = 'code';
@@ -127,7 +127,6 @@ export class OAuthFlow {
     const oauthCode = params.get(OAUTH_CODE_PARAM_NAME);
     const oauthStateStr = params.get(OAUTH_STATE_PARAM_NAME);
     if (!oauthStateStr || !oauthCode) {
-      console.log("No oauth code or state found", oauthCode, oauthStateStr);
       return undefined;
     }
 

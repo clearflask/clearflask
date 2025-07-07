@@ -43,26 +43,43 @@ export const importSuccess = i => {
 };
 export const importFailed = e => {
   console.log('import failed', e);
-  notistackRef.current?.enqueueSnackbar("Failed to load: " + e, {
+  notistackRef.current?.enqueueSnackbar('Failed to load: ' + e, {
     variant: 'error',
     preventDuplicate: true,
     persist: true,
   });
 };
-const App = loadable(() => import(/* webpackChunkName: "app", webpackPreload: true */'./app/App').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
-const Dashboard = loadable(() => import(/* webpackChunkName: "dashboard" */'./site/Dashboard').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
-const Site = loadable(() => import(/* webpackChunkName: "site" */'./site/Site').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
-const Invoice = loadable(() => import(/* webpackChunkName: "invoice" */'./site/InvoicePage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
-const PostStatus = loadable(() => import(/* webpackChunkName: "postStatus" */'./app/PostStatus').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
-const AccountEnterPage = loadable(() => import(/* webpackChunkName: "AccountEnterPage", webpackPreload: true */'./site/AccountEnterPage').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
-const BathtubOauthProvider = loadable(() => import(/* webpackChunkName: "BathtubOauthProvider" */'./common/BathtubOauthProvider').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
-const ApiDocs = loadable(() => import(/* webpackChunkName: "ApiDocs" */'./ApiDocs').then(importSuccess).catch(importFailed), { fallback: (<Loading />) });
+const App = loadable(() => import(/* webpackChunkName: "app", webpackPreload: true */'./app/App').then(importSuccess).catch(importFailed), {
+  fallback: (<Loading />),
+});
+const Dashboard = loadable(() => import(/* webpackChunkName: "dashboard" */'./site/Dashboard').then(importSuccess).catch(importFailed), {
+  fallback: (<Loading />),
+});
+const Site = loadable(() => import(/* webpackChunkName: "site" */'./site/Site').then(importSuccess).catch(importFailed), {
+  fallback: (<Loading />),
+});
+const Invoice = loadable(() => import(/* webpackChunkName: "invoice" */'./site/InvoicePage').then(importSuccess).catch(importFailed), {
+  fallback: (<Loading />),
+});
+const PostStatus = loadable(() => import(/* webpackChunkName: "postStatus" */'./app/PostStatus').then(importSuccess).catch(importFailed), {
+  fallback: (<Loading />),
+});
+const AccountEnterPage = loadable(() => import(/* webpackChunkName: "AccountEnterPage", webpackPreload: true */'./site/AccountEnterPage').then(importSuccess).catch(importFailed), {
+  fallback: (<Loading />),
+});
+const BathtubOauthProvider = loadable(() => import(/* webpackChunkName: "BathtubOauthProvider" */'./common/BathtubOauthProvider').then(importSuccess).catch(importFailed), {
+  fallback: (<Loading />),
+});
+const ApiDocs = loadable(() => import(/* webpackChunkName: "ApiDocs" */'./ApiDocs').then(importSuccess).catch(importFailed), {
+  fallback: (<Loading />),
+});
 
 interface Props {
   i18n: typeof i18n;
   ssrLocation?: string;
   ssrStaticRouterContext?: StaticRouterContext;
 }
+
 class Main extends Component<Props> {
   readonly theme: Theme;
   customerTrackerPresent: boolean = false;
@@ -115,12 +132,13 @@ class Main extends Component<Props> {
         ReactGA.initialize('UA-127162051-3');
         ReactGA.set({
           anonymizeIp: true,
-          forceSSL: true
+          forceSSL: true,
         });
         ReactGA.pageview(windowIso.location.pathname + windowIso.location.search);
 
         LinkedInTag.init('3564876', 'dc', false);
-      } catch (e) { }
+      } catch (e) {
+      }
     });
   }
 
@@ -169,7 +187,7 @@ class Main extends Component<Props> {
                       } : {})}
                     >
                       <ScrollAnchor scrollOnNavigate />
-                      <Route path='/' render={routeProps => {
+                      <Route path="/" render={routeProps => {
                         trackingBlock(() => {
                           ReactGA.set({ page: routeProps.location.pathname + routeProps.location.search });
                           ReactGA.pageview(routeProps.location.pathname + routeProps.location.search);
@@ -177,12 +195,12 @@ class Main extends Component<Props> {
                         return null;
                       }} />
                       <Route render={routeProps => routeProps.location.pathname.startsWith('/embed-status') ? null : (
-                        <EnvironmentNotifier key='env-notifier' />
+                        <EnvironmentNotifier key="env-notifier" />
                       )} />
                       <Switch>
                         {[
                           (
-                            <Route key='api-docs' path='/api' render={props => (
+                            <Route key="api-docs" path="/api" render={props => (
                               <NoSsr>
                                 <Provider store={ServerAdmin.get().getStore()}>
                                   <ApiDocs />
@@ -191,15 +209,17 @@ class Main extends Component<Props> {
                             )} />
                           ),
                           ...(!isProd() ? [(
-                            <Route key='mock-oauth-provider-bathtub' path='/bathtub/authorize' render={props => (
+                            <Route key="mock-oauth-provider-bathtub" path="/bathtub/authorize" render={props => (
                               <Provider store={ServerAdmin.get().getStore()}>
                                 <BathtubOauthProvider />
                               </Provider>
                             )} />
                           )] : []),
                           ...(showDashboard ? [(
-                            <Route key='dashboard' path="/dashboard/:path?/:subPath*" render={props => (
+                            <Route key="dashboard" path="/dashboard/:path?/:subPath*" render={props => (
                               <Provider store={ServerAdmin.get().getStore()}>
+                                {/* Disabled as it consumes too many API calls */}
+                                {/*<CastlePageTrack routeProps={props} track="account" />*/}
                                 <SentryIdentifyAccount />
                                 <SetMaxAge val={0 /* If you want to cache, don't cache if auth is present in URL */} />
                                 <NoSsr>
@@ -212,7 +232,7 @@ class Main extends Component<Props> {
                               </Provider>
                             )} />
                           ), (
-                            <Route key='invoice' path="/invoice/:invoiceId" render={props => (
+                            <Route key="invoice" path="/invoice/:invoiceId" render={props => (
                               <Provider store={ServerAdmin.get().getStore()}>
                                 <SentryIdentifyAccount />
                                 <SetMaxAge val={0} />
@@ -220,26 +240,27 @@ class Main extends Component<Props> {
                               </Provider>
                             )} />
                           ), (
-                            <Route key='enter' exact path='/:type(login|signup|invitation|coupon)/:id([a-z0-9]*)?' render={props => (
-                              <Provider store={ServerAdmin.get().getStore()}>
-                                <SetMaxAge val={0} />
-                                <SetTitle title={props.match.params['type'] === 'login'
-                                  ? 'Login'
-                                  : (props.match.params['type'] === 'signup'
-                                    ? 'Sign up'
-                                    : (props.match.params['type'] === 'invitation'
-                                      ? 'Invitation'
-                                      : 'Coupon'))} />
-                                <AccountEnterPage
-                                  type={props.match.params['type']}
-                                  invitationId={props.match.params['type'] === 'invitation' ? props.match.params['id'] : undefined}
-                                  couponId={props.match.params['type'] === 'coupon' ? props.match.params['id'] : undefined}
-                                />
-                              </Provider>
-                            )} />
+                            <Route key="enter" exact path="/:type(login|signup|invitation|coupon)/:id([a-z0-9]*)?"
+                                   render={props => (
+                                     <Provider store={ServerAdmin.get().getStore()}>
+                                       <SetMaxAge val={0} />
+                                       <SetTitle title={props.match.params['type'] === 'login'
+                                         ? 'Login'
+                                         : (props.match.params['type'] === 'signup'
+                                           ? 'Sign up'
+                                           : (props.match.params['type'] === 'invitation'
+                                             ? 'Invitation'
+                                             : 'Coupon'))} />
+                                       <AccountEnterPage
+                                         type={props.match.params['type']}
+                                         invitationId={props.match.params['type'] === 'invitation' ? props.match.params['id'] : undefined}
+                                         couponId={props.match.params['type'] === 'coupon' ? props.match.params['id'] : undefined}
+                                       />
+                                     </Provider>
+                                   )} />
                           )] : []),
                           ...(showProject ? [(
-                            <Route key='embed-status' path="/embed-status/post/:postId" render={props => (
+                            <Route key="embed-status" path="/embed-status/post/:postId" render={props => (
                               <>
                                 <SetMaxAge val={24 * 60 * 60} />
                                 <PostStatus
@@ -249,7 +270,7 @@ class Main extends Component<Props> {
                               </>
                             )} />
                           ), (
-                            <Route key='app' path='/' render={props => (
+                            <Route key="app" path="/" render={props => (
                               <>
                                 <SetMaxAge val={60} />
                                 <App slug={windowIso.location.hostname} {...props} />
@@ -257,7 +278,7 @@ class Main extends Component<Props> {
                             )} />
                           )] : []),
                           ...(showSite ? [(
-                            <Route key='site' path='/' render={props => (
+                            <Route key="site" path="/" render={props => (
                               <Provider store={ServerAdmin.get().getStore()}>
                                 <SentryIdentifyAccount />
                                 <SetMaxAge val={24 * 60 * 60} />

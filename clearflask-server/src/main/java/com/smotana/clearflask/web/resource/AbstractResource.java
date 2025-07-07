@@ -22,6 +22,7 @@ import java.util.Optional;
 @Slf4j
 @Singleton
 @Path(Application.RESOURCE_VERSION)
+@SuppressWarnings("RestResourceMethodInspection")
 public abstract class AbstractResource {
 
     @VisibleForTesting

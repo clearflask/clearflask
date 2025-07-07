@@ -14,6 +14,7 @@ import * as Admin from './admin';
 import * as Client from './client';
 import ServerAdmin from './serverAdmin';
 import ServerMock from './serverMock';
+import { getCastleApiMiddleware } from '../site/Castle';
 
 export type Unsubscribe = () => void;
 export type ErrorSubscriber = ((errorMsg: string, isUserFacing: boolean) => void);
@@ -66,9 +67,11 @@ export class Server {
       this.store = createStore(reducers, preloadedState, storeMiddleware);
     }
 
+    const castleMiddleware = getCastleApiMiddleware()
     const apiConf: Client.ConfigurationParameters = {
       fetchApi: windowIso.fetch.bind(windowIso),
       basePath: Server.augmentApiBasePath(Client.BASE_PATH),
+      middleware: !!castleMiddleware ? [castleMiddleware] : [],
     };
     if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
       apiOverride = ServerMock.get();

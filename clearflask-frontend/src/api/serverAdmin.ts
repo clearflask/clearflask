@@ -15,6 +15,7 @@ import * as Admin from './admin';
 import * as Client from './client';
 import { DispatchProps, Server, Status } from './server';
 import ServerMock from './serverMock';
+import { getCastleApiMiddleware } from '../site/Castle';
 
 export const DemoUpdateDelay = 300;
 
@@ -45,9 +46,11 @@ export default class ServerAdmin {
   constructor() {
     if (ServerAdmin.instance !== undefined) throw Error('ServerAdmin singleton instantiating second time');
 
+    const castleMiddleware = getCastleApiMiddleware()
     const apiConf: Admin.ConfigurationParameters = {
       fetchApi: windowIso.fetch.bind(windowIso),
       basePath: Server.augmentApiBasePath(Admin.BASE_PATH),
+      middleware: !!castleMiddleware ? [castleMiddleware] : [],
     };
     var apiOverride: Client.ApiInterface & Admin.ApiInterface | undefined;
     if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
