@@ -23,7 +23,7 @@ import java.time.format.DateTimeFormatter;
 public class OnTrialEnding {
 
     public interface Config {
-        @DefaultValue("Free Trial Ending – Subscribe Now")
+        @DefaultValue("Free Trial Ending Soon – Subscribe Now")
         String subjectTemplate();
 
         @DefaultValue("<p>Hi __NAME__,</p>"
