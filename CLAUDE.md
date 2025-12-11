@@ -110,3 +110,7 @@ When running `make local-up`:
 - Kibana: `http://localhost:5601`
 - KillBill Kaui: `http://localhost:8081` (admin/password)
 - LocalStack AWS: `aws --endpoint-url=http://localhost:4566`
+
+## Plans
+
+Development plans and roadmaps are stored in `./plans/`. See the comprehensive roadmap for feature opportunities, technical debt, and security issues.
