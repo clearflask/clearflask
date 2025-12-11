@@ -19,6 +19,7 @@ import UnmergeIcon from '@material-ui/icons/CallSplit';
 /* alternatives: comment, chat bubble (outline), forum, mode comment, add comment */
 import SpeechIcon from '@material-ui/icons/ChatBubbleOutlineRounded';
 import DeleteIcon from '@material-ui/icons/DeleteOutline';
+import CopyIcon from '@material-ui/icons/FileCopyOutlined';
 import RespondIcon from '@material-ui/icons/FeedbackOutlined';
 import ImgIcon from '@material-ui/icons/Image';
 import AddEmojiIcon from '@material-ui/icons/InsertEmoticon';
@@ -1068,15 +1069,26 @@ class Post extends Component<Props & ConnectProps & WithTranslation<'app'> & Wit
         const postLink = `${getProjectLink(this.props.config)}/post/${this.props.idea.ideaId}`;
 
         return (
-            <MyButton
-                key='extLink'
-                className={this.props.classes.extLink}
-                buttonVariant='post'
-                Icon={VisitIcon}
-                to={postLink}
-                onClick={e => !windowIso.isSsr && windowIso.open(postLink, '_blank')}
-            >
-            </MyButton>
+            <>
+                <MyButton
+                    key='copyLink'
+                    className={this.props.classes.extLink}
+                    buttonVariant='post'
+                    Icon={CopyIcon}
+                    onClick={e => {
+                        if (windowIso.isSsr) return;
+                        windowIso.navigator.clipboard?.writeText(postLink);
+                        this.props.enqueueSnackbar('Link copied', { variant: 'success', preventDuplicate: true });
+                    }}
+                />
+                <MyButton
+                    key='extLink'
+                    buttonVariant='post'
+                    Icon={VisitIcon}
+                    to={postLink}
+                    onClick={e => !windowIso.isSsr && windowIso.open(postLink, '_blank')}
+                />
+            </>
         );
     }
 
