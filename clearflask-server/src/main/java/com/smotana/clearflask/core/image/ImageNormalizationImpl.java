@@ -71,8 +71,9 @@ public class ImageNormalizationImpl implements ImageNormalization {
     }
 
     /**
-     * TODO not working....
-     * For some reason this produces an empty image file.
+     * Write animated GIF with resized frames.
+     * Note: This method preserves animation but may lose some metadata like frame delays.
+     * For best quality, keep animated GIFs as-is using keepGifsAsIs=true (default).
      */
     private Image writeGif(ImageReader imageReader) {
         byte[] data;
@@ -80,13 +81,17 @@ public class ImageNormalizationImpl implements ImageNormalization {
              ImageOutputStream ios = ImageIO.createImageOutputStream(out)) {
             final ImageWriter writer = ImageIO.getImageWritersByFormatName("gif").next();
             writer.setOutput(ios);
-            writer.prepareWriteSequence(null);
+            writer.prepareWriteSequence(imageReader.getStreamMetadata());
             int numImages = imageReader.getNumImages(true);
             for (int i = 0; i < numImages; i++) {
-                BufferedImage image = resizeImg(imageReader.read(imageReader.getMinIndex()));
-                writer.writeToSequence(new IIOImage(image, null, null), null);
+                BufferedImage frame = imageReader.read(i);
+                BufferedImage resizedFrame = resizeImg(frame);
+                // Preserve frame metadata (timing, disposal) if available
+                IIOImage iioImage = new IIOImage(resizedFrame, null, imageReader.getImageMetadata(i));
+                writer.writeToSequence(iioImage, writer.getDefaultWriteParam());
             }
             writer.endWriteSequence();
+            ios.flush();
             data = out.toByteArray();
         } catch (IOException ex) {
             throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Corrupted image", ex);
