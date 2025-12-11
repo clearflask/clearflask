@@ -851,8 +851,8 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             userUpdatedBuilder.isMod(updates.getIsMod());
             indexUpdates.put("isMod", updates.getIsMod() == Boolean.TRUE);
             mysqlUpdates.setIsmod(updates.getIsMod());
-            // TODO update all sessions that user is mod instead of revoking
-            revokeSessions(projectId, userId, Optional.empty());
+            // Update isMod flag in all active sessions instead of revoking them
+            updateSessionsModStatus(projectId, userId, updates.getIsMod());
         }
         if (updateAuthTokenValidityStart) {
             Instant authTokenValidityStart = Instant.now();
@@ -1465,6 +1465,36 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                                     "sessionId", sessionId)))
                             .forEach(tableWriteItems::addPrimaryKeyToDelete);
                     singleTable.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
+                });
+    }
+
+    /**
+     * Update the isMod flag in all sessions for a user.
+     * This is more user-friendly than revoking sessions when mod status changes.
+     */
+    private void updateSessionsModStatus(String projectId, String userId, Boolean isMod) {
+        StreamSupport.stream(sessionByUserSchema.index().query(new QuerySpec()
+                                .withHashKey(sessionByUserSchema.partitionKey(Map.of(
+                                        "userId", userId)))
+                                .withRangeKeyCondition(new RangeKeyCondition(sessionByUserSchema.rangeKeyName())
+                                        .beginsWith(sessionByUserSchema.rangeValuePartial(Map.of()))))
+                        .pages()
+                        .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(sessionByUserSchema::fromItem)
+                .filter(session -> projectId.equals(session.getProjectId()))
+                .forEach(session -> {
+                    UpdateItemSpec updateSpec = new UpdateItemSpec()
+                            .withPrimaryKey(sessionByIdSchema.primaryKey(Map.of("sessionId", session.getSessionId())));
+                    if (isMod == Boolean.TRUE) {
+                        updateSpec.withUpdateExpression("SET #isMod = :isMod")
+                                .withNameMap(new NameMap().with("#isMod", "isMod"))
+                                .withValueMap(new ValueMap().withBoolean(":isMod", true));
+                    } else {
+                        updateSpec.withUpdateExpression("REMOVE #isMod")
+                                .withNameMap(new NameMap().with("#isMod", "isMod"));
+                    }
+                    sessionByIdSchema.table().updateItem(updateSpec);
                 });
     }
 
