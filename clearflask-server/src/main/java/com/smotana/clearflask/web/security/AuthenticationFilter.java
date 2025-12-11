@@ -33,6 +33,7 @@ import javax.ws.rs.ext.Provider;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Provider
@@ -40,6 +41,9 @@ import java.util.Optional;
 public class AuthenticationFilter implements ContainerRequestFilter {
     public static final String EXTERNAL_API_AUTH_HEADER_NAME_TOKEN = "x-cf-token";
     public static final String EXTERNAL_API_AUTH_HEADER_NAME_CONNECT_TOKEN = "x-cf-connect-token";
+
+    /** Session IDs are 32-character hex strings (UUID without dashes) */
+    private static final Pattern SESSION_ID_PATTERN = Pattern.compile("^[a-f0-9]{32}$");
 
     public interface Config {
         @NoDefaultValue
@@ -108,11 +112,23 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     }
 
     private Optional<AccountSession> getAccountSessionForCookieName(ContainerRequestContext requestContext, String cookieName) {
-        // TODO check for HttpOnly, isSecure, etc...
-        // TODO sanity check cookie.getValue()
         return Optional.ofNullable(requestContext.getCookies().get(cookieName))
                 .map(Cookie::getValue)
+                .filter(this::isValidSessionId)
                 .flatMap(accountStore::getSession);
+    }
+
+    /**
+     * Validate session ID format to prevent injection attacks.
+     * Session IDs should be 32-character lowercase hex strings.
+     */
+    private boolean isValidSessionId(String sessionId) {
+        if (sessionId == null || !SESSION_ID_PATTERN.matcher(sessionId).matches()) {
+            log.warn("Invalid session ID format received: {}",
+                    sessionId == null ? "null" : sessionId.substring(0, Math.min(10, sessionId.length())) + "...");
+            return false;
+        }
+        return true;
     }
 
     private Optional<Account> getAccountByApiKey(ContainerRequestContext requestContext) {
@@ -134,10 +150,14 @@ public class AuthenticationFilter implements ContainerRequestFilter {
             return Optional.empty();
         }
 
-        // TODO check for HttpOnly, isSecure, etc...
-        // TODO sanity check cookie.getValue()
+        String sessionId = cookie.getValue();
+        if (sessionId == null || !SESSION_ID_PATTERN.matcher(sessionId).matches()) {
+            log.warn("Invalid user session ID format received: {}",
+                    sessionId == null ? "null" : sessionId.substring(0, Math.min(10, sessionId.length())) + "...");
+            return Optional.empty();
+        }
 
-        return userStore.getSession(cookie.getValue());
+        return userStore.getSession(sessionId);
     }
 
     private boolean hasRole(String role, Optional<String> authenticatedAccountIdOpt, Optional<String> authenticatedSuperAccountIdOpt, Optional<UserSession> authenticatedUserSessionOpt, ContainerRequestContext requestContext) {
