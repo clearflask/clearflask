@@ -611,7 +611,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     public MergeResponse mergeIdeas(String projectId, String ideaId, String parentIdeaId, boolean undo, BiFunction<String, String, Double> categoryExpressionToWeightMapper) {
         ConnectResponse connectResponse = connectIdeas(projectId, ideaId, parentIdeaId, true, undo, categoryExpressionToWeightMapper);
 
-        // TODO Fix this: I believe this needs to update more than just mergedToPostId field: votes, expressions, funding, trend score...
+        // Update search index for merged idea (mergedToPostId field)
         SettableFuture<Void> indexingFuture = SettableFuture.create();
         SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
@@ -623,6 +623,8 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                     RequestOptions.DEFAULT,
                     searchEngine.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexIdea(f, connectResponse.getIdea()))
                             : ActionListeners.onFailureRetry(() -> indexIdea(connectResponse.getIdea())));
+            // Also re-index parent idea to update votes, expressions, funding, trend score
+            indexIdea(connectResponse.getParentIdea());
         }
         if (searchEngine.isWriteMysql()) {
             CompletionStage<Integer> completionStage = mysql.get().update(JooqIdea.IDEA)
@@ -635,6 +637,8 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
             } else {
                 CompletionStageUtil.logFailure(completionStage);
             }
+            // Also re-index parent idea in MySQL to update votes, expressions, funding
+            indexIdea(connectResponse.getParentIdea());
         }
 
         return new MergeResponse(connectResponse.idea, connectResponse.parentIdea, indexingFuture);
