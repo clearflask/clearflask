@@ -117,7 +117,8 @@ export class OAuthFlow {
       extraData,
     };
     const oauthStateStr = encodeURIComponent(JSON.stringify(oauthState));
-    localStorage.setItem(`${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${provider.clientId}`, oauthCsrfToken);
+    // Use sessionStorage for CSRF tokens (more secure, per-tab isolation)
+    sessionStorage.setItem(`${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${provider.clientId}`, oauthCsrfToken);
     return oauthStateStr;
   }
 
@@ -155,15 +156,14 @@ export class OAuthFlow {
       return undefined;
     }
 
-    const oauthCsrfExpected = localStorage.getItem(`${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${oauthState.cid}`);
+    const storageKey = `${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${oauthState.cid}`;
+    const oauthCsrfExpected = sessionStorage.getItem(storageKey);
     if (oauthCsrfExpected !== oauthState?.csrf) {
       console.log("CSRF mismatch", oauthCsrfExpected, oauthState?.csrf);
       return undefined;
     }
-    // TODO: Remove CSRF token from local storage
-    // It appears this result check is called twice, resulting in the CSRF token being removed before the second check
-    // can be performed. For now, do not clear the local storage key, but later we should find out why this is happening.
-    // localStorage.removeItem(`${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${oauthState.cid}`)
+    // Clean up CSRF token after successful validation
+    sessionStorage.removeItem(storageKey);
 
     const oAuthToken: OAuthToken = {
       id: oauthState.cid,
