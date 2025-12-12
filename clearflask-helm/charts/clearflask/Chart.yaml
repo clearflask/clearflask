@@ -2,7 +2,7 @@ apiVersion: v2
 name: clearflask
 description: Open-source feedback management platform (alternative to Canny/UserVoice)
 type: application
-version: 0.1.1
+version: 2.2.0
 appVersion: "2.2.0"
 home: https://clearflask.com
 sources:

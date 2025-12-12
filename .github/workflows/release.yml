@@ -62,3 +62,30 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: make release-${{ github.event.inputs.versionType }}
+
+      - name: Update Helm charts with new version
+        run: |
+          # Get the new version from the latest git tag
+          NEW_VERSION=$(git describe --tags --abbrev=0)
+          echo "New version: $NEW_VERSION"
+
+          # Update clearflask chart - version matches app version
+          sed -i "s/^version: .*/version: $NEW_VERSION/" clearflask-helm/charts/clearflask/Chart.yaml
+          sed -i "s/^appVersion: .*/appVersion: \"$NEW_VERSION\"/" clearflask-helm/charts/clearflask/Chart.yaml
+          sed -i "s/tag: \".*\"/tag: \"$NEW_VERSION\"/" clearflask-helm/charts/clearflask/values.yaml
+
+          # Update clearflask-dependencies chart to match main version
+          sed -i "s/^version: .*/version: $NEW_VERSION/" clearflask-helm/charts/clearflask-dependencies/Chart.yaml
+
+          # Commit and push
+          git add clearflask-helm/charts/*/Chart.yaml clearflask-helm/charts/clearflask/values.yaml
+          git commit -m "chore(helm): update charts to version $NEW_VERSION"
+          git push origin master
+
+  publish-helm:
+    needs: build
+    uses: ./.github/workflows/helm-release.yml
+    permissions:
+      contents: write
+      pages: write
+      id-token: write

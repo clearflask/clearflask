@@ -1,12 +1,7 @@
 name: Release Helm Charts
 
 on:
-  push:
-    branches:
-      - master
-    paths:
-      - 'clearflask-helm/charts/**'
-      - '.github/workflows/helm-release.yml'
+  workflow_call:
   workflow_dispatch:
 
 permissions:

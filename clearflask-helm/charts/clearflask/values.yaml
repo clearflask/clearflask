@@ -16,7 +16,7 @@ server:
 
   image:
     repository: ghcr.io/clearflask/clearflask-server
-    tag: "latest"
+    tag: "2.2.0"
     pullPolicy: IfNotPresent
 
   # Server configuration
@@ -193,7 +193,7 @@ connect:
 
   image:
     repository: ghcr.io/clearflask/clearflask-connect
-    tag: "latest"
+    tag: "2.2.0"
     pullPolicy: IfNotPresent
 
   # Connect configuration
