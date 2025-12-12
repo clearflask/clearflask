@@ -1,0 +1,16 @@
+{{- if .Values.monitoring.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "clearflask.server.fullname" . }}
+  labels:
+    {{- include "clearflask.server.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "clearflask.server.selectorLabels" . | nindent 6 }}
+  endpoints:
+    - port: jmx
+      interval: {{ .Values.monitoring.serviceMonitor.interval }}
+      scrapeTimeout: {{ .Values.monitoring.serviceMonitor.scrapeTimeout }}
+{{- end }}

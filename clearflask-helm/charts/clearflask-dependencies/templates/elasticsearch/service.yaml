@@ -1,0 +1,22 @@
+{{- if .Values.elasticsearch.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "clearflask-dependencies.elasticsearch.fullname" . }}
+  labels:
+    {{- include "clearflask-dependencies.elasticsearch.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.elasticsearch.service.type }}
+  clusterIP: None  # Headless service for StatefulSet
+  ports:
+    - port: {{ .Values.elasticsearch.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+    - port: 9300
+      targetPort: transport
+      protocol: TCP
+      name: transport
+  selector:
+    {{- include "clearflask-dependencies.elasticsearch.selectorLabels" . | nindent 4 }}
+{{- end }}

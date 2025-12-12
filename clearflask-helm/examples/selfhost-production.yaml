@@ -1,0 +1,205 @@
+# Production-ready self-hosted ClearFlask deployment
+# This example shows a complete configuration for on-premises or bare-metal Kubernetes
+
+global:
+  domain: "feedback.example.com"  # CHANGE THIS
+
+server:
+  replicaCount: 3  # HA with 3 replicas
+
+  image:
+    tag: "2.2.0"  # Pin to specific version for production
+
+  config:
+    environment: "PRODUCTION_SELF_HOST"
+    searchEngine: "READWRITE_MYSQL"
+    startupWaitUntilDeps: true
+    createIndexesOnStartup: true
+    superAdminEmail: "^admin@example\\.com$"  # CHANGE THIS - only this email can create account
+    signupEnabled: true  # Set to false after creating admin account
+    authCookieSecure: true  # Required for HTTPS
+    enableTelemetry: false  # Disable if privacy-sensitive
+
+  secrets:
+    # REQUIRED: Generate unique secrets!
+    tokenSignerPrivKey: ""  # openssl rand -base64 172 | tr -d '\n'
+    cursorSharedKey: ""  # openssl rand -base64 16
+    ssoSecretKey: ""  # uuidgen
+    connectToken: ""  # uuidgen (must match connect.connectToken)
+
+    # Browser push notifications
+    browserPush:
+      publicKey: ""  # npx web-push generate-vapid-keys
+      privateKey: ""
+
+    # Optional: ReCAPTCHA for bot protection
+    recaptcha:
+      enabled: false
+      siteKey: ""
+      secretKey: ""
+
+  serviceAccount:
+    create: true
+
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+
+  resources:
+    requests:
+      memory: "3Gi"  # Production-sized
+      cpu: "1500m"
+    limits:
+      memory: "6Gi"
+      cpu: "3000m"
+
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 15
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 2  # Ensure 2 pods always available
+
+connect:
+  replicaCount: 3  # HA with 3 replicas
+
+  image:
+    tag: "2.2.0"  # Pin to specific version
+
+  config:
+    disableAutoFetchCertificate: true  # Using cert-manager
+    forceRedirectHttpToHttps: true  # Always redirect to HTTPS
+
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 30
+    targetCPUUtilizationPercentage: 70
+
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 2
+
+ingress:
+  enabled: true
+  className: "nginx"
+
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"  # Allow larger file uploads
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/rate-limit: "100"  # Rate limiting
+    nginx.ingress.kubernetes.io/limit-connections: "20"
+
+  hosts:
+    - host: "feedback.example.com"  # CHANGE THIS
+      paths:
+        - path: /api
+          pathType: Prefix
+          backend: server
+        - path: /
+          pathType: Prefix
+          backend: connect
+
+  tls:
+    enabled: true
+    secretName: clearflask-tls
+
+  certManager:
+    enabled: true
+    issuer: "letsencrypt-prod"  # Assumes cert-manager is installed
+
+# Enable network policies for security
+networkPolicy:
+  enabled: true
+  policyTypes:
+    - Ingress
+    - Egress
+
+# External services configuration
+externalServices:
+  # DynamoDB via LocalStack
+  dynamodb:
+    endpoint: "http://clearflask-deps-localstack:4566"
+    region: "us-east-1"
+
+  # S3 via LocalStack
+  s3:
+    endpoint: "http://s3.localhost.localstack.cloud:4566"
+    bucketName: "clearflask-prod-uploads"
+    createBucket: true
+    scheme: "http"
+    hostname: "clearflask-prod-uploads.s3.localhost.localstack.cloud:4566"
+    proxyEnabled: true
+    dnsResolverTo: "localstack"
+
+  # MySQL for search/filtering
+  mysql:
+    enabled: true
+    host: "clearflask-deps-mysql"
+    port: 3306
+    database: "clearflask"
+    user: "clearflask"  # Create dedicated user
+    password: ""  # CHANGE THIS - use strong password
+
+  # ElasticSearch disabled (using MySQL)
+  elasticsearch:
+    enabled: false
+
+  # Email via SMTP (replace with your SMTP provider)
+  email:
+    provider: "smtp"
+    smtp:
+      strategy: "SMTP_TLS"
+      host: "smtp.example.com"  # CHANGE THIS
+      port: 587
+      user: "support@example.com"  # CHANGE THIS
+      password: ""  # CHANGE THIS
+      displayName: "Example Feedback"
+      fromEmailLocalPart: "support"
+      fromEmailDomainOverride: "example.com"
+
+  # LocalStack credentials
+  aws:
+    accessKeyId: "test"
+    secretKey: "test"
+
+# Monitoring
+monitoring:
+  serviceMonitor:
+    enabled: false  # Set to true if using Prometheus Operator
+
+# Node affinity (optional - for dedicated nodes)
+# server:
+#   affinity:
+#     nodeAffinity:
+#       requiredDuringSchedulingIgnoredDuringExecution:
+#         nodeSelectorTerms:
+#           - matchExpressions:
+#               - key: workload
+#                 operator: In
+#                 values:
+#                   - clearflask
+
+# Tolerations (optional - for tainted nodes)
+# server:
+#   tolerations:
+#     - key: "workload"
+#       operator: "Equal"
+#       value: "clearflask"
+#       effect: "NoSchedule"

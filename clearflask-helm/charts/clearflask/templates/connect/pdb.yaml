@@ -1,0 +1,13 @@
+{{- if .Values.connect.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "clearflask.connect.fullname" . }}
+  labels:
+    {{- include "clearflask.connect.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.connect.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "clearflask.connect.selectorLabels" . | nindent 6 }}
+{{- end }}

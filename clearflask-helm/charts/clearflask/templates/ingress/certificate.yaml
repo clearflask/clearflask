@@ -1,0 +1,22 @@
+{{- if and .Values.ingress.enabled .Values.ingress.certManager.enabled .Values.ingress.tls.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "clearflask.fullname" . }}-tls
+  labels:
+    {{- include "clearflask.labels" . | nindent 4 }}
+spec:
+  secretName: {{ .Values.ingress.tls.secretName }}
+  issuerRef:
+    name: {{ .Values.ingress.certManager.issuer }}
+    kind: ClusterIssuer
+  dnsNames:
+    {{- range .Values.ingress.hosts }}
+    - {{ .host | quote }}
+    {{- end }}
+  {{- if .Values.ingress.certManager.dnsProvider }}
+  solvers:
+    - dns01:
+        {{- toYaml .Values.ingress.certManager.dnsProvider | nindent 8 }}
+  {{- end }}
+{{- end }}

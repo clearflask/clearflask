@@ -1,0 +1,19 @@
+apiVersion: v2
+name: clearflask
+description: Open-source feedback management platform (alternative to Canny/UserVoice)
+type: application
+version: 0.1.0
+appVersion: "2.2.0"
+home: https://clearflask.com
+sources:
+  - https://github.com/clearflask/clearflask
+keywords:
+  - clearflask
+  - feedback
+  - roadmap
+  - feature-requests
+  - customer-feedback
+  - user-feedback
+maintainers:
+  - name: Matus Faro
+    email: matus@smotana.com

@@ -1,0 +1,241 @@
+# Production AWS EKS deployment
+# This example uses native AWS services (DynamoDB, S3, ElasticSearch, SES)
+
+global:
+  domain: "feedback.example.com"  # CHANGE THIS
+
+server:
+  replicaCount: 3
+
+  image:
+    tag: "2.2.0"  # Pin version
+
+  config:
+    environment: "PRODUCTION_AWS"
+    searchEngine: "READWRITE_ELASTICSEARCH"  # Using AWS ElasticSearch
+    startupWaitUntilDeps: true
+    createIndexesOnStartup: true
+    superAdminEmail: "^admin@example\\.com$"  # CHANGE THIS
+    signupEnabled: false  # Disable after admin creation
+    authCookieSecure: true
+
+  secrets:
+    # Generate these!
+    tokenSignerPrivKey: ""  # openssl rand -base64 172 | tr -d '\n'
+    cursorSharedKey: ""  # openssl rand -base64 16
+    ssoSecretKey: ""  # uuidgen
+    connectToken: ""  # uuidgen
+
+    browserPush:
+      publicKey: ""
+      privateKey: ""
+
+  # IAM Role for Service Account (IRSA)
+  serviceAccount:
+    create: true
+    annotations:
+      eks.amazonaws.com/role-arn: "arn:aws:iam::123456789012:role/clearflask-server-role"  # CHANGE THIS
+
+  resources:
+    requests:
+      memory: "3Gi"
+      cpu: "1500m"
+    limits:
+      memory: "6Gi"
+      cpu: "3000m"
+
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 20
+
+  # Pod affinity for spreading across AZs
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/component: server
+            topologyKey: topology.kubernetes.io/zone
+
+connect:
+  replicaCount: 3
+
+  image:
+    tag: "2.2.0"
+
+  config:
+    disableAutoFetchCertificate: true
+    forceRedirectHttpToHttps: true
+
+  serviceAccount:
+    create: true
+    annotations:
+      eks.amazonaws.com/role-arn: "arn:aws:iam::123456789012:role/clearflask-connect-role"  # CHANGE THIS
+
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 40
+
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/component: connect
+            topologyKey: topology.kubernetes.io/zone
+
+# AWS Load Balancer Controller
+ingress:
+  enabled: true
+  className: "alb"
+
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:us-east-1:123456789012:certificate/abcd1234-..."  # CHANGE THIS
+    alb.ingress.kubernetes.io/backend-protocol: HTTP
+    alb.ingress.kubernetes.io/healthcheck-path: /api/health
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: '15'
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: '5'
+    alb.ingress.kubernetes.io/success-codes: '200'
+    alb.ingress.kubernetes.io/load-balancer-attributes: >-
+      access_logs.s3.enabled=true,
+      access_logs.s3.bucket=my-alb-logs,
+      access_logs.s3.prefix=clearflask
+    # WAF protection
+    alb.ingress.kubernetes.io/wafv2-acl-arn: "arn:aws:wafv2:us-east-1:123456789012:global/webacl/..."  # Optional
+
+  hosts:
+    - host: "feedback.example.com"  # CHANGE THIS
+      paths:
+        - path: /api
+          pathType: Prefix
+          backend: server
+        - path: /
+          pathType: Prefix
+          backend: connect
+
+  tls:
+    enabled: true
+    secretName: clearflask-tls
+
+  certManager:
+    enabled: false  # Using ACM instead
+
+networkPolicy:
+  enabled: true
+
+# AWS Services
+externalServices:
+  # AWS DynamoDB
+  dynamodb:
+    endpoint: ""  # Empty = real DynamoDB
+    region: "us-east-1"  # CHANGE THIS
+
+  # AWS S3
+  s3:
+    endpoint: ""  # Empty = real S3
+    bucketName: "clearflask-production-uploads-12345"  # CHANGE THIS (must be globally unique)
+    createBucket: false  # Create manually with lifecycle policies
+    scheme: "https"
+    hostname: "clearflask-production-uploads-12345.s3.amazonaws.com"  # CHANGE THIS
+    proxyEnabled: false
+
+  # Disable MySQL
+  mysql:
+    enabled: false
+
+  # AWS ElasticSearch / OpenSearch
+  elasticsearch:
+    enabled: true
+    endpoint: "https://vpc-clearflask-es-abc123.us-east-1.es.amazonaws.com"  # CHANGE THIS
+    compatibilityHeader: false
+
+  # AWS SES
+  email:
+    provider: "ses"
+    ses:
+      region: "us-east-1"  # CHANGE THIS
+      endpoint: ""  # Empty = real SES
+
+  # No credentials needed (using IRSA)
+  aws:
+    accessKeyId: ""
+    secretKey: ""
+
+# Prometheus monitoring
+monitoring:
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    scrapeTimeout: 10s
+
+# IAM Policy for clearflask-server-role:
+# {
+#   "Version": "2012-10-17",
+#   "Statement": [
+#     {
+#       "Effect": "Allow",
+#       "Action": [
+#         "dynamodb:BatchGetItem",
+#         "dynamodb:GetItem",
+#         "dynamodb:Query",
+#         "dynamodb:Scan",
+#         "dynamodb:BatchWriteItem",
+#         "dynamodb:PutItem",
+#         "dynamodb:UpdateItem",
+#         "dynamodb:DeleteItem",
+#         "dynamodb:CreateTable",
+#         "dynamodb:DescribeTable"
+#       ],
+#       "Resource": "arn:aws:dynamodb:us-east-1:123456789012:table/clearflask-*"
+#     },
+#     {
+#       "Effect": "Allow",
+#       "Action": [
+#         "s3:GetObject",
+#         "s3:PutObject",
+#         "s3:DeleteObject",
+#         "s3:ListBucket"
+#       ],
+#       "Resource": [
+#         "arn:aws:s3:::clearflask-production-uploads-12345",
+#         "arn:aws:s3:::clearflask-production-uploads-12345/*"
+#       ]
+#     },
+#     {
+#       "Effect": "Allow",
+#       "Action": [
+#         "es:ESHttpGet",
+#         "es:ESHttpPut",
+#         "es:ESHttpPost",
+#         "es:ESHttpDelete"
+#       ],
+#       "Resource": "arn:aws:es:us-east-1:123456789012:domain/clearflask-es/*"
+#     },
+#     {
+#       "Effect": "Allow",
+#       "Action": [
+#         "ses:SendEmail",
+#         "ses:SendRawEmail"
+#       ],
+#       "Resource": "*"
+#     }
+#   ]
+# }

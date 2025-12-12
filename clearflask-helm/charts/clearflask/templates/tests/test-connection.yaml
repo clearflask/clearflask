@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "clearflask.fullname" . }}-test-connection"
+  labels:
+    {{- include "clearflask.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget-server
+      image: busybox
+      command: ['wget']
+      args: ['{{ include "clearflask.server.fullname" . }}:{{ .Values.server.service.port }}/api/health']
+    - name: wget-connect
+      image: busybox
+      command: ['wget']
+      args: ['{{ include "clearflask.connect.fullname" . }}:80/']
+  restartPolicy: Never

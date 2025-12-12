@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "clearflask.server.fullname" . }}
+  labels:
+    {{- include "clearflask.server.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.server.service.type }}
+  ports:
+    - port: {{ .Values.server.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+    {{- if .Values.server.service.jmxPort }}
+    - port: {{ .Values.server.service.jmxPort }}
+      targetPort: jmx
+      protocol: TCP
+      name: jmx
+    - port: {{ .Values.server.service.jmxRmiPort }}
+      targetPort: jmx-rmi
+      protocol: TCP
+      name: jmx-rmi
+    {{- end }}
+  selector:
+    {{- include "clearflask.server.selectorLabels" . | nindent 4 }}

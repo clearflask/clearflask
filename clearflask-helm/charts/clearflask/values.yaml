@@ -1,0 +1,417 @@
+# Default values for clearflask
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+## Global configuration
+global:
+  domain: "localhost"
+
+  # Image pull secrets for private registries
+  imagePullSecrets: []
+
+## ClearFlask Server configuration
+server:
+  # Number of replicas
+  replicaCount: 2
+
+  image:
+    repository: ghcr.io/clearflask/clearflask-server
+    tag: "latest"
+    pullPolicy: IfNotPresent
+
+  # Server configuration
+  config:
+    # ClearFlask environment (PRODUCTION_SELF_HOST, PRODUCTION_AWS, DEVELOPMENT_LOCAL)
+    environment: "PRODUCTION_SELF_HOST"
+
+    # Search engine choice: READWRITE_MYSQL or READWRITE_ELASTICSEARCH
+    searchEngine: "READWRITE_MYSQL"
+
+    # Wait for dependencies to be ready before starting
+    startupWaitUntilDeps: true
+
+    # Create indexes on startup
+    createIndexesOnStartup: true
+
+    # Enable telemetry
+    enableTelemetry: true
+
+    # Super admin email regex (users matching this can create accounts)
+    superAdminEmail: "^admin@localhost$"
+
+    # Allow user signups
+    signupEnabled: true
+
+    # Secure auth cookies (set to true if using HTTPS)
+    authCookieSecure: false
+
+  # Server secrets (REQUIRED - generate these before installing)
+  secrets:
+    # JWT token signing key
+    # Generate: openssl rand -base64 172 | tr -d '\n'
+    tokenSignerPrivKey: ""
+
+    # Cursor encryption key
+    # Generate: openssl rand -base64 16
+    cursorSharedKey: ""
+
+    # SSO secret key
+    # Generate: uuidgen
+    ssoSecretKey: ""
+
+    # Connect-Server authentication token (must match connect.connectToken)
+    # Generate: uuidgen
+    connectToken: ""
+
+    # Browser push VAPID keys
+    # Generate: npx web-push generate-vapid-keys
+    browserPush:
+      publicKey: "BI_27q_GDMSYPCoLc5rPUyBMQ3CMUCmjfblbqVoDNcl2CRCAUmtCSgU2-g8SdaJlCqTFBi0Z1eU4maehFNX595M="
+      privateKey: "AKBBxKqCjroXt2ohL8yHSEpREoRzmtBb6Zk0g4zEDp4H"
+
+    # Optional: ReCAPTCHA keys
+    recaptcha:
+      enabled: false
+      siteKey: ""
+      secretKey: ""
+
+    # Optional: GitHub integration
+    github:
+      enabled: false
+      appId: ""
+      privateKeyPem: ""
+      webhookSecret: ""
+      clientSecret: ""
+
+    # Optional: OpenAI for AI features
+    openai:
+      enabled: false
+      apiKey: ""
+
+  # Service account
+  serviceAccount:
+    create: true
+    annotations: {}
+    # For AWS EKS with IRSA:
+    # annotations:
+    #   eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT:role/clearflask-server
+
+  # Pod security context
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+
+  # Container security context
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: false  # Tomcat needs write access to temp/logs
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 8080
+    jmxPort: 9950
+    jmxRmiPort: 9951
+
+  # Resource limits
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "1000m"
+    limits:
+      memory: "4Gi"
+      cpu: "2000m"
+
+  # Liveness probe
+  livenessProbe:
+    httpGet:
+      path: /api/health
+      port: 8080
+    initialDelaySeconds: 90
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  # Readiness probe
+  readinessProbe:
+    httpGet:
+      path: /api/health
+      port: 8080
+    initialDelaySeconds: 30
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+  # Startup probe
+  startupProbe:
+    httpGet:
+      path: /api/health
+      port: 8080
+    initialDelaySeconds: 0
+    periodSeconds: 10
+    failureThreshold: 12  # 120 seconds max startup time
+
+  # Environment variables
+  env:
+    JAVA_OPTS: "-Xmx2g -XX:+UseG1GC"
+
+  # Horizontal Pod Autoscaling
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+
+  # Pod Disruption Budget
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+  # Pod annotations
+  podAnnotations: {}
+
+  # Node selector
+  nodeSelector: {}
+
+  # Tolerations
+  tolerations: []
+
+  # Affinity
+  affinity: {}
+
+## ClearFlask Connect configuration
+connect:
+  # Number of replicas
+  replicaCount: 2
+
+  image:
+    repository: ghcr.io/clearflask/clearflask-connect
+    tag: "latest"
+    pullPolicy: IfNotPresent
+
+  # Connect configuration
+  config:
+    # Disable automatic Let's Encrypt certificate fetching (use Ingress/cert-manager instead)
+    disableAutoFetchCertificate: true
+
+    # Force HTTPS redirect
+    forceRedirectHttpToHttps: false
+
+    # Worker count (defaults to number of CPUs in the pod)
+    workerCount: null
+
+  # Service account
+  serviceAccount:
+    create: true
+    annotations: {}
+
+  # Pod security context
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+
+  # Container security context
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: false
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    httpPort: 9080
+    httpsPort: 9443
+
+  # Resource limits
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+
+  # Liveness probe
+  livenessProbe:
+    httpGet:
+      path: /
+      port: 9080
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  # Readiness probe
+  readinessProbe:
+    httpGet:
+      path: /
+      port: 9080
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+  # Environment variables
+  env:
+    NODE_ENV: "production"
+    ENV: "selfhost"
+
+  # Horizontal Pod Autoscaling
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 20
+    targetCPUUtilizationPercentage: 70
+
+  # Pod Disruption Budget
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+  # Pod annotations
+  podAnnotations: {}
+
+  # Node selector
+  nodeSelector: {}
+
+  # Tolerations
+  tolerations: []
+
+  # Affinity
+  affinity: {}
+
+## Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"
+
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+
+  # Hosts configuration
+  hosts:
+    - host: "localhost"
+      paths:
+        - path: /api
+          pathType: Prefix
+          backend: server
+        - path: /
+          pathType: Prefix
+          backend: connect
+
+  # TLS configuration
+  tls:
+    enabled: true
+    secretName: clearflask-tls
+
+  # cert-manager configuration
+  certManager:
+    enabled: true
+    issuer: "letsencrypt-prod"
+    # For DNS challenges (required for wildcard certificates):
+    # dnsProvider:
+    #   cloudDNS:
+    #     project: my-project
+
+## Network Policy
+networkPolicy:
+  enabled: false
+  policyTypes:
+    - Ingress
+    - Egress
+
+## External Services Configuration
+externalServices:
+  # DynamoDB configuration
+  dynamodb:
+    # Service endpoint (empty for real AWS DynamoDB)
+    endpoint: "http://clearflask-deps-localstack:4566"
+    # AWS region
+    region: "us-east-1"
+    signingRegion: "us-east-1"
+    productionRegion: "us-east-1"
+
+  # S3 configuration
+  s3:
+    # Service endpoint (empty for real AWS S3)
+    endpoint: "http://s3.localhost.localstack.cloud:4566"
+    # Bucket name
+    bucketName: "local-upload"
+    # Auto-create bucket on startup
+    createBucket: true
+    # Scheme (http or https)
+    scheme: "http"
+    # Hostname for pre-signed URLs
+    hostname: "local-upload.s3.localhost.localstack.cloud:4566"
+    # Proxy configuration (for LocalStack)
+    proxyEnabled: true
+    dnsResolverTo: "localstack"
+    # AWS region
+    signingRegion: "us-east-1"
+    productionRegion: "us-east-1"
+
+  # MySQL configuration
+  mysql:
+    enabled: true
+    host: "clearflask-deps-mysql"
+    port: 3306
+    database: "clearflask"
+    user: "root"
+    password: "clearflask"
+
+  # ElasticSearch configuration
+  elasticsearch:
+    enabled: false
+    endpoint: ""
+    # For ES 8+, may need compatibility header
+    compatibilityHeader: false
+
+  # Email configuration
+  email:
+    # Provider: "ses" or "smtp"
+    provider: "ses"
+
+    # SES configuration
+    ses:
+      region: "us-east-1"
+      endpoint: "http://clearflask-deps-localstack:4566"
+
+    # SMTP configuration
+    smtp:
+      strategy: "SMTP_TLS"  # SMTP_TLS, SMTPS, or SMTP
+      host: ""
+      port: 587
+      user: ""
+      password: ""
+      displayName: "ClearFlask"
+      fromEmailLocalPart: "support"
+      fromEmailDomainOverride: ""
+
+  # AWS credentials (if not using IRSA)
+  aws:
+    # Leave empty to use pod IAM role or other credential providers
+    accessKeyId: "test"
+    secretKey: "test"
+
+## Monitoring
+monitoring:
+  # Enable Prometheus ServiceMonitor (requires Prometheus Operator)
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    scrapeTimeout: 10s

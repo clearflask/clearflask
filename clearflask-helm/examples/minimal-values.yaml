@@ -1,0 +1,66 @@
+# Minimal ClearFlask deployment for testing/development
+# This example shows the bare minimum configuration needed to run ClearFlask
+
+global:
+  domain: "localhost"
+
+server:
+  replicaCount: 1  # Single replica for minimal resource usage
+
+  secrets:
+    # IMPORTANT: Generate these before deploying!
+    tokenSignerPrivKey: "CHANGEME"  # openssl rand -base64 172 | tr -d '\n'
+    cursorSharedKey: "CHANGEME"  # openssl rand -base64 16
+    ssoSecretKey: "CHANGEME"  # uuidgen
+    connectToken: "CHANGEME"  # uuidgen
+
+  autoscaling:
+    enabled: false  # Disabled for minimal setup
+
+  resources:
+    requests:
+      memory: "1Gi"  # Reduced for development
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+
+connect:
+  replicaCount: 1  # Single replica
+
+  autoscaling:
+    enabled: false
+
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "125m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+ingress:
+  enabled: false  # Use port-forward instead
+
+# Use clearflask-dependencies chart with minimal resources
+externalServices:
+  dynamodb:
+    endpoint: "http://clearflask-deps-localstack:4566"
+  s3:
+    endpoint: "http://s3.localhost.localstack.cloud:4566"
+    bucketName: "test-upload"
+  mysql:
+    enabled: true
+    host: "clearflask-deps-mysql"
+    password: "test123"
+  email:
+    provider: "ses"
+    ses:
+      endpoint: "http://clearflask-deps-localstack:4566"
+  aws:
+    accessKeyId: "test"
+    secretKey: "test"
+
+# Access the application:
+# kubectl port-forward svc/clearflask-connect 8080:80
+# Then visit http://localhost:8080

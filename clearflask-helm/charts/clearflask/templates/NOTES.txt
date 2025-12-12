@@ -1,0 +1,69 @@
+Thank you for installing {{ .Chart.Name }}!
+
+Your ClearFlask instance is being deployed.
+
+{{- if .Values.ingress.enabled }}
+
+1. Get the application URL:
+{{- range .Values.ingress.hosts }}
+  http{{ if $.Values.ingress.tls.enabled }}s{{ end }}://{{ .host }}
+{{- end }}
+
+{{- else if contains "LoadBalancer" .Values.connect.service.type }}
+
+1. Get the application URL by running:
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+  You can watch the status by running 'kubectl get svc -w {{ include "clearflask.connect.fullname" . }}'
+
+  export SERVICE_IP=$(kubectl get svc {{ include "clearflask.connect.fullname" . }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
+  echo http://$SERVICE_IP
+
+{{- else if contains "ClusterIP" .Values.connect.service.type }}
+
+1. Access the application by port-forwarding:
+  kubectl port-forward svc/{{ include "clearflask.connect.fullname" . }} 8080:80
+
+  Then visit: http://localhost:8080
+
+{{- end }}
+
+2. Check deployment status:
+  kubectl get pods -l "app.kubernetes.io/name={{ include "clearflask.name" . }},app.kubernetes.io/instance={{ .Release.Name }}"
+
+3. View server logs:
+  kubectl logs -l "app.kubernetes.io/component=server" -f
+
+4. View connect logs:
+  kubectl logs -l "app.kubernetes.io/component=connect" -f
+
+5. Test the health endpoint:
+  curl http://{{ include "clearflask.server.fullname" . }}:{{ .Values.server.service.port }}/api/health
+
+{{- if not .Values.server.secrets.tokenSignerPrivKey }}
+
+WARNING: You have not set required secrets!
+Please update the following values:
+  - server.secrets.tokenSignerPrivKey (generate: openssl rand -base64 172 | tr -d '\n')
+  - server.secrets.cursorSharedKey (generate: openssl rand -base64 16)
+  - server.secrets.ssoSecretKey (generate: uuidgen)
+  - server.secrets.connectToken (generate: uuidgen)
+  - server.secrets.browserPush.publicKey and privateKey (generate: npx web-push generate-vapid-keys)
+
+Then upgrade the release:
+  helm upgrade {{ .Release.Name }} clearflask/clearflask --reuse-values --set server.secrets.tokenSignerPrivKey=<value>
+
+{{- end }}
+
+{{- if eq .Values.global.domain "localhost" }}
+
+NOTE: You are using the default domain 'localhost'.
+For production use, set global.domain to your actual domain:
+  --set global.domain=yourdomain.com
+
+{{- end }}
+
+For more information, visit:
+  - Documentation: https://github.com/clearflask/clearflask
+  - Website: https://clearflask.com
+
+Happy feedback collecting!

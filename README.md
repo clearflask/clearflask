@@ -46,8 +46,10 @@
 - [Managed hosting](#managed-hosting)
 - [Self hosting](#self-hosting)
     - [Quick start](#quick-start)
+    - [Kubernetes deployment](#kubernetes-deployment)
     - [Deploy dependencies](#deploy-dependencies)
         - [Via Docker](#via-docker)
+        - [Via Kubernetes](#via-kubernetes)
         - [Via AWS](#via-aws)
     - [Deploy ClearFlask](#deploy-clearflask)
         - [Setup](#setup)
@@ -85,6 +87,53 @@ You also want to setup outgoing mail, read the [Email section](#email).
 If you wish to host it on your domain other than `localhost`, read the [DNS section](#dns) and then
 setup [SSL/TLS certificates](#certificate-management).
 
+## Kubernetes deployment
+
+For self-hosting, we provide Kubernetes Helm charts.
+
+### Installation
+
+1. Add the Helm repository:
+
+```shell
+helm repo add clearflask https://clearflask.github.io/clearflask
+helm repo update
+```
+
+2. Install dependencies (MySQL + LocalStack):
+
+```shell
+helm install clearflask-deps clearflask/clearflask-dependencies \
+  --set mysql.enabled=true \
+  --set localstack.enabled=true
+```
+
+3. Generate secrets and install ClearFlask:
+
+```shell
+TOKEN_SIGNER=$(openssl rand -base64 172 | tr -d '\n')
+CURSOR_KEY=$(openssl rand -base64 16)
+SSO_SECRET=$(uuidgen)
+CONNECT_TOKEN=$(uuidgen)
+
+helm install clearflask clearflask/clearflask \
+  --set global.domain=yourdomain.com \
+  --set server.config.searchEngine=READWRITE_MYSQL \
+  --set server.secrets.tokenSignerPrivKey="$TOKEN_SIGNER" \
+  --set server.secrets.cursorSharedKey="$CURSOR_KEY" \
+  --set server.secrets.ssoSecretKey="$SSO_SECRET" \
+  --set server.secrets.connectToken="$CONNECT_TOKEN"
+```
+
+4. Access your instance:
+
+```shell
+kubectl port-forward svc/clearflask-connect 3000:80
+# Visit http://localhost:3000
+```
+
+See the [Helm Chart documentation](clearflask-helm/README.md) for more information.
+
 ## Replace dependencies
 
 There are several dependencies that you can swap out for ClearFlask:
@@ -109,6 +158,28 @@ You can spin up all dependencies via Docker.
 Simply add the `--profile with-deps` to your `docker-compose` command when starting ClearFlask.
 
 All database content will be persisted to local filesystem under `data` folder.
+
+### Via Kubernetes
+
+Production-ready Helm charts are available:
+
+```shell
+helm repo add clearflask https://clearflask.github.io/clearflask
+helm repo update
+
+helm install clearflask-deps clearflask/clearflask-dependencies \
+  --set mysql.enabled=true \
+  --set localstack.enabled=true
+```
+
+This deploys:
+
+- **MySQL/MariaDB** for search and filtering with persistent storage (20Gi default)
+- **LocalStack** for DynamoDB, S3, and SES emulation with persistent storage (10Gi default)
+- **ElasticSearch** (optional) for advanced search with persistent storage (50Gi default)
+
+All databases are persistent by default using PersistentVolumeClaims. See
+the [Helm Chart documentation](clearflask-helm/README.md) for configuration options.
 
 ### Via AWS
 
@@ -179,8 +250,45 @@ Alternatively use any other email provider and fill out the SMTP settings
 
 ClearFlask consists of two components:
 
-- Tomcat application for serving API requests
-- NodeJS for SSR, dynamic cert management and serving static files
+- **clearflask-server**: Tomcat application for serving API requests
+- **clearflask-connect**: NodeJS for SSR, dynamic cert management and serving static files
+
+### Via Kubernetes (Recommended for Production)
+
+**No build required** - uses pre-built Docker images.
+
+```shell
+# Add Helm repository
+helm repo add clearflask https://clearflask.github.io/clearflask
+helm repo update
+
+# Generate required secrets
+TOKEN_SIGNER=$(openssl rand -base64 172 | tr -d '\n')
+CURSOR_KEY=$(openssl rand -base64 16)
+SSO_SECRET=$(uuidgen)
+CONNECT_TOKEN=$(uuidgen)
+
+# Install ClearFlask
+helm install clearflask clearflask/clearflask \
+  --set global.domain=yourdomain.com \
+  --set server.config.searchEngine=READWRITE_MYSQL \
+  --set server.secrets.tokenSignerPrivKey="$TOKEN_SIGNER" \
+  --set server.secrets.cursorSharedKey="$CURSOR_KEY" \
+  --set server.secrets.ssoSecretKey="$SSO_SECRET" \
+  --set server.secrets.connectToken="$CONNECT_TOKEN"
+```
+
+Features:
+
+- Horizontal Pod Autoscaling
+- Zero-downtime rolling updates
+- Built-in health checks
+- TLS certificate management
+
+For detailed configuration options, deployment scenarios (AWS EKS, GKE, AKS), and troubleshooting, see
+the [Helm Chart documentation](clearflask-helm/README.md).
+
+### Via Docker (Quick Start)
 
 ### Setup
 
@@ -483,6 +591,26 @@ from your IDE. Otherwise you will have to alwasy spin up all dependencies.
 ### Run locally
 
 There are several ways to run locally depending on what you want to test.
+
+#### Kubernetes (Full Production Stack)
+
+Intended for testing production deployment locally. **No build required** - uses pre-built Docker images.
+
+```shell
+git clone https://github.com/clearflask/clearflask.git
+cd clearflask/clearflask-helm
+./local-start.sh
+```
+
+Access via port-forward at [http://localhost:3000](http://localhost:3000).
+
+Cleanup:
+
+```shell
+./local-stop.sh
+```
+
+Note: For testing code changes, you would need to build and push new Docker images first.
 
 #### Frontend + Mock backend
 

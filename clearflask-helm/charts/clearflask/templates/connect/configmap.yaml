@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "clearflask.connect.fullname" . }}
+  labels:
+    {{- include "clearflask.connect.labels" . | nindent 4 }}
+data:
+  connect.config.json: |
+    {
+      "listenPort": 9080,
+      {{- if .Values.connect.config.workerCount }}
+      "workerCount": {{ .Values.connect.config.workerCount }},
+      {{- end }}
+      "connectToken": "{{ .Values.server.secrets.connectToken }}",
+      "apiBasePath": "{{ include "clearflask.server.apiBasePath" . }}",
+      "parentDomain": "{{ include "clearflask.domain" . }}",
+      "publicPath": "/srv/clearflask-connect/public",
+      "disableAutoFetchCertificate": {{ .Values.connect.config.disableAutoFetchCertificate }},
+      "forceRedirectHttpToHttps": {{ .Values.connect.config.forceRedirectHttpToHttps }}
+    }
