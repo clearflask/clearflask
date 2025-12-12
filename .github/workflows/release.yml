@@ -16,6 +16,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
     permissions:
       packages: write
       contents: write
@@ -64,10 +66,12 @@ jobs:
         run: make release-${{ github.event.inputs.versionType }}
 
       - name: Update Helm charts with new version
+        id: get-version
         run: |
           # Get the new version from the latest git tag
           NEW_VERSION=$(git describe --tags --abbrev=0)
           echo "New version: $NEW_VERSION"
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
           # Update clearflask chart - version matches app version
           sed -i "s/^version: .*/version: $NEW_VERSION/" clearflask-helm/charts/clearflask/Chart.yaml
@@ -85,6 +89,8 @@ jobs:
   publish-helm:
     needs: build
     uses: ./.github/workflows/helm-release.yml
+    with:
+      version: ${{ needs.build.outputs.version }}
     permissions:
       contents: write
       pages: write
