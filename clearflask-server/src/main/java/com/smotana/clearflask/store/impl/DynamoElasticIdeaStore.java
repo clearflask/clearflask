@@ -1581,6 +1581,15 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 indexUpdatesMysql.setOrder(ideaUpdateAdmin.getOrder());
             }
         }
+        if (ideaUpdateAdmin.getAdminNotes() != null) {
+            if (ideaUpdateAdmin.getAdminNotes().isEmpty()) {
+                updateItemSpec.addAttributeUpdate(new AttributeUpdate("adminNotes").delete());
+            } else {
+                updateItemSpec.addAttributeUpdate(new AttributeUpdate("adminNotes")
+                        .put(ideaSchema.toDynamoValue("adminNotes", ideaUpdateAdmin.getAdminNotes())));
+            }
+            // adminNotes is not indexed for search as it's private admin-only content
+        }
 
         IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(updateItemSpec).getItem());
 

@@ -87,6 +87,7 @@ interface State {
   tagIdsHasError?: boolean;
   fundGoal?: string;
   suppressNotifications?: boolean;
+  adminNotes?: string;
 }
 class PostEdit extends Component<Props & WithMediaQuery & WithTranslation<'app'> & WithStyles<typeof styles, true>, State> {
   state: State = {};
@@ -102,7 +103,8 @@ class PostEdit extends Component<Props & WithMediaQuery & WithTranslation<'app'>
         || this.state.response !== undefined
         || this.state.statusId !== undefined
         || this.state.tagIds !== undefined
-        || this.state.fundGoal !== undefined)
+        || this.state.fundGoal !== undefined
+        || this.state.adminNotes !== undefined)
     );
     const notifyReasons = [
       this.state.statusId !== undefined ? 'status' : undefined,
@@ -213,6 +215,21 @@ class PostEdit extends Component<Props & WithMediaQuery & WithTranslation<'app'>
                       />
                     </Grid>
                   )}
+                  <Grid item xs={12} className={this.props.classes.row}>
+                    <TextField
+                      variant='outlined'
+                      size='small'
+                      disabled={this.state.isSubmitting}
+                      label='Admin Notes'
+                      helperText='Private notes visible only to admins and moderators'
+                      fullWidth
+                      multiline
+                      rows={2}
+                      rowsMax={6}
+                      value={(this.state.adminNotes === undefined ? this.props.idea.adminNotes : this.state.adminNotes) || ''}
+                      onChange={e => this.setState({ adminNotes: e.target.value })}
+                    />
+                  </Grid>
                   <Grid item xs={12}>
                     <Collapse in={!!notifyReasons}>
                       <FormControlLabel
@@ -254,6 +271,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithTranslation<'app'>
                     tagIds: this.state.tagIds,
                     fundGoal: !this.state.fundGoal ? undefined : +this.state.fundGoal,
                     suppressNotifications: this.state.suppressNotifications,
+                    adminNotes: this.state.adminNotes,
                   },
                 }))
                 : this.props.server.dispatch().then(d => d.ideaUpdate({
@@ -274,6 +292,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithTranslation<'app'>
                     tagIds: undefined,
                     fundGoal: undefined,
                     suppressNotifications: undefined,
+                    adminNotes: undefined,
                   });
                   this.props.onClose();
                 })

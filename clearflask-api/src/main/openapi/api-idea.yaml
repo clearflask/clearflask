@@ -243,6 +243,9 @@ components:
           type: string
         coverImg:
           type: string
+        adminNotes:
+          description: Private notes visible only to admins and moderators
+          type: string
     IdeaConnectResponse:
       type: object
       required:
@@ -322,6 +325,9 @@ components:
               format: double
             coverImg:
               type: string
+            adminNotes:
+              description: Private notes visible only to admins and moderators
+              type: string
     IdeaDraftAdmin:
       allOf:
         - $ref: 'api-idea.yaml#/components/schemas/IdeaCreateAdmin'
@@ -367,6 +373,9 @@ components:
               type: number
               format: double
             coverImg:
+              type: string
+            adminNotes:
+              description: Private notes visible only to admins and moderators
               type: string
     Hits:
       type: object
