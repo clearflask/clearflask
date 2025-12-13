@@ -73,6 +73,8 @@ import com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
 import com.smotana.clearflask.store.github.GitHubClientProviderImpl;
 import com.smotana.clearflask.store.github.GitHubStoreImpl;
+import com.smotana.clearflask.store.slack.SlackClientProviderImpl;
+import com.smotana.clearflask.store.slack.SlackStoreImpl;
 import com.smotana.clearflask.store.impl.ConfigurableLlmPromptStore;
 import com.smotana.clearflask.store.impl.DynamoCertStore;
 import com.smotana.clearflask.store.impl.DynamoDraftStore;
@@ -116,6 +118,7 @@ import com.smotana.clearflask.web.resource.ConnectResource;
 import com.smotana.clearflask.web.resource.ContentResource;
 import com.smotana.clearflask.web.resource.CreditResource;
 import com.smotana.clearflask.web.resource.GitHubResource;
+import com.smotana.clearflask.web.resource.SlackResource;
 import com.smotana.clearflask.web.resource.HealthResource;
 import com.smotana.clearflask.web.resource.IdeaResource;
 import com.smotana.clearflask.web.resource.KillBillResource;
@@ -230,6 +233,8 @@ public enum ServiceInjector {
                 }
                 install(GitHubClientProviderImpl.module());
                 install(GitHubStoreImpl.module());
+                install(SlackClientProviderImpl.module());
+                install(SlackStoreImpl.module());
                 install(ResourceLegalStore.module());
                 install(SingleTableProvider.module());
                 install(MysqlUtil.module());
@@ -312,6 +317,7 @@ public enum ServiceInjector {
                     install(KillBillResource.module());
                 }
                 install(GitHubResource.module());
+                install(SlackResource.module());
                 install(UserResource.module());
                 install(AccountResource.module());
                 install(IdeaResource.module());

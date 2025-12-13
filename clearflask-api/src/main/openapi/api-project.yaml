@@ -1007,6 +1007,33 @@ components:
                 releaseNotifyAll:
                   x-clearflask-prop: { order: 95, name: 'Announcement notify', defaultValue: true, description: 'Mirrored ClearFlask Announcement from a GitHub Release should notify subscribers in ClearFlask.', falseAsUndefined: true }
                   type: boolean
+            slack:
+              x-clearflask-hide: true
+              x-clearflask-page: { order: 6, name: 'Slack Connect', description: 'Synchronize ClearFlask posts with Slack channels. Get updates directly in Slack when posts are created, updated, or commented.' }
+              title: Slack
+              type: object
+              required:
+                - teamId
+                - accessToken
+                - botUserId
+              properties:
+                teamId:
+                  x-clearflask-prop: { order: 0, name: 'Team ID', description: 'Slack workspace ID. Set automatically during OAuth connection.' }
+                  type: string
+                teamName:
+                  x-clearflask-prop: { order: 1, name: 'Workspace Name', description: 'Name of the connected Slack workspace. For information only.' }
+                  type: string
+                accessToken:
+                  x-clearflask-prop: { order: 2, name: 'Access Token', description: 'OAuth access token. Set automatically during OAuth connection.' }
+                  type: string
+                botUserId:
+                  x-clearflask-prop: { order: 3, name: 'Bot User ID', description: 'Bot user ID for filtering self-messages. Set automatically during OAuth connection.' }
+                  type: string
+                channelLinks:
+                  x-clearflask-page-group: { order: 10, name: 'Channel Links', description: 'Link Slack channels to ClearFlask categories for two-way synchronization.', tablePropertyNames: [ 'channelName', 'categoryId' ] }
+                  type: array
+                  items:
+                    $ref: 'api-project.yaml#/components/schemas/SlackChannelLink'
             forceSearchEngine:
               x-clearflask-super-admin-only: true
               x-clearflask-prop: { subType: 'Search Engine', order: 2, name: 'Which search engine to use' }
@@ -1203,6 +1230,50 @@ components:
           properties:
             panel:
               $ref: 'api-project.yaml#/components/schemas/PagePanelWithHideIfEmpty'
+    SlackChannelLink:
+      type: object
+      required:
+        - channelId
+        - categoryId
+      properties:
+        channelId:
+          x-clearflask-prop: { order: 0, name: 'Channel ID', description: 'Slack channel ID (e.g., C01234567). Set automatically when selecting a channel.' }
+          type: string
+        channelName:
+          x-clearflask-prop: { order: 1, name: 'Channel Name', description: 'Name of the linked Slack channel. For information only.' }
+          type: string
+        categoryId:
+          x-clearflask-prop: { order: 10, name: 'Category', description: 'ClearFlask category to link with this Slack channel.', subType: 'id' }
+          x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: [ 'content', 'categories' ], displayPropName: 'name', colorPropName: 'color' }
+          type: string
+        initialStatusId:
+          x-clearflask-prop: { order: 20, name: 'Initial Status', description: 'Status for posts created from Slack messages. Uses default if not set.' }
+          x-clearflask-prop-link: { idPropName: 'statusId', linkPath: [ 'content', 'categories', '<$>', 'workflow', 'statuses' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '.', 'categoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
+          type: string
+        createWithTags:
+          x-clearflask-prop: { order: 30, name: 'Apply Tags', description: 'Tags to apply to posts created from Slack.' }
+          x-clearflask-prop-link: { idPropName: 'tagId', linkPath: [ 'content', 'categories', '<$>', 'tagging', 'tags' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '.', 'categoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
+          type: array
+          items:
+            type: string
+        syncPostsToSlack:
+          x-clearflask-prop: { order: 40, name: 'Posts → Slack', defaultValue: true, description: 'Send new ClearFlask posts to Slack channel.' }
+          type: boolean
+        syncSlackToPosts:
+          x-clearflask-prop: { order: 50, name: 'Slack → Posts', defaultValue: false, description: 'Create posts from new Slack messages in this channel.' }
+          type: boolean
+        syncCommentsToReplies:
+          x-clearflask-prop: { order: 60, name: 'Comments → Replies', defaultValue: true, description: 'Mirror ClearFlask comments as Slack thread replies.' }
+          type: boolean
+        syncRepliesToComments:
+          x-clearflask-prop: { order: 70, name: 'Replies → Comments', defaultValue: true, description: 'Create ClearFlask comments from Slack thread replies.' }
+          type: boolean
+        syncStatusUpdates:
+          x-clearflask-prop: { order: 80, name: 'Status Updates', defaultValue: true, description: 'Update Slack message when post status changes.' }
+          type: boolean
+        syncResponseUpdates:
+          x-clearflask-prop: { order: 90, name: 'Response Updates', defaultValue: true, description: 'Post admin responses as Slack thread replies.' }
+          type: boolean
     VersionedConfig:
       type: object
       required:
