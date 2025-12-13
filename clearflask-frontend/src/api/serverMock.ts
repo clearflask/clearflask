@@ -470,6 +470,14 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     });
   }
 
+  jiraGetProjectsAdmin(request: Admin.JiraGetProjectsAdminRequest): Promise<Admin.AvailableJiraProjects> {
+    return this.returnLater({
+      projects: [
+        { cloudId: 'mock-cloud-123', cloudName: 'Mock Cloud', cloudUrl: 'https://mock.atlassian.net', projectId: 'proj-1', projectKey: 'MOCK', projectName: 'Mock Project' },
+      ],
+    });
+  }
+
   accountDeleteAdmin(): Promise<void> {
     if (!this.account) return this.throwLater(403, 'Not logged in');
     this.loggedIn = false;

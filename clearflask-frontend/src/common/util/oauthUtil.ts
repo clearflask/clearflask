@@ -14,6 +14,14 @@ const GitHubAppProvider = {
   authorizeUrl: 'https://github.com/login/oauth/authorize',
 };
 
+// Jira Cloud OAuth 2.0 (3LO)
+// Requires configuring Jira OAuth app at https://developer.atlassian.com/console/myapps/
+const JiraAppProvider: OAuthProvider = {
+  clientId: isProd() ? '' : 'jira-client-id', // TODO: Replace with actual Jira OAuth client ID
+  authorizeUrl: 'https://auth.atlassian.com/authorize',
+  scope: 'read:jira-user read:jira-work manage:jira-configuration write:jira-work manage:jira-webhook offline_access',
+};
+
 export type Unsubscribe = () => void;
 export interface OAuthToken {
   id: string;
@@ -85,6 +93,22 @@ export class OAuthFlow {
 
     windowIso.location.href = `https://github.com/apps/clearflask?`
       + `${OAUTH_STATE_PARAM_NAME}=${oauthStateStr}`;
+  }
+
+  openForJiraApp() {
+    if (windowIso.isSsr) return;
+
+    const oauthStateStr = this.setState(JiraAppProvider);
+
+    // Jira OAuth 2.0 (3LO) requires audience parameter
+    windowIso.location.href = `${JiraAppProvider.authorizeUrl}?`
+      + `audience=api.atlassian.com`
+      + `&client_id=${JiraAppProvider.clientId}`
+      + `&scope=${encodeURIComponent(JiraAppProvider.scope || '')}`
+      + `&redirect_uri=${encodeURIComponent(`${windowIso.location.protocol}//${windowIso.location.host}${this.props.redirectPath}`)}`
+      + `&${OAUTH_STATE_PARAM_NAME}=${oauthStateStr}`
+      + `&response_type=code`
+      + `&prompt=consent`;
   }
 
   open(provider: OAuthProvider, openTarget: 'window' | 'self', extraData?: string) {
