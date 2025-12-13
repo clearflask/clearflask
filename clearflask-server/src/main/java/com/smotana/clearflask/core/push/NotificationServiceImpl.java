@@ -658,7 +658,7 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
             return;
         }
         submit(() -> {
-            String link = "https://" + configApp.domain() + "/login/reset-password";
+            String link = "https://" + configApp.domain() + "/reset-password";
             checkState(!Strings.isNullOrEmpty(account.getEmail()));
 
             try {
