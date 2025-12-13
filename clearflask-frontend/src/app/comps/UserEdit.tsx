@@ -1,10 +1,12 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
-import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, FormHelperText, Grid, IconButton, InputAdornment, Switch, TextField, Tooltip, Typography } from '@material-ui/core';
+import { Button, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, FormHelperText, Grid, IconButton, InputAdornment, Switch, TextField, Tooltip, Typography, CircularProgress, Box } from '@material-ui/core';
 import { Theme, WithStyles, createStyles, withStyles } from '@material-ui/core/styles';
 import EditIcon from '@material-ui/icons/Edit';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import VisibilityOffIcon from '@material-ui/icons/VisibilityOff';
+import CloudUploadIcon from '@material-ui/icons/CloudUpload';
+import DeleteIcon from '@material-ui/icons/Delete';
 import { Alert } from '@material-ui/lab';
 import classNames from 'classnames';
 import { WithSnackbarProps, withSnackbar } from 'notistack';
@@ -52,6 +54,59 @@ const styles = (theme: Theme) => createStyles({
     display: 'flex',
     minWidth: 'max-content',
   },
+  avatarContainer: {
+    position: 'relative',
+    display: 'inline-block',
+    cursor: 'pointer',
+    '&:hover $avatarOverlay': {
+      opacity: 1,
+    },
+  },
+  avatarOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: '50%',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    opacity: 0,
+    transition: theme.transitions.create('opacity'),
+  },
+  avatarOverlayText: {
+    color: theme.palette.common.white,
+    fontSize: 11,
+    fontWeight: 500,
+  },
+  profilePicPreview: {
+    width: 150,
+    height: 150,
+    borderRadius: '50%',
+    objectFit: 'cover',
+    marginBottom: theme.spacing(2),
+  },
+  uploadArea: {
+    border: `2px dashed ${theme.palette.divider}`,
+    borderRadius: theme.shape.borderRadius,
+    padding: theme.spacing(3),
+    textAlign: 'center',
+    cursor: 'pointer',
+    transition: theme.transitions.create(['border-color', 'background-color']),
+    '&:hover': {
+      borderColor: theme.palette.primary.main,
+      backgroundColor: theme.palette.action.hover,
+    },
+  },
+  uploadAreaDragActive: {
+    borderColor: theme.palette.primary.main,
+    backgroundColor: theme.palette.action.selected,
+  },
+  hiddenInput: {
+    display: 'none',
+  },
 });
 interface Props {
   className?: string;
@@ -84,6 +139,11 @@ interface State {
   transactionCreateOpen?: boolean;
   balanceAdjustment?: string;
   balanceDescription?: string;
+  profilePicDialogOpen?: boolean;
+  profilePicFile?: File;
+  profilePicPreview?: string;
+  profilePicUploading?: boolean;
+  profilePicDragActive?: boolean;
 }
 class UserEdit extends Component<Props & ConnectProps & WithTranslation<'app'> & WithMediaQuery & WithStyles<typeof styles, true> & WithSnackbarProps, State> {
   state: State = {};
@@ -211,17 +271,28 @@ class UserEdit extends Component<Props & ConnectProps & WithTranslation<'app'> &
             <Grid container alignItems='center' className={this.props.classes.item}>
               <Grid item xs={12} sm={6}><Typography>{this.props.t('avatar')}</Typography></Grid>
               <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
-                <AvatarDisplay user={{
-                  ...user,
-                  ...(this.state.displayName !== undefined ? {
-                    name: this.state.displayName,
-                  } : {}),
-                  ...(this.state.email !== undefined ? {
-                    email: this.state.email,
-                  } : {}),
-                }} size={40} />
+                <div
+                  className={this.props.classes.avatarContainer}
+                  onClick={() => this.setState({ profilePicDialogOpen: true })}
+                >
+                  <AvatarDisplay user={{
+                    ...user,
+                    ...(this.state.displayName !== undefined ? {
+                      name: this.state.displayName,
+                    } : {}),
+                    ...(this.state.email !== undefined ? {
+                      email: this.state.email,
+                    } : {}),
+                  }} size={40} />
+                  <div className={this.props.classes.avatarOverlay}>
+                    <Typography className={this.props.classes.avatarOverlayText}>
+                      {user.pic === 'uploaded' ? 'Change' : 'Upload'}
+                    </Typography>
+                  </div>
+                </div>
               </Grid>
             </Grid>
+            {this.renderProfilePicDialog(user, userId!, isModOrAdminLoggedIn)}
             <Grid container alignItems='center' className={this.props.classes.item}>
               <Grid item xs={12} sm={6}><Typography>{this.props.t('displayname')}</Typography></Grid>
               <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
@@ -831,6 +902,211 @@ class UserEdit extends Component<Props & ConnectProps & WithTranslation<'app'> &
         )}
         label={<FormHelperText component='span' error={controlDisabled}>{label}</FormHelperText>}
       />
+    );
+  }
+
+  renderProfilePicDialog(user: Client.UserMe | Admin.UserAdmin, userId: string, isModOrAdminLoggedIn: boolean) {
+    const fileInputRef = React.createRef<HTMLInputElement>();
+
+    const handleFileSelect = (file: File | undefined) => {
+      if (!file) return;
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        this.props.enqueueSnackbar('Please select an image file', { variant: 'error' });
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        this.props.enqueueSnackbar('Image size must be less than 5MB', { variant: 'error' });
+        return;
+      }
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.setState({
+          profilePicFile: file,
+          profilePicPreview: e.target?.result as string,
+        });
+      };
+      reader.readAsDataURL(file);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+      e.preventDefault();
+      this.setState({ profilePicDragActive: false });
+
+      const file = e.dataTransfer.files[0];
+      handleFileSelect(file);
+    };
+
+    const handleUpload = async () => {
+      if (!this.state.profilePicFile) return;
+
+      this.setState({ profilePicUploading: true });
+      try {
+        const dispatcher = await this.props.server.dispatch();
+        await dispatcher.profilepicUpload({
+          projectId: this.props.server.getProjectId(),
+          body: this.state.profilePicFile,
+        });
+
+        this.props.enqueueSnackbar('Profile picture updated successfully', { variant: 'success' });
+        this.setState({
+          profilePicDialogOpen: false,
+          profilePicFile: undefined,
+          profilePicPreview: undefined,
+        });
+
+        // Force re-fetch user data
+        if (isModOrAdminLoggedIn && this.props.loggedInUser?.userId !== userId) {
+          const newUserAdmin = await (await this.props.server.dispatchAdmin()).userGetAdmin({
+            projectId: this.props.server.getProjectId(),
+            userId,
+          });
+          this.setState({ userAdmin: newUserAdmin });
+        } else {
+          // Reload page to refresh user data from server
+          window.location.reload();
+        }
+      } catch (error) {
+        this.props.enqueueSnackbar('Failed to upload profile picture', { variant: 'error' });
+      } finally {
+        this.setState({ profilePicUploading: false });
+      }
+    };
+
+    const handleDelete = async () => {
+      this.setState({ profilePicUploading: true });
+      try {
+        if (isModOrAdminLoggedIn) {
+          const newUserAdmin = await (await this.props.server.dispatchAdmin()).userUpdateAdmin({
+            projectId: this.props.server.getProjectId(),
+            userId,
+            userUpdateAdmin: { pic: '', picUrl: '' },
+          });
+          this.setState({
+            userAdmin: newUserAdmin,
+            profilePicDialogOpen: false,
+          });
+        } else {
+          await (await this.props.server.dispatch()).userUpdate({
+            projectId: this.props.server.getProjectId(),
+            userId,
+            userUpdate: { pic: '', picUrl: '' },
+          });
+          this.setState({ profilePicDialogOpen: false });
+          // Reload page to refresh user data from server
+          window.location.reload();
+        }
+
+        this.props.enqueueSnackbar('Profile picture removed', { variant: 'success' });
+      } catch (error) {
+        this.props.enqueueSnackbar('Failed to remove profile picture', { variant: 'error' });
+      } finally {
+        this.setState({ profilePicUploading: false });
+      }
+    };
+
+    const currentPicUrl = this.state.profilePicPreview || (user.pic === 'uploaded' ? user.picUrl : undefined);
+
+    return (
+      <Dialog
+        open={!!this.state.profilePicDialogOpen}
+        onClose={() => this.setState({
+          profilePicDialogOpen: false,
+          profilePicFile: undefined,
+          profilePicPreview: undefined,
+        })}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Profile Picture</DialogTitle>
+        <DialogContent>
+          <Box display="flex" flexDirection="column" alignItems="center">
+            {currentPicUrl ? (
+              <img
+                src={currentPicUrl}
+                alt="Profile preview"
+                className={this.props.classes.profilePicPreview}
+              />
+            ) : (
+              <div style={{ marginBottom: 16 }}>
+                <AvatarDisplay user={user} size={150} />
+              </div>
+            )}
+
+            {!this.state.profilePicFile && (
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className={this.props.classes.hiddenInput}
+                  onChange={(e) => handleFileSelect(e.target.files?.[0])}
+                />
+                <div
+                  className={classNames(
+                    this.props.classes.uploadArea,
+                    this.state.profilePicDragActive && this.props.classes.uploadAreaDragActive
+                  )}
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    this.setState({ profilePicDragActive: true });
+                  }}
+                  onDragLeave={() => this.setState({ profilePicDragActive: false })}
+                  onDrop={handleDrop}
+                >
+                  <CloudUploadIcon style={{ fontSize: 48, marginBottom: 8 }} color="action" />
+                  <Typography variant="body1">
+                    Drag & drop an image here, or click to select
+                  </Typography>
+                  <Typography variant="caption" color="textSecondary">
+                    Max size: 5MB
+                  </Typography>
+                </div>
+              </>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          {user.pic === 'uploaded' && !this.state.profilePicFile && (
+            <Button
+              onClick={handleDelete}
+              disabled={this.state.profilePicUploading}
+              startIcon={<DeleteIcon />}
+              color="secondary"
+            >
+              Remove Picture
+            </Button>
+          )}
+          <div style={{ flex: 1 }} />
+          <Button
+            onClick={() => this.setState({
+              profilePicDialogOpen: false,
+              profilePicFile: undefined,
+              profilePicPreview: undefined,
+            })}
+            disabled={this.state.profilePicUploading}
+          >
+            Cancel
+          </Button>
+          {this.state.profilePicFile && (
+            <Button
+              onClick={handleUpload}
+              disabled={this.state.profilePicUploading}
+              color="primary"
+              variant="contained"
+              startIcon={this.state.profilePicUploading ? <CircularProgress size={20} /> : <CloudUploadIcon />}
+            >
+              {this.state.profilePicUploading ? 'Uploading...' : 'Upload'}
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
     );
   }
 }
