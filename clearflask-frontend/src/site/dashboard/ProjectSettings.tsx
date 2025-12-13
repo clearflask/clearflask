@@ -3506,6 +3506,276 @@ export const ProjectSettingsGitHub = (props: {
   );
 };
 
+export const ProjectSettingsGitLab = (props: {
+  project: AdminProject;
+  server: Server;
+  editor: ConfigEditor.Editor;
+}) => {
+  const classes = useStyles();
+  const theme = useTheme();
+  const [projects, setProjects] = useState<Array<{ projectId: number; projectPath: string; name: string }> | undefined>();
+  const [selfHostedUrl, setSelfHostedUrl] = useState<string>('');
+  const [selfHostedClientId, setSelfHostedClientId] = useState<string>('');
+  const [showSelfHosted, setShowSelfHosted] = useState<boolean>(false);
+
+  const accountBasePlanId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
+  const accountAddons = useSelector<ReduxStateAdmin, {
+    [addonId: string]: string
+  }>(state => state.account.account.account?.addons || {}, shallowEqual);
+  const accountSubscriptionStatus = useSelector<ReduxStateAdmin, Admin.SubscriptionStatus | undefined>(state => state.account.account.account?.subscriptionStatus, shallowEqual);
+
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(props.project.hasUnsavedChanges());
+  useEffect(() => {
+    return props.project.subscribeToUnsavedChanges(() => {
+      setHasUnsavedChanges(props.project.hasUnsavedChanges());
+    });
+  }, [props.project]);
+
+  const [gitLab, setGitLab] = useState<Admin.GitLab | undefined>(props.editor.getConfig().gitlab);
+  useEffect(() => {
+    return props.editor.subscribe(() => {
+      setGitLab(props.editor.getConfig().gitlab);
+    });
+  }, [props.editor]);
+
+  const getProjects = (code: string, gitlabInstanceUrl?: string) => ServerAdmin.get().dispatchAdmin()
+    .then(d => d.gitLabGetProjectsAdmin({ gitLabGetProjectsBody: { code, gitlabInstanceUrl } }))
+    .then(result => setProjects(result.projects));
+
+  const oauthFlow = new OAuthFlow({
+    accountType: 'gitlab-integration',
+    redirectPath: '/dashboard/settings/project/gitlab',
+  });
+  const oauthResult = oauthFlow.checkResult();
+  if (oauthResult) {
+    // extraData contains the GitLab instance URL for self-hosted instances
+    getProjects(oauthResult.code, oauthResult.extraData);
+  }
+
+  return (
+    <ProjectSettingsBase title="GitLab Integration"
+                         description="Mirror GitLab Issues and Releases into ClearFlask. Resolve issues from ClearFlask and mirror into GitLab.">
+      <UpgradeWrapper
+        accountBasePlanId={accountBasePlanId}
+        accountAddons={accountAddons}
+        subscriptionStatus={accountSubscriptionStatus}
+        propertyPath={['gitlab']}
+      >
+        <Collapse in={!!gitLab}>
+          <Section
+            title="Configure synchronization"
+            description={(
+              <>
+                Your linked GitLab project <b>{gitLab?.name}</b> synchronization can be configured
+                here.
+              </>
+            )}
+            content={!!gitLab && (
+              <>
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['gitlab', 'createWithCategoryId']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['gitlab', 'initialStatusId']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['gitlab', 'createWithTags']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['gitlab', 'statusSync']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['gitlab', 'responseSync']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['gitlab', 'commentSync']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['gitlab', 'createReleaseWithCategoryId']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['gitlab', 'releaseNotifyAll']} />
+                <p>
+                  <Button
+                    style={{ color: theme.palette.error.dark }}
+                    color="inherit"
+                    onClick={() => props.editor.getPage(['gitlab']).set(undefined)}
+                  >Delete</Button>
+                </p>
+              </>
+            )}
+          />
+        </Collapse>
+        <Section
+          title="Select new project"
+          description="Link your GitLab project by authorizing ClearFlask"
+          content={(
+            <>
+              <Collapse in={!projects && hasUnsavedChanges}>
+                <p>
+                  <Message
+                    message="You must publish unsaved changes before we can redirect you to GitLab"
+                    severity="warning" />
+                </p>
+              </Collapse>
+              <Collapse in={!projects && !hasUnsavedChanges}>
+                <p>
+                  <Button
+                    variant="contained"
+                    disableElevation
+                    color="primary"
+                    disabled={hasUnsavedChanges}
+                    onClick={() => isProd() ? oauthFlow.openForGitLab() : getProjects('my-code')}
+                  >Connect GitLab.com</Button>
+                </p>
+                <p>
+                  <MuiLink
+                    href="#"
+                    onClick={(e) => { e.preventDefault(); setShowSelfHosted(!showSelfHosted); }}
+                  >
+                    <Typography component="span" variant="caption" color="primary">
+                      {showSelfHosted ? 'Hide self-hosted options' : 'Using self-hosted GitLab?'}
+                    </Typography>
+                  </MuiLink>
+                </p>
+                <Collapse in={showSelfHosted}>
+                  <div style={{ marginTop: 16 }}>
+                    <TextField
+                      label="GitLab Instance URL"
+                      placeholder="https://gitlab.mycompany.com"
+                      value={selfHostedUrl}
+                      onChange={e => setSelfHostedUrl(e.target.value)}
+                      fullWidth
+                      margin="dense"
+                      helperText="Your self-hosted GitLab URL"
+                    />
+                    <TextField
+                      label="OAuth Application ID"
+                      placeholder="Application ID from GitLab"
+                      value={selfHostedClientId}
+                      onChange={e => setSelfHostedClientId(e.target.value)}
+                      fullWidth
+                      margin="dense"
+                      helperText={(
+                        <>
+                          Create an OAuth application in your GitLab instance under{' '}
+                          <MuiLink href="https://docs.gitlab.com/ee/integration/oauth_provider.html" target="_blank" rel="noopener noreferrer">
+                            Admin Area &gt; Applications
+                          </MuiLink>
+                          {' '}with redirect URI: <code>{windowIso.location.protocol}//{windowIso.location.host}/dashboard/settings/project/gitlab</code>
+                        </>
+                      )}
+                    />
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      disabled={!selfHostedUrl || !selfHostedClientId || hasUnsavedChanges}
+                      onClick={() => oauthFlow.openForSelfHostedGitLab(selfHostedUrl, selfHostedClientId)}
+                      style={{ marginTop: 8 }}
+                    >Connect Self-Hosted GitLab</Button>
+                  </div>
+                </Collapse>
+              </Collapse>
+              {!!projects && (projects.length ? (
+                <TemplateWrapper<[FeedbackInstance | undefined, ChangelogInstance | undefined]>
+                  key="feedback-changelog"
+                  editor={props.editor}
+                  mapper={templater => Promise.all([templater.feedbackGet(), templater.changelogGet()])}
+                  renderResolved={(templater, [feedback, changelog]) => (
+                    <Collapse in={!!projects} appear>
+                      <Table className={classes.githubReposTable}>
+                        <TableBody>
+                          {projects.map(project => {
+                            const selected = gitLab?.projectId === project.projectId;
+                            return (
+                              <TableRow key={project.projectPath}>
+                                <TableCell key="project">
+                                  <Typography>{project.name}</Typography>
+                                  <Typography variant="caption" color="textSecondary">{project.projectPath}</Typography>
+                                </TableCell>
+                                <TableCell key="action">
+                                  <Typography>
+                                    <Button
+                                      variant="contained"
+                                      disableElevation
+                                      color="primary"
+                                      disabled={selected}
+                                      onClick={() => {
+                                        if (selected) return;
+                                        const gitLabPage = props.editor.getPage(['gitlab']);
+                                        if (!gitLabPage.value) {
+                                          gitLabPage.set(true);
+                                          (props.editor.getProperty(['gitlab', 'statusSync']) as ConfigEditor.ObjectProperty)
+                                            .set(true);
+
+                                          var category: Admin.Category | undefined;
+                                          var closedStatuses: Array<string> | undefined;
+                                          var closedStatus: string | undefined;
+                                          var openStatus: string | undefined;
+                                          if (feedback) {
+                                            category = feedback.categoryAndIndex.category;
+                                          } else if (!!props.editor.getConfig().content.categories.length) {
+                                            category = props.editor.getConfig().content.categories[0];
+                                          }
+                                          closedStatuses = [
+                                            ...(feedback?.statusIdAccepted ? [feedback.statusIdAccepted] : []),
+                                            ...(category ? category.workflow.statuses
+                                              .filter(status => ['accepted', 'closed', 'completed', 'complete', 'cancelled'].includes(status.name?.toLowerCase()))
+                                              .map(status => status.statusId) : []),
+                                          ];
+                                          closedStatus = feedback?.statusIdAccepted || closedStatuses?.[0];
+                                          openStatus = category?.workflow.entryStatus || category?.workflow.statuses.find(s => !closedStatuses?.includes(s.statusId))?.statusId;
+
+                                          category && (props.editor.getProperty(['gitlab', 'createWithCategoryId']) as ConfigEditor.StringProperty)
+                                            .set(category.categoryId);
+                                          closedStatuses?.length && (props.editor.getProperty(['gitlab', 'statusSync', 'closedStatuses']) as ConfigEditor.LinkMultiProperty)
+                                            .set(new Set(closedStatuses));
+                                          closedStatus && (props.editor.getProperty(['gitlab', 'statusSync', 'closedStatus']) as ConfigEditor.StringProperty)
+                                            .set(closedStatus);
+                                          openStatus && (props.editor.getProperty(['gitlab', 'statusSync', 'openStatus']) as ConfigEditor.StringProperty)
+                                            .set(openStatus);
+
+                                          // Release sync
+                                          var releaseCategory: Admin.Category | undefined;
+                                          if (changelog) {
+                                            releaseCategory = changelog.categoryAndIndex.category;
+                                          } else if (!!props.editor.getConfig().content.categories.length) {
+                                            releaseCategory = props.editor.getConfig().content.categories[props.editor.getConfig().content.categories.length - 1];
+                                          }
+                                          releaseCategory && (props.editor.getProperty(['gitlab', 'createReleaseWithCategoryId']) as ConfigEditor.StringProperty)
+                                            .set(releaseCategory.categoryId);
+                                        }
+                                        (props.editor.getProperty(['gitlab', 'name']) as ConfigEditor.StringProperty)
+                                          .set(project.name);
+                                        (props.editor.getProperty(['gitlab', 'projectId']) as ConfigEditor.NumberProperty)
+                                          .set(project.projectId);
+                                        (props.editor.getProperty(['gitlab', 'projectPath']) as ConfigEditor.StringProperty)
+                                          .set(project.projectPath);
+                                        // Store the GitLab instance URL if using self-hosted
+                                        if (selfHostedUrl) {
+                                          (props.editor.getProperty(['gitlab', 'gitlabInstanceUrl']) as ConfigEditor.StringProperty)
+                                            .set(selfHostedUrl);
+                                        }
+                                      }}
+                                    >
+                                      {selected ? 'Linked' : 'Link'}
+                                    </Button>
+                                  </Typography>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </Collapse>
+                  )} />
+              ) : (
+                <Message message="No projects found" severity="warning" />
+              ))}
+            </>
+          )
+          }
+        />
+      </UpgradeWrapper>
+      <br /><br />
+      <NeedHelpInviteTeammate server={props.server} />
+    </ProjectSettingsBase>
+  );
+};
+
 export const ProjectSettingsIntercom = (props: {
   server: Server;
   editor: ConfigEditor.Editor;

@@ -14,6 +14,14 @@ const GitHubAppProvider = {
   authorizeUrl: 'https://github.com/login/oauth/authorize',
 };
 
+// GitLab OAuth provider for gitlab.com
+// For self-hosted GitLab, the authorizeUrl needs to be constructed dynamically
+const GitLabProvider: OAuthProvider = {
+  clientId: isProd() ? '' : 'gitlab-client-id', // TODO: Add production GitLab OAuth App client ID
+  authorizeUrl: 'https://gitlab.com/oauth/authorize',
+  scope: 'api read_user',
+};
+
 export type Unsubscribe = () => void;
 export interface OAuthToken {
   id: string;
@@ -85,6 +93,27 @@ export class OAuthFlow {
 
     windowIso.location.href = `https://github.com/apps/clearflask?`
       + `${OAUTH_STATE_PARAM_NAME}=${oauthStateStr}`;
+  }
+
+  /**
+   * Open GitLab OAuth authorization for gitlab.com
+   */
+  openForGitLab() {
+    this.open(GitLabProvider, 'self');
+  }
+
+  /**
+   * Open GitLab OAuth authorization for a self-hosted GitLab instance
+   * @param gitlabInstanceUrl The base URL of the GitLab instance (e.g., https://gitlab.mycompany.com)
+   * @param clientId The OAuth application client ID configured on the GitLab instance
+   */
+  openForSelfHostedGitLab(gitlabInstanceUrl: string, clientId: string) {
+    const provider: OAuthProvider = {
+      clientId,
+      authorizeUrl: `${gitlabInstanceUrl.replace(/\/$/, '')}/oauth/authorize`,
+      scope: 'api read_user',
+    };
+    this.open(provider, 'self', gitlabInstanceUrl);
   }
 
   open(provider: OAuthProvider, openTarget: 'window' | 'self', extraData?: string) {
