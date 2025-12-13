@@ -704,7 +704,9 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                         null,
                         null,
                         null,
-                        null),
+                        null,
+                        updates.getPic(),
+                        updates.getPicUrl()),
                 updates.getIosPushToken(),
                 updates.getAndroidPushToken(),
                 updates.getBrowserPushToken());
@@ -851,8 +853,26 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             userUpdatedBuilder.isMod(updates.getIsMod());
             indexUpdates.put("isMod", updates.getIsMod() == Boolean.TRUE);
             mysqlUpdates.setIsmod(updates.getIsMod());
-            // Update isMod flag in all active sessions instead of revoking them
-            updateSessionsModStatus(projectId, userId, updates.getIsMod());
+        }
+        if (updates.getPic() != null) {
+            nameMap.put("#pic", "pic");
+            if (updates.getPic().isEmpty()) {
+                removeUpdates.add("#pic");
+            } else {
+                valMap.put(":pic", userSchema.toAttrValue("pic", updates.getPic()));
+                setUpdates.add("#pic = :pic");
+            }
+            userUpdatedBuilder.pic(updates.getPic());
+        }
+        if (updates.getPicUrl() != null) {
+            nameMap.put("#picUrl", "picUrl");
+            if (updates.getPicUrl().isEmpty()) {
+                removeUpdates.add("#picUrl");
+            } else {
+                valMap.put(":picUrl", userSchema.toAttrValue("picUrl", updates.getPicUrl()));
+                setUpdates.add("#picUrl = :picUrl");
+            }
+            userUpdatedBuilder.picUrl(updates.getPicUrl());
         }
         if (updateAuthTokenValidityStart) {
             Instant authTokenValidityStart = Instant.now();
@@ -1371,11 +1391,13 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                     null,
                     null,
                     Instant.now(),
+                    null,  // pic
+                    null,  // picUrl
                     null,
                     null,
                     null,
                     null,
-                    null,
+                    null,  // isTracked
                     ImmutableSet.of()))
                     .getUser());
         }

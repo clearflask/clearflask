@@ -17,7 +17,11 @@ public interface ContentStore {
 
     ContentUrl upload(String projectId, String userId, ContentType contentType, InputStream inputStream, int length);
 
+    ContentUrl upload(String projectId, String userId, ContentType contentType, InputStream inputStream, int length, String fileName);
+
     String uploadAndSign(String projectId, String userId, ContentType contentType, InputStream inputStream, int length);
+
+    String uploadAndSign(String projectId, String userId, ContentType contentType, InputStream inputStream, int length, String fileName);
 
     /**
      * Throws a WebApplicationException with proxied response

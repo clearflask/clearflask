@@ -80,6 +80,7 @@ interface Props {
     name?: string;
     isMod?: boolean;
     pic?: string;
+    picUrl?: string;
   } | Client.User;
   onClick?: (userId: string) => void;
   disabled?: boolean;
@@ -90,7 +91,7 @@ class AvatarDisplay extends React.Component<Props & RouteComponentProps & WithSt
     const userName = DisplayUserName(this.props.user);
     const size = this.props.size || 25;
     var avatar;
-    switch (this.props.user?.pic ? 'image' : this.props.type) {
+    switch (this.props.user?.picUrl ? 'image' : this.props.type) {
       default:
       case 'beam':
         avatar = (
@@ -126,7 +127,7 @@ class AvatarDisplay extends React.Component<Props & RouteComponentProps & WithSt
       case 'image':
       case 'initials':
         var backgroundColor;
-        if (!this.props.user?.pic) {
+        if (!this.props.user?.picUrl) {
           backgroundColor = DeterministicColorFromUser(this.props.user);
           backgroundColor = !backgroundColor ? undefined
             : (this.props.theme.palette.type === 'dark'
@@ -143,7 +144,7 @@ class AvatarDisplay extends React.Component<Props & RouteComponentProps & WithSt
               backgroundColor: backgroundColor,
             }}
             alt={userName}
-            src={this.props.user?.pic}
+            src={this.props.user?.picUrl}
           >{Initial(this.props.user)}</MuiAvatar>
         );
         break;

@@ -114,11 +114,13 @@ public class UserStoreIT extends AbstractIT {
                 "myAndroidPushToken",
                 "myBrowserPushToken",
                 Instant.now(),
+                null,  // pic
+                null,  // picUrl
                 null,
                 null,
                 null,
                 null,
-                null,
+                null,  // isTracked
                 ImmutableSet.of());
 
         store.createIndex(user.getProjectId()).get();
@@ -186,11 +188,13 @@ public class UserStoreIT extends AbstractIT {
                 "myAndroidPushToken1",
                 "myBrowserPushToken1",
                 Instant.now(),
+                null,  // pic
+                null,  // picUrl
                 null,
                 null,
                 null,
                 null,
-                null,
+                null,  // isTracked
                 ImmutableSet.of());
         UserModel user2 = new UserModel(
                 projectId,
@@ -209,11 +213,13 @@ public class UserStoreIT extends AbstractIT {
                 "myAndroidPushToken2",
                 "myBrowserPushToken2",
                 Instant.now().minus(1, ChronoUnit.DAYS),
+                null,  // pic
+                null,  // picUrl
                 null,
                 null,
                 null,
                 null,
-                null,
+                null,  // isTracked
                 ImmutableSet.of());
         UserModel user3 = new UserModel(
                 projectId,
@@ -232,11 +238,13 @@ public class UserStoreIT extends AbstractIT {
                 "myAndroidPushToken3",
                 "myBrowserPushToken3",
                 Instant.now().minus(2, ChronoUnit.DAYS),
+                null,  // pic
+                null,  // picUrl
                 null,
                 null,
                 null,
                 null,
-                null,
+                null,  // isTracked
                 ImmutableSet.of());
 
         store.createIndex(projectId).get();
@@ -348,11 +356,13 @@ public class UserStoreIT extends AbstractIT {
                 "myAndroidPushToken",
                 "myBrowserPushToken",
                 Instant.now(),
+                null,  // pic
+                null,  // picUrl
                 null,
                 null,
                 null,
                 null,
-                null,
+                null,  // isTracked
                 ImmutableSet.of());
 
         store.createIndex(user.getProjectId()).get();
@@ -387,11 +397,13 @@ public class UserStoreIT extends AbstractIT {
                 "myAndroidPushToken",
                 "myBrowserPushToken",
                 Instant.now(),
+                null,  // pic
+                null,  // picUrl
                 null,
                 null,
                 null,
                 null,
-                null,
+                null,  // isTracked
                 ImmutableSet.of());
 
         store.createIndex(user.getProjectId()).get();

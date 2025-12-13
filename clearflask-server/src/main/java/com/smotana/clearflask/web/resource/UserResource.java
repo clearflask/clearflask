@@ -296,11 +296,13 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 userCreate.getAndroidPushToken(),
                 userCreate.getBrowserPushToken(),
                 Instant.now(),
+                null,  // pic
+                null,  // picUrl
                 null,
                 null,
                 null,
                 null,
-                null,
+                null,  // isTracked
                 ImmutableSet.of());
         userStore.createUser(user);
 
@@ -357,11 +359,13 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 userCreateAdmin.getAndroidPushToken(),
                 userCreateAdmin.getBrowserPushToken(),
                 Instant.now(),
+                null,  // pic
+                null,  // picUrl
                 null,
                 null,
                 null,
                 null,
-                null,
+                null,  // isTracked
                 ImmutableSet.of());
         userStore.createUser(user);
         if (user.getIsMod() == Boolean.TRUE) {

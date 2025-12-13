@@ -42,6 +42,8 @@ public class ContentResource extends AbstractResource implements ContentApi, Con
     private ContentStore contentStore;
     @Inject
     private ImageNormalization imageNormalization;
+    @Inject
+    private UserStore userStore;
 
     @Override
     public void contentProxy(
@@ -78,14 +80,59 @@ public class ContentResource extends AbstractResource implements ContentApi, Con
         return new ContentUploadResponse(doUpload(projectId, authorId, body));
     }
 
+    @RolesAllowed({Role.PROJECT_USER})
+    @Limit(requiredPermits = 30, challengeAfter = 20)
+    @Override
+    public ContentUploadResponse profilepicUpload(String projectId, InputStream body) {
+        String userId = getExtendedPrincipal()
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
+                .map(UserStore.UserSession::getUserId)
+                .get();
+
+        return new ContentUploadResponse(uploadProfilePic(projectId, userId, body));
+    }
+
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
+    @Limit(requiredPermits = 5, challengeAfter = 100)
+    @Override
+    public ContentUploadResponse profilepicUploadAsAdmin(String projectId, String userId, InputStream body) {
+        return new ContentUploadResponse(uploadProfilePic(projectId, userId, body));
+    }
+
+    private String uploadProfilePic(String projectId, String userId, InputStream body) {
+        // Normalize with smaller dimensions for profile pictures (500x500)
+        Image imageNormalized = normalizeImageWithSize(body, 500.0, 500.0);
+        ContentStore.ContentType contentType = checkNotNull(
+                ContentStore.ContentType.MEDIA_TYPE_TO_CONTENT_TYPE.get(imageNormalized.getMediaType()));
+
+        // Upload with deterministic filename for profile picture
+        String fileName = "profilepic." + contentType.getExtension();
+        String signedUrl = contentStore.uploadAndSign(
+                projectId,
+                userId,
+                contentType,
+                new ByteArrayInputStream(imageNormalized.getData()),
+                imageNormalized.getData().length,
+                fileName);
+
+        // Update user profile with pic type and URL
+        userStore.updateUser(projectId, userId, new com.smotana.clearflask.api.model.UserUpdate(
+                null,  // name
+                null,  // email
+                null,  // password
+                null,  // emailNotify
+                null,  // iosPushToken
+                null,  // androidPushToken
+                null,  // browserPushToken
+                "uploaded",  // pic type
+                signedUrl    // picUrl
+        ));
+
+        return signedUrl;
+    }
+
     private String doUpload(String projectId, String authorId, InputStream body) {
-        byte[] imgBytes;
-        try (body) {
-            imgBytes = IOUtils.toByteArray(body);
-        } catch (IOException ex) {
-            throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Corrrupted data", ex);
-        }
-        Image imageNormalized = imageNormalization.normalize(imgBytes);
+        Image imageNormalized = normalizeImage(body);
         String signedUrl = contentStore.uploadAndSign(
                 projectId,
                 authorId,
@@ -93,6 +140,28 @@ public class ContentResource extends AbstractResource implements ContentApi, Con
                 new ByteArrayInputStream(imageNormalized.getData()),
                 imageNormalized.getData().length);
         return signedUrl;
+    }
+
+    private Image normalizeImage(InputStream body) {
+        byte[] imgBytes;
+        try (body) {
+            imgBytes = IOUtils.toByteArray(body);
+        } catch (IOException ex) {
+            throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Corrrupted data", ex);
+        }
+        Image imageNormalized = imageNormalization.normalize(imgBytes);
+        return imageNormalized;
+    }
+
+    private Image normalizeImageWithSize(InputStream body, double maxWidth, double maxHeight) {
+        byte[] imgBytes;
+        try (body) {
+            imgBytes = IOUtils.toByteArray(body);
+        } catch (IOException ex) {
+            throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Corrrupted data", ex);
+        }
+        Image imageNormalized = imageNormalization.normalize(imgBytes, maxWidth, maxHeight);
+        return imageNormalized;
     }
 
     public static Module module() {

@@ -76,7 +76,11 @@ components:
         created:
           type: string
           format: date-time
+        # Type of display image, valid options:
+        # ...
         pic:
+          type: string
+        picUrl:
           type: string
     UserMe:
       allOf:
@@ -171,6 +175,10 @@ components:
           type: string
         browserPushToken:
           type: string
+        pic:
+          type: string
+        picUrl:
+          type: string
 
     UserUpdateAdmin:
       type: object
@@ -193,6 +201,10 @@ components:
           $ref: 'api-credit.yaml#/components/schemas/TransactionCreateAdmin'
         isMod:
           type: boolean
+        pic:
+          type: string
+        picUrl:
+          type: string
     SubscriptionListenerUser:
       type: object
       required:

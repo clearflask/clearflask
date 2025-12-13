@@ -16,6 +16,11 @@ public interface ImageNormalization {
      */
     Image normalize(byte[] imgBytes) throws ApiException;
 
+    /**
+     * Normalize image with custom max dimensions
+     */
+    Image normalize(byte[] imgBytes, double maxWidth, double maxHeight) throws ApiException;
+
     @Value
     class Image {
         String mediaType;

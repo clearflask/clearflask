@@ -1176,6 +1176,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       user.browserPush = request.userUpdate.browserPushToken !== '';
     }
     ;
+    if (request.userUpdate.pic !== undefined) {
+      user.pic = request.userUpdate.pic === '' ? undefined : request.userUpdate.pic;
+    }
+    if (request.userUpdate.picUrl !== undefined) {
+      user.picUrl = request.userUpdate.picUrl === '' ? undefined : request.userUpdate.picUrl;
+    }
     return this.returnLater(user);
   }
 
@@ -1595,6 +1601,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (request.userUpdateAdmin.iosPush === false) user.iosPush = false;
     if (request.userUpdateAdmin.androidPush === false) user.androidPush = false;
     if (request.userUpdateAdmin.browserPush === false) user.browserPush = false;
+    if (request.userUpdateAdmin.pic !== undefined) {
+      user.pic = request.userUpdateAdmin.pic === '' ? undefined : request.userUpdateAdmin.pic;
+    }
+    if (request.userUpdateAdmin.picUrl !== undefined) {
+      user.picUrl = request.userUpdateAdmin.picUrl === '' ? undefined : request.userUpdateAdmin.picUrl;
+    }
     var balance = this.getProject(request.projectId).balances[request.userId];
     var balanceUpdateTransaction: Admin.Transaction | undefined;
     if (request.userUpdateAdmin.transactionCreate !== undefined) {
@@ -1829,6 +1841,33 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       };
       reader.readAsDataURL(request.body);
     });
+    return this.returnLater({ url: data });
+  }
+
+  async profilepicUpload(request: Client.ProfilepicUploadRequest): Promise<Client.ContentUploadResponse> {
+    const loggedInUser = this.getProject(request.projectId).loggedInUser;
+    if (!loggedInUser) return this.throwLater(403, 'Not logged in');
+
+    const data = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = reject;
+      reader.onload = () => {
+        // Always a string since using readAsDataURL below
+        resolve(reader.result as string);
+      };
+      reader.readAsDataURL(request.body);
+    });
+
+    // Update the logged in user's pic
+    const user: Admin.UserAdmin = this.getImmutable(
+      this.getProject(request.projectId).users,
+      user => user.userId === loggedInUser.userId);
+    user.pic = 'uploaded';
+    user.picUrl = data;
+
+    // Update the loggedInUser reference
+    this.getProject(request.projectId).loggedInUser = user;
+
     return this.returnLater({ url: data });
   }
 

@@ -47,6 +47,11 @@ public class ImageNormalizationImpl implements ImageNormalization {
 
     @Override
     public Image normalize(byte[] imgBytes) throws ApiException {
+        return normalize(imgBytes, config.maxWidth(), config.maxHeight());
+    }
+
+    @Override
+    public Image normalize(byte[] imgBytes, double maxWidth, double maxHeight) throws ApiException {
         try (ByteArrayInputStream bais = new ByteArrayInputStream(imgBytes);
              ImageInputStream iis = ImageIO.createImageInputStream(bais)) {
             Iterator<ImageReader> imageReaders = ImageIO.getImageReaders(iis);
@@ -63,7 +68,7 @@ public class ImageNormalizationImpl implements ImageNormalization {
             } else if ("gif".equals(format) && numImages > 1 && config.keepGifsAsIs()) {
                 return new Image(ContentType.GIF.getMediaType(), imgBytes);
             } else {
-                return writeJpeg(imageReader.read(0));
+                return writeJpeg(imageReader.read(0), maxWidth, maxHeight);
             }
         } catch (IOException ex) {
             throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Corrupted image", ex);
@@ -100,11 +105,15 @@ public class ImageNormalizationImpl implements ImageNormalization {
     }
 
     private Image writeJpeg(BufferedImage image) {
+        return writeJpeg(image, config.maxWidth(), config.maxHeight());
+    }
+
+    private Image writeJpeg(BufferedImage image, double maxWidth, double maxHeight) {
         if (image == null) {
             throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "No image");
         }
 
-        BufferedImage convertedImage = resizeImg(image);
+        BufferedImage convertedImage = resizeImg(image, maxWidth, maxHeight);
 
         JPEGImageWriteParam jpegParams = new JPEGImageWriteParam(null);
         jpegParams.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
@@ -124,7 +133,11 @@ public class ImageNormalizationImpl implements ImageNormalization {
     }
 
     private BufferedImage resizeImg(BufferedImage image) {
-        Dimension scaledDimension = getScaledDimension(image.getWidth(), image.getHeight(), config.maxWidth(), config.maxHeight());
+        return resizeImg(image, config.maxWidth(), config.maxHeight());
+    }
+
+    private BufferedImage resizeImg(BufferedImage image, double maxWidth, double maxHeight) {
+        Dimension scaledDimension = getScaledDimension(image.getWidth(), image.getHeight(), maxWidth, maxHeight);
         final BufferedImage convertedImage = new BufferedImage(
                 (int) scaledDimension.getWidth(),
                 (int) scaledDimension.getHeight(),
