@@ -109,6 +109,23 @@ components:
           type: string
         password:
           type: string
+    AccountForgotPassword:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+    AccountPasswordReset:
+      type: object
+      required:
+        - token
+        - password
+      properties:
+        token:
+          type: string
+        password:
+          type: string
     AccountLoginAs:
       type: object
       required:
@@ -603,6 +620,35 @@ components:
         application/json:
           schema:
             $ref: 'api-account.yaml#/components/schemas/AccountLogin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-account.yaml#/components/schemas/AccountAdmin'
+/admin/account/forgot:
+  post:
+    operationId: accountForgotPassword
+    tags: [ AccountAdmin ]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-account.yaml#/components/schemas/AccountForgotPassword'
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
+/admin/account/password-reset:
+  post:
+    operationId: accountPasswordReset
+    tags: [ AccountAdmin ]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-account.yaml#/components/schemas/AccountPasswordReset'
     responses:
       '200':
         content:

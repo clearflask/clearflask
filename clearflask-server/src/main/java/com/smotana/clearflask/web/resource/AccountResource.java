@@ -32,7 +32,9 @@ import com.smotana.clearflask.api.model.AccountBindAdmin;
 import com.smotana.clearflask.api.model.AccountBindAdminResponse;
 import com.smotana.clearflask.api.model.AccountCreditAdjustment;
 import com.smotana.clearflask.api.model.AccountDeleteSuperAdmin;
+import com.smotana.clearflask.api.model.AccountForgotPassword;
 import com.smotana.clearflask.api.model.AccountLogin;
+import com.smotana.clearflask.api.model.AccountPasswordReset;
 import com.smotana.clearflask.api.model.AccountLoginAs;
 import com.smotana.clearflask.api.model.AccountSearchResponse;
 import com.smotana.clearflask.api.model.AccountSearchSuperAdmin;
@@ -77,6 +79,7 @@ import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.InvitationModel;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.RemoteLicenseStore;
+import com.smotana.clearflask.store.TokenVerifyStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.util.ChatwootUtil;
 import com.smotana.clearflask.util.IntercomUtil;
@@ -179,6 +182,8 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
     private LegalStore legalStore;
     @Inject
     private ProjectStore projectStore;
+    @Inject
+    private TokenVerifyStore tokenVerifyStore;
     @Inject
     private GitHubStore gitHubStore;
     @Inject
@@ -377,6 +382,77 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
         }
         log.debug("Successful account login for email {}", credentials.getEmail());
 
+        AccountStore.AccountSession accountSession = accountStore.createSession(
+                account,
+                Instant.now().plus(config.sessionExpiry()).getEpochSecond());
+        authCookie.setAuthCookie(request, response, ACCOUNT_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
+        if (superAdminPredicate.isEmailSuperAdmin(account.getEmail())) {
+            authCookie.setAuthCookie(request, response, SUPER_ADMIN_AUTH_COOKIE_NAME, accountSession.getSessionId(), accountSession.getTtlInEpochSec());
+        }
+
+        return account.toAccountAdmin(intercomUtil, chatwootUtil, planStore, cfSso, superAdminPredicate);
+    }
+
+    @PermitAll
+    @Limit(requiredPermits = 10, challengeAfter = 3)
+    @Override
+    public void accountForgotPassword(AccountForgotPassword accountForgotPassword) {
+        sanitizer.email(accountForgotPassword.getEmail());
+
+        Optional<Account> accountOpt = accountStore.getAccountByEmail(accountForgotPassword.getEmail());
+        if (!accountOpt.isPresent()) {
+            // Don't reveal whether the email exists
+            log.info("Forgot password request for non-existent email {}", accountForgotPassword.getEmail());
+            return;
+        }
+        Account account = accountOpt.get();
+
+        if (Strings.isNullOrEmpty(account.getPassword())) {
+            // Account uses OAuth, no password to reset
+            log.info("Forgot password request for OAuth account {}", accountForgotPassword.getEmail());
+            return;
+        }
+
+        TokenVerifyStore.Token token = tokenVerifyStore.createToken("adminPasswordReset", account.getAccountId());
+        // Create compound token: accountId:token for password reset
+        String compoundToken = account.getAccountId() + ":" + token.getToken();
+        notificationService.onAdminForgotPassword(account, compoundToken);
+        log.debug("Sent password reset email to {}", account.getEmail());
+    }
+
+    @PermitAll
+    @Limit(requiredPermits = 10, challengeAfter = 5)
+    @Override
+    public AccountAdmin accountPasswordReset(AccountPasswordReset accountPasswordReset) {
+        // Token format is: accountId:actualToken
+        String[] tokenParts = accountPasswordReset.getToken().split(":", 2);
+        if (tokenParts.length != 2) {
+            log.info("Password reset with invalid token format");
+            throw new ApiException(Response.Status.BAD_REQUEST, "Invalid or expired reset link");
+        }
+
+        String accountId = tokenParts[0];
+        String tokenStr = tokenParts[1];
+
+        boolean tokenValid = tokenVerifyStore.useToken(tokenStr, "adminPasswordReset", accountId);
+        if (!tokenValid) {
+            log.info("Password reset with invalid or expired token for accountId {}", accountId);
+            throw new ApiException(Response.Status.BAD_REQUEST, "Invalid or expired reset link");
+        }
+
+        Optional<Account> accountOpt = accountStore.getAccount(accountId, false);
+        if (!accountOpt.isPresent()) {
+            log.warn("Password reset token valid but account {} not found", accountId);
+            throw new ApiException(Response.Status.BAD_REQUEST, "Invalid or expired reset link");
+        }
+        Account account = accountOpt.get();
+
+        // Update the password
+        String passwordHashed = passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, accountPasswordReset.getPassword(), account.getEmail());
+        account = accountStore.updatePassword(account.getAccountId(), passwordHashed, Optional.empty());
+        log.info("Password reset successful for account {}", account.getEmail());
+
+        // Create a session for the user
         AccountStore.AccountSession accountSession = accountStore.createSession(
                 account,
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());

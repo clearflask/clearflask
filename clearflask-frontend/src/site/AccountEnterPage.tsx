@@ -177,7 +177,7 @@ const styles = (theme: Theme) => createStyles({
 const useStyles = makeStyles(styles);
 
 interface Props {
-    type: 'login' | 'signup' | 'invitation' | 'coupon';
+    type: 'login' | 'signup' | 'invitation' | 'coupon' | 'forgot-password' | 'reset-password';
     invitationId?: string;
     couponId?: string;
 }
@@ -207,6 +207,8 @@ interface State {
     name?: string; // signup only
     emailIsFreeOrDisposable?: boolean; // signup only
     revealPassword?: boolean; // login & signup
+    forgotPasswordSuccess?: boolean; // forgot-password
+    resetPasswordError?: string; // reset-password
 }
 
 class AccountEnterPage extends Component<Props & WithTranslation<'site'> & RouteComponentProps<{}, StaticContext, LocationState | undefined> & ConnectProps & WithStyles<typeof styles, true>, State> {
@@ -294,6 +296,12 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
         }
         if (this.props.type === 'coupon') {
             return this.renderCoupon(isLoggedIn);
+        }
+        if (this.props.type === 'forgot-password') {
+            return this.renderForgotPassword();
+        }
+        if (this.props.type === 'reset-password') {
+            return this.renderResetPassword();
         }
 
         if (this.props.accountStatus === Status.FULFILLED && !!this.props.account
@@ -477,6 +485,13 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
                                     margin='normal'
                                     disabled={this.state.isSubmitting}
                                 />
+                                {this.props.type === 'login' && (
+                                    <Typography variant='caption' style={{textAlign: 'right', display: 'block', marginTop: 4}}>
+                                        <Link to='/forgot-password' className={this.props.classes.link}>
+                                            {this.props.t('forgot-password')}
+                                        </Link>
+                                    </Typography>
+                                )}
                                 {this.props.type === 'signup' && (
                                     <AcceptTerms/>
                                 )}
@@ -791,6 +806,171 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
         } catch (e) {
             this.setState({isSubmitting: false});
             throw e;
+        }
+    }
+
+    renderForgotPassword() {
+        return (
+            <EnterTemplate
+                title={(
+                    <>
+                        {this.props.t('forgot-password')}
+                    </>
+                )}
+                renderContent={submitButton => (
+                    <>
+                        {this.state.forgotPasswordSuccess ? (
+                            <Alert className={this.props.classes.alert} severity='success'>
+                                <AlertTitle>{this.props.t('email-sent')}</AlertTitle>
+                                {this.props.t('password-reset-email-sent')}
+                            </Alert>
+                        ) : (
+                            <>
+                                <Typography variant='body2' color='textSecondary' style={{marginBottom: 16}}>
+                                    {this.props.t('enter-email-for-password-reset')}
+                                </Typography>
+                                <TextField
+                                    variant='outlined'
+                                    fullWidth
+                                    required
+                                    value={this.state.email || ''}
+                                    onChange={e => this.setState({email: e.target.value})}
+                                    placeholder={this.props.t('email')}
+                                    type='email'
+                                    margin='normal'
+                                    disabled={this.state.isSubmitting}
+                                />
+                                {submitButton}
+                            </>
+                        )}
+                    </>
+                )}
+                submitTitle={this.state.forgotPasswordSuccess ? undefined : this.props.t('send-reset-link')}
+                submitDisabled={!this.state.email}
+                isSubmitting={this.state.isSubmitting}
+                onSubmit={this.onForgotPassword.bind(this)}
+                footer={{
+                    text: this.props.t('remember-password'),
+                    actionText: this.props.t('log-in-here'),
+                    linkTo: '/login',
+                }}
+                layout={this.props.type}
+            />
+        );
+    }
+
+    async onForgotPassword() {
+        this.setState({isSubmitting: true});
+        try {
+            await (await ServerAdmin.get().dispatchAdmin()).accountForgotPassword({
+                accountForgotPassword: {
+                    email: this.state.email || '',
+                }
+            });
+            this.setState({
+                isSubmitting: false,
+                forgotPasswordSuccess: true,
+            });
+        } catch (e) {
+            this.setState({isSubmitting: false});
+            // Don't throw - we show success even if email doesn't exist for security
+            this.setState({forgotPasswordSuccess: true});
+        }
+    }
+
+    renderResetPassword() {
+        // Get token from URL query parameter
+        const urlParams = new URLSearchParams(windowIso.location.search);
+        const token = urlParams.get('token');
+
+        if (!token) {
+            return (
+                <EnterTemplate
+                    title={this.props.t('invalid-reset-link')}
+                    renderContent={() => (
+                        <Alert className={this.props.classes.alert} severity='error'>
+                            {this.props.t('reset-link-invalid-or-expired')}
+                        </Alert>
+                    )}
+                    onSubmit={() => {}}
+                    footer={{
+                        text: this.props.t('need-new-link'),
+                        actionText: this.props.t('request-new-link'),
+                        linkTo: '/forgot-password',
+                    }}
+                    layout={this.props.type}
+                />
+            );
+        }
+
+        return (
+            <EnterTemplate
+                title={this.props.t('reset-your-password')}
+                renderContent={submitButton => (
+                    <>
+                        {this.state.resetPasswordError && (
+                            <Alert className={this.props.classes.alert} severity='error'>
+                                {this.state.resetPasswordError}
+                            </Alert>
+                        )}
+                        <TextField
+                            variant='outlined'
+                            fullWidth
+                            required
+                            value={this.state.pass || ''}
+                            onChange={e => this.setState({pass: e.target.value})}
+                            placeholder={this.props.t('new-password')}
+                            type={this.state.revealPassword ? 'text' : 'password'}
+                            InputProps={{
+                                endAdornment: (
+                                    <InputAdornment position='end'>
+                                        <IconButton
+                                            aria-label='Toggle password visibility'
+                                            onClick={() => this.setState({revealPassword: !this.state.revealPassword})}
+                                        >
+                                            {this.state.revealPassword ? <VisibilityIcon fontSize='small'/> :
+                                                <VisibilityOffIcon fontSize='small'/>}
+                                        </IconButton>
+                                    </InputAdornment>
+                                )
+                            }}
+                            margin='normal'
+                            disabled={this.state.isSubmitting}
+                        />
+                        {submitButton}
+                    </>
+                )}
+                submitTitle={this.props.t('reset-password')}
+                submitDisabled={!this.state.pass}
+                isSubmitting={this.state.isSubmitting}
+                onSubmit={this.onResetPassword.bind(this, token)}
+                footer={{
+                    text: this.props.t('remember-password'),
+                    actionText: this.props.t('log-in-here'),
+                    linkTo: '/login',
+                }}
+                layout={this.props.type}
+            />
+        );
+    }
+
+    async onResetPassword(token: string) {
+        this.setState({isSubmitting: true, resetPasswordError: undefined});
+        try {
+            await (await ServerAdmin.get().dispatchAdmin()).accountPasswordReset({
+                accountPasswordReset: {
+                    token,
+                    password: saltHashPassword(this.state.pass || ''),
+                }
+            });
+            // Successful reset - user is now logged in, redirect to dashboard
+            this.setState({isSubmitting: false});
+            this.props.history.push('/dashboard');
+        } catch (e: any) {
+            this.setState({
+                isSubmitting: false,
+                resetPasswordError: e?.message || this.props.t('reset-link-invalid-or-expired'),
+            });
         }
     }
 }
