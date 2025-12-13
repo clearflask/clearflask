@@ -22,8 +22,9 @@ export const getCastle = (): ReturnType<typeof Castle.configure> | null => {
       const env = detectEnv();
       if (!windowIso.isSsr && (
         env === Environment.PRODUCTION
-        || env === Environment.DEVELOPMENT_FRONTEND
-        || env === Environment.DEVELOPMENT_LOCAL
+        // Disable Castle in local development to avoid invisible iframe overlay
+        // || env === Environment.DEVELOPMENT_FRONTEND
+        // || env === Environment.DEVELOPMENT_LOCAL
       )) {
         castleInstance = Castle.configure({
           // https://dashboard.castle.io/settings/configuration
