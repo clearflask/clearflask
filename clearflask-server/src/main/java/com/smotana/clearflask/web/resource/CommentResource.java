@@ -122,6 +122,56 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
         return commentModel.toCommentWithVote(VoteOption.UPVOTE, sanitizer);
     }
 
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
+    @Limit(requiredPermits = 10, challengeAfter = 50)
+    @Override
+    public CommentWithVote commentCreateAdmin(String projectId, String ideaId, CommentCreateAdmin create) {
+        sanitizer.content(create.getContent());
+
+        String ideaIdOrMergedIdeaId = Strings.isNullOrEmpty(create.getMergedPostId()) ? ideaId : create.getMergedPostId();
+
+        UserModel user = userStore.getUser(projectId, create.getAuthorUserId())
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "User not found"));
+        Project project = projectStore.getProject(projectId, true).get();
+        ConfigAdmin configAdmin = project.getVersionedConfigAdmin().getConfig();
+        IdeaStore.IdeaModel idea = ideaStore.getIdea(projectId, ideaIdOrMergedIdeaId)
+                .orElseThrow(() -> new BadRequestException("Cannot create comment, containing idea doesn't exist"));
+        Optional<CommentModel> parentCommentOpt = Optional.ofNullable(Strings.emptyToNull(create.getParentCommentId()))
+                .map(parentCommentId -> commentStore.getComment(projectId, ideaIdOrMergedIdeaId, parentCommentId)
+                        .orElseThrow(() -> new BadRequestException("Cannot create comment, parent comment doesn't exist")));
+        ImmutableList<String> parentCommentIds = parentCommentOpt.map(parentComment -> ImmutableList.<String>builder()
+                        .addAll(parentComment.getParentCommentIds())
+                        .add(parentComment.getCommentId())
+                        .build())
+                .orElse(ImmutableList.of());
+        CommentModel commentModel = commentStore.createCommentAndUpvote(new CommentModel(
+                        projectId,
+                        ideaIdOrMergedIdeaId,
+                        commentStore.genCommentId(sanitizer.richHtmlToPlaintext(create.getContent())),
+                        parentCommentIds,
+                        parentCommentIds.size(),
+                        0,
+                        user.getUserId(),
+                        user.getName(),
+                        user.getIsMod(),
+                        Instant.now(),
+                        null,
+                        create.getContent(),
+                        0,
+                        0))
+                .getCommentModel();
+        notificationService.onCommentReply(
+                configAdmin,
+                idea,
+                parentCommentOpt,
+                commentModel,
+                user);
+        billing.recordUsage(Billing.UsageType.COMMENT, project.getAccountId(), projectId, user);
+        gitHubStore.cfCommentCreatedAsync(project, idea, commentModel, user);
+        webhookService.eventCommentNew(idea, commentModel, user);
+        return commentModel.toCommentWithVote(VoteOption.UPVOTE, sanitizer);
+    }
+
     @RolesAllowed({Role.PROJECT_ANON})
     @Limit(requiredPermits = 10)
     @Override

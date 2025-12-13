@@ -9,6 +9,7 @@ import { Server } from '../../api/server';
 import RichEditor from '../../common/RichEditor';
 import RichEditorImageUpload from '../../common/RichEditorImageUpload';
 import ScrollAnchor from '../../common/util/ScrollAnchor';
+import UserSelection from '../../site/dashboard/UserSelection';
 
 const styles = (theme: Theme) => createStyles({
   addCommentForm: {
@@ -29,6 +30,9 @@ const styles = (theme: Theme) => createStyles({
   addCommentSubmitButton: {
     margin: theme.spacing(1),
   },
+  userSelection: {
+    marginBottom: theme.spacing(1),
+  },
 });
 
 interface Props {
@@ -47,6 +51,7 @@ interface Props {
 
 interface State {
   newCommentInput?: string;
+  selectedAuthorId?: string;
 }
 
 class Post extends Component<Props & WithTranslation<'app'> & WithStyles<typeof styles, true>, State> {
@@ -74,6 +79,7 @@ class Post extends Component<Props & WithTranslation<'app'> & WithStyles<typeof 
   }
 
   render() {
+    const isMod = this.props.server.isModOrAdminLoggedIn();
     return (
       <Collapse
         mountOnEnter
@@ -81,6 +87,19 @@ class Post extends Component<Props & WithTranslation<'app'> & WithStyles<typeof 
         className={classNames(this.props.className, this.props.classes.addCommentFormOuter)}
       >
         <div className={this.props.classes.addCommentForm}>
+          {isMod && (
+            <UserSelection
+              className={this.props.classes.userSelection}
+              variant='outlined'
+              size='small'
+              server={this.props.server}
+              label={this.props.t('as-user')}
+              width='100%'
+              suppressInitialOnChange
+              onChange={selectedUserLabel => this.setState({ selectedAuthorId: selectedUserLabel?.value })}
+              allowCreate
+            />
+          )}
           <RichEditor
             uploadImage={(file) => this.richEditorImageUploadRef.current!.uploadImage(file)}
             variant='outlined'
@@ -112,16 +131,30 @@ class Post extends Component<Props & WithTranslation<'app'> & WithStyles<typeof 
               className={this.props.classes.addCommentSubmitButton}
               disabled={!this.state.newCommentInput}
               onClick={e => {
-                this.props.logIn().then(() => this.props.server.dispatch().then(d => d.commentCreate({
-                  projectId: this.props.server.getProjectId(),
-                  ideaId: this.props.ideaId,
-                  commentCreate: {
+                this.props.logIn().then(() => {
+                  const commentData = {
                     content: this.state.newCommentInput!,
                     parentCommentId: this.props.mergedPostId === this.props.parentCommentId ? undefined : this.props.parentCommentId,
                     mergedPostId: this.props.mergedPostId,
-                  },
-                }))).then(comment => {
-                  this.setState({ newCommentInput: undefined })
+                  };
+                  if (this.state.selectedAuthorId) {
+                    return this.props.server.dispatchAdmin().then(d => d.commentCreateAdmin({
+                      projectId: this.props.server.getProjectId(),
+                      ideaId: this.props.ideaId,
+                      commentCreateAdmin: {
+                        ...commentData,
+                        authorUserId: this.state.selectedAuthorId!,
+                      },
+                    }));
+                  } else {
+                    return this.props.server.dispatch().then(d => d.commentCreate({
+                      projectId: this.props.server.getProjectId(),
+                      ideaId: this.props.ideaId,
+                      commentCreate: commentData,
+                    }));
+                  }
+                }).then(comment => {
+                  this.setState({ newCommentInput: undefined, selectedAuthorId: undefined })
                   this.props.onSubmitted && this.props.onSubmitted();
                 });
               }}
