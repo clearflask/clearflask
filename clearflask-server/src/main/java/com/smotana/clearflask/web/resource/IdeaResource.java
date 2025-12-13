@@ -247,7 +247,9 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
+        ImmutableSet<String> hiddenStatusIds = projectStore.getProject(projectId, true).get().getHiddenStatusIds();
         return ideaStore.getIdea(projectId, ideaId)
+                .filter(ideaModel -> ideaModel.getStatusId() == null || !hiddenStatusIds.contains(ideaModel.getStatusId()))
                 .map(ideaModel -> userOpt.map(user -> toIdeaWithVote(user, ideaModel))
                         .orElseGet(() -> ideaModel.toIdeaWithVote(
                                 IdeaVote.builder().build(),
@@ -263,9 +265,12 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
+        ImmutableSet<String> hiddenStatusIds = projectStore.getProject(projectId, true).get().getHiddenStatusIds();
         ImmutableCollection<IdeaModel> ideaModels = ideaStore.getIdeas(projectId, ideaGetAll.getPostIds().stream()
                 .filter(Objects::nonNull)
-                .collect(ImmutableList.toImmutableList())).values();
+                .collect(ImmutableList.toImmutableList())).values().stream()
+                .filter(ideaModel -> ideaModel.getStatusId() == null || !hiddenStatusIds.contains(ideaModel.getStatusId()))
+                .collect(ImmutableList.toImmutableList());
         return new IdeaGetAllResponse(userOpt.map(user -> toIdeasWithVotes(user, ideaModels))
                 .orElseGet(() -> ideaModels.stream()
                         .map(ideaModel -> ideaModel.toIdeaWithVote(
@@ -359,10 +364,12 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
+        Project project = projectStore.getProject(projectId, true).get();
         SearchResponse searchResponse = ideaStore.searchIdeas(
                 projectId,
                 ideaSearch,
                 userOpt.map(UserModel::getUserId),
+                project.getHiddenStatusIds(),
                 Optional.ofNullable(Strings.emptyToNull(cursor)));
         if (searchResponse.getIdeaIds().isEmpty()) {
             return new IdeaWithVoteSearchResponse(

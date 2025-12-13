@@ -718,6 +718,9 @@ components:
               disableComments:
                 x-clearflask-prop: { order: 7, name: 'Freeze new comments', description: 'Overrides parent settings to disable commenting during this status', trueLabel: 'Frozen', falseLabel: 'Default' }
                 type: boolean
+              disablePublicDisplay:
+                x-clearflask-prop: { order: 8, name: 'Hide from public', description: 'Posts with this status will be hidden from public view and only visible to moderators. Useful for pending approval workflow.', trueLabel: 'Hidden', falseLabel: 'Visible' }
+                type: boolean
     tagging:
       x-clearflask-page: { order: 80, name: 'Tagging', description: 'Tags allow you to group content into categories. These categories can be used to for searching and filtering throughout the project.' }
       title: Tagging

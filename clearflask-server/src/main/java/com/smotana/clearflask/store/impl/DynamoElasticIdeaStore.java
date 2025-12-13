@@ -918,7 +918,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                     Optional.ofNullable(ideaHistogramSearchAdmin.getFilterCreatedStart()),
                     Optional.ofNullable(ideaHistogramSearchAdmin.getFilterCreatedEnd()),
                     Optional.ofNullable(ideaHistogramSearchAdmin.getInterval()),
-                    Optional.of(searchIdeasQuery(ideaSearchAdmin, Optional.empty())));
+                    Optional.of(searchIdeasQuery(ideaSearchAdmin, Optional.empty(), ImmutableSet.of())));
         } else {
             return mysqlUtil.histogram(
                     JooqIdea.IDEA,
@@ -927,12 +927,12 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                     Optional.ofNullable(ideaHistogramSearchAdmin.getFilterCreatedStart()),
                     Optional.ofNullable(ideaHistogramSearchAdmin.getFilterCreatedEnd()),
                     Optional.ofNullable(ideaHistogramSearchAdmin.getInterval()),
-                    Optional.of(searchIdeasCondition(projectId, ideaSearchAdmin, Optional.empty())));
+                    Optional.of(searchIdeasCondition(projectId, ideaSearchAdmin, Optional.empty(), ImmutableSet.of())));
         }
     }
 
     @Override
-    public SearchResponse searchIdeas(String projectId, IdeaSearch ideaSearch, Optional<String> requestorUserIdOpt, Optional<String> cursorOpt) {
+    public SearchResponse searchIdeas(String projectId, IdeaSearch ideaSearch, Optional<String> requestorUserIdOpt, ImmutableSet<String> hiddenStatusIds, Optional<String> cursorOpt) {
         return searchIdeas(
                 projectId,
                 new IdeaSearchAdmin(
@@ -955,12 +955,13 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                         null),
                 requestorUserIdOpt,
                 false,
+                hiddenStatusIds,
                 cursorOpt);
     }
 
     @Override
     public SearchResponse searchIdeas(String projectId, IdeaSearchAdmin ideaSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt) {
-        return searchIdeas(projectId, ideaSearchAdmin, Optional.empty(), useAccurateCursor, cursorOpt);
+        return searchIdeas(projectId, ideaSearchAdmin, Optional.empty(), useAccurateCursor, ImmutableSet.of(), cursorOpt);
     }
 
     @Value
@@ -973,11 +974,16 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     private SearchIdeasConditions searchIdeasCondition(
             String projectId,
             IdeaSearchAdmin ideaSearchAdmin,
-            Optional<String> requestorUserIdOpt) {
+            Optional<String> requestorUserIdOpt,
+            ImmutableSet<String> hiddenStatusIds) {
         List<Condition> conditions = Lists.newArrayList();
         List<Condition> conditionsRange = Lists.newArrayList();
         List<Join> joins = Lists.newArrayList();
 
+        // Filter out posts with hidden statuses (for non-admin queries)
+        if (!hiddenStatusIds.isEmpty()) {
+            conditions.add(JooqIdea.IDEA.STATUSID.notIn(hiddenStatusIds));
+        }
 
         if (ideaSearchAdmin.getFundedByMeAndActive() == Boolean.TRUE) {
             checkArgument(requestorUserIdOpt.isPresent());
@@ -1075,8 +1081,14 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
 
     private QueryBuilder searchIdeasQuery(
             IdeaSearchAdmin ideaSearchAdmin,
-            Optional<String> requestorUserIdOpt) {
+            Optional<String> requestorUserIdOpt,
+            ImmutableSet<String> hiddenStatusIds) {
         BoolQueryBuilder query = QueryBuilders.boolQuery();
+
+        // Filter out posts with hidden statuses (for non-admin queries)
+        if (!hiddenStatusIds.isEmpty()) {
+            query.mustNot(QueryBuilders.termsQuery("statusId", hiddenStatusIds.toArray()));
+        }
 
         if (ideaSearchAdmin.getFundedByMeAndActive() == Boolean.TRUE) {
             checkArgument(requestorUserIdOpt.isPresent());
@@ -1180,6 +1192,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
             IdeaSearchAdmin ideaSearchAdmin,
             Optional<String> requestorUserIdOpt,
             boolean useAccurateCursor,
+            ImmutableSet<String> hiddenStatusIds,
             Optional<String> cursorOpt) {
         if (!Strings.isNullOrEmpty(ideaSearchAdmin.getSimilarToIdeaId())
                 && !config.enableSimilarToIdea()) {
@@ -1205,7 +1218,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
 
         final SearchResponse searchResponse;
         if (projectStore.getSearchEngineForProject(projectId).isReadElastic()) {
-            QueryBuilder query = searchIdeasQuery(ideaSearchAdmin, requestorUserIdOpt);
+            QueryBuilder query = searchIdeasQuery(ideaSearchAdmin, requestorUserIdOpt, hiddenStatusIds);
 
             Optional<SortOrder> sortOrderOpt;
             ImmutableList<String> sortFields;
@@ -1274,7 +1287,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                         searchResponseWithCursor.getSearchResponse().getHits().getTotalHits().relation == TotalHits.Relation.GREATER_THAN_OR_EQUAL_TO);
             }
         } else {
-            SearchIdeasConditions searchConditions = searchIdeasCondition(projectId, ideaSearchAdmin, requestorUserIdOpt);
+            SearchIdeasConditions searchConditions = searchIdeasCondition(projectId, ideaSearchAdmin, requestorUserIdOpt, hiddenStatusIds);
 
             final ImmutableList<SortField<?>> sortFields;
             if (ideaSearchAdmin.getSortBy() != null
