@@ -1,0 +1,33 @@
+{{^posts}}
+No results found based on the provided criteria
+{{/posts}}
+{{#posts}}
+*{{post.title}}*
+postId:{{post.ideaId}}
+created:{{post.created}}
+content:"{{descriptionAsText}}"
+author:userId:{{post.authorUserId}}{{#post.authorName}} name:"{{.}}"{{/post.authorName}}{{#post.authorIsMod}} isMod{{/post.authorIsMod}}
+categoryId:{{post.categoryId}}
+{{#post.statusId}}
+statusId:{{.}}
+{{/post.statusId}}
+{{^post.tagIds.empty}}
+tagIds:{{#post.tagIds}}{{.}}{{^-last}},{{/-last}}{{/post.tagIds}}
+{{/post.tagIds.empty}}
+{{#post.commentCount}}
+comments:{{.}}
+{{/post.commentCount}}
+{{#post.votersCount}}
+voters:{{.}}
+{{/post.votersCount}}
+{{#post.voteValue}}
+voteValue:{{.}}
+{{/post.voteValue}}
+{{#post.response}}
+response:{{post.response}}
+responseAuthor:userId:{{post.responseAuthorUserId}} name:"{{post.responseAuthorName}}" isMod
+{{/post.response}}
+{{^-last}}
+---
+{{/-last}}
+{{/posts}}

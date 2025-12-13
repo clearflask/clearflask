@@ -3,40 +3,14 @@
 package com.smotana.clearflask.store.impl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.document.AttributeUpdate;
-import com.amazonaws.services.dynamodbv2.document.DynamoDB;
-import com.amazonaws.services.dynamodbv2.document.ItemUtils;
-import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
-import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
-import com.amazonaws.services.dynamodbv2.document.TableKeysAndAttributes;
-import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
-import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
-import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
-import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
-import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
-import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
+import com.amazonaws.services.dynamodbv2.document.*;
+import com.amazonaws.services.dynamodbv2.document.spec.*;
 import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.CancellationReason;
-import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
-import com.amazonaws.services.dynamodbv2.model.Delete;
-import com.amazonaws.services.dynamodbv2.model.Put;
-import com.amazonaws.services.dynamodbv2.model.ReturnValue;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
-import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
-import com.amazonaws.services.dynamodbv2.model.Update;
+import com.amazonaws.services.dynamodbv2.model.*;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableCollection;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import com.google.common.collect.*;
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
 import com.google.common.hash.HashFunction;
@@ -47,11 +21,8 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.google.gson.Gson;
 import com.google.gson.GsonNonNull;
 import com.google.gson.annotations.SerializedName;
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
 import com.google.inject.Module;
-import com.google.inject.Provider;
-import com.google.inject.Singleton;
+import com.google.inject.*;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
@@ -59,13 +30,7 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.kik.config.ice.annotations.NoDefaultValue;
 import com.kik.config.ice.convert.MoreConfigValueConverters;
-import com.smotana.clearflask.api.model.HistogramResponse;
-import com.smotana.clearflask.api.model.HistogramSearchAdmin;
-import com.smotana.clearflask.api.model.Hits;
-import com.smotana.clearflask.api.model.NotificationMethodsOauth;
-import com.smotana.clearflask.api.model.UserSearchAdmin;
-import com.smotana.clearflask.api.model.UserUpdate;
-import com.smotana.clearflask.api.model.UserUpdateAdmin;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.ProjectStore;
@@ -89,13 +54,7 @@ import com.smotana.clearflask.web.util.WebhookService;
 import io.dataspray.singletable.IndexSchema;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.RequiredTypeException;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.UnsupportedJwtException;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.impl.compression.GzipCompressionCodec;
 import io.jsonwebtoken.security.SignatureException;
 import lombok.NonNull;
@@ -134,13 +93,7 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
@@ -898,8 +851,8 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             userUpdatedBuilder.isMod(updates.getIsMod());
             indexUpdates.put("isMod", updates.getIsMod() == Boolean.TRUE);
             mysqlUpdates.setIsmod(updates.getIsMod());
-            // TODO update all sessions that user is mod instead of revoking
-            revokeSessions(projectId, userId, Optional.empty());
+            // Update isMod flag in all active sessions instead of revoking them
+            updateSessionsModStatus(projectId, userId, updates.getIsMod());
         }
         if (updateAuthTokenValidityStart) {
             Instant authTokenValidityStart = Instant.now();
@@ -1512,6 +1465,36 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                                     "sessionId", sessionId)))
                             .forEach(tableWriteItems::addPrimaryKeyToDelete);
                     singleTable.retryUnprocessed(dynamoDoc.batchWriteItem(tableWriteItems));
+                });
+    }
+
+    /**
+     * Update the isMod flag in all sessions for a user.
+     * This is more user-friendly than revoking sessions when mod status changes.
+     */
+    private void updateSessionsModStatus(String projectId, String userId, Boolean isMod) {
+        StreamSupport.stream(sessionByUserSchema.index().query(new QuerySpec()
+                                .withHashKey(sessionByUserSchema.partitionKey(Map.of(
+                                        "userId", userId)))
+                                .withRangeKeyCondition(new RangeKeyCondition(sessionByUserSchema.rangeKeyName())
+                                        .beginsWith(sessionByUserSchema.rangeValuePartial(Map.of()))))
+                        .pages()
+                        .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(sessionByUserSchema::fromItem)
+                .filter(session -> projectId.equals(session.getProjectId()))
+                .forEach(session -> {
+                    UpdateItemSpec updateSpec = new UpdateItemSpec()
+                            .withPrimaryKey(sessionByIdSchema.primaryKey(Map.of("sessionId", session.getSessionId())));
+                    if (isMod == Boolean.TRUE) {
+                        updateSpec.withUpdateExpression("SET #isMod = :isMod")
+                                .withNameMap(new NameMap().with("#isMod", "isMod"))
+                                .withValueMap(new ValueMap().withBoolean(":isMod", true));
+                    } else {
+                        updateSpec.withUpdateExpression("REMOVE #isMod")
+                                .withNameMap(new NameMap().with("#isMod", "isMod"));
+                    }
+                    sessionByIdSchema.table().updateItem(updateSpec);
                 });
     }
 

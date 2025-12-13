@@ -11,11 +11,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
 import com.google.inject.Module;
-import com.google.inject.Provider;
-import com.google.inject.Singleton;
+import com.google.inject.*;
 import com.google.inject.name.Named;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.HistogramInterval;
@@ -41,11 +38,7 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregationBuilder;
-import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
-import org.elasticsearch.search.aggregations.bucket.histogram.Histogram;
-import org.elasticsearch.search.aggregations.bucket.histogram.LongBounds;
-import org.elasticsearch.search.aggregations.bucket.histogram.ParsedDateHistogram;
+import org.elasticsearch.search.aggregations.bucket.histogram.*;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
@@ -56,6 +49,7 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -323,10 +317,13 @@ public class ElasticUtil {
                 .map((Histogram.Bucket b) -> new HistogramResponsePoints(
                         ((ZonedDateTime) b.getKey()).toLocalDate(),
                         b.getDocCount()))
+                .sorted(Comparator.comparing(HistogramResponsePoints::getTs))
                 .collect(ImmutableList.toImmutableList());
 
         return new HistogramResponse(points,
-                new Hits(
+                search.getHits().getTotalHits() == null
+                        ? new Hits((long) points.size(), true)
+                        : new Hits(
                         search.getHits().getTotalHits().value,
                         search.getHits().getTotalHits().relation == TotalHits.Relation.GREATER_THAN_OR_EQUAL_TO
                                 ? true : null));

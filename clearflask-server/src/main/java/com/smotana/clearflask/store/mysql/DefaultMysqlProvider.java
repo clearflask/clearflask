@@ -3,12 +3,8 @@
 package com.smotana.clearflask.store.mysql;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
 import com.google.inject.Module;
-import com.google.inject.Provider;
-import com.google.inject.ProvisionException;
-import com.google.inject.Singleton;
+import com.google.inject.*;
 import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
@@ -54,11 +50,15 @@ public class DefaultMysqlProvider extends ManagedService implements Provider<DSL
         @DefaultValue("clearflask")
         String databaseName();
 
-        /** For testing only */
+        /**
+         * For testing only
+         */
         @DefaultValue("false")
         boolean recreateDatabaseOnStartup();
 
-        /** For testing only */
+        /**
+         * For testing only
+         */
         @DefaultValue("false")
         boolean dropDatabaseOnShutdown();
     }

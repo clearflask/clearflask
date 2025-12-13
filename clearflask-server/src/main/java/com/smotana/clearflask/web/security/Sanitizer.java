@@ -17,17 +17,8 @@ import com.smotana.clearflask.store.ContentStore;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
-import org.owasp.html.Handler;
-import org.owasp.html.HtmlChangeListener;
-import org.owasp.html.HtmlPolicyBuilder;
-import org.owasp.html.HtmlSanitizer;
-import org.owasp.html.HtmlStreamRenderer;
-import org.owasp.html.PolicyFactory;
-import org.xbill.DNS.CNAMERecord;
-import org.xbill.DNS.Lookup;
-import org.xbill.DNS.Record;
-import org.xbill.DNS.TextParseException;
-import org.xbill.DNS.Type;
+import org.owasp.html.*;
+import org.xbill.DNS.*;
 
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
@@ -75,15 +66,23 @@ public class Sanitizer {
     @Inject
     private ContentStore contentStore;
 
-    /** If changed, also change in PostCreateForm.tsx */
+    /**
+     * If changed, also change in PostCreateForm.tsx
+     */
     public static final long POST_TITLE_MAX_LENGTH = 100;
     public static final long CONTENT_MAX_LENGTH = 10_000;
     public static final long NAME_MAX_LENGTH = 30;
-    /** If changed, also change in api-project.yaml */
+    /**
+     * If changed, also change in api-project.yaml
+     */
     private static final long SUBDOMAIN_MIN_LENGTH = 1;
-    /** If changed, also change in api-project.yaml */
+    /**
+     * If changed, also change in api-project.yaml
+     */
     private static final long SUBDOMAIN_MAX_LENGTH = 30;
-    /** If changed, also change in api-project.yaml */
+    /**
+     * If changed, also change in api-project.yaml
+     */
     private static final String SUBDOMAIN_REGEX = "^[a-z0-9](?:[a-z0-9\\-]*[a-z0-9])?$";
     private static final long SEARCH_TEXT_MAX_LENGTH = 200;
     private static final Pattern IS_NUMERIC_PATTERN = Pattern.compile("^[0-9]+$");
@@ -131,10 +130,15 @@ public class Sanitizer {
         }
     }
 
-    public void accountName(String accountName) {
-        if (accountName != null && accountName.length() > NAME_MAX_LENGTH) {
+    public String accountName(String accountName) {
+        accountName = Strings.nullToEmpty(accountName).trim();
+        if (Strings.isNullOrEmpty(accountName)) {
+            throw new ApiException(BAD_REQUEST, "Name is required");
+        }
+        if (accountName.length() > NAME_MAX_LENGTH) {
             throw new ApiException(BAD_REQUEST, "Name is too long, must be at most " + NAME_MAX_LENGTH + " characters");
         }
+        return accountName;
     }
 
     public void userName(String userName) {

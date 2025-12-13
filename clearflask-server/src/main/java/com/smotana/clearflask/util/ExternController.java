@@ -84,9 +84,11 @@ public class ExternController extends ManagedService {
 
     @Override
     protected void serviceStop() throws Exception {
-        for (ObjectName objectName : registeredObjectNames) {
-            mBeanServer.unregisterMBean(objectName);
-        }
+        // With Tomcat WAR reloading, the previous service stop occurs after new service start so this ends up
+        // deregistering the new beans.
+        //        for (ObjectName objectName : registeredObjectNames) {
+        //            mBeanServer.unregisterMBean(objectName);
+        //        }
     }
 
     public static Module module() {

@@ -220,5 +220,7 @@
   "blog": "Blogi",
   "cookie-consent": "Evästeen suostumus",
   "free-forever": "Ilmainen ikuisesti",
-  "you-have-unsaved-changes": "Sinulla on tallentamattomia muutoksia"
+  "you-have-unsaved-changes": "Sinulla on tallentamattomia muutoksia",
+  "empty": "Tyhjä",
+  "notifications": "Ilmoitukset"
 }

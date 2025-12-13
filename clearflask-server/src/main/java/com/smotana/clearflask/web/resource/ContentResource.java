@@ -24,6 +24,7 @@ import org.apache.commons.io.IOUtils;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
@@ -41,6 +42,22 @@ public class ContentResource extends AbstractResource implements ContentApi, Con
     private ContentStore contentStore;
     @Inject
     private ImageNormalization imageNormalization;
+
+    @Override
+    public void contentProxy(
+            String projectId,
+            String userId,
+            String object,
+            String xAmzSecurityToken,
+            String xAmzAlgorithm,
+            String xAmzDate,
+            String xAmzSignedHeaders,
+            String xAmzExpires,
+            String xAmzCredential,
+            String xAmzSignature) {
+        contentStore.proxy(projectId, userId, object, xAmzSecurityToken, xAmzAlgorithm, xAmzDate, xAmzSignedHeaders, xAmzExpires, xAmzCredential, xAmzSignature);
+        throw new NotFoundException();
+    }
 
     @RolesAllowed({Role.PROJECT_USER})
     @Limit(requiredPermits = 30, challengeAfter = 20)

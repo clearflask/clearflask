@@ -1,0 +1,88 @@
+{{- if .Values.localstack.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "clearflask-dependencies.localstack.fullname" . }}
+  labels:
+    {{- include "clearflask-dependencies.localstack.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "clearflask-dependencies.localstack.fullname" . }}
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "clearflask-dependencies.localstack.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "clearflask-dependencies.localstack.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: localstack
+          image: "{{ .Values.localstack.image.repository }}:{{ .Values.localstack.image.tag }}"
+          imagePullPolicy: {{ .Values.localstack.image.pullPolicy }}
+          env:
+            - name: DEFAULT_REGION
+              value: {{ .Values.localstack.aws.defaultRegion | quote }}
+            - name: LOCALSTACK_HOSTNAME
+              value: "localstack"
+            - name: HOSTNAME_EXTERNAL
+              value: {{ .Values.localstack.aws.hostnameExternal | quote }}
+            - name: SERVICES
+              value: {{ .Values.localstack.services | quote }}
+            - name: LS_LOG
+              value: "warn"
+            - name: START_WEB
+              value: "0"
+            - name: USE_SSL
+              value: "0"
+            - name: FORCE_NONINTERACTIVE
+              value: "true"
+            - name: DATA_DIR
+              value: "/tmp/localstack/data"
+            - name: LEGACY_PERSISTENCE
+              value: "1"
+          ports:
+            - name: edge
+              containerPort: 4566
+              protocol: TCP
+            - name: health
+              containerPort: 4571
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: health
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: health
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+          volumeMounts:
+            - name: data
+              mountPath: /tmp/localstack
+          resources:
+            {{- toYaml .Values.localstack.resources | nindent 12 }}
+  {{- if .Values.localstack.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - {{ .Values.localstack.persistence.accessMode }}
+        {{- if .Values.localstack.persistence.storageClass }}
+        storageClassName: {{ .Values.localstack.persistence.storageClass | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.localstack.persistence.size }}
+  {{- else }}
+      volumes:
+        - name: data
+          emptyDir: {}
+  {{- end }}
+{{- end }}

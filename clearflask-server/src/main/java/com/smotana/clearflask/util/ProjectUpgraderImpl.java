@@ -4,11 +4,8 @@ package com.smotana.clearflask.util;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
 import com.google.inject.Module;
-import com.google.inject.Provider;
-import com.google.inject.Singleton;
+import com.google.inject.*;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.elastic.ElasticUtil;

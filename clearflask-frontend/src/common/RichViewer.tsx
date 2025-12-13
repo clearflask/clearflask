@@ -4,6 +4,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import { CSSProperties } from '@material-ui/core/styles/withStyles';
 import classNames from 'classnames';
 import React from 'react';
+import { MaxContentWidth } from '../app/comps/Post';
 import { contentScrollApplyStyles, Orientation, Side } from './ContentScroll';
 
 const contentBackgroundColor = (theme: Theme): string => theme.palette.grey[theme.palette.type === 'dark' ? 900 : 100];
@@ -277,7 +278,10 @@ export const QuillViewStyle = (theme: Theme): CSSProperties => ({
   '& .ql-align-center': { textAlign: 'center' },
   '& .ql-align-justify': { textAlign: 'justify' },
   '& .ql-align-right': { textAlign: 'right' },
-  '& img': { margin: theme.spacing(1) },
+  '& img': {
+    maxWidth: MaxContentWidth,
+    margin: theme.spacing(1)
+  },
   '& img[align="left"]': {
     float: 'left',
     marginLeft: 0,

@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableMap;
 import lombok.NonNull;
 import lombok.Value;
 
+import javax.ws.rs.WebApplicationException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Optional;
@@ -21,6 +22,21 @@ public interface ContentStore {
     String uploadAndSign(String projectId, String userId, ContentType contentType, InputStream inputStream, int length);
 
     String uploadAndSign(String projectId, String userId, ContentType contentType, InputStream inputStream, int length, String fileName);
+
+    /**
+     * Throws a WebApplicationException with proxied response
+     */
+    void proxy(
+            String projectId,
+            String userId,
+            String object,
+            String xAmzSecurityToken,
+            String xAmzAlgorithm,
+            String xAmzDate,
+            String xAmzSignedHeaders,
+            String xAmzExpires,
+            String xAmzCredential,
+            String xAmzSignature) throws WebApplicationException;
 
     void deleteAsUser(String matchProjectId, String matchUserId, String url);
 

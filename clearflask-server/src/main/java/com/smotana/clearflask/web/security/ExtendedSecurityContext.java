@@ -30,20 +30,30 @@ public class ExtendedSecurityContext implements SecurityContext {
         @NonNull
         String remoteIp;
 
-        /** Present if request is authenticated */
+        /**
+         * Present if request is authenticated
+         */
         @NonNull
         Optional<String> authenticatedAccountIdOpt;
-        /** Present if request is super authenticated */
+        /**
+         * Present if request is super authenticated
+         */
         @NonNull
         Optional<String> authenticatedSuperAccountIdOpt;
-        /** Present if request is user authenticated */
+        /**
+         * Present if request is user authenticated
+         */
         @NonNull
         Optional<UserSession> authenticatedUserSessionOpt;
 
-        /** Only present if session is used (not by API) */
+        /**
+         * Only present if session is used (not by API)
+         */
         @NonNull
         Optional<AccountSession> accountSessionOpt;
-        /** Only present if session is used (not by API) */
+        /**
+         * Only present if session is used (not by API)
+         */
         @NonNull
         Optional<AccountSession> superAccountSessionOpt;
     }

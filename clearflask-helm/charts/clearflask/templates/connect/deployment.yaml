@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "clearflask.connect.fullname" . }}
+  labels:
+    {{- include "clearflask.connect.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.connect.autoscaling.enabled }}
+  replicas: {{ .Values.connect.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "clearflask.connect.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0  # Zero-downtime deployments
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/connect/configmap.yaml") . | sha256sum }}
+        {{- with .Values.connect.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "clearflask.connect.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "clearflask.connect.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.connect.podSecurityContext | nindent 8 }}
+      containers:
+        - name: connect
+          image: "{{ .Values.connect.image.repository }}:{{ .Values.connect.image.tag }}"
+          imagePullPolicy: {{ .Values.connect.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.connect.securityContext | nindent 12 }}
+          env:
+            - name: NODE_ENV
+              value: {{ .Values.connect.env.NODE_ENV | quote }}
+            - name: ENV
+              value: {{ .Values.connect.env.ENV | quote }}
+          ports:
+            - name: http
+              containerPort: 9080
+              protocol: TCP
+            - name: https
+              containerPort: 9443
+              protocol: TCP
+          livenessProbe:
+            {{- toYaml .Values.connect.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.connect.readinessProbe | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /opt/clearflask/connect.config.json
+              subPath: connect.config.json
+              readOnly: true
+          resources:
+            {{- toYaml .Values.connect.resources | nindent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "clearflask.connect.fullname" . }}
+      {{- with .Values.connect.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.connect.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.connect.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

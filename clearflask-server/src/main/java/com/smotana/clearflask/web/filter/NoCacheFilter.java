@@ -5,12 +5,7 @@ package com.smotana.clearflask.web.filter;
 import com.smotana.clearflask.core.ServiceInjector;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.servlet.*;
 import javax.servlet.http.HttpServletResponse;
 
 @Slf4j
@@ -21,7 +16,7 @@ public class NoCacheFilter implements Filter {
     }
 
     public void doFilter(ServletRequest request, ServletResponse response,
-                         FilterChain chain) throws java.io.IOException, ServletException {
+            FilterChain chain) throws java.io.IOException, ServletException {
 
         HttpServletResponse res = (HttpServletResponse) response;
         res.setHeader("Cache-Control", "no-cache");

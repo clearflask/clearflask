@@ -9,7 +9,7 @@ import { Server, StateSettings, Status } from '../api/server';
 import ServerMock from '../api/serverMock';
 import MyLoadingBar from '../common/MyLoadingBar';
 import WebNotification, { Status as WebNotificationStatus } from '../common/notification/webNotification';
-import { detectEnv, Environment } from '../common/util/detectEnv';
+import { Environment, detectEnv } from '../common/util/detectEnv';
 import { IframeBroadcastPathname } from '../common/util/iframeUrlSync';
 import { OAuthFlow } from '../common/util/oauthUtil';
 import { RedirectIso, RouteWithStatus } from '../common/util/routerUtil';
@@ -22,12 +22,12 @@ import AccountPage from './AccountPage';
 import AppDynamicPage from './AppDynamicPage';
 import AppThemeProvider from './AppThemeProvider';
 import BasePage from './BasePage';
-import PostPage from './comps/PostPage';
-import UserPage from './comps/UserPage';
 import ErrorPage from './ErrorPage';
 import Header from './Header';
 import SetAppFavicon from './SetAppFavicon';
 import SsoSuccessPage from './SsoSuccessPage';
+import PostPage from './comps/PostPage';
+import UserPage from './comps/UserPage';
 import AnimatedPageSwitch from './utils/AnimatedRoutes';
 import CaptchaChallenger from './utils/CaptchaChallenger';
 import { CookieConsenter } from './utils/CookieConsenter';
@@ -120,10 +120,10 @@ class App extends Component<Props> {
     }
 
     var result;
-    if (this.server.getStore().getState().conf.status !== Status.FULFILLED
-      // If SSR gets onboardBefore, we still want to retry getting conf ourselves
-      || !this.server.getStore().getState().conf.conf) {
-      try {
+    try {
+      if (this.server.getStore().getState().conf.status !== Status.FULFILLED
+        // If SSR gets onboardBefore, we still want to retry getting conf ourselves
+        || !this.server.getStore().getState().conf.conf) {
         result = await (await this.server.dispatch()).configAndUserBindSlug({
           slug: this.props.slug,
           userBind: {
@@ -133,21 +133,21 @@ class App extends Component<Props> {
             browserPushToken,
           },
         });
-      } catch (err) {
-        if (err?.status !== 404) {
-          throw err;
-        }
+      } else {
+        result = await (await this.server.dispatch()).userBindSlug({
+          slug: this.props.slug,
+          userBind: {
+            ssoToken: token || undefined,
+            authToken: authToken || undefined,
+            oauthToken: oauthToken || undefined,
+            browserPushToken,
+          },
+        });
       }
-    } else {
-      result = await (await this.server.dispatch()).userBindSlug({
-        slug: this.props.slug,
-        userBind: {
-          ssoToken: token || undefined,
-          authToken: authToken || undefined,
-          oauthToken: oauthToken || undefined,
-          browserPushToken,
-        },
-      });
+    } catch (err) {
+      if (err?.['status'] !== 404) {
+        throw err;
+      }
     }
 
     if (!!result?.user) {

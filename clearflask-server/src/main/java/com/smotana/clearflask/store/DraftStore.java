@@ -11,12 +11,7 @@ import com.smotana.clearflask.api.model.NotifySubscribers;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.web.security.Sanitizer;
 import io.dataspray.singletable.DynamoTable;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Value;
+import lombok.*;
 
 import java.time.Instant;
 import java.util.Optional;

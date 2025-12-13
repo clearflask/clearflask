@@ -3,53 +3,27 @@
 package com.smotana.clearflask.store.impl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.document.AttributeUpdate;
-import com.amazonaws.services.dynamodbv2.document.DynamoDB;
-import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
-import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
-import com.amazonaws.services.dynamodbv2.document.TableKeysAndAttributes;
-import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
-import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
-import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
-import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
-import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
-import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
+import com.amazonaws.services.dynamodbv2.document.*;
+import com.amazonaws.services.dynamodbv2.document.spec.*;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.google.common.base.Strings;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.ImmutableCollection;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import com.google.common.collect.*;
 import com.google.common.collect.Sets.SetView;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.gson.Gson;
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
 import com.google.inject.Module;
-import com.google.inject.Provider;
-import com.google.inject.Singleton;
+import com.google.inject.*;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
-import com.smotana.clearflask.api.model.HistogramResponse;
-import com.smotana.clearflask.api.model.Hits;
-import com.smotana.clearflask.api.model.IdeaAggregateResponse;
-import com.smotana.clearflask.api.model.IdeaHistogramSearchAdmin;
-import com.smotana.clearflask.api.model.IdeaSearch;
-import com.smotana.clearflask.api.model.IdeaSearchAdmin;
-import com.smotana.clearflask.api.model.IdeaUpdate;
-import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.ProjectStore;
@@ -63,11 +37,7 @@ import com.smotana.clearflask.store.elastic.ActionListeners;
 import com.smotana.clearflask.store.elastic.ElasticScript;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
 import com.smotana.clearflask.store.elastic.ElasticUtil.ConfigSearch;
-import com.smotana.clearflask.store.mysql.CompletionStageUtil;
-import com.smotana.clearflask.store.mysql.DefaultMysqlProvider;
-import com.smotana.clearflask.store.mysql.MoreSQLDataType;
-import com.smotana.clearflask.store.mysql.MysqlCustomFunction;
-import com.smotana.clearflask.store.mysql.MysqlUtil;
+import com.smotana.clearflask.store.mysql.*;
 import com.smotana.clearflask.store.mysql.MysqlUtil.Join;
 import com.smotana.clearflask.store.mysql.model.JooqRoutines;
 import com.smotana.clearflask.store.mysql.model.tables.JooqIdea;
@@ -76,19 +46,12 @@ import com.smotana.clearflask.store.mysql.model.tables.JooqIdeaTags;
 import com.smotana.clearflask.store.mysql.model.tables.JooqUser;
 import com.smotana.clearflask.store.mysql.model.tables.records.JooqIdeaRecord;
 import com.smotana.clearflask.store.mysql.model.tables.records.JooqIdeaTagsRecord;
-import com.smotana.clearflask.util.ExpDecayScore;
-import com.smotana.clearflask.util.ExplicitNull;
-import com.smotana.clearflask.util.Extern;
-import com.smotana.clearflask.util.IdUtil;
-import com.smotana.clearflask.util.LogUtil;
+import com.smotana.clearflask.util.*;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
 import io.dataspray.singletable.Expression;
-import io.dataspray.singletable.ExpressionBuilder;
-import io.dataspray.singletable.IndexSchema;
-import io.dataspray.singletable.SingleTable;
-import io.dataspray.singletable.TableSchema;
+import io.dataspray.singletable.*;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.search.TotalHits;
@@ -105,13 +68,8 @@ import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.xcontent.XContentType;
-import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.*;
 import org.elasticsearch.index.query.MoreLikeThisQueryBuilder.Item;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.RangeQueryBuilder;
-import org.elasticsearch.index.query.TermsQueryBuilder;
-import org.elasticsearch.index.query.ZeroTermsQueryOption;
 import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
 import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
 import org.elasticsearch.search.SearchHit;
@@ -119,12 +77,7 @@ import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
-import org.jooq.Condition;
-import org.jooq.DSLContext;
-import org.jooq.JoinType;
-import org.jooq.Queries;
-import org.jooq.Query;
-import org.jooq.SortField;
+import org.jooq.*;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 import org.jooq.util.mysql.MySQLDataType;
@@ -134,12 +87,7 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletionStage;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -155,7 +103,6 @@ import static com.google.common.base.Preconditions.checkState;
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
 import static com.smotana.clearflask.store.mysql.DefaultMysqlProvider.ID_MAX_LENGTH;
 import static com.smotana.clearflask.util.ExplicitNull.orNull;
-import static org.jooq.SortOrder.ASC;
 import static org.jooq.SortOrder.DESC;
 
 @Slf4j
@@ -664,7 +611,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     public MergeResponse mergeIdeas(String projectId, String ideaId, String parentIdeaId, boolean undo, BiFunction<String, String, Double> categoryExpressionToWeightMapper) {
         ConnectResponse connectResponse = connectIdeas(projectId, ideaId, parentIdeaId, true, undo, categoryExpressionToWeightMapper);
 
-        // TODO Fix this: I believe this needs to update more than just mergedToPostId field: votes, expressions, funding, trend score...
+        // Update search index for merged idea (mergedToPostId field)
         SettableFuture<Void> indexingFuture = SettableFuture.create();
         SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);
         if (searchEngine.isWriteElastic()) {
@@ -676,6 +623,8 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                     RequestOptions.DEFAULT,
                     searchEngine.isReadElastic() ? ActionListeners.onFailureRetry(indexingFuture, f -> indexIdea(f, connectResponse.getIdea()))
                             : ActionListeners.onFailureRetry(() -> indexIdea(connectResponse.getIdea())));
+            // Also re-index parent idea to update votes, expressions, funding, trend score
+            indexIdea(connectResponse.getParentIdea());
         }
         if (searchEngine.isWriteMysql()) {
             CompletionStage<Integer> completionStage = mysql.get().update(JooqIdea.IDEA)
@@ -688,6 +637,8 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
             } else {
                 CompletionStageUtil.logFailure(completionStage);
             }
+            // Also re-index parent idea in MySQL to update votes, expressions, funding
+            indexIdea(connectResponse.getParentIdea());
         }
 
         return new MergeResponse(connectResponse.idea, connectResponse.parentIdea, indexingFuture);
@@ -958,6 +909,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 null,
                 null,
                 null,
+                null,
                 null);
         if (projectStore.getSearchEngineForProject(projectId).isReadElastic()) {
             return elasticUtil.histogram(
@@ -992,6 +944,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                         ideaSearch.getFilterTagIds(),
                         ideaSearch.getInvertTag(),
                         ideaSearch.getFilterAuthorId(),
+                        ideaSearch.getInvertAuthorId(),
                         ideaSearch.getSearchText(),
                         ideaSearch.getFundedByMeAndActive(),
                         ideaSearch.getLimit(),
@@ -1036,7 +989,11 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         }
 
         if (!Strings.isNullOrEmpty(ideaSearchAdmin.getFilterAuthorId())) {
-            conditions.add(JooqIdea.IDEA.AUTHORUSERID.eq(ideaSearchAdmin.getFilterAuthorId()));
+            if (ideaSearchAdmin.getInvertAuthorId() == Boolean.TRUE) {
+                conditions.add(JooqIdea.IDEA.AUTHORUSERID.ne(ideaSearchAdmin.getFilterAuthorId()));
+            } else {
+                conditions.add(JooqIdea.IDEA.AUTHORUSERID.eq(ideaSearchAdmin.getFilterAuthorId()));
+            }
         }
 
         if (!Strings.isNullOrEmpty(ideaSearchAdmin.getSimilarToIdeaId())) {
@@ -1128,7 +1085,11 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         }
 
         if (!Strings.isNullOrEmpty(ideaSearchAdmin.getFilterAuthorId())) {
-            query.must(QueryBuilders.termQuery("authorUserId", ideaSearchAdmin.getFilterAuthorId()));
+            if (ideaSearchAdmin.getInvertAuthorId() == Boolean.TRUE) {
+                query.mustNot(QueryBuilders.termQuery("authorUserId", ideaSearchAdmin.getFilterAuthorId()));
+            } else {
+                query.must(QueryBuilders.termQuery("authorUserId", ideaSearchAdmin.getFilterAuthorId()));
+            }
         }
 
         if (!Strings.isNullOrEmpty(ideaSearchAdmin.getSimilarToIdeaId())) {
@@ -1333,7 +1294,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                         sortFields = ImmutableList.of(DSL.rand().sort(DESC));
                         break;
                     case DRAGANDDROP:
-                        sortFields = ImmutableList.of(JooqIdea.IDEA.ORDER.sort(ASC), JooqIdea.IDEA.CREATED.sort(ASC));
+                        sortFields = ImmutableList.of(DSL.coalesce(JooqIdea.IDEA.ORDER, DSL.epoch(JooqIdea.IDEA.CREATED).mul(1000)).asc());
                         break;
                     default:
                         throw new ApiException(Response.Status.BAD_REQUEST,
@@ -1390,7 +1351,9 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
             org.elasticsearch.action.search.SearchResponse response = elasticUtil.retry(() -> elastic.get().search(new SearchRequest(elasticUtil.getIndexName(IDEA_INDEX, projectId))
                     .source(new SearchSourceBuilder()
                             .fetchSource(false)
-                            .query(QueryBuilders.termQuery("categoryId", categoryId))
+                            .query(QueryBuilders.boolQuery()
+                                    .must(QueryBuilders.termQuery("categoryId", categoryId))
+                                    .mustNot(QueryBuilders.existsQuery("mergedToPostId")))
                             .aggregation(AggregationBuilders
                                     .terms("statuses")
                                     .field("statusId"))
@@ -1415,13 +1378,15 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                     mysql.get().selectCount()
                             .from(JooqIdea.IDEA)
                             .where(JooqIdea.IDEA.PROJECTID.eq(projectId)
-                                    .and(JooqIdea.IDEA.CATEGORYID.eq(categoryId)))
+                                    .and(JooqIdea.IDEA.CATEGORYID.eq(categoryId))
+                                    .and(JooqIdea.IDEA.MERGEDTOPOSTID.isNull()))
                             .fetchOne().component1().longValue(),
                     mysql.get().select(JooqIdea.IDEA.STATUSID, DSL.count())
                             .from(JooqIdea.IDEA)
                             .where(JooqIdea.IDEA.PROJECTID.eq(projectId)
                                     .and(JooqIdea.IDEA.CATEGORYID.eq(categoryId))
-                                    .and(JooqIdea.IDEA.STATUSID.isNotNull()))
+                                    .and(JooqIdea.IDEA.STATUSID.isNotNull())
+                                    .and(JooqIdea.IDEA.MERGEDTOPOSTID.isNull()))
                             .groupBy(JooqIdea.IDEA.STATUSID)
                             .fetchMap(JooqIdea.IDEA.STATUSID, r -> r.component2().longValue()),
                     mysql.get().select(JooqIdeaTags.IDEA_TAGS.TAGID, DSL.count())
@@ -1431,7 +1396,8 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                                             .and(JooqIdeaTags.IDEA_TAGS.POSTID.eq(JooqIdea.IDEA.POSTID))))
                             .where(JooqIdea.IDEA.PROJECTID.eq(projectId)
                                     .and(JooqIdea.IDEA.CATEGORYID.eq(categoryId))
-                                    .and(JooqIdeaTags.IDEA_TAGS.TAGID.isNotNull()))
+                                    .and(JooqIdeaTags.IDEA_TAGS.TAGID.isNotNull())
+                                    .and(JooqIdea.IDEA.MERGEDTOPOSTID.isNull()))
                             .groupBy(JooqIdeaTags.IDEA_TAGS.TAGID)
                             .fetchMap(JooqIdeaTags.IDEA_TAGS.TAGID, r -> r.component2().longValue()));
         }
@@ -2172,12 +2138,16 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         Expression expression = expressionBuilder.build();
         log.trace("delete idea expression {}", expression);
 
-        ideaSchema.table().deleteItem(new DeleteItemSpec()
-                .withPrimaryKey(ideaSchema.primaryKey(Map.of(
-                        "projectId", projectId,
-                        "ideaId", ideaId)))
-                .withConditionExpression(expression.conditionExpression().orElse(null))
-                .withNameMap(expression.nameMap().orElse(null)));
+        try {
+            ideaSchema.table().deleteItem(new DeleteItemSpec()
+                    .withPrimaryKey(ideaSchema.primaryKey(Map.of(
+                            "projectId", projectId,
+                            "ideaId", ideaId)))
+                    .withConditionExpression(expression.conditionExpression().orElse(null))
+                    .withNameMap(expression.nameMap().orElse(null)));
+        } catch (ConditionalCheckFailedException ex) {
+            // Already deleted
+        }
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();
         SearchEngine searchEngine = projectStore.getSearchEngineForProject(projectId);

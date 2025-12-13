@@ -31,7 +31,7 @@ export enum Action {
 }
 
 
-export type Actions = 
+export type Actions =
 {{#apiInfo}}
 {{#apis}}
 {{#operations}}
@@ -88,7 +88,11 @@ export class Dispatcher implements ApiInterface {
 {{#operations}}
 {{#operation}}
 
-  {{nickname}}({{#allParams.0}}request: {{classname}}.{{operationIdCamelCase}}Request, {{/allParams.0}}metaExtra?:any, headerExtra?:{[key:string]:string}): Promise<{{#returnType}}{{#isResponseFile}}runtime.FileDownload{{/isResponseFile}}{{^isResponseFile}}Model.{{{returnType}}}{{/isResponseFile}}{{/returnType}}{{^returnType}}void{{/returnType}}> {
+  {{nickname}}({{#allParams.0}}request: {{classname}}.{{operationIdCamelCase}}Request, {{/allParams.0}}{{^vendorExtensions.x-sse}}metaExtra?:any, headerExtra?:{[key:string]:string}{{/vendorExtensions.x-sse}}): {{#vendorExtensions.x-sse}}EventSource{{/vendorExtensions.x-sse}}{{^vendorExtensions.x-sse}}Promise<{{#returnType}}{{#isResponseFile}}runtime.FileDownload{{/isResponseFile}}{{^isResponseFile}}Model.{{{returnType}}}{{/isResponseFile}}{{/returnType}}{{^returnType}}void{{/returnType}}>{{/vendorExtensions.x-sse}} {
+    {{#vendorExtensions.x-sse}}
+    return this.apiDelegate.get{{classname}}().{{nickname}}({{#allParams.0}}request{{^-last}}, {{/-last}}{{/allParams.0}});
+    {{/vendorExtensions.x-sse}}
+    {{^vendorExtensions.x-sse}}
     return this.dispatcherDelegate({
       type: Action.{{nickname}},
       meta: {
@@ -99,6 +103,7 @@ export class Dispatcher implements ApiInterface {
       },
       payload: this.apiDelegate.get{{classname}}().{{nickname}}({{#allParams.0}}request, {{/allParams.0}}headerExtra),
     });
+    {{/vendorExtensions.x-sse}}
   }
 {{/operation}}
 {{/operations}}

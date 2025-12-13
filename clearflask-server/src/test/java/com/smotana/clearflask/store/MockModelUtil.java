@@ -5,19 +5,50 @@ package com.smotana.clearflask.store;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.api.model.TransactionType;
+import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore.TransactionModel;
 import com.smotana.clearflask.util.IdUtil;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
+import static com.smotana.clearflask.billing.KillBillPlanStore.AVAILABLE_PLAN_NAMES;
+import static com.smotana.clearflask.billing.KillBillPlanStore.SELFHOST_SERVICE_PLANS;
 import static com.smotana.clearflask.testutil.HtmlUtil.textToSimpleHtml;
 
 public class MockModelUtil {
+
+    public static Account getRandomAccount() {
+        return new Account(
+                IdUtil.randomId(),
+                IdUtil.randomId() + "@example.com",
+                SubscriptionStatus.ACTIVE,
+                IdUtil.randomId(),
+                AVAILABLE_PLAN_NAMES.stream()
+                        .filter(Predicate.not(SELFHOST_SERVICE_PLANS::contains))
+                        .findAny()
+                        .orElseThrow(),
+                Instant.now().minus(Duration.ofDays(4)),
+                IdUtil.randomId(5),
+                IdUtil.randomId(),
+                ImmutableSet.of(),
+                ImmutableSet.of(),
+                IdUtil.randomId(),
+                ImmutableMap.of(),
+                ImmutableMap.of(),
+                null,
+                ImmutableSet.of(),
+                null,
+                null);
+    }
+
     public static UserModel getRandomUser() {
         return new UserModel(
                 IdUtil.randomId(),

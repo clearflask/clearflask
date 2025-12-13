@@ -1,0 +1,22 @@
+{{- if .Values.localstack.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "clearflask-dependencies.localstack.fullname" . }}
+  labels:
+    {{- include "clearflask-dependencies.localstack.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.localstack.service.type }}
+  clusterIP: None  # Headless service for StatefulSet
+  ports:
+    - port: {{ .Values.localstack.service.edgePort }}
+      targetPort: edge
+      protocol: TCP
+      name: edge
+    - port: {{ .Values.localstack.service.healthPort }}
+      targetPort: health
+      protocol: TCP
+      name: health
+  selector:
+    {{- include "clearflask-dependencies.localstack.selectorLabels" . | nindent 4 }}
+{{- end }}

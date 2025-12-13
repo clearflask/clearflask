@@ -13,19 +13,16 @@ import com.smotana.clearflask.api.model.AccountBillingPaymentActionRequired;
 import com.smotana.clearflask.api.model.Invoices;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.RemoteLicenseStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.web.ApiException;
+import lombok.extern.slf4j.Slf4j;
 import org.joda.time.LocalDate;
 import org.killbill.billing.catalog.api.BillingPeriod;
 import org.killbill.billing.catalog.api.Currency;
 import org.killbill.billing.catalog.api.PhaseType;
 import org.killbill.billing.catalog.api.ProductCategory;
-import org.killbill.billing.client.model.gen.Account;
-import org.killbill.billing.client.model.gen.PaymentMethod;
-import org.killbill.billing.client.model.gen.PaymentMethodPluginDetail;
-import org.killbill.billing.client.model.gen.PhasePrice;
-import org.killbill.billing.client.model.gen.PlanDetail;
-import org.killbill.billing.client.model.gen.Subscription;
+import org.killbill.billing.client.model.gen.*;
 import org.killbill.billing.entitlement.api.Entitlement;
 
 import javax.ws.rs.core.Response;
@@ -33,6 +30,7 @@ import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 public class SelfHostBilling implements Billing {
 
     private static final UUID ACCOUNT_ID = UUID.fromString("250F25AE-327D-4DFD-B947-D5507073EAC9");
@@ -48,6 +46,10 @@ public class SelfHostBilling implements Billing {
 
     @Inject
     private Config config;
+    @Inject
+    private AccountStore accountStore;
+    @Inject
+    private RemoteLicenseStore remoteLicenseStore;
 
     @Override
     public void createAccountWithSubscriptionAsync(AccountStore.Account accountInDyn) {
@@ -91,6 +93,7 @@ public class SelfHostBilling implements Billing {
 
     @Override
     public Subscription getSubscription(String accountId) {
+        AccountStore.Account account = accountStore.getAccount(accountId, true).orElseThrow();
         return new Subscription(
                 ACCOUNT_ID,
                 ACCOUNT_ID,
@@ -98,12 +101,12 @@ public class SelfHostBilling implements Billing {
                 ACCOUNT_ID,
                 ACCOUNT_ID.toString(),
                 LocalDate.parse("1970"),
-                SelfHostPlanStore.SELF_HOST_PLAN.getBasePlanId(),
+                account.getPlanid(),
                 ProductCategory.BASE,
                 BillingPeriod.ANNUAL,
                 PhaseType.EVERGREEN,
                 null,
-                SelfHostPlanStore.SELF_HOST_PLAN.getBasePlanId(),
+                account.getPlanid(), // Plan id is required for entitlement status in getEntitlementStatus
                 Entitlement.EntitlementState.ACTIVE,
                 Entitlement.EntitlementSourceType.NATIVE,
                 null,
@@ -114,8 +117,8 @@ public class SelfHostBilling implements Billing {
                 ImmutableList.of(),
                 null,
                 ImmutableList.of(new PhasePrice(
-                        SelfHostPlanStore.SELF_HOST_PLAN.getBasePlanId(),
-                        SelfHostPlanStore.SELF_HOST_PLAN.getBasePlanId(),
+                        account.getPlanid(),
+                        account.getPlanid(),
                         PhaseType.EVERGREEN.name(),
                         BigDecimal.ZERO,
                         BigDecimal.ZERO,
@@ -130,12 +133,18 @@ public class SelfHostBilling implements Billing {
 
     @Override
     public SubscriptionStatus getEntitlementStatus(Account account, Subscription subscription) {
-        return SubscriptionStatus.ACTIVE;
+        return remoteLicenseStore.getSelfhostEntitlementStatus(subscription.getPlanName());
     }
 
     @Override
     public SubscriptionStatus updateAndGetEntitlementStatus(SubscriptionStatus currentStatus, Account account, Subscription subscription, String reason) {
-        return getEntitlementStatus(account, subscription);
+        SubscriptionStatus newStatus = getEntitlementStatus(account, subscription);
+        if (!newStatus.equals(currentStatus)) {
+            log.info("Subscription status change {} -> {}, reason: {}, for {}",
+                    currentStatus, newStatus, reason, account.getExternalKey());
+            accountStore.updateStatus(account.getExternalKey(), newStatus);
+        }
+        return newStatus;
     }
 
     @Override
@@ -164,8 +173,9 @@ public class SelfHostBilling implements Billing {
     }
 
     @Override
-    public Subscription changePlan(String accountId, String planId) {
-        throw new ApiException(Response.Status.BAD_REQUEST, "Billing is not configured");
+    public Subscription changePlan(String accountId, String planId, Optional<Long> recurringPriceOpt) {
+        accountStore.setPlan(accountId, planId, Optional.empty());
+        return getSubscription(accountId).setPlanName(planId);
     }
 
     @Override
@@ -175,7 +185,46 @@ public class SelfHostBilling implements Billing {
 
     @Override
     public boolean tryAutoUpgradePlan(AccountStore.Account account, String requiredPlanId) {
-        throw new ApiException(Response.Status.BAD_REQUEST, "Billing is not configured");
+        if ("selfhost-licensed".equals(requiredPlanId)
+                && remoteLicenseStore.validateLicenseRemotely(true).orElse(false)) {
+            changePlan(account.getAccountId(), requiredPlanId, Optional.empty());
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public Optional<AccountStore.Account> tryAutoUpgradeAfterSelfhostLicenseAdded(AccountStore.Account accountInDyn) {
+
+        // Ensure right source plan
+        switch (accountInDyn.getPlanid()) {
+            case "self-host":
+            case "selfhost-free":
+                break;
+            default:
+                return Optional.empty();
+        }
+
+        // Ensure right entitlement
+        switch (accountInDyn.getStatus()) {
+            case ACTIVE:
+            case ACTIVETRIAL:
+                break;
+            default:
+                return Optional.empty();
+        }
+
+        // Perform upgrade
+        String upgradeToPlan = "selfhost-licensed";
+        try {
+            changePlan(accountInDyn.getAccountId(), upgradeToPlan, Optional.empty());
+        } catch (Throwable th) {
+            log.error("Failed to auto upgrade accountId {} to plan {}",
+                    accountInDyn.getAccountId(), upgradeToPlan, th);
+            return Optional.empty();
+        }
+
+        return accountStore.getAccount(accountInDyn.getAccountId(), true);
     }
 
     @Override
@@ -184,7 +233,7 @@ public class SelfHostBilling implements Billing {
     }
 
     @Override
-    public String getInvoiceHtml(String accountId, UUID invoiceId) {
+    public String getInvoiceHtml(UUID invoiceId, Optional<String> accountIdOpt) {
         throw new ApiException(Response.Status.BAD_REQUEST, "Billing is not configured");
     }
 

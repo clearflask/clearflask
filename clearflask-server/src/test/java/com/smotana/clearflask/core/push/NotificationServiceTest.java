@@ -13,35 +13,23 @@ import com.google.common.util.concurrent.GuavaRateLimiters;
 import com.google.inject.Inject;
 import com.smotana.clearflask.api.model.TransactionType;
 import com.smotana.clearflask.api.model.VersionedConfigAdmin;
-import com.smotana.clearflask.core.push.message.EmailLogin;
-import com.smotana.clearflask.core.push.message.EmailTemplates;
-import com.smotana.clearflask.core.push.message.EmailVerify;
-import com.smotana.clearflask.core.push.message.OnAccountSignup;
-import com.smotana.clearflask.core.push.message.OnCommentReply;
-import com.smotana.clearflask.core.push.message.OnCreditChange;
-import com.smotana.clearflask.core.push.message.OnEmailChanged;
-import com.smotana.clearflask.core.push.message.OnForgotPassword;
-import com.smotana.clearflask.core.push.message.OnInvoicePaymentSuccess;
-import com.smotana.clearflask.core.push.message.OnModInvite;
-import com.smotana.clearflask.core.push.message.OnPaymentFailed;
-import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
-import com.smotana.clearflask.core.push.message.OnTeammateInvite;
-import com.smotana.clearflask.core.push.message.OnTrialEnded;
+import com.smotana.clearflask.billing.PlanStore;
+import com.smotana.clearflask.core.push.NotificationService.Digest;
+import com.smotana.clearflask.core.push.NotificationService.DigestItem;
+import com.smotana.clearflask.core.push.NotificationService.DigestProject;
+import com.smotana.clearflask.core.push.NotificationService.DigestSection;
+import com.smotana.clearflask.core.push.message.*;
 import com.smotana.clearflask.core.push.provider.BrowserPushService.BrowserPush;
 import com.smotana.clearflask.core.push.provider.EmailService.Email;
 import com.smotana.clearflask.core.push.provider.MockBrowserPushService;
 import com.smotana.clearflask.core.push.provider.MockEmailService;
 import com.smotana.clearflask.core.push.provider.MockNotificationStore;
 import com.smotana.clearflask.security.limiter.rate.LocalRateLimiter;
-import com.smotana.clearflask.store.CommentStore;
-import com.smotana.clearflask.store.ContentStore;
+import com.smotana.clearflask.store.AccountStore.Account;
+import com.smotana.clearflask.store.*;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
-import com.smotana.clearflask.store.MockModelUtil;
 import com.smotana.clearflask.store.NotificationStore.NotificationModel;
-import com.smotana.clearflask.store.ProjectStore;
-import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
-import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.ExpressModel;
 import com.smotana.clearflask.store.VoteStore.FundModel;
 import com.smotana.clearflask.store.VoteStore.TransactionModel;
@@ -88,6 +76,10 @@ public class NotificationServiceTest extends AbstractTest {
     @Inject
     private UserStore mockUserStore;
     @Inject
+    private IdeaStore mockIdeaStore;
+    @Inject
+    private PlanStore mockPlanStore;
+    @Inject
     private MockNotificationStore mockNotificationStore;
 
     @Override
@@ -99,11 +91,15 @@ public class NotificationServiceTest extends AbstractTest {
         bindMock(VoteStore.class);
         bindMock(UserStore.class);
         bindMock(ContentStore.class);
+        bindMock(IdeaStore.class);
+        bindMock(PlanStore.class);
 
         install(NotificationServiceImpl.module());
         install(EmailTemplates.module());
         install(OnCommentReply.module());
         install(OnStatusOrResponseChange.module());
+        install(OnTrialEnding.module());
+        install(OnProjectDeletionImminent.module());
         install(OnTrialEnded.module());
         install(OnPaymentFailed.module());
         install(OnInvoicePaymentSuccess.module());
@@ -113,6 +109,7 @@ public class NotificationServiceTest extends AbstractTest {
         install(OnTeammateInvite.module());
         install(OnModInvite.module());
         install(OnEmailChanged.module());
+        install(OnDigest.module());
         install(EmailVerify.module());
         install(EmailLogin.module());
         install(Sanitizer.module());
@@ -181,14 +178,14 @@ public class NotificationServiceTest extends AbstractTest {
         log.info("push {}", push);
         log.info("inApp {}", inApp);
         assertNotNull(email);
-        assertFalse(email.getSubject().contains("__"));
-        assertFalse(email.getContentHtml().contains("__"));
-        assertFalse(email.getContentText().contains("__"));
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
         assertNotNull(push);
-        assertFalse(push.getTitle().contains("__"));
-        assertFalse(push.getBody().contains("__"));
+        assertFalse(push.getTitle(), push.getTitle().contains("__"));
+        assertFalse(push.getBody(), push.getBody().contains("__"));
         assertNotNull(inApp);
-        assertFalse(inApp.getDescription().contains("__"));
+        assertFalse(inApp.getDescription(), inApp.getDescription().contains("__"));
     }
 
     @Test(timeout = 10_000L)
@@ -245,14 +242,14 @@ public class NotificationServiceTest extends AbstractTest {
         log.info("push {}", push);
         log.info("inApp {}", inApp);
         assertNotNull(email);
-        assertFalse(email.getSubject().contains("__"));
-        assertFalse(email.getContentHtml().contains("__"));
-        assertFalse(email.getContentText().contains("__"));
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
         assertNotNull(push);
-        assertFalse(push.getTitle().contains("__"));
-        assertFalse(push.getBody().contains("__"));
+        assertFalse(push.getTitle(), push.getTitle().contains("__"));
+        assertFalse(push.getBody(), push.getBody().contains("__"));
         assertNotNull(inApp);
-        assertFalse(inApp.getDescription().contains("__"));
+        assertFalse(inApp.getDescription(), inApp.getDescription().contains("__"));
     }
 
     @Test(timeout = 10_000L)
@@ -285,14 +282,14 @@ public class NotificationServiceTest extends AbstractTest {
         log.info("push {}", push);
         log.info("inApp {}", inApp);
         assertNotNull(email);
-        assertFalse(email.getSubject().contains("__"));
-        assertFalse(email.getContentHtml().contains("__"));
-        assertFalse(email.getContentText().contains("__"));
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
         assertNotNull(push);
-        assertFalse(push.getTitle().contains("__"));
-        assertFalse(push.getBody().contains("__"));
+        assertFalse(push.getTitle(), push.getTitle().contains("__"));
+        assertFalse(push.getBody(), push.getBody().contains("__"));
         assertNotNull(inApp);
-        assertFalse(inApp.getDescription().contains("__"));
+        assertFalse(inApp.getDescription(), inApp.getDescription().contains("__"));
     }
 
     @Test(timeout = 10_000L)
@@ -316,9 +313,9 @@ public class NotificationServiceTest extends AbstractTest {
         Email email = mockEmailService.sent.take();
         log.info("email {}", email);
         assertNotNull(email);
-        assertFalse(email.getSubject().contains("__"));
-        assertFalse(email.getContentHtml().contains("__"));
-        assertFalse(email.getContentText().contains("__"));
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
     }
 
     @Test(timeout = 10_000L)
@@ -342,9 +339,9 @@ public class NotificationServiceTest extends AbstractTest {
         Email email = mockEmailService.sent.take();
         log.info("email {}", email);
         assertNotNull(email);
-        assertFalse(email.getSubject().contains("__"));
-        assertFalse(email.getContentHtml().contains("__"));
-        assertFalse(email.getContentText().contains("__"));
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
     }
 
     @Test(timeout = 10_000L)
@@ -373,9 +370,9 @@ public class NotificationServiceTest extends AbstractTest {
         Email email = mockEmailService.sent.take();
         log.info("email {}", email);
         assertNotNull(email);
-        assertFalse(email.getSubject().contains("__"));
-        assertFalse(email.getContentHtml().contains("__"));
-        assertFalse(email.getContentText().contains("__"));
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
     }
 
     @Test(timeout = 10_000L)
@@ -400,9 +397,169 @@ public class NotificationServiceTest extends AbstractTest {
         Email email = mockEmailService.sent.take();
         log.info("email {}", email);
         assertNotNull(email);
-        assertFalse(email.getSubject().contains("__"));
-        assertFalse(email.getContentHtml().contains("__"));
-        assertFalse(email.getContentText().contains("__"));
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
+    }
+
+    @Test(timeout = 10_000L)
+    public void testOnSignup() throws Exception {
+        Account account = MockModelUtil.getRandomAccount().toBuilder()
+                .email("user@email.com")
+                .build();
+        when(this.mockPlanStore.prettifyPlanName(any())).thenReturn("Starter");
+
+        service.onAccountSignup(account);
+
+        Email email = mockEmailService.sent.take();
+        log.info("email {}", email);
+        assertNotNull(email);
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
+    }
+
+    @Test(timeout = 10_000L)
+    public void testOnDigest() throws Exception {
+        String projectId = "myProject";
+        Account account = MockModelUtil.getRandomAccount().toBuilder()
+                .email("user@email.com")
+                .build();
+        when(this.mockUserStore.createToken(any(), any(), any())).thenReturn("myAuthToken");
+
+        service.onDigest(
+                account,
+                Digest.builder().from("Mar 1").to("Mar 7").projects(ImmutableList.of(
+                        DigestProject.builder()
+                                .author(MockModelUtil.getRandomUser())
+                                .name("My Project")
+                                .link("https://example.com")
+                                .sections(ImmutableList.of(
+                                        DigestSection.builder()
+                                                .sectionName("Missed notifications")
+                                                .items(ImmutableList.of(
+                                                        DigestItem.builder()
+                                                                .text("Someone commented")
+                                                                .link("https://example.com")
+                                                                .build(),
+                                                        DigestItem.builder()
+                                                                .text("Someone replied")
+                                                                .link("https://example.com")
+                                                                .build(),
+                                                        DigestItem.builder()
+                                                                .text("There is a new announcement")
+                                                                .link("https://example.com")
+                                                                .build()
+                                                )).build(),
+                                        DigestSection.builder()
+                                                .sectionName("New feedback")
+                                                .items(ImmutableList.of(
+                                                        DigestItem.builder()
+                                                                .text("I would like dark mode please")
+                                                                .link("https://example.com")
+                                                                .build(),
+                                                        DigestItem.builder()
+                                                                .text("How about you implement this other thing")
+                                                                .link("https://example.com")
+                                                                .build(),
+                                                        DigestItem.builder()
+                                                                .text("What if this button did everything")
+                                                                .link("https://example.com")
+                                                                .build()
+                                                )).build(),
+                                        DigestSection.builder()
+                                                .sectionName("New users")
+                                                .items(ImmutableList.of(
+                                                        DigestItem.builder()
+                                                                .text("Power House")
+                                                                .link("https://example.com")
+                                                                .build(),
+                                                        DigestItem.builder()
+                                                                .text("Gregory Gregoryson")
+                                                                .link("https://example.com")
+                                                                .build(),
+                                                        DigestItem.builder()
+                                                                .text("Sandy Sanderson")
+                                                                .link("https://example.com")
+                                                                .build()
+                                                )).build()
+                                )).build()
+                )).build());
+
+        Email email = mockEmailService.sent.take();
+        log.info("email {}", email);
+        assertNotNull(email);
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
+    }
+
+    @Test(timeout = 10_000L)
+    public void testOnTrialEnding() throws Exception {
+        Instant trialEnd = Instant.now();
+        Account account = MockModelUtil.getRandomAccount().toBuilder()
+                .email("user@email.com")
+                .build();
+        when(this.mockPlanStore.prettifyPlanName(any())).thenReturn("Starter");
+
+        service.onTrialEnding(account, trialEnd);
+
+        Email email = mockEmailService.sent.take();
+        log.info("email {}", email);
+        assertNotNull(email);
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
+    }
+
+    @Test(timeout = 10_000L)
+    public void testOnTrialEndedHasPayment() throws Exception {
+        Account account = MockModelUtil.getRandomAccount().toBuilder()
+                .email("user@email.com")
+                .build();
+        when(this.mockPlanStore.prettifyPlanName(any())).thenReturn("Starter");
+
+        service.onTrialEnded(account, true);
+
+        Email email = mockEmailService.sent.take();
+        log.info("email {}", email);
+        assertNotNull(email);
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
+    }
+
+    @Test(timeout = 10_000L)
+    public void testOnProjectDeletionImminent() throws Exception {
+        Account account = MockModelUtil.getRandomAccount().toBuilder()
+                .email("user@email.com")
+                .build();
+
+        service.onProjectDeletionImminent(account);
+
+        Email email = mockEmailService.sent.take();
+        log.info("email {}", email);
+        assertNotNull(email);
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
+    }
+
+    @Test(timeout = 10_000L)
+    public void testOnTrialEndedNoPayment() throws Exception {
+        Account account = MockModelUtil.getRandomAccount().toBuilder()
+                .email("user@email.com")
+                .build();
+        when(this.mockPlanStore.prettifyPlanName(any())).thenReturn("Starter");
+
+        service.onTrialEnded(account, false);
+
+        Email email = mockEmailService.sent.take();
+        log.info("email {}", email);
+        assertNotNull(email);
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
     }
 
     private KeyPair generateKeyPair() {

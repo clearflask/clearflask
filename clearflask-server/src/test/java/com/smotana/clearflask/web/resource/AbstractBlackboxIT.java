@@ -18,8 +18,8 @@ import com.google.inject.Inject;
 import com.google.inject.name.Names;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
-import com.ning.http.client.Response;
 import com.smotana.clearflask.TestUtil;
+import com.smotana.clearflask.antispam.CastleAntiSpam;
 import com.smotana.clearflask.api.model.AccountAdmin;
 import com.smotana.clearflask.api.model.AccountBillingPayment;
 import com.smotana.clearflask.api.model.AccountBindAdmin;
@@ -35,6 +35,7 @@ import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.api.model.UserCreate;
 import com.smotana.clearflask.api.model.UserMeWithBalance;
 import com.smotana.clearflask.billing.Billing;
+import com.smotana.clearflask.billing.CommonPlanVerifyStore;
 import com.smotana.clearflask.billing.DynamoCouponStore;
 import com.smotana.clearflask.billing.KillBillPlanStore;
 import com.smotana.clearflask.billing.KillBillSync;
@@ -51,14 +52,17 @@ import com.smotana.clearflask.core.push.message.EmailVerify;
 import com.smotana.clearflask.core.push.message.OnAccountSignup;
 import com.smotana.clearflask.core.push.message.OnCommentReply;
 import com.smotana.clearflask.core.push.message.OnCreditChange;
+import com.smotana.clearflask.core.push.message.OnDigest;
 import com.smotana.clearflask.core.push.message.OnEmailChanged;
 import com.smotana.clearflask.core.push.message.OnForgotPassword;
 import com.smotana.clearflask.core.push.message.OnInvoicePaymentSuccess;
 import com.smotana.clearflask.core.push.message.OnModInvite;
 import com.smotana.clearflask.core.push.message.OnPaymentFailed;
+import com.smotana.clearflask.core.push.message.OnProjectDeletionImminent;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
 import com.smotana.clearflask.core.push.message.OnTeammateInvite;
 import com.smotana.clearflask.core.push.message.OnTrialEnded;
+import com.smotana.clearflask.core.push.message.OnTrialEnding;
 import com.smotana.clearflask.core.push.provider.MockBrowserPushService;
 import com.smotana.clearflask.core.push.provider.MockEmailService;
 import com.smotana.clearflask.security.CertFetcherImpl;
@@ -66,6 +70,7 @@ import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.security.SimpleEmailValidator;
 import com.smotana.clearflask.security.limiter.rate.LocalRateLimiter;
 import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.CloudLocalLicenseStore;
 import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.UserStore;
@@ -74,16 +79,22 @@ import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
 import com.smotana.clearflask.store.github.GitHubClientProviderImpl;
 import com.smotana.clearflask.store.github.GitHubStoreImpl;
+import com.smotana.clearflask.store.impl.ConfigurableLlmPromptStore;
 import com.smotana.clearflask.store.impl.DynamoCertStore;
 import com.smotana.clearflask.store.impl.DynamoDraftStore;
 import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
 import com.smotana.clearflask.store.impl.DynamoElasticCommentStore;
 import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
+import com.smotana.clearflask.store.impl.DynamoLlmHistoryStore;
+import com.smotana.clearflask.store.impl.DynamoLlmMemoryStore;
 import com.smotana.clearflask.store.impl.DynamoNotificationStore;
 import com.smotana.clearflask.store.impl.DynamoProjectStore;
+import com.smotana.clearflask.store.impl.DynamoRemoteLicenseStore;
 import com.smotana.clearflask.store.impl.DynamoTokenVerifyStore;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
+import com.smotana.clearflask.store.impl.LangChainLlmAgentStore;
+import com.smotana.clearflask.store.impl.LangChainLlmToolingStore;
 import com.smotana.clearflask.store.impl.ResourceLegalStore;
 import com.smotana.clearflask.store.impl.S3ContentStore;
 import com.smotana.clearflask.store.mysql.MysqlUtil;
@@ -95,6 +106,7 @@ import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.MarkdownAndQuillUtil;
 import com.smotana.clearflask.util.ModelUtil;
+import com.smotana.clearflask.util.MustacheProvider;
 import com.smotana.clearflask.util.ProjectUpgraderImpl;
 import com.smotana.clearflask.util.ServerSecretTest;
 import com.smotana.clearflask.util.StringableSecretKey;
@@ -130,7 +142,9 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static io.jsonwebtoken.SignatureAlgorithm.HS512;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 @Slf4j
 public abstract class AbstractBlackboxIT extends AbstractIT {
@@ -155,6 +169,8 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     protected KillBillResource killBillResource;
     @Inject
     protected GitHubResource gitHubResource;
+    @Inject
+    protected LlmResource llmResource;
     @Inject
     protected MockExtendedSecurityContext mockExtendedSecurityContext;
     @Inject
@@ -207,6 +223,13 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 CreditResource.module(),
                 CertFetcherImpl.module(),
                 NotificationResource.module(),
+                LlmResource.module(),
+                DynamoLlmHistoryStore.module(),
+                DynamoLlmMemoryStore.module(),
+                ConfigurableLlmPromptStore.module(),
+                LangChainLlmAgentStore.module(),
+                LangChainLlmToolingStore.module(),
+                MustacheProvider.module(),
                 KillBillResource.module(),
                 GitHubResource.module(),
                 GitHubStoreImpl.module(),
@@ -225,6 +248,8 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 WebhookServiceImpl.module(),
                 OnCommentReply.module(),
                 OnStatusOrResponseChange.module(),
+                OnTrialEnding.module(),
+                OnProjectDeletionImminent.module(),
                 OnTrialEnded.module(),
                 OnPaymentFailed.module(),
                 OnInvoicePaymentSuccess.module(),
@@ -233,14 +258,17 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 OnTeammateInvite.module(),
                 IntercomUtil.module(),
                 ChatwootUtil.module(),
+                CastleAntiSpam.module(),
                 OnModInvite.module(),
                 OnEmailChanged.module(),
+                OnDigest.module(),
                 EmailVerify.module(),
                 EmailLogin.module(),
                 MockBrowserPushService.module(),
                 MockEmailService.module(),
                 LocalRateLimiter.module(),
                 ResourceLegalStore.module(),
+                CommonPlanVerifyStore.module(),
                 KillBillPlanStore.module(),
                 SuperAdminPredicate.module(),
                 DynamoElasticCommentStore.module(),
@@ -255,6 +283,8 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 DynamoTokenVerifyStore.module(),
                 DynamoVoteStore.module(),
                 DynamoCertStore.module(),
+                DynamoRemoteLicenseStore.module(),
+                CloudLocalLicenseStore.module(),
                 S3ContentStore.module(),
                 DefaultS3ClientProvider.module(),
                 ImageNormalizationImpl.module(),
@@ -354,7 +384,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     }
 
     protected AccountAndProject getTrialAccount() throws Exception {
-        return getTrialAccount("growth2-monthly");
+        return getTrialAccount("flat-yearly");
     }
 
     protected AccountAndProject getTrialAccount(String planid) throws Exception {
@@ -363,6 +393,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 IdUtil.randomId(5) + "unittest@clearflask.com",
                 "password",
                 planid,
+                null,
                 null,
                 null));
         NewProjectResult newProjectResult = projectResource.projectCreateAdmin(
@@ -390,7 +421,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     }
 
     protected AccountAndProject getActiveAccount() throws Exception {
-        return getActiveAccount("growth2-monthly");
+        return getActiveAccount("flat-yearly");
     }
 
     protected AccountAndProject getActiveAccount(String planid) throws Exception {
@@ -450,7 +481,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
 
     protected void kbClockReset() throws Exception {
         // https://github.com/killbill/killbill/blob/master/jaxrs/src/main/java/org/killbill/billing/jaxrs/resources/TestResource.java#L170
-        Response response = kbClient.doPost("/1.0/kb/test/clock", "", KillBillUtil.roDefault());
+        var response = kbClient.doPost("/1.0/kb/test/clock", "", KillBillUtil.roDefault());
         log.info("Reset clock to {}", response.getResponseBody());
     }
 
@@ -462,7 +493,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
 
     protected void kbClockSleep(long sleepInDays) throws Exception {
         // https://github.com/killbill/killbill/blob/master/jaxrs/src/main/java/org/killbill/billing/jaxrs/resources/TestResource.java#L193
-        Response response = kbClient.doPut("/1.0/kb/test/clock?days=" + sleepInDays, "", KillBillUtil.roDefault());
+        var response = kbClient.doPut("/1.0/kb/test/clock?days=" + sleepInDays, "", KillBillUtil.roDefault());
         log.info("Slept for {} days, current clock is {}", sleepInDays, response.getResponseBody());
         refreshStatus();
     }
@@ -541,6 +572,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 false,
                 false,
                 null,
+                null,
                 KillBillUtil.roDefault());
         long invoicesCommitted = 0L;
         for (Invoice invoice : invoices) {
@@ -579,6 +611,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 false,
                 false,
                 true,
+                null,
                 null,
                 KillBillUtil.roDefault());
         log.info("KB invoices:\n{}", invoicesKb);

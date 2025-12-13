@@ -220,5 +220,7 @@
   "blog": "ブログ",
   "cookie-consent": "Cookieに関する同意事項",
   "free-forever": "永久に無料",
-  "you-have-unsaved-changes": "保存されていない変更があります"
+  "you-have-unsaved-changes": "保存されていない変更があります",
+  "empty": "なし",
+  "notifications": "通知"
 }

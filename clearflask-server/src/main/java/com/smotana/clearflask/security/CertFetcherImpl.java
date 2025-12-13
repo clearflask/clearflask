@@ -4,11 +4,16 @@ package com.smotana.clearflask.security;
 
 import com.amazonaws.util.StringInputStream;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -16,6 +21,7 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.smotana.clearflask.api.model.CertGetOrCreateResponse;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.CertStore;
 import com.smotana.clearflask.store.CertStore.CertModel;
@@ -27,19 +33,16 @@ import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.Application;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.shredzone.acme4j.Account;
-import org.shredzone.acme4j.AccountBuilder;
-import org.shredzone.acme4j.Authorization;
-import org.shredzone.acme4j.Certificate;
-import org.shredzone.acme4j.Order;
-import org.shredzone.acme4j.Session;
-import org.shredzone.acme4j.Status;
+import org.jetbrains.annotations.NotNull;
+import org.shredzone.acme4j.*;
 import org.shredzone.acme4j.challenge.Challenge;
 import org.shredzone.acme4j.challenge.Dns01Challenge;
 import org.shredzone.acme4j.challenge.Http01Challenge;
+import org.shredzone.acme4j.exception.AcmeRateLimitedException;
 import org.shredzone.acme4j.toolbox.AcmeUtils;
 import org.shredzone.acme4j.util.CSRBuilder;
 import org.shredzone.acme4j.util.KeyPairUtils;
+import org.xbill.DNS.Cache;
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.TXTRecord;
 import org.xbill.DNS.Type;
@@ -55,6 +58,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -65,7 +69,6 @@ import java.util.stream.Collectors;
 public class CertFetcherImpl extends ManagedService implements CertFetcher {
 
     public static final String KEYPAIR_ID_INTERNAL_WILD = "clearflask-wildcard";
-    public static final Instant CHECK_PRIVATE_PUBLIC_CREATED_PRIOR_TO = Instant.ofEpochMilli(/* May 7, 2022 */1651932425000L);
 
     public interface Config {
         @DefaultValue("true")
@@ -76,6 +79,9 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
 
         @DefaultValue("P60D")
         Duration renewWithExpiryRangeMax();
+
+        @DefaultValue("")
+        String staticCert();
     }
 
     @Inject
@@ -83,10 +89,23 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
     @Inject
     private Application.Config configApp;
     @Inject
+    private Gson gson;
+    @Inject
     private CertStore certStore;
     @Inject
     private ProjectStore projectStore;
 
+    private final LoadingCache<String, CertGetOrCreateResponse> staticCertCache = CacheBuilder.newBuilder()
+            .maximumSize(1)
+            .build(new CacheLoader<>() {
+                @Override
+                public CertGetOrCreateResponse load(@NotNull String certStr) throws Exception {
+                    // Replace literal '\n' into new line
+                    certStr = certStr.replaceAll("\\\\n", "\n");
+                    // Parse from JSON
+                    return gson.fromJson(certStr, CertGetOrCreateResponse.class);
+                }
+            });
     private ListeningExecutorService executor;
     private Duration renewWithExpiry;
 
@@ -109,11 +128,22 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
     }
 
     @Override
-    public Optional<CertAndKeypair> getOrCreateCertAndKeypair(String domain) {
+    public Optional<CertGetOrCreateResponse> getOrCreateCertAndKeypair(String domain) {
         if (!config.enabled()) {
             return Optional.empty();
         }
 
+        // Static cert handling
+        String staticCert = config.staticCert();
+        if (!Strings.isNullOrEmpty(staticCert)) {
+            try {
+                return Optional.of(staticCertCache.get(staticCert));
+            } catch (ExecutionException ex) {
+                throw new RuntimeException("Failed to parse static from configuration, check for 'staticCert' property", ex);
+            }
+        }
+
+        // Dynamic cert handling
         try {
             String domainToRequest;
             if (configApp.domain().equals(domain)
@@ -125,47 +155,47 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
                 domainToRequest = domain;
             }
 
-            Optional<CertModel> certModelOpt = certStore.getCert(domainToRequest);
-            if (certModelOpt.isPresent() && Instant.now().isAfter(certModelOpt.get().getExpiresAt().minus(renewWithExpiry))) {
+            Optional<CertModel> certModelOpt = certStore.getCert(domainToRequest, false);
+            if (certModelOpt.isPresent()
+                    && Instant.now().isAfter(certModelOpt.get().getExpiresAt().minus(renewWithExpiry))
+                    && (certModelOpt.get().getRetryAfter() == null || Instant.now().isAfter(certModelOpt.get().getRetryAfter()))) {
                 executor.submit(() -> {
                     try {
                         createCert(domainToRequest);
+                    } catch (AcmeRateLimitedException ex) {
+                        log.warn("Acme rate limit for domain {}", domain, ex);
+                        ex.getRetryAfter().ifPresent(retryAfter -> certStore.setCertRetryAfter(domainToRequest, retryAfter));
                     } catch (Exception ex) {
                         log.warn("Failed to renew cert for domain {}", domain, ex);
                     }
                 });
             }
             if (certModelOpt.isEmpty()) {
-                try {
-                    return Optional.of(createCert(domainToRequest));
-                } catch (Exception ex) {
-                    log.warn("Failed to create cert for domain {}", domain, ex);
-                    return Optional.empty();
-                }
-            } else {
-                Optional<KeypairModel> keypairModelOpt = certStore.getKeypair(KeypairType.CERT, domainToRequest);
-                if (keypairModelOpt.isEmpty()) {
-                    log.warn("No keypair found matching cert for domain {}, re-creating both", domainToRequest);
-                    certStore.deleteCert(domainToRequest);
-                    return Optional.of(createCert(domainToRequest));
-                }
-
-                // Because there were a few certs we created with the wrong private key,
-                // Ensure the private key matches the cert otherwise throw it away
-                if (certModelOpt.get().getIssuedAt().isBefore(CHECK_PRIVATE_PUBLIC_CREATED_PRIOR_TO)) {
-                    boolean privatePublicMatches = checkPrivatePublicMatches(certModelOpt.get(), keypairModelOpt.get());
-                    if (!privatePublicMatches) {
-                        log.warn("Keypair doesn't match cert for domain {}, re-creating both", domainToRequest);
-                        certStore.deleteKeypair(KeypairType.CERT, domainToRequest);
-                        certStore.deleteCert(domainToRequest);
-                        return Optional.of(createCert(domainToRequest));
+                synchronized (this) {
+                    certModelOpt = certStore.getCert(domainToRequest, true);
+                    if (certModelOpt.isEmpty()) {
+                        try {
+                            return Optional.of(createCert(domainToRequest))
+                                    .map(CertAndKeypair::toCertGetOrCreateResponse);
+                        } catch (Exception ex) {
+                            log.warn("Failed to create cert for domain {}", domain, ex);
+                            return Optional.empty();
+                        }
                     }
                 }
-
-                return Optional.of(new CertAndKeypair(
-                        certModelOpt.get(),
-                        keypairModelOpt.get()));
             }
+            Optional<KeypairModel> keypairModelOpt = certStore.getKeypair(KeypairType.CERT, domainToRequest);
+            if (keypairModelOpt.isEmpty()) {
+                log.warn("No keypair found matching cert for domain {}, re-creating both", domainToRequest);
+                certStore.deleteCert(domainToRequest);
+                return Optional.of(createCert(domainToRequest))
+                        .map(CertAndKeypair::toCertGetOrCreateResponse);
+            }
+
+            return Optional.of(new CertAndKeypair(
+                            certModelOpt.get(),
+                            keypairModelOpt.get()))
+                    .map(CertAndKeypair::toCertGetOrCreateResponse);
         } catch (Exception ex) {
             if (LogUtil.rateLimitAllowLog("WildCertFetcherImpl-failed-get-create-wildcart-cert")) {
                 log.warn("Failed to get/create wildcard cert for domain {}", domain, ex);
@@ -249,7 +279,8 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
                 domains.asList(),
                 certificate.getCertificate().getNotBefore().toInstant(),
                 certificate.getCertificate().getNotAfter().toInstant(),
-                certificate.getCertificate().getNotAfter().toInstant().getEpochSecond());
+                certificate.getCertificate().getNotAfter().toInstant().getEpochSecond(),
+                null);
 
         certStore.setCert(certModel);
 
@@ -328,16 +359,16 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
 
     @SneakyThrows
     private Challenge challengeSetup(Authorization authorization) {
-        Http01Challenge httpChallenge = authorization.findChallenge(Http01Challenge.TYPE);
-        if (httpChallenge != null) {
-            httpChallengeSetup(authorization, httpChallenge);
-            return httpChallenge;
+        Optional<Http01Challenge> httpChallengeOpt = authorization.findChallenge(Http01Challenge.TYPE);
+        if (httpChallengeOpt.isPresent()) {
+            httpChallengeSetup(authorization, httpChallengeOpt.get());
+            return httpChallengeOpt.get();
         }
 
-        Dns01Challenge dnsChallenge = authorization.findChallenge(Dns01Challenge.TYPE);
-        if (dnsChallenge != null) {
-            dnsChallengeSetup(authorization, dnsChallenge);
-            return dnsChallenge;
+        Optional<Dns01Challenge> dnsChallengeOpt = authorization.findChallenge(Dns01Challenge.TYPE);
+        if (dnsChallengeOpt.isPresent()) {
+            dnsChallengeSetup(authorization, dnsChallengeOpt.get());
+            return dnsChallengeOpt.get();
         }
 
         throw new RuntimeException("No appropriate challenges found, available ones: "
@@ -358,8 +389,19 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
                 challengeDomain,
                 challenge.getDigest());
 
+        // Disable JVM DNS caching
+        try {
+            java.security.Security.setProperty("networkaddress.cache.ttl", "0");
+        } catch (Exception ignored) {
+        }
+
         // Poll to verify DNS entry.
+        Cache cache = new Cache();
+        cache.setMaxCache(0);
+        cache.setMaxNCache(0);
+        cache.setMaxEntries(0);
         Lookup lookup = new Lookup(challengeDomain, Type.TXT);
+        lookup.setCache(cache);
         ImmutableList<String> txtStrings = ImmutableList.of();
         int attempts = 10;
         for (int i = 0; i < 10; i++) {

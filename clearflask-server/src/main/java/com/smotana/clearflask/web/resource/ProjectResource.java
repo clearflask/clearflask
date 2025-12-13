@@ -24,44 +24,20 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.ProjectAdminApi;
 import com.smotana.clearflask.api.ProjectApi;
-import com.smotana.clearflask.api.model.Category;
-import com.smotana.clearflask.api.model.ConfigAdmin;
-import com.smotana.clearflask.api.model.ConfigAndBindAllResult;
-import com.smotana.clearflask.api.model.ConfigAndBindAllResultByProjectId;
-import com.smotana.clearflask.api.model.ConfigAndUserBindSlugResult;
-import com.smotana.clearflask.api.model.ConfigBindSlugResult;
-import com.smotana.clearflask.api.model.IdeaStatus;
-import com.smotana.clearflask.api.model.ImportResponse;
-import com.smotana.clearflask.api.model.InvitationAdmin;
-import com.smotana.clearflask.api.model.NewProjectResult;
-import com.smotana.clearflask.api.model.Onboarding;
-import com.smotana.clearflask.api.model.ProjectAdmin;
-import com.smotana.clearflask.api.model.ProjectAdminsInviteResult;
-import com.smotana.clearflask.api.model.ProjectAdminsListResult;
-import com.smotana.clearflask.api.model.SubscriptionStatus;
-import com.smotana.clearflask.api.model.Tag;
-import com.smotana.clearflask.api.model.UserBind;
-import com.smotana.clearflask.api.model.UserBindResponse;
-import com.smotana.clearflask.api.model.VersionedConfigAdmin;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.PlanStore;
+import com.smotana.clearflask.billing.PlanVerifyStore;
 import com.smotana.clearflask.billing.RequiresUpgradeException;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
-import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.*;
 import com.smotana.clearflask.store.AccountStore.Account;
-import com.smotana.clearflask.store.CommentStore;
-import com.smotana.clearflask.store.DraftStore;
-import com.smotana.clearflask.store.GitHubStore;
-import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
-import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.InvitationModel;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.ProjectStore.SearchEngine;
-import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
-import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
 import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
@@ -160,6 +136,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Inject
     private PlanStore planStore;
     @Inject
+    private PlanVerifyStore planVerifyStore;
+    @Inject
     private AuthCookie authCookie;
     @Inject
     private UserBindUtil userBindUtil;
@@ -200,6 +178,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 10)
     @Override
     public UserBindResponse userBindSlug(String slug, UserBind userBind) {
+        Optional<UserBind> userBindOpt = Optional.ofNullable(userBind);
         Project project = projectStore.getProjectBySlug(slug, true)
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         Optional<UserStore.UserModel> loggedInUserOpt = userBindUtil.userBind(
@@ -207,10 +186,10 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 response,
                 project.getProjectId(),
                 getExtendedPrincipal(),
-                Optional.ofNullable(Strings.emptyToNull(userBind.getSsoToken())),
-                Optional.ofNullable(Strings.emptyToNull(userBind.getAuthToken())),
-                Optional.ofNullable(userBind.getOauthToken()),
-                Optional.ofNullable(Strings.emptyToNull(userBind.getBrowserPushToken())));
+                userBindOpt.flatMap(ub -> Optional.ofNullable(Strings.emptyToNull(ub.getSsoToken()))),
+                userBindOpt.flatMap(ub -> Optional.ofNullable(Strings.emptyToNull(ub.getAuthToken()))),
+                userBindOpt.flatMap(ub -> Optional.ofNullable(ub.getOauthToken())),
+                userBindOpt.flatMap(ub -> Optional.ofNullable(Strings.emptyToNull(ub.getBrowserPushToken()))));
 
         return new UserBindResponse(loggedInUserOpt
                 .map(loggedInUser -> loggedInUser.toUserMeWithBalance(project.getIntercomEmailToIdentityFun()))
@@ -221,6 +200,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 10)
     @Override
     public ConfigAndUserBindSlugResult configAndUserBindSlug(String slug, UserBind userBind) {
+        Optional<UserBind> userBindOpt = Optional.ofNullable(userBind);
         Project project = projectStore.getProjectBySlug(slug, true)
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         Optional<UserModel> loggedInUserOpt = userBindUtil.userBind(
@@ -228,10 +208,10 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 response,
                 project.getProjectId(),
                 getExtendedPrincipal(),
-                Optional.ofNullable(Strings.emptyToNull(userBind.getSsoToken())),
-                Optional.ofNullable(Strings.emptyToNull(userBind.getAuthToken())),
-                Optional.ofNullable(userBind.getOauthToken()),
-                Optional.ofNullable(Strings.emptyToNull(userBind.getBrowserPushToken())));
+                userBindOpt.flatMap(ub -> Optional.ofNullable(Strings.emptyToNull(ub.getSsoToken()))),
+                userBindOpt.flatMap(ub -> Optional.ofNullable(Strings.emptyToNull(ub.getAuthToken()))),
+                userBindOpt.flatMap(ub -> Optional.ofNullable(ub.getOauthToken())),
+                userBindOpt.flatMap(ub -> Optional.ofNullable(Strings.emptyToNull(ub.getBrowserPushToken()))));
 
         if (!loggedInUserOpt.isPresent() && !Onboarding.VisibilityEnum.PUBLIC.equals(project.getVersionedConfigAdmin()
                 .getConfig()
@@ -278,7 +258,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 ? ImmutableSet.of()
                 : projectStore.getProjects(allProjectIds, false);
         if (allProjectIds.size() != projects.size()) {
-            log.warn("ProjectIds on account not found in project table, email {} missing projects {}",
+            log.info("ProjectIds on account not found in project table, email {} missing projects {}",
                     account.getEmail(), Sets.difference(allProjectIds, projects.stream()
                             .map(c -> c.getVersionedConfigAdmin().getConfig().getProjectId()).collect(ImmutableSet.toImmutableSet())));
         }
@@ -326,14 +306,14 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
         Account projectAccount = accountStore.getAccount(project.getAccountId(), true).get();
         try {
-            planStore.verifyConfigMeetsPlanRestrictions(projectAccount.getPlanid(), accountId, configAdmin);
+            planVerifyStore.verifyConfigMeetsPlanRestrictions(projectAccount.getPlanid(), accountId, configAdmin);
         } catch (RequiresUpgradeException ex) {
             if (!billing.tryAutoUpgradePlan(projectAccount, ex.getRequiredPlanId())) {
                 throw ex;
             }
         }
         boolean isSuperAdmin = getExtendedPrincipal().map(ExtendedPrincipal::getAuthenticatedSuperAccountIdOpt).isPresent();
-        planStore.verifyConfigChangeMeetsRestrictions(isSuperAdmin, Optional.of(project.getVersionedConfigAdmin().getConfig()), configAdmin);
+        planVerifyStore.verifyConfigChangeMeetsRestrictions(isSuperAdmin, Optional.of(project.getVersionedConfigAdmin().getConfig()), configAdmin);
 
         gitHubStore.setupConfigGitHubIntegration(
                 accountId,
@@ -357,9 +337,22 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         Account projectAccount = projectStore.getProject(projectId, true)
                 .map(Project::getAccountId)
                 .flatMap(accountId -> accountStore.getAccount(accountId, true))
-                .get();
+                .orElseThrow();
+
+        if (projectStore.getProject(projectId, true)
+                .stream()
+                .map(Project::getModel)
+                .flatMap(project -> Stream.concat(
+                        Stream.of(project.getAccountId()),
+                        project.getAdminsAccountIds().stream()))
+                .map(accountId -> accountStore.getAccount(accountId, true).orElseThrow())
+                .map(Account::getEmail)
+                .anyMatch(email::equalsIgnoreCase)) {
+            throw new ApiException(Response.Status.CONFLICT, "An admin with the same email already exists");
+        }
+
         try {
-            planStore.verifyTeammateInviteMeetsPlanRestrictions(projectAccount.getPlanid(), projectId, true);
+            planVerifyStore.verifyTeammateInviteMeetsPlanRestrictions(projectAccount.getPlanid(), projectAccount.getAccountId(), true);
         } catch (RequiresUpgradeException ex) {
             if (!billing.tryAutoUpgradePlan(projectAccount, ex.getRequiredPlanId())) {
                 throw ex;
@@ -381,6 +374,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         Project project = projectStore.getProject(projectId, true).get();
         ImmutableList<ProjectAdmin> admins = Stream.concat(Stream.of(project.getAccountId()), project.getModel().getAdminsAccountIds().stream())
                 .map(accountId -> accountStore.getAccount(accountId, true))
+                .filter(Optional::isPresent)
                 .map(Optional::get)
                 .map(account -> account.toProjectAdmin(account.getAccountId().equals(project.getAccountId())
                         ? ProjectAdmin.RoleEnum.OWNER : ProjectAdmin.RoleEnum.ADMIN))
@@ -423,7 +417,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 .get();
 
         try {
-            planStore.verifyActionMeetsPlanRestrictions(account.getPlanid(), account.getAccountId(), PlanStore.Action.CREATE_PROJECT);
+            planVerifyStore.verifyActionMeetsPlanRestrictions(account.getPlanid(), account.getAccountId(), PlanVerifyStore.Action.CREATE_PROJECT);
         } catch (RequiresUpgradeException ex) {
             if (!billing.tryAutoUpgradePlan(account, ex.getRequiredPlanId())) {
                 throw ex;
@@ -431,13 +425,13 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         }
 
         try {
-            planStore.verifyConfigMeetsPlanRestrictions(account.getPlanid(), account.getAccountId(), configAdmin);
+            planVerifyStore.verifyConfigMeetsPlanRestrictions(account.getPlanid(), account.getAccountId(), configAdmin);
         } catch (RequiresUpgradeException ex) {
             if (!billing.tryAutoUpgradePlan(account, ex.getRequiredPlanId())) {
                 throw ex;
             }
         }
-        planStore.verifyConfigChangeMeetsRestrictions(isSuperAdmin, Optional.empty(), configAdmin);
+        planVerifyStore.verifyConfigChangeMeetsRestrictions(isSuperAdmin, Optional.empty(), configAdmin);
 
         gitHubStore.setupConfigGitHubIntegration(
                 account.getAccountId(),
@@ -643,19 +637,19 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 100, challengeAfter = 10)
     @Override
     public ImportResponse projectImportPostAdmin(String projectId,
-                                                 String categoryId,
-                                                 String authorUserId,
-                                                 Long indexTitle,
-                                                 InputStream body,
-                                                 @Nullable Boolean firstRowIsHeader,
-                                                 @Nullable Long indexDescription,
-                                                 @Nullable Long indexStatusId,
-                                                 @Nullable Long indexStatusName,
-                                                 @Nullable Long indexTagIds,
-                                                 @Nullable Long indexTagNames,
-                                                 @Nullable Long indexVoteValue,
-                                                 @Nullable Long indexDateTime,
-                                                 @Nullable Long tzOffInMin) {
+            String categoryId,
+            String authorUserId,
+            Long indexTitle,
+            InputStream body,
+            @Nullable Boolean firstRowIsHeader,
+            @Nullable Long indexDescription,
+            @Nullable Long indexStatusId,
+            @Nullable Long indexStatusName,
+            @Nullable Long indexTagIds,
+            @Nullable Long indexTagNames,
+            @Nullable Long indexVoteValue,
+            @Nullable Long indexDateTime,
+            @Nullable Long tzOffInMin) {
         RateLimiter limiter = RateLimiter.create(config.importRateLimitPerSecond());
 
         Optional<UserModel> authorOpt = userStore.getUser(projectId, authorUserId);
@@ -817,7 +811,9 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         return projectId + "-" + type + "-" + DateTime.now().toString("yyyy-MM-dd-HH-mm-ss") + "." + extension;
     }
 
-    /** One-off method to clean up projects on blocked accounts. */
+    /**
+     * One-off method to clean up projects on blocked accounts.
+     */
     @Extern
     private void deleteProjectsForBlockedAccounts(boolean dryRun) {
         accountStore.listAllAccounts(account -> {

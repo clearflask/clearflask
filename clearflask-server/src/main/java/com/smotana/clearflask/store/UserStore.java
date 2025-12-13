@@ -8,25 +8,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.smotana.clearflask.api.model.Balance;
-import com.smotana.clearflask.api.model.HistogramResponse;
-import com.smotana.clearflask.api.model.HistogramSearchAdmin;
-import com.smotana.clearflask.api.model.NotificationMethodsOauth;
-import com.smotana.clearflask.api.model.User;
-import com.smotana.clearflask.api.model.UserAdmin;
-import com.smotana.clearflask.api.model.UserMe;
-import com.smotana.clearflask.api.model.UserMeWithBalance;
-import com.smotana.clearflask.api.model.UserSearchAdmin;
-import com.smotana.clearflask.api.model.UserUpdate;
-import com.smotana.clearflask.api.model.UserUpdateAdmin;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.web.ApiException;
 import io.dataspray.singletable.DynamoTable;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NonNull;
-import lombok.ToString;
-import lombok.Value;
+import lombok.*;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -202,7 +188,9 @@ public interface UserStore {
         @NonNull
         String userId;
 
-        /** For SSO and OAuth */
+        /**
+         * For SSO and OAuth
+         */
         String ssoGuid;
 
         Boolean isMod;
@@ -253,6 +241,12 @@ public interface UserStore {
 
         @NonNull
         ImmutableSet<String> subscribedCategoryIds;
+
+        public String getNameOrEmailOrId() {
+            return Optional.ofNullable(Strings.emptyToNull(name))
+                    .or(() -> Optional.ofNullable(Strings.emptyToNull(email)))
+                    .orElse(userId);
+        }
 
         public UserMe toUserMe(Function<String, String> intercomEmailToIdentity) {
             return new UserMe(

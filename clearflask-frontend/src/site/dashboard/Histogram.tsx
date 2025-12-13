@@ -1,16 +1,17 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import loadable from '@loadable/component';
-import { SvgIconTypeMap } from '@material-ui/core';
+import { SvgIconTypeMap, Tooltip } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { Theme, WithStyles, createStyles, withStyles } from '@material-ui/core/styles';
+import ErrorIcon from '@material-ui/icons/Error';
 import moment from 'moment';
-import React, { Component } from 'react';
+import { Component } from 'react';
+import { importFailed, importSuccess } from '../../Main';
 import * as Admin from '../../api/admin';
 import { Server } from '../../api/server';
 import Loading from '../../app/utils/Loading';
-import { importFailed, importSuccess } from '../../Main';
-import GraphBox from './GraphBox';
+import DashboardHomeBox from './DashboardHomeBox';
 
 const ReactApexChart = loadable(() => import(/* webpackChunkName: "ReactApexChart", webpackPreload: true */'react-apexcharts').then(importSuccess).catch(importFailed), { fallback: (<Loading />), ssr: false });
 
@@ -42,6 +43,7 @@ interface Props {
     max: Date;
   };
   search: (dispatcher: Admin.Dispatcher) => Promise<Admin.HistogramResponse>;
+  overrideValue?: React.ReactNode;
 }
 interface State {
   results?: Admin.HistogramResponse;
@@ -54,7 +56,8 @@ class Histogram extends Component<Props & WithStyles<typeof styles, true>, State
     if (!this.state.results) {
       this.props.server.dispatchAdmin()
         .then(this.props.search)
-        .then(results => this.setState({ results }));
+        .then(results => this.setState({ results }))
+        .catch(e => this.setState({ error: `Failed to load: ${e?.status || e}`}));
     }
   }
 
@@ -164,12 +167,18 @@ class Histogram extends Component<Props & WithStyles<typeof styles, true>, State
           height={this.props.chartHeight}
         />
       );
+    } else if(this.state.error) {
+      chart = (
+        <Tooltip title={this.state.error} placement='bottom'>
+          <ErrorIcon fontSize='large' />
+        </Tooltip>
+      );
     } else {
       chart = (<Loading />);
     }
 
     return (
-      <GraphBox
+      <DashboardHomeBox
         className={this.props.className}
         icon={this.props.icon}
         title={this.props.title}
@@ -181,9 +190,11 @@ class Histogram extends Component<Props & WithStyles<typeof styles, true>, State
             {chart}
           </div>
         )}
-        value={this.state.results === undefined
-          ? ' '
-          : this.state.results.hits?.value || 0}
+        value={this.props.overrideValue !== undefined
+          ? this.props.overrideValue
+          : (this.state.results === undefined
+            ? ' '
+            : this.state.results.hits?.value || 0)}
       />
     );
   }

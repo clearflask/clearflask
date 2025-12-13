@@ -3,13 +3,7 @@
 package com.smotana.clearflask.web.resource;
 
 import com.amazonaws.services.simpleemailv2.AmazonSimpleEmailServiceV2;
-import com.amazonaws.services.simpleemailv2.model.Body;
-import com.amazonaws.services.simpleemailv2.model.Content;
-import com.amazonaws.services.simpleemailv2.model.Destination;
-import com.amazonaws.services.simpleemailv2.model.EmailContent;
-import com.amazonaws.services.simpleemailv2.model.Message;
-import com.amazonaws.services.simpleemailv2.model.MessageTag;
-import com.amazonaws.services.simpleemailv2.model.SendEmailRequest;
+import com.amazonaws.services.simpleemailv2.model.*;
 import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -64,7 +58,7 @@ public class SupportResource extends AbstractResource implements SupportApi {
         @DefaultValue("support")
         String supportEmailLocalPart();
 
-        @DefaultValue("noreply")
+        @DefaultValue("support")
         String fromEmailLocalPart();
 
         @DefaultValue("ClearFlask Support")
@@ -140,11 +134,11 @@ public class SupportResource extends AbstractResource implements SupportApi {
 
     private String generateBody(SupportMessage supportMessage, Optional<Account> accountOpt) {
         return Stream.concat(
-                ImmutableMap.of(
-                        "ip", IpUtil.getRemoteIp(request, env),
-                        "loggedInAccountEmail", accountOpt.map(Account::getEmail).orElse("None")
-                ).entrySet().stream(),
-                supportMessage.getContent().entrySet().stream())
+                        ImmutableMap.of(
+                                "ip", IpUtil.getRemoteIp(request, env),
+                                "loggedInAccountEmail", accountOpt.map(Account::getEmail).orElse("None")
+                        ).entrySet().stream(),
+                        supportMessage.getContent().entrySet().stream())
                 .map(pair -> Strings.nullToEmpty(pair.getKey()) + ": " + Strings.nullToEmpty(pair.getValue()))
                 .collect(Collectors.joining("\n"));
     }

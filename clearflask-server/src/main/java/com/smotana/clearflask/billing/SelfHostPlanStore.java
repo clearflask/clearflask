@@ -6,37 +6,61 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
+import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.smotana.clearflask.api.model.AllPlansGetResponse;
-import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.FeaturesTable;
 import com.smotana.clearflask.api.model.Plan;
-import com.smotana.clearflask.api.model.PlanPricing;
 import com.smotana.clearflask.api.model.PlansGetResponse;
-import com.smotana.clearflask.web.ApiException;
+import com.smotana.clearflask.store.RemoteLicenseStore;
+import com.smotana.clearflask.web.Application;
 
 import java.util.Optional;
 
 public class SelfHostPlanStore implements PlanStore {
 
-    public static final Plan SELF_HOST_PLAN = new Plan(
+    public static final Plan SELF_HOST_UNLIMITED_PLAN = new Plan(
             "self-host",
-            "Self-Hosting",
-            new PlanPricing(
-                    0L,
-                    0L,
-                    0L,
-                    0L,
-                    null,
-                    PlanPricing.PeriodEnum.YEARLY),
+            "Selfhost Open-Source",
+            null,
+            ImmutableList.of(),
+            false,
+            false);
+    public static final Plan SELF_HOST_LICENSED_PLAN = new Plan(
+            "selfhost-licensed",
+            "Selfhost Licensed",
+            null,
+            ImmutableList.of(),
+            false,
+            false);
+    /**
+     * This plan is no longer necessary, by default the unlimited plan is available.
+     */
+    @Deprecated
+    public static final Plan SELF_HOST_FREE_PLAN = new Plan(
+            "selfhost-free",
+            "Selfhost Limited (Deprecated)",
+            null,
             ImmutableList.of(),
             false,
             false);
 
+    @Inject
+    private Application.Config configApp;
+    @Inject
+    private RemoteLicenseStore remoteLicenseStore;
+
     @Override
     public PlansGetResponse getPublicPlans() {
+
         return new PlansGetResponse(
-                ImmutableList.of(SELF_HOST_PLAN),
+                remoteLicenseStore.validateLicenseRemotely(true).isPresent()
+                        ? ImmutableList.of(SELF_HOST_LICENSED_PLAN, SELF_HOST_UNLIMITED_PLAN)
+                        : ImmutableList.of(SELF_HOST_UNLIMITED_PLAN),
+                new FeaturesTable(
+                        ImmutableList.of(),
+                        ImmutableList.of(),
+                        null),
                 new FeaturesTable(
                         ImmutableList.of(),
                         ImmutableList.of(),
@@ -45,76 +69,32 @@ public class SelfHostPlanStore implements PlanStore {
 
     @Override
     public AllPlansGetResponse getAllPlans() {
-        return new AllPlansGetResponse(ImmutableList.of(SELF_HOST_PLAN));
+        return new AllPlansGetResponse(ImmutableList.of(SELF_HOST_FREE_PLAN, SELF_HOST_LICENSED_PLAN, SELF_HOST_UNLIMITED_PLAN));
     }
 
     @Override
     public ImmutableSet<Plan> getAccountChangePlanOptions(String accountId) {
-        return ImmutableSet.of();
+        return ImmutableSet.of(SELF_HOST_LICENSED_PLAN, SELF_HOST_UNLIMITED_PLAN);
     }
 
     @Override
     public Optional<Plan> getPlan(String planId, Optional<String> accountIdOpt) {
-        return SELF_HOST_PLAN.getBasePlanId().equals(planId)
-                ? Optional.of(SELF_HOST_PLAN)
-                : Optional.empty();
+        return getAllPlans().getPlans().stream()
+                .filter(plan -> plan.getBasePlanId().equals(planId))
+                .findAny();
     }
 
     @Override
     public Optional<PlanWithAddons> getCouponPlan(CouponStore.CouponModel coupon, Optional<String> accountId) {
-        return SELF_HOST_PLAN.getBasePlanId().equals(coupon.getBasePlanId())
-                ? Optional.of(new PlanWithAddons(SELF_HOST_PLAN, ImmutableMap.of()))
-                : Optional.empty();
+        return getAllPlans().getPlans().stream()
+                .filter(plan -> plan.getBasePlanId().equals(coupon.getBasePlanId()))
+                .map(plan -> new PlanWithAddons(plan, ImmutableMap.of()))
+                .findAny();
     }
 
     @Override
     public String getBasePlanId(String planId) {
         return planId;
-    }
-
-    @Override
-    public String prettifyPlanName(String planIdOrPrettyPlanName) {
-        return planIdOrPrettyPlanName;
-    }
-
-    @Override
-    public void verifyAccountMeetsPlanRestrictions(String planId, String accountId) throws ApiException {
-        // No-op
-    }
-
-    @Override
-    public void verifyAccountMeetsLimits(String planId, String accountId) throws ApiException {
-        // No-op
-    }
-
-    @Override
-    public boolean isAccountExceedsPostLimit(String planId, String accountId) {
-        return false;
-    }
-
-    @Override
-    public void verifyActionMeetsPlanRestrictions(String planId, String accountId, Action action) throws ApiException {
-        // No-op
-    }
-
-    @Override
-    public void verifyConfigMeetsPlanRestrictions(String planId, String accountId, ConfigAdmin config) throws ApiException {
-        // No-op
-    }
-
-    @Override
-    public void verifyConfigChangeMeetsRestrictions(boolean isSuperAdmin, Optional<ConfigAdmin> configAdminPreviousOpt, ConfigAdmin config) throws ApiException {
-        // No-op
-    }
-
-    @Override
-    public void verifyTeammateInviteMeetsPlanRestrictions(String planId, String projectId, boolean addOne) throws ApiException {
-        // No-op
-    }
-
-    @Override
-    public void verifyProjectCountMeetsPlanRestrictions(String planId, String accountId, boolean addOne) throws ApiException {
-        // No-op
     }
 
     public static Module module() {

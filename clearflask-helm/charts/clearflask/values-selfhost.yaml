@@ -1,0 +1,143 @@
+# Values for self-hosted Kubernetes deployment
+# This configuration uses in-cluster MySQL and LocalStack for DynamoDB/S3/SES
+
+global:
+  domain: "localhost"  # CHANGE THIS to your domain
+
+server:
+  replicaCount: 2
+
+  config:
+    environment: "PRODUCTION_SELF_HOST"
+    searchEngine: "READWRITE_MYSQL"
+    startupWaitUntilDeps: true
+    createIndexesOnStartup: true
+    superAdminEmail: "^admin@localhost$"  # CHANGE THIS
+    signupEnabled: true
+    authCookieSecure: true  # Set to true when using HTTPS
+
+  secrets:
+    # REQUIRED: Generate these secrets before installing
+    # tokenSignerPrivKey: ""  # openssl rand -base64 172 | tr -d '\n'
+    # cursorSharedKey: ""  # openssl rand -base64 16
+    # ssoSecretKey: ""  # uuidgen
+    # connectToken: ""  # uuidgen
+    browserPush:
+      publicKey: "BI_27q_GDMSYPCoLc5rPUyBMQ3CMUCmjfblbqVoDNcl2CRCAUmtCSgU2-g8SdaJlCqTFBi0Z1eU4maehFNX595M="
+      privateKey: "AKBBxKqCjroXt2ohL8yHSEpREoRzmtBb6Zk0g4zEDp4H"
+
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "1000m"
+    limits:
+      memory: "4Gi"
+      cpu: "2000m"
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+
+connect:
+  replicaCount: 2
+
+  config:
+    disableAutoFetchCertificate: true  # Using cert-manager
+    forceRedirectHttpToHttps: true
+
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 20
+
+ingress:
+  enabled: true
+  className: "nginx"
+
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+
+  hosts:
+    - host: "localhost"  # CHANGE THIS to your domain
+      paths:
+        - path: /api
+          pathType: Prefix
+          backend: server
+        - path: /
+          pathType: Prefix
+          backend: connect
+
+  tls:
+    enabled: true
+    secretName: clearflask-tls
+
+  certManager:
+    enabled: true
+    issuer: "letsencrypt-prod"
+
+# Network policies for enhanced security
+networkPolicy:
+  enabled: false  # Enable this if your cluster supports network policies
+
+# External services configuration
+externalServices:
+  # DynamoDB via LocalStack
+  dynamodb:
+    endpoint: "http://clearflask-deps-localstack:4566"
+    region: "us-east-1"
+    signingRegion: "us-east-1"
+    productionRegion: "us-east-1"
+
+  # S3 via LocalStack
+  s3:
+    endpoint: "http://s3.localhost.localstack.cloud:4566"
+    bucketName: "clearflask-upload"
+    createBucket: true
+    scheme: "http"
+    hostname: "clearflask-upload.s3.localhost.localstack.cloud:4566"
+    proxyEnabled: true
+    dnsResolverTo: "localstack"
+    signingRegion: "us-east-1"
+    productionRegion: "us-east-1"
+
+  # MySQL for search/filtering
+  mysql:
+    enabled: true
+    host: "clearflask-deps-mysql"
+    port: 3306
+    database: "clearflask"
+    user: "root"
+    password: "clearflask"  # CHANGE THIS in production
+
+  # ElasticSearch (disabled, using MySQL)
+  elasticsearch:
+    enabled: false
+
+  # Email via SES (LocalStack)
+  email:
+    provider: "ses"
+    ses:
+      region: "us-east-1"
+      endpoint: "http://clearflask-deps-localstack:4566"
+
+  # AWS credentials for LocalStack
+  aws:
+    accessKeyId: "test"
+    secretKey: "test"
+
+# Monitoring
+monitoring:
+  serviceMonitor:
+    enabled: false  # Enable if using Prometheus Operator

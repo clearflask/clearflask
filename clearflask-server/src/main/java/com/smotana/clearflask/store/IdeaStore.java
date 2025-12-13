@@ -3,36 +3,19 @@
 package com.smotana.clearflask.store;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableCollection;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
+import com.google.common.collect.*;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.smotana.clearflask.api.model.HistogramResponse;
-import com.smotana.clearflask.api.model.Idea;
-import com.smotana.clearflask.api.model.IdeaAggregateResponse;
-import com.smotana.clearflask.api.model.IdeaHistogramSearchAdmin;
-import com.smotana.clearflask.api.model.IdeaSearch;
-import com.smotana.clearflask.api.model.IdeaSearchAdmin;
-import com.smotana.clearflask.api.model.IdeaUpdate;
-import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
-import com.smotana.clearflask.api.model.IdeaVote;
-import com.smotana.clearflask.api.model.IdeaWithVote;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore.TransactionModel;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.web.security.Sanitizer;
 import io.dataspray.singletable.DynamoTable;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Value;
+import lombok.*;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -197,6 +180,10 @@ public interface IdeaStore {
         @NonNull
         Instant created;
 
+        public Instant getCreated() {
+            return created.truncatedTo(ChronoUnit.SECONDS);
+        }
+
         @NonNull
         String title;
 
@@ -246,7 +233,7 @@ public interface IdeaStore {
 
         /**
          * Expression counts; map of expression display to count.
-         *
+         * <p>
          * NonNull: Some old entries in Dynamo may have this null,
          * but it shouldn't be null going forward.
          */

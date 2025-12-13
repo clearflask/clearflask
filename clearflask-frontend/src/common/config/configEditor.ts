@@ -1584,7 +1584,6 @@ export class EditorImpl implements Editor {
               childProperties.push(this.getProperty([...path, i], true, propSchema.items));
             }
             childProperties.push(...this.parseAdditionalChildren(propSchema, path, ResolveDepth.None).props);
-            childProperties.sort(this.sortPagesProps);
           }
           return childProperties;
         }

@@ -41,7 +41,9 @@ public class ColorUtilTest extends AbstractTest {
         assertEquals(expected.map(this::colorToString), actual.map(this::colorToString));
     }
 
-    /** Color.toString() is missin alpha channel */
+    /**
+     * Color.toString() is missin alpha channel
+     */
     private String colorToString(Color color) {
         return "[r=" + color.getRed() + ",g=" + color.getGreen() + ",b=" + color.getBlue() + ",a=" + color.getAlpha() + "]";
     }

@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "clearflask.server.fullname" . }}
+  labels:
+    {{- include "clearflask.server.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.server.autoscaling.enabled }}
+  replicas: {{ .Values.server.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "clearflask.server.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0  # Zero-downtime deployments
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/server/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/server/secret.yaml") . | sha256sum }}
+        {{- with .Values.server.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "clearflask.server.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "clearflask.server.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.server.podSecurityContext | nindent 8 }}
+      containers:
+        - name: server
+          image: "{{ .Values.server.image.repository }}:{{ .Values.server.image.tag }}"
+          imagePullPolicy: {{ .Values.server.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.server.securityContext | nindent 12 }}
+          env:
+            - name: CLEARFLASK_ENVIRONMENT
+              value: {{ .Values.server.config.environment | quote }}
+            - name: JAVA_OPTS
+              value: {{ .Values.server.env.JAVA_OPTS | quote }}
+            {{- if .Values.server.service.jmxPort }}
+            - name: CATALINA_OPTS
+              value: >-
+                -Dcom.sun.management.jmxremote
+                -Dcom.sun.management.jmxremote.port={{ .Values.server.service.jmxPort }}
+                -Dcom.sun.management.jmxremote.rmi.port={{ .Values.server.service.jmxRmiPort }}
+                -Dcom.sun.management.jmxremote.authenticate=false
+                -Dcom.sun.management.jmxremote.ssl=false
+                -Djava.rmi.server.hostname=127.0.0.1
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            {{- if .Values.server.service.jmxPort }}
+            - name: jmx
+              containerPort: {{ .Values.server.service.jmxPort }}
+              protocol: TCP
+            - name: jmx-rmi
+              containerPort: {{ .Values.server.service.jmxRmiPort }}
+              protocol: TCP
+            {{- end }}
+          livenessProbe:
+            {{- toYaml .Values.server.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.server.readinessProbe | nindent 12 }}
+          startupProbe:
+            {{- toYaml .Values.server.startupProbe | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /opt/clearflask/config-selfhost.cfg
+              subPath: config-selfhost.cfg
+              readOnly: true
+          resources:
+            {{- toYaml .Values.server.resources | nindent 12 }}
+      volumes:
+        - name: config
+          secret:
+            secretName: {{ include "clearflask.server.fullname" . }}
+      {{- with .Values.server.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.server.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.server.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

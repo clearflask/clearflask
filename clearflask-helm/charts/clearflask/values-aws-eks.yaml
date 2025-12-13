@@ -1,0 +1,156 @@
+# Values for AWS EKS deployment
+# This configuration uses native AWS services (DynamoDB, S3, ElasticSearch/OpenSearch, SES)
+
+global:
+  domain: "example.com"  # CHANGE THIS to your domain
+
+server:
+  replicaCount: 2
+
+  config:
+    environment: "PRODUCTION_AWS"
+    searchEngine: "READWRITE_ELASTICSEARCH"  # Using AWS ElasticSearch/OpenSearch
+    startupWaitUntilDeps: true
+    createIndexesOnStartup: true
+    superAdminEmail: "^admin@example\\.com$"  # CHANGE THIS
+    signupEnabled: true
+    authCookieSecure: true
+
+  secrets:
+    # REQUIRED: Generate these secrets before installing
+    # tokenSignerPrivKey: ""  # openssl rand -base64 172 | tr -d '\n'
+    # cursorSharedKey: ""  # openssl rand -base64 16
+    # ssoSecretKey: ""  # uuidgen
+    # connectToken: ""  # uuidgen
+    browserPush:
+      publicKey: "BI_27q_GDMSYPCoLc5rPUyBMQ3CMUCmjfblbqVoDNcl2CRCAUmtCSgU2-g8SdaJlCqTFBi0Z1eU4maehFNX595M="
+      privateKey: "AKBBxKqCjroXt2ohL8yHSEpREoRzmtBb6Zk0g4zEDp4H"
+
+  # IAM Role for Service Account (IRSA)
+  serviceAccount:
+    create: true
+    annotations:
+      eks.amazonaws.com/role-arn: "arn:aws:iam::ACCOUNT_ID:role/clearflask-server"  # CHANGE THIS
+
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "1000m"
+    limits:
+      memory: "4Gi"
+      cpu: "2000m"
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 20
+
+connect:
+  replicaCount: 2
+
+  config:
+    disableAutoFetchCertificate: true
+    forceRedirectHttpToHttps: true
+
+  # IAM Role for Service Account (IRSA)
+  serviceAccount:
+    create: true
+    annotations:
+      eks.amazonaws.com/role-arn: "arn:aws:iam::ACCOUNT_ID:role/clearflask-connect"  # CHANGE THIS
+
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 30
+
+ingress:
+  enabled: true
+  className: "alb"  # Using AWS Load Balancer Controller
+
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:REGION:ACCOUNT_ID:certificate/CERT_ID"  # CHANGE THIS
+    alb.ingress.kubernetes.io/backend-protocol: HTTP
+    alb.ingress.kubernetes.io/healthcheck-path: /api/health
+    alb.ingress.kubernetes.io/success-codes: "200"
+
+  hosts:
+    - host: "example.com"  # CHANGE THIS
+      paths:
+        - path: /api
+          pathType: Prefix
+          backend: server
+        - path: /
+          pathType: Prefix
+          backend: connect
+
+  tls:
+    enabled: true
+    secretName: clearflask-tls
+
+  certManager:
+    enabled: false  # Using ACM instead
+
+# Network policies
+networkPolicy:
+  enabled: true
+
+# External services configuration
+externalServices:
+  # AWS DynamoDB
+  dynamodb:
+    endpoint: ""  # Empty for real AWS DynamoDB
+    region: "us-east-1"  # CHANGE THIS to your region
+    signingRegion: "us-east-1"
+    productionRegion: "us-east-1"
+
+  # AWS S3
+  s3:
+    endpoint: ""  # Empty for real AWS S3
+    bucketName: "clearflask-production-uploads"  # CHANGE THIS
+    createBucket: false  # Create bucket manually
+    scheme: "https"
+    hostname: "clearflask-production-uploads.s3.amazonaws.com"  # CHANGE THIS
+    proxyEnabled: false
+    signingRegion: "us-east-1"
+    productionRegion: "us-east-1"
+
+  # MySQL (disabled when using ElasticSearch)
+  mysql:
+    enabled: false
+
+  # AWS ElasticSearch / OpenSearch
+  elasticsearch:
+    enabled: true
+    endpoint: "https://vpc-clearflask-es-XXXXX.us-east-1.es.amazonaws.com"  # CHANGE THIS
+    compatibilityHeader: false  # Set to true for ES 8+
+
+  # AWS SES for email
+  email:
+    provider: "ses"
+    ses:
+      region: "us-east-1"  # CHANGE THIS
+      endpoint: ""  # Empty for real AWS SES
+
+  # AWS credentials (not needed when using IRSA)
+  aws:
+    accessKeyId: ""
+    secretKey: ""
+
+# Monitoring
+monitoring:
+  serviceMonitor:
+    enabled: true  # If using Prometheus Operator
+    interval: 30s
+    scrapeTimeout: 10s

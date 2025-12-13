@@ -9,7 +9,7 @@ import UsersIcon from '@material-ui/icons/PersonAdd';
 import moment from 'moment';
 import React, { Component } from 'react';
 import { withTranslation, WithTranslation } from 'react-i18next';
-import { connect } from 'react-redux';
+import { connect, Provider } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
@@ -21,12 +21,18 @@ import { RoadmapInstance } from '../../common/config/template/roadmap';
 import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
 import { initialWidth } from '../../common/util/screenUtil';
 import Histogram from './Histogram';
+import DashboardHomeBox from './DashboardHomeBox';
+import WorkflowPreview from '../../common/config/settings/injects/WorkflowPreview';
+import classNames from 'classnames';
+import DashboardHomePostList from './DashboardHomePostList';
+import DashboardHomeUserList from './DashboardHomeUserList';
+import ServerAdmin from '../../api/serverAdmin';
+import { TourChecklist } from '../../common/tour';
 
 const statePrefixAggregate = 'aggr-';
 
 const styles = (theme: Theme) => createStyles({
-  page: {
-  },
+  page: {},
   sections: {
     display: 'inline-flex',
     width: 'fit-content',
@@ -93,29 +99,42 @@ const styles = (theme: Theme) => createStyles({
     alignItems: 'baseline',
     justifyContent: 'center',
   },
-  stat: {
+  stat: {},
+  postLists: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'baseline',
+    justifyContent: 'center',
   },
   scrollVertical: {
     ...contentScrollApplyStyles({ theme, orientation: Orientation.Horizontal }),
+  },
+  tourChecklistContainer: {
+    display: 'flex',
+    justifyContent: 'center',
   },
 });
 
 interface Props {
   server: Server;
   editor: ConfigEditor.Editor;
+  onPageClick: (path: string, subPath?: ConfigEditor.Path) => void;
   feedback?: FeedbackInstance;
   roadmap?: RoadmapInstance;
   changelog?: ChangelogInstance;
 }
+
 interface ConnectProps {
   callOnMount?: () => void,
   configver?: string;
   config?: Client.Config;
   loggedInUserId?: string;
 }
+
 interface State {
   // State contains dynamic entries for aggregation
 }
+
 class DashboardHome extends Component<Props & ConnectProps & WithTranslation<'site'> & WithStyles<typeof styles, true> & RouteComponentProps & WithWidth, State> {
   state: State = {};
   readonly dispatchedCategoryAggregateForIds = new Set<string>();
@@ -134,29 +153,40 @@ class DashboardHome extends Component<Props & ConnectProps & WithTranslation<'si
           projectId: this.props.server.getProjectId(),
           categoryId: categoryId,
         })).then(results => this.setState({
-          [statePrefixAggregate + categoryId]: results,
-        }));
+        [statePrefixAggregate + categoryId]: results,
+      }));
     }
     return this.state[statePrefixAggregate + categoryId] as Admin.IdeaAggregateResponse | undefined;
   }
 
   render() {
-    const feedbackAggregate = !this.props.feedback ? undefined
-      : this.getAggregate(this.props.feedback.categoryAndIndex.category.categoryId);
-
     const chartWidth = 100;
     const chartHeight = 50;
     const chartXAxis = {
       min: moment().subtract(7, 'd').toDate(),
       max: new Date(),
     };
+
+    // Workflow previews
+    const workflows = this.props.config?.content.categories
+      .filter(category => !!category.workflow.statuses.length)
+      .map((category, index) => ({
+        categoryId: category.categoryId,
+        categoryIndex: index,
+        name: category.name,
+        aggregate: this.getAggregate(category.categoryId),
+      }));
+    const workflowPreviewRenderAggregateLabel = (aggr: Admin.IdeaAggregateResponse) => (statusId: string | 'total', name: string) => `${name} (${statusId === 'total' ? aggr.total : aggr.statuses[statusId] || 0})`;
+    const workflowPreviewDimensions = { width: 700, height: 200 };
+    const feedbackAggregate = this.props.feedback && workflows?.find(w => w.categoryId === this.props.feedback?.categoryAndIndex.category.categoryId)?.aggregate;
+
     return (
       <div className={this.props.classes.page}>
         <div className={this.props.classes.stats}>
           <div className={this.props.classes.stats}>
             {!!this.props.feedback && !!feedbackAggregate && (
               <Histogram
-                key='Open feedback'
+                key="Open feedback"
                 icon={OpenIdeasIcon}
                 title={this.props.t('open-feedback')}
                 server={this.props.server}
@@ -169,24 +199,19 @@ class DashboardHome extends Component<Props & ConnectProps & WithTranslation<'si
                   ideaHistogramSearchAdmin: {
                     interval: Admin.HistogramInterval.DAY,
                     filterCreatedStart: moment().subtract(7, 'd').toDate(),
-                  }
-                }).then(histogramResults => ({
-                  ...histogramResults,
-                  // Quick hack to show histogram of all feedback, but show a count
-                  // of only the open/new/unaddressed feedback
-                  hits: {
-                    value: feedbackAggregate.statuses[
-                      this.props.feedback?.categoryAndIndex.category.workflow.entryStatus
-                      || this.props.feedback?.categoryAndIndex.category.workflow.statuses[0]?.statusId
-                      || ''
-                    ] || 0,
+                    filterCategoryIds: [this.props.feedback!.categoryAndIndex.category.categoryId],
                   },
-                }))}
+                })}
+                overrideValue={!!feedbackAggregate
+                  // Filter out for only initial feedback status, typically 'New'
+                  ? (feedbackAggregate.statuses[this.props.feedback!.categoryAndIndex.category.workflow.entryStatus || ''] || 0)
+                  // Wait for the aggregate call to finish
+                  : ''}
               />
             )}
             {!!this.props.roadmap?.statusIdCompleted && (
               <Histogram
-                key='Completed Tasks'
+                key="Completed Tasks"
                 icon={AllIdeasIcon}
                 title={this.props.t('completed-tasks')}
                 server={this.props.server}
@@ -201,14 +226,14 @@ class DashboardHome extends Component<Props & ConnectProps & WithTranslation<'si
                     filterStatusIds: [this.props.roadmap!.statusIdCompleted!],
                     interval: Admin.HistogramInterval.DAY,
                     filterCreatedStart: moment().subtract(7, 'd').toDate(),
-                  }
+                  },
                 })}
               />
             )}
           </div>
           <div className={this.props.classes.stats}>
             <Histogram
-              key='Identified Users'
+              key="Identified Users"
               icon={UsersIcon}
               title={this.props.t('identified-users')}
               server={this.props.server}
@@ -221,11 +246,11 @@ class DashboardHome extends Component<Props & ConnectProps & WithTranslation<'si
                 histogramSearchAdmin: {
                   interval: Admin.HistogramInterval.DAY,
                   filterCreatedStart: moment().subtract(7, 'd').toDate(),
-                }
+                },
               })}
             />
             <Histogram
-              key='Comments'
+              key="Comments"
               icon={DiscussionIcon}
               title={this.props.t('comments')}
               server={this.props.server}
@@ -238,21 +263,18 @@ class DashboardHome extends Component<Props & ConnectProps & WithTranslation<'si
                 histogramSearchAdmin: {
                   interval: Admin.HistogramInterval.DAY,
                   filterCreatedStart: moment().subtract(7, 'd').toDate(),
-                }
+                },
               })}
             />
           </div>
         </div>
-        {/* For now, workflow previews are disabled, they were kind of ugly here
-        const workflowPreviewRenderAggregateLabel = (aggr: Admin.IdeaAggregateResponse) => (statusId: string | 'total', name: string) => `${name} (${statusId === 'total' ? aggr.total : aggr.statuses[statusId] || 0})`;
-        const workflowPreviewDimensions = { width: 700, height: 200 };
         <div className={classNames(
           this.props.classes.stats,
           this.props.classes.scrollVertical,
         )}>
-          {!!this.props.feedback && !!feedbackAggregate && (
-            <GraphBox
-              title={workflowPreviewRenderAggregateLabel(feedbackAggregate)('total', 'Feedback')}
+          {workflows?.map(workflow => !!workflow.aggregate && (
+            <DashboardHomeBox
+              title={workflowPreviewRenderAggregateLabel(workflow.aggregate)('total', workflow.name)}
               chartAsBackground={workflowPreviewDimensions}
               chart={(
                 <WorkflowPreview
@@ -260,31 +282,88 @@ class DashboardHome extends Component<Props & ConnectProps & WithTranslation<'si
                   width={workflowPreviewDimensions.width}
                   height={workflowPreviewDimensions.height}
                   editor={this.props.editor}
-                  categoryIndex={this.props.feedback.categoryAndIndex.index}
+                  categoryIndex={workflow.categoryIndex}
                   hideCorner
-                  renderLabel={workflowPreviewRenderAggregateLabel(feedbackAggregate)}
+                  renderLabel={workflowPreviewRenderAggregateLabel(workflow.aggregate)}
                 />
               )}
             />
-          )}
-          {!!this.props.roadmap && !!roadmapAggregate && (
-            <GraphBox
-              title={workflowPreviewRenderAggregateLabel(roadmapAggregate)('total', 'Tasks')}
-              chartAsBackground={workflowPreviewDimensions}
-              chart={(
-                <WorkflowPreview
-                  static
-                  width={workflowPreviewDimensions.width}
-                  height={workflowPreviewDimensions.height}
-                  editor={this.props.editor}
-                  categoryIndex={this.props.roadmap.categoryAndIndex.index}
-                  hideCorner
-                  renderLabel={workflowPreviewRenderAggregateLabel(roadmapAggregate)}
-                />
-              )}
+          ))}
+        </div>
+        <div className={this.props.classes.postLists}>
+          <div className={this.props.classes.postLists}>
+            <DashboardHomePostList
+              title="Trending"
+              server={this.props.server}
+              onClickPost={postId => this.props.onPageClick('post', [postId])}
+              onUserClick={userId => this.props.onPageClick('user', [userId])}
+              search={{
+                sortBy: Admin.IdeaSearchAdminSortByEnum.Trending,
+              }}
+              displayOverride={{
+                showCreated: true,
+                showVotingCount: true,
+                showExpression: true,
+                showStatus: true,
+                showTags: true,
+                showCategoryName: true,
+              }}
             />
-          )}
-        </div> */}
+            {!!this.props.changelog && (
+              <DashboardHomePostList
+                title="Announcements"
+                server={this.props.server}
+                onClickPost={postId => this.props.onPageClick('post', [postId])}
+                onUserClick={userId => this.props.onPageClick('user', [userId])}
+                search={{
+                  filterCategoryIds: [this.props.changelog.categoryAndIndex.category.categoryId],
+                  sortBy: Admin.IdeaSearchAdminSortByEnum.New,
+                }}
+                displayOverride={{
+                  showCreated: true,
+                  showVotingCount: true,
+                  showExpression: true,
+                  showStatus: true,
+                  showTags: true,
+                }}
+              />
+            )}
+          </div>
+          <div className={this.props.classes.postLists}>
+            <DashboardHomeUserList
+              title="Recent users"
+              server={this.props.server}
+              onUserClick={userId => this.props.onPageClick('user', [userId])}
+            />
+            <DashboardHomePostList
+              title="Randomized"
+              server={this.props.server}
+              onClickPost={postId => this.props.onPageClick('post', [postId])}
+              onUserClick={userId => this.props.onPageClick('user', [userId])}
+              search={{
+                sortBy: Admin.IdeaSearchAdminSortByEnum.Random,
+              }}
+              displayOverride={{
+                showCreated: true,
+                showVotingCount: true,
+                showExpression: true,
+                showStatus: true,
+                showTags: true,
+                showCategoryName: true,
+              }}
+            />
+          </div>
+        </div>
+        <div className={this.props.classes.tourChecklistContainer}>
+          <DashboardHomeBox
+            scroll
+            chart={(
+              <Provider store={ServerAdmin.get().getStore()}>
+                <TourChecklist />
+              </Provider>
+            )}
+          />
+        </div>
       </div>
     );
   }
@@ -300,7 +379,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
     newProps.callOnMount = () => {
       ownProps.server.dispatch().then(d => d.configAndUserBindSlug({
         slug: ownProps.server.getStore().getState().conf.conf?.slug!,
-        userBind: {}
+        userBind: {},
       }));
     };
   }

@@ -1,0 +1,79 @@
+{{- if .Values.elasticsearch.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "clearflask-dependencies.elasticsearch.fullname" . }}
+  labels:
+    {{- include "clearflask-dependencies.elasticsearch.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "clearflask-dependencies.elasticsearch.fullname" . }}
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "clearflask-dependencies.elasticsearch.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "clearflask-dependencies.elasticsearch.selectorLabels" . | nindent 8 }}
+    spec:
+      initContainers:
+        # ElasticSearch requires vm.max_map_count to be at least 262144
+        - name: sysctl
+          image: busybox
+          command: ['sh', '-c', 'sysctl -w vm.max_map_count=262144']
+          securityContext:
+            privileged: true
+      containers:
+        - name: elasticsearch
+          image: "{{ .Values.elasticsearch.image.repository }}:{{ .Values.elasticsearch.image.tag }}"
+          imagePullPolicy: {{ .Values.elasticsearch.image.pullPolicy }}
+          env:
+            - name: ES_JAVA_OPTS
+              value: {{ .Values.elasticsearch.config.javaOpts | quote }}
+            - name: discovery.type
+              value: {{ .Values.elasticsearch.config.discoveryType | quote }}
+          ports:
+            - name: http
+              containerPort: 9200
+              protocol: TCP
+            - name: transport
+              containerPort: 9300
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /_cluster/health
+              port: http
+            initialDelaySeconds: 90
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /_cluster/health?wait_for_status=yellow
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /usr/share/elasticsearch/data
+          resources:
+            {{- toYaml .Values.elasticsearch.resources | nindent 12 }}
+  {{- if .Values.elasticsearch.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - {{ .Values.elasticsearch.persistence.accessMode }}
+        {{- if .Values.elasticsearch.persistence.storageClass }}
+        storageClassName: {{ .Values.elasticsearch.persistence.storageClass | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.elasticsearch.persistence.size }}
+  {{- else }}
+      volumes:
+        - name: data
+          emptyDir: {}
+  {{- end }}
+{{- end }}

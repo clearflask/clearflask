@@ -35,7 +35,7 @@ public class ConfigSystems {
      * of the "[<1>,<2>,...]" string generated. Use this method to override the default
      * collection's toString method to produce a CSV line compatible with built-in
      * value converters.
-     *
+     * <p>
      * Note: Collection implementations marked as final cannot be used including Guava's
      * ImmutableList, ImmutableSet.
      */

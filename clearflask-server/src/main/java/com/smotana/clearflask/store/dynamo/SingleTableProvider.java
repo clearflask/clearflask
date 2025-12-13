@@ -2,13 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.smotana.clearflask.store.dynamo;
 
-import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.google.gson.Gson;
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
 import com.google.inject.Module;
-import com.google.inject.Provider;
-import com.google.inject.Singleton;
+import com.google.inject.*;
 import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
@@ -37,7 +34,7 @@ public class SingleTableProvider extends ManagedService implements Provider<Sing
     @Inject
     private Gson gson;
     @Inject
-    private DynamoDB dynamoDoc;
+    private AmazonDynamoDB dynamo;
     @Inject
     private Provider<SingleTable> singleTableProvider;
 
@@ -45,7 +42,7 @@ public class SingleTableProvider extends ManagedService implements Provider<Sing
     public SingleTable get() {
         return SingleTable.builder()
                 .tablePrefix(config.tablePrefix())
-                .dynamoDoc(dynamoDoc)
+                .overrideDynamo(dynamo)
                 .overrideGson(gson)
                 .build();
     }

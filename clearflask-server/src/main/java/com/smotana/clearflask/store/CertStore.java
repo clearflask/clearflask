@@ -7,11 +7,7 @@ import com.smotana.clearflask.api.model.Challenge;
 import com.smotana.clearflask.api.model.Keypair;
 import com.smotana.clearflask.store.CertStore.KeypairModel.KeypairType;
 import io.dataspray.singletable.DynamoTable;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NonNull;
-import lombok.SneakyThrows;
-import lombok.Value;
+import lombok.*;
 import org.jetbrains.annotations.NotNull;
 import org.shredzone.acme4j.util.KeyPairUtils;
 
@@ -47,9 +43,14 @@ public interface CertStore {
     void deleteDnsChallenge(String host, String value);
 
 
-    Optional<CertModel> getCert(String domain);
+    Optional<CertModel> getCert(String domain, boolean consistentRead);
 
     void setCert(CertModel cert);
+
+    /**
+     * For cert creation rate limiting back-off, set the next retry time.
+     */
+    void setCertRetryAfter(String domain, Instant retryAfter);
 
     void deleteCert(String domain);
 
@@ -141,6 +142,8 @@ public interface CertStore {
 
         @NonNull
         long ttlInEpochSec;
+
+        Instant retryAfter;
 
         public Cert toCert() {
             return new Cert(

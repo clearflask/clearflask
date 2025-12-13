@@ -1,0 +1,101 @@
+name: Release Helm Charts
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'Version to release'
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: master
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Pull latest chart updates
+        run: |
+          git pull origin master
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.13.0
+
+      - name: Package Helm charts
+        run: |
+          mkdir -p .cr-release-packages
+          helm package clearflask-helm/charts/clearflask -d .cr-release-packages
+          helm package clearflask-helm/charts/clearflask-dependencies -d .cr-release-packages
+
+      - name: Upload charts to GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ inputs.version }}"
+          for chart in .cr-release-packages/*.tgz; do
+            echo "Uploading $chart to release $VERSION"
+            gh release upload "$VERSION" "$chart" --clobber
+          done
+
+      - name: Checkout gh-pages
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Update Helm repository index
+        run: |
+          VERSION="${{ inputs.version }}"
+
+          # Create index directory if it doesn't exist
+          mkdir -p gh-pages
+
+          # Download existing index if it exists
+          if [ -f gh-pages/index.yaml ]; then
+            cp gh-pages/index.yaml index.yaml
+          fi
+
+          # Update index with new chart packages
+          # Use the GitHub release URL as the base URL
+          helm repo index .cr-release-packages \
+            --url "https://github.com/${{ github.repository }}/releases/download/$VERSION" \
+            --merge index.yaml || helm repo index .cr-release-packages \
+            --url "https://github.com/${{ github.repository }}/releases/download/$VERSION"
+
+          # Move updated index to gh-pages
+          mv .cr-release-packages/index.yaml gh-pages/index.yaml
+
+      - name: Publish gh-pages
+        working-directory: gh-pages
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+          git add index.yaml
+          if git diff --staged --quiet; then
+            echo "No changes to index.yaml"
+          else
+            git commit -m "Update Helm repository index for version ${{ inputs.version }}"
+            git push origin gh-pages
+          fi

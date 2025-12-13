@@ -4,7 +4,7 @@
 /// <reference path="../@types/transform-media-imports.d.ts"/>
 import { Button, Checkbox, Collapse, Container, IconButton, Link as MuiLink, Slider, SvgIconTypeMap, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, Tooltip, Typography, useMediaQuery } from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
-import { createStyles, darken, fade, lighten, makeStyles, Theme, useTheme } from '@material-ui/core/styles';
+import { Theme, createStyles, darken, fade, lighten, makeStyles, useTheme } from '@material-ui/core/styles';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
 import CheckIcon from '@material-ui/icons/Check';
 import MobileDesktopIcon from '@material-ui/icons/DevicesRounded';
@@ -26,6 +26,7 @@ import { Alert } from '@material-ui/lab';
 import classNames from 'classnames';
 import React, { useContext, useState } from 'react';
 import ReactGA from 'react-ga';
+import ReactGA4 from 'react-ga4';
 import { Link } from 'react-router-dom';
 import Scrollspy from 'react-scrollspy';
 import ClearFlaskImg from '../../public/img/clearflask-logo.png';
@@ -82,7 +83,7 @@ import UserReportImg from '../../public/img/landing/compare/userreport.png';
 import DesktopUserVoiceImg from '../../public/img/landing/compare/uservoice-desktop.jpg';
 import MobileUserVoiceImg from '../../public/img/landing/compare/uservoice-mobile.jpg';
 import UserVoiceImg from '../../public/img/landing/compare/uservoice.png';
-import { contentScrollApplyStyles, Orientation } from '../common/ContentScroll';
+import { Orientation, contentScrollApplyStyles } from '../common/ContentScroll';
 import DeviceContainer, { Device } from '../common/DeviceContainer';
 import HoverArea from '../common/HoverArea';
 import ImgIso from '../common/ImgIso';
@@ -2337,11 +2338,13 @@ const ExternalLinkPlatform = (props: ({
       aria-label={props.type === 'pricing' ? 'pricing page' : 'home page'}
       onClick={e => {
         trackingBlock(() => {
-          ReactGA.event({
-            category: 'compare',
-            action: props.type === 'pricing' ? 'click-competitor-pricing-page' : 'click-competitor-home-page',
-            label: props.platform.id,
-          });
+          [ReactGA4, ReactGA].forEach(ga =>
+            ga.event({
+              category: 'compare',
+              action: props.type === 'pricing' ? 'click-competitor-pricing-page' : 'click-competitor-home-page',
+              label: props.platform.id,
+            })
+          );
         });
         !windowIso.isSsr && windowIso.open(props.type === 'pricing' ? props.platform.pricing.url : props.platform.url, '_blank', 'noopener');
       }}

@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "clearflask.connect.fullname" . }}
+  labels:
+    {{- include "clearflask.connect.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.connect.service.type }}
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+    - port: 443
+      targetPort: https
+      protocol: TCP
+      name: https
+  selector:
+    {{- include "clearflask.connect.selectorLabels" . | nindent 4 }}

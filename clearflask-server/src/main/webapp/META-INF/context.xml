@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Context path="">
+<Context path="" reloadable="true">
     <!-- Rewrite valve to properly forward specific urls back to react router. See WEB-INF/rewrite.config -->
     <Valve className="org.apache.catalina.valves.rewrite.RewriteValve"/>
 </Context>

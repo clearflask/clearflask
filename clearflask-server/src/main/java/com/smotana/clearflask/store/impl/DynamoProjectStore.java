@@ -3,41 +3,16 @@
 package com.smotana.clearflask.store.impl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.document.DynamoDB;
-import com.amazonaws.services.dynamodbv2.document.ItemUtils;
-import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
-import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
-import com.amazonaws.services.dynamodbv2.document.TableKeysAndAttributes;
-import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
-import com.amazonaws.services.dynamodbv2.document.spec.BatchGetItemSpec;
-import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
-import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
-import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
-import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
-import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
+import com.amazonaws.services.dynamodbv2.document.*;
+import com.amazonaws.services.dynamodbv2.document.spec.*;
 import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.CancellationReason;
-import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
-import com.amazonaws.services.dynamodbv2.model.Put;
-import com.amazonaws.services.dynamodbv2.model.ReturnValue;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanResult;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
-import com.amazonaws.services.dynamodbv2.model.Update;
+import com.amazonaws.services.dynamodbv2.model.*;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import com.google.common.collect.*;
 import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -45,24 +20,11 @@ import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
-import com.smotana.clearflask.api.model.Category;
-import com.smotana.clearflask.api.model.ConfigAdmin;
-import com.smotana.clearflask.api.model.Expressing;
-import com.smotana.clearflask.api.model.Expression;
-import com.smotana.clearflask.api.model.GitHub;
-import com.smotana.clearflask.api.model.IdeaStatus;
-import com.smotana.clearflask.api.model.VersionedConfig;
-import com.smotana.clearflask.api.model.VersionedConfigAdmin;
-import com.smotana.clearflask.api.model.Voting;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.WebhookListener.ResourceType;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
-import com.smotana.clearflask.util.ConfigSchemaUpgrader;
-import com.smotana.clearflask.util.Extern;
-import com.smotana.clearflask.util.IntercomUtil;
-import com.smotana.clearflask.util.LogUtil;
-import com.smotana.clearflask.util.ProjectUpgrader;
-import com.smotana.clearflask.util.StringSerdeUtil;
+import com.smotana.clearflask.util.*;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
@@ -137,6 +99,8 @@ public class DynamoProjectStore implements ProjectStore {
     @Inject
     private Sanitizer sanitizer;
     @Inject
+    private ProjectUtil projectUtil;
+    @Inject
     private ConfigSchemaUpgrader configSchemaUpgrader;
     @Inject
     private ProjectUpgrader projectUpgrader;
@@ -149,7 +113,7 @@ public class DynamoProjectStore implements ProjectStore {
     private IndexSchema<SlugModel> slugByProjectSchema;
     private TableSchema<InvitationModel> invitationSchema;
     private IndexSchema<InvitationModel> invitationByProjectSchema;
-    private Cache<String, String> slugCache;
+    private Cache<String, Optional<String>> slugCache;
     private Cache<String, Optional<Project>> projectCache;
 
     @Inject
@@ -176,47 +140,58 @@ public class DynamoProjectStore implements ProjectStore {
         if (slug.endsWith("." + configApp.domain())) {
             slugAltOpt = Optional.of(slug.substring(0, slug.indexOf('.')));
         }
+
+        boolean isCached = false;
+        boolean isAltCached = false;
         if (config.enableSlugCacheRead() && useCache) {
-            String projectId = slugCache.getIfPresent(slug);
-            if (projectId != null) {
-                return getProject(projectId, useCache);
+            Optional<String> projectIdOpt = slugCache.getIfPresent(slug);
+            isCached = projectIdOpt != null;
+            if (isCached) {
+                if (projectIdOpt.isPresent()) {
+                    // Main is present, return it
+                    return getProject(projectIdOpt.get(), useCache);
+                } else if (slugAltOpt.isEmpty()) {
+                    // Main is empty and there is no alt so return empty
+                    return Optional.empty();
+                } else {
+                    // Main is empty, but need to first check alt as well
+                }
             }
             if (slugAltOpt.isPresent()) {
-                projectId = slugCache.getIfPresent(slugAltOpt.get());
-                if (projectId != null) {
-                    return getProject(projectId, useCache);
+                Optional<String> projectIdAltOpt = slugCache.getIfPresent(slugAltOpt.get());
+                isAltCached = projectIdAltOpt != null;
+                if (isAltCached) {
+                    if (projectIdAltOpt.isPresent()) {
+                        // Alt is present, return it
+                        return getProject(projectIdAltOpt.get(), useCache);
+                    } else if (projectIdOpt != null && projectIdOpt.isEmpty()) {
+                        // Only if both are cached and empty, return empty
+                        return Optional.empty();
+                    } else {
+                        // Alt is empty, main one is not cached, continue
+                    }
                 }
             }
         }
-        Optional<SlugModel> slugModelOpt = Optional.ofNullable(slugSchema.fromItem(slugSchema.table()
-                .getItem(new GetItemSpec()
-                        .withPrimaryKey(slugSchema
-                                .primaryKey(Map.of("slug", slug))))));
-        if (!slugModelOpt.isPresent() && slugAltOpt.isPresent()) {
-            slugModelOpt = Optional.ofNullable(slugSchema.fromItem(slugSchema.table()
-                    .getItem(new GetItemSpec()
-                            .withPrimaryKey(slugSchema
-                                    .primaryKey(Map.of("slug", slugAltOpt.get()))))));
+        if (!isCached) {
+            Optional<SlugModel> slugModelOpt = Optional.ofNullable(slugSchema.fromItem(slugSchema.table()
+                    .getItem(new GetItemSpec().withPrimaryKey(slugSchema
+                            .primaryKey(Map.of("slug", slug))))));
+            slugCache.put(slug, slugModelOpt.map(SlugModel::getProjectId));
+            if (slugModelOpt.isPresent()) {
+                return slugModelOpt.flatMap(slugModel -> getProject(slugModel.getProjectId(), useCache));
+            }
         }
-        Optional<Project> projectOpt = slugModelOpt.flatMap(slugModel -> getProject(slugModel.getProjectId(), useCache));
-
-        if (projectOpt.isEmpty() && slugModelOpt.isPresent() && slugModelOpt.get().getTtlInEpochSec() == null) {
-            log.info("Removing slug {} without expiry pointing to non-existent project {}; this is expected for projects deleted prior to fixing slug removal bug",
-                    slugModelOpt.get().getSlug(), slugModelOpt.get().getProjectId());
-            slugSchema.table().deleteItem(new DeleteItemSpec()
-                    .withPrimaryKey(slugSchema.primaryKey(slugModelOpt.get()))
-                    .withConditionExpression("attribute_exists(#pk) AND attribute_exists(#sk) AND attribute_not_exists(#ttl) AND #projectId = :projectId")
-                    .withNameMap(ImmutableMap.of(
-                            "#pk", "pk",
-                            "#sk", "sk",
-                            "#ttl", "ttl",
-                            "#projectId", "projectId"))
-                    .withValueMap(ImmutableMap.of(
-                            ":projectId", slugModelOpt.get().getProjectId())));
+        if (!isAltCached && slugAltOpt.isPresent()) {
+            Optional<SlugModel> slugModelOpt = Optional.ofNullable(slugSchema.fromItem(slugSchema.table()
+                    .getItem(new GetItemSpec().withPrimaryKey(slugSchema
+                            .primaryKey(Map.of("slug", slugAltOpt.get()))))));
+            slugCache.put(slugAltOpt.get(), slugModelOpt.map(SlugModel::getProjectId));
+            if (slugModelOpt.isPresent()) {
+                return slugModelOpt.flatMap(slugModel -> getProject(slugModel.getProjectId(), useCache));
+            }
         }
-
-        slugModelOpt.ifPresent(slugModel -> slugCache.put(slug, slugModel.getProjectId()));
-        return projectOpt;
+        return Optional.empty();
     }
 
     @Extern
@@ -348,8 +323,8 @@ public class DynamoProjectStore implements ProjectStore {
         }
         ProjectImpl project = new ProjectImpl(projectModel);
         projectCache.put(projectId, Optional.of(project));
-        slugCache.put(subdomain, projectId);
-        domainOpt.ifPresent(domain -> slugCache.put(domain, projectId));
+        slugCache.put(subdomain, Optional.of(projectId));
+        domainOpt.ifPresent(domain -> slugCache.put(domain, Optional.of(projectId)));
         return project;
     }
 
@@ -532,19 +507,23 @@ public class DynamoProjectStore implements ProjectStore {
 
     @Override
     public InvitationModel createInvitation(String projectId, String invitedEmail, String inviteeName) {
-        Project project = getProject(projectId, true).get();
+        Project project = getProject(projectId, true).orElseThrow();
         InvitationModel invitation = new InvitationModel(
                 genInvitationId(),
                 projectId,
                 invitedEmail,
                 inviteeName,
-                project.getVersionedConfigAdmin().getConfig().getName(),
+                projectUtil.getProjectName(project.getVersionedConfigAdmin().getConfig()),
                 null,
                 Instant.now().plus(config.invitationExpireAfterCreation()).getEpochSecond());
-        invitationSchema.table().putItem(new PutItemSpec()
-                .withItem(invitationSchema.toItem(invitation))
-                .withConditionExpression("attribute_not_exists(#partitionKey)")
-                .withNameMap(new NameMap().with("#partitionKey", invitationSchema.partitionKeyName())));
+        try {
+            invitationSchema.table().putItem(new PutItemSpec()
+                    .withItem(invitationSchema.toItem(invitation))
+                    .withConditionExpression("attribute_not_exists(#partitionKey)")
+                    .withNameMap(new NameMap().with("#partitionKey", invitationSchema.partitionKeyName())));
+        } catch (ConditionalCheckFailedException ex) {
+            throw new ApiException(Response.Status.CONFLICT, "Invitation already exists for this email", ex);
+        }
         return invitation;
     }
 
@@ -668,6 +647,23 @@ public class DynamoProjectStore implements ProjectStore {
         return project;
     }
 
+    @Override
+    public Project changeOwner(String projectId, String newOwnerAccountId) {
+        Project project = new ProjectImpl(projectSchema.fromItem(projectSchema.table().updateItem(new UpdateItemSpec()
+                        .withPrimaryKey(projectSchema.primaryKey(Map.of("projectId", projectId)))
+                        .withConditionExpression("attribute_exists(#partitionKey) AND #accountId <> :newOwnerAccountId")
+                        .withUpdateExpression("SET #accountId = :newOwnerAccountId")
+                        .withNameMap(Map.of(
+                                "#partitionKey", projectSchema.partitionKeyName(),
+                                "#accountId", "accountId"))
+                        .withValueMap(Map.of(
+                                ":newOwnerAccountId", projectSchema.toDynamoValue("accountId", newOwnerAccountId)))
+                        .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem()));
+        projectCache.put(projectId, Optional.of(project));
+        return project;
+    }
+
     private String packWebhookListener(WebhookListener listener) {
         return StringSerdeUtil.mergeStrings(listener.getResourceType().name(), listener.getEventType(), listener.getUrl());
     }
@@ -779,6 +775,16 @@ public class DynamoProjectStore implements ProjectStore {
         }
 
         @Override
+        public String getName() {
+            return projectUtil.getProjectName(versionedConfigAdmin.getConfig());
+        }
+
+        @Override
+        public String getLink() {
+            return "https://" + getHostname();
+        }
+
+        @Override
         public ProjectModel getModel() {
             return model;
         }
@@ -819,6 +825,11 @@ public class DynamoProjectStore implements ProjectStore {
                 return EXPRESSION_WEIGHT_DEFAULT;
             }
             return expressionToWeight.getOrDefault(expression, EXPRESSION_WEIGHT_DEFAULT);
+        }
+
+        @Override
+        public ImmutableCollection<Category> getCategories() {
+            return categories.values();
         }
 
         @Override

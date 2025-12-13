@@ -1,6 +1,5 @@
 ## SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 ## SPDX-License-Identifier: Apache-2.0
-version: '3.8'
 services:
   clearflask-connect:
     image: 'clearflask/clearflask-connect:latest'
@@ -22,7 +21,6 @@ services:
     depends_on:
       - killbill-engine
       - localstack
-      - elasticsearch
       - mysql-db
     volumes:
       - ./server/logback-dev.xml:/usr/local/tomcat/webapps/ROOT/WEB-INF/classes/logback.xml
@@ -44,7 +42,7 @@ services:
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
   killbill-engine:
-    image: killbill/killbill:0.22.20
+    image: killbill/killbill:0.22.32
     depends_on:
       - mysql-db
     ports:
@@ -72,14 +70,15 @@ services:
     ports:
       - 8081:8080
     environment:
-      - KAUI_CONFIG_DAO_URL=jdbc:mysql://mysql-db:3306/kaui
+      - KAUI_CONFIG_DAO_URL=jdbc:mysql://mysql-db:3306/killbill
       - KAUI_CONFIG_DAO_USER=root
       - KAUI_CONFIG_DAO_PASSWORD=killbill
       - KAUI_KILLBILL_URL=http://killbill-engine:8080
   mysql-db:
-    image: mysql:5.7
+    image: mariadb:10.5
     command:
       - 'mysqld'
+      - '--port=3306'
       - '--sql-mode=IGNORE_SPACE'
       - '--explicit-defaults-for-timestamp'
       - '--secure-file-priv=/tmp'
@@ -111,7 +110,7 @@ services:
       - ELASTICSEARCH_URL=http://elasticsearch:9200
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
   localstack:
-    image: localstack/localstack-full
+    image: localstack/localstack:0.14.3
     privileged: true
     ports:
       - 4566:4566

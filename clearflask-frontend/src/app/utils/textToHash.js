@@ -38,6 +38,7 @@ function makeUnique(hash, unique, i = 1) {
 }
 
 export default function textToHash(text, unique = {}) {
+  if (!text) return '';
   return makeUnique(
     encodeURI(
       text

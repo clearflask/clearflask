@@ -8,6 +8,7 @@ import { connect } from 'react-redux';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
 import { getSearchKey, ReduxState, Server, Status } from '../../api/server';
+import LoadMoreButton from '../../app/comps/LoadMoreButton';
 import ErrorMsg from '../../app/ErrorMsg';
 import Loading from '../../app/utils/Loading';
 import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
@@ -15,6 +16,7 @@ import UserWithAvatarDisplay from '../../common/UserWithAvatarDisplay';
 import { notEmpty } from '../../common/util/arrayUtil';
 import keyMapper from '../../common/util/keyMapper';
 import { TabFragment, TabsVertical } from '../../common/util/tabsUtil';
+import { withTranslation, WithTranslation } from 'react-i18next';
 
 interface SearchResult {
   status: Status;
@@ -54,8 +56,9 @@ interface ConnectProps {
   configver?: string;
   config?: Client.Config;
   searchResult: SearchResult;
+  loadMore?: () => void;
 }
-class UserList extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
+class UserList extends Component<Props & ConnectProps & WithTranslation<'site'> & WithStyles<typeof styles, true>> {
 
   constructor(props) {
     super(props);
@@ -82,7 +85,7 @@ class UserList extends Component<Props & ConnectProps & WithStyles<typeof styles
         if (this.props.searchResult.users.length === 0) {
           return (
             <div className={this.props.classes.placeholder}>
-              <Typography variant='overline'>Empty</Typography>
+              <Typography variant='overline'>{this.props.t('empty')}</Typography>
             </div>
           );
         } else {
@@ -127,6 +130,9 @@ class UserList extends Component<Props & ConnectProps & WithStyles<typeof styles
               this.props.scroll && this.props.classes.scroll,
             )}>
               {content}
+              {this.props.loadMore && (
+                <LoadMoreButton onClick={this.props.loadMore.bind(this)} />
+              )}
             </div>
           );
           return content;
@@ -167,7 +173,13 @@ export default keyMapper(
         if (user.user?.['hasPassword'] === undefined) return undefined;
         return user.user as Admin.UserAdmin;
       }).filter(notEmpty);
+      newProps.loadMore = !bySearch.cursor ? undefined
+       : () => ownProps.server.dispatchAdmin({ ssr: true }).then(d => d.userSearchAdmin({
+          projectId: state.projectId!,
+          userSearchAdmin: ownProps.search || {},
+          cursor: newProps.searchResult.cursor,
+        }));
     }
 
     return newProps;
-  }, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(UserList)));
+  }, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withTranslation('site', { withRef: true })(UserList))));

@@ -11,15 +11,15 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Based on https://github.com/killbill/killbill-payment-test-plugin/blob/master/src/main/java/org/killbill/billing/plugin/payment/model/Payload.java
- *
+ * <p>
  * Copyright 2014-2020 The Billing Project, LLC
- *
+ * <p>
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
  * License.  You may obtain a copy of the License at:
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the

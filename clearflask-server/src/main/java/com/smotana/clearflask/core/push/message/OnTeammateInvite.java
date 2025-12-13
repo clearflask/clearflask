@@ -39,7 +39,7 @@ public class OnTeammateInvite {
         String subject = config.subjectTemplate();
         String content = config.contentTemplate();
 
-        String projectName = emailTemplates.sanitize(invitation.getProjectName());
+        String projectName = emailTemplates.sanitize(invitation.getProjectNameNonNull());
         subject = subject.replace("__project_name__", projectName);
         content = content.replace("__project_name__", projectName);
 

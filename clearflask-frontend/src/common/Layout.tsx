@@ -1,6 +1,17 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
-import { AppBar, Button, Divider, Drawer, IconButton, Portal, SvgIconTypeMap, Toolbar, Typography, WithWidthProps } from '@material-ui/core';
+import {
+  AppBar,
+  Button,
+  Divider,
+  Drawer,
+  IconButton,
+  Portal,
+  SvgIconTypeMap,
+  Toolbar,
+  Typography,
+  WithWidthProps,
+} from '@material-ui/core';
 import { OverridableComponent } from '@material-ui/core/OverridableComponent';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { CSSProperties } from '@material-ui/core/styles/withStyles';
@@ -22,17 +33,20 @@ export interface LayoutState {
   isShown: (name: string) => BreakAction;
   enableBoxLayout: boolean;
 }
+
 export interface HeaderTitle {
   title?: string;
   icon?: OverridableComponent<SvgIconTypeMap>;
   help?: string;
 }
+
 export interface HeaderAction {
   label: string;
   onClick: () => void;
   icon?: OverridableComponent<SvgIconTypeMap>;
   tourAnchorProps?: React.ComponentProps<typeof TourAnchor>;
 }
+
 export interface Header {
   left?: React.ReactNode;
   title?: HeaderTitle;
@@ -41,6 +55,7 @@ export interface Header {
   right?: React.ReactNode;
   height?: number;
 }
+
 export interface LayoutSize {
   breakWidth?: number;
   width?: number | string;
@@ -48,6 +63,7 @@ export interface LayoutSize {
   maxWidth?: number | string;
   scroll?: Orientation;
 }
+
 export type SectionContent = React.ReactNode | ((layoutState: LayoutState) => (React.ReactNode | null));
 export type BreakAction = 'show' | 'hide' | 'menu' | 'drawer' | 'stack';
 export type Section = {
@@ -66,13 +82,13 @@ export type Section = {
   content: SectionContent;
   barBottom?: SectionContent;
 } & (
-    {
-      breakAction?: Exclude<BreakAction, 'stack'>; // default: 'show'
-    } | {
-      breakAction: 'stack';
-      stackWithSectionName: string;
-      stackLevel: Exclude<number, 0>;
-    }
+  {
+    breakAction?: Exclude<BreakAction, 'stack'>; // default: 'show'
+  } | {
+  breakAction: 'stack';
+  stackWithSectionName: string;
+  stackLevel: Exclude<number, 0>;
+}
   );
 
 export const BOX_MARGIN = 36;
@@ -108,8 +124,7 @@ const styles = (theme: Theme) => createStyles({
   menuPaper: {
     zIndex: theme.zIndex.drawer + 1,
   },
-  bar: {
-  },
+  bar: {},
   previewMobileModal: {
     zIndex: (theme.zIndex.drawer + '!important') as any,
   },
@@ -124,7 +139,11 @@ const styles = (theme: Theme) => createStyles({
   appBar: {
     zIndex: Math.max(theme.zIndex.appBar, theme.zIndex.drawer) + 1,
     ...BoxLayoutBoxApplyStyles(theme),
-    ...contentScrollApplyStyles({ theme, orientation: Orientation.Horizontal, backgroundColor: theme.palette.background.paper }),
+    ...contentScrollApplyStyles({
+      theme,
+      orientation: Orientation.Horizontal,
+      backgroundColor: theme.palette.background.paper,
+    }),
   },
   menuButton: {
     marginRight: 20,
@@ -178,7 +197,7 @@ const styles = (theme: Theme) => createStyles({
     backgroundColor: theme.palette.divider,
     ...contentScrollApplyStyles({
       theme, orientation: Orientation.Horizontal,
-      backgroundColor: theme.palette.divider
+      backgroundColor: theme.palette.divider,
     }),
   },
   sections: {
@@ -236,6 +255,7 @@ const styles = (theme: Theme) => createStyles({
     ...contentScrollApplyStyles({ theme, orientation: Orientation.Vertical }),
   },
 });
+
 interface Props {
   sections: Array<Section>;
   toolbarShow: boolean;
@@ -245,9 +265,11 @@ interface Props {
   previewForceShowClose?: boolean;
   previewShowNot: () => void;
 }
+
 interface State {
   mobileMenuOpen: boolean;
 }
+
 class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof styles, true> & WithWidthProps, State> {
   readonly editor: ConfigEditor.Editor = new ConfigEditor.EditorImpl(ServerAdmin.get().isSuperAdminLoggedIn());
 
@@ -283,7 +305,7 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
             ref={anchorRef}
             className={this.props.classes.headerAction}
             disableElevation
-            color='primary'
+            color="primary"
             onClick={() => {
               header.action?.onClick();
               next();
@@ -293,7 +315,7 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
             {!!HeaderActionIcon && (
               <>
                 &nbsp;
-                <HeaderActionIcon fontSize='inherit' color='inherit' />
+                <HeaderActionIcon fontSize="inherit" color="inherit" />
               </>
             )}
           </Button>
@@ -303,12 +325,11 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
     const HeaderIcon = header?.title?.icon;
     return (
       <>
-        {header?.left}
         {!!header?.title && (
-          <Typography variant='h4' component='h1' className={this.props.classes.headerTitle}>
+          <Typography variant="h4" component="h1" className={this.props.classes.headerTitle}>
             {HeaderIcon && (
               <>
-                <HeaderIcon fontSize='inherit' color='primary' />
+                <HeaderIcon fontSize="inherit" color="primary" />
                 &nbsp;&nbsp;
               </>
             )}
@@ -321,6 +342,7 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
             )}
           </Typography>
         )}
+        {header?.left}
         <div className={this.props.classes.grow} />
         {header?.middle && (
           <>
@@ -331,8 +353,8 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
         {headerAction}
         {breakAction === 'drawer' && (
           <IconButton
-            color='inherit'
-            aria-label=''
+            color="inherit"
+            aria-label=""
             onClick={this.handlePreviewClose.bind(this)}
             className={this.props.classes.previewCloseButton}
           >
@@ -399,7 +421,7 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
 
     const isOverflow = breakAction !== 'show' && breakAction !== 'stack';
     const header = this.renderHeader(layoutState, section.header);
-    const headerContent = this.renderHeaderContent(header, breakAction)
+    const headerContent = this.renderHeaderContent(header, breakAction);
     const barTop = this.renderContent(layoutState, section.barTop);
     const barBottom = this.renderContent(layoutState, section.barBottom);
     return (
@@ -419,7 +441,7 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
         maxWidth: section.size?.maxWidth,
         ...(header ? {
           marginTop: (header.height || HEADER_HEIGHT) + 1,
-        } : {})
+        } : {}),
       }}>
         <div className={classNames(
           this.props.classes.shadows,
@@ -463,8 +485,8 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
     const breakActionForName: { [name: string]: BreakAction } = {};
     this.props.sections.forEach(section => {
       const breakAction = (section.breakAlways
-        ? section.breakAction
-        : (this.props.mediaQueries[section.name] === false && section.breakAction))
+          ? section.breakAction
+          : (this.props.mediaQueries[section.name] === false && section.breakAction))
         || 'show';
       breakActionForName[section.name] = breakAction;
       if (breakAction === 'stack' && section.breakAction === 'stack') {
@@ -497,7 +519,7 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
       <div>
         {!!this.props.toolbarShow && (
           <Portal>
-            <AppBar elevation={0} color='default' className={this.props.classes.appBar}>
+            <AppBar elevation={0} color="default" className={this.props.classes.appBar}>
               <Toolbar>
                 {!!contentMenu && (
                   <IconButton
@@ -519,7 +541,7 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
         )}
         {!!contentMenu && (
           <Drawer
-            variant='temporary'
+            variant="temporary"
             open={this.state.mobileMenuOpen}
             onClose={this.handleDrawerToggle.bind(this)}
             classes={{
@@ -538,9 +560,9 @@ class Layout extends Component<Props & WithMediaQueries<any> & WithStyles<typeof
         )}
         {!!contentPreview && (
           <Drawer
-            variant='temporary'
+            variant="temporary"
             SlideProps={{ mountOnEnter: true }}
-            anchor='right'
+            anchor="right"
             open={!!this.props.previewShow}
             onClose={this.handlePreviewClose.bind(this)}
             classes={{

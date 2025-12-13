@@ -11,17 +11,14 @@ import com.smotana.clearflask.api.model.AccountSearchSuperAdmin;
 import com.smotana.clearflask.api.model.ProjectAdmin;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.billing.PlanStore;
+import com.smotana.clearflask.core.ServiceInjector;
 import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.util.ChatwootUtil;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.web.security.SuperAdminPredicate;
 import io.dataspray.singletable.DynamoTable;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NonNull;
-import lombok.ToString;
-import lombok.Value;
+import lombok.*;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -34,8 +31,8 @@ import static io.dataspray.singletable.TableType.Primary;
 
 public interface AccountStore {
 
-    default String genAccountId() {
-        return IdUtil.randomId();
+    default String genAccountId(String name) {
+        return IdUtil.contentUnique(name);
     }
 
     AccountAndIndexingFuture createAccount(Account account);
@@ -53,8 +50,6 @@ public interface AccountStore {
     void repopulateIndex(boolean deleteExistingIndex, boolean repopulateElasticSearch, boolean repopulateMysql) throws Exception;
 
     boolean isEmailAvailable(String email);
-
-    SearchAccountsResponse listAccounts(boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt);
 
     void listAllAccounts(Consumer<Account> consumer);
 
@@ -95,6 +90,12 @@ public interface AccountStore {
     AccountAndIndexingFuture updateStatus(String accountId, SubscriptionStatus status);
 
     Account updateAttrs(String accountId, Map<String, String> attrs, boolean overwriteMap);
+
+    Account setWeeklyDigestOptOut(String accountId, ImmutableSet<String> digestOptOutForProjectIds);
+
+    Account setTrialReminderSent(String accountId);
+
+    Account setProjectDeletionReminderSent(String accountId);
 
     ListenableFuture<Void> deleteAccount(String accountId);
 
@@ -189,7 +190,9 @@ public interface AccountStore {
         @NonNull
         String name;
 
-        /** Empty if only using OAuth guid */
+        /**
+         * Empty if only using OAuth guid
+         */
         @ToString.Exclude
         String password;
 
@@ -204,6 +207,34 @@ public interface AccountStore {
         ImmutableMap<String, String> attrs;
 
         ImmutableMap<String, String> addons;
+
+        /**
+         * If set, monthly subscription should be created with this price. Only used if subscription failed to create on
+         * signup and needs to be created on-demand and need to know what price to use.
+         */
+        Long requestedRecurringPrice;
+
+        @NonNull
+        ImmutableSet<String> digestOptOutForProjectIds;
+
+        Boolean trialEndingReminderSent;
+
+        Instant projectDeletionReminderSent;
+
+        /**
+         * Workaround for Self-Hosted ClearFlask to get the status of the subscription on-deman
+         */
+        public SubscriptionStatus getStatus() {
+            // Ideally we would be using the injected Environment, but:
+            // - This is not a Guice managed class so we can't @Inject anything here
+            // - In tests: we can't use ServiceInjector.INSTANCE here, since each test has its own injector
+            // - In tests: there is no env var for Environment, so we compare the optionals here as we expect it to be empty
+            if (ServiceInjector.detectEnvironment().equals(Optional.of(ServiceInjector.Environment.PRODUCTION_SELF_HOST))) {
+                return ServiceInjector.INSTANCE.get().getInstance(RemoteLicenseStore.class)
+                        .getSelfhostEntitlementStatus(planid);
+            }
+            return status;
+        }
 
         /**
          * ClearFlask Feedback page guid
@@ -232,7 +263,8 @@ public interface AccountStore {
                     getApiKey(),
                     superAdminPredicate.isEmailSuperAdmin(getEmail()),
                     getAttrs(),
-                    getAddons());
+                    getAddons(),
+                    getDigestOptOutForProjectIds().asList());
         }
 
         public ProjectAdmin toProjectAdmin(ProjectAdmin.RoleEnum role) {

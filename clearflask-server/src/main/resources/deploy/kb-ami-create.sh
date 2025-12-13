@@ -5,7 +5,7 @@ sudo yum install -y mc telnet
 sudo amazon-linux-extras install -y ruby2.6 tomcat8.5
 ln -s /usr/share/tomcat ~/tomcat
 sudo ln -s /usr/share/tomcat ~/tomcat
-sudo yum install -y java-1.8.0-openjdk gcc ruby-devel
+sudo yum install -y java-1.8.0-openjdk gcc ruby-devel mysql-connector-java
 sudo gem update --system 2.7.5 --install-dir=/usr/share/gems --bindir /usr/local/bin
 sudo gem install io-console
 sudo gem install kpm
@@ -13,17 +13,17 @@ sudo mkdir -p /var/lib/killbill
 sudo chown -R ec2-user:ec2-user /var/lib/killbill
 cat > /var/lib/killbill/kpm.yml <<"EOF"
 killbill:
-  version: 0.22.20
+  version: 0.22.32
   plugins:
     java:
       - name: analytics
-        version: 7.0.8
+        version: 7.2.7
       - name: stripe
-        version: 7.0.4
+        version: 7.3.3
   webapp_path: /var/lib/tomcat/webapps/killbill/ROOT.war
   plugins_dir: /var/lib/killbill/bundles
 kaui:
-  version: 2.0.8
+  version: 2.1.1
   plugins_dir: /var/lib/killbill # Used for sha1.yml
   webapp_path: /var/lib/tomcat/webapps/kaui/ROOT.war
 EOF
@@ -282,6 +282,16 @@ sudo tee /usr/share/tomcat/webapps/killbill/ROOT/WEB-INF/classes/logback.xml <<"
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>WARN</level>
         </filter>
+        <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
+            <evaluator>
+                <matcher>
+                    <Name>regex</Name>
+                    <regex>falling back to SQLDialect|The scratchDir you specified|Unable to find the JRuby bundle|Timed out while shutting down entitlement-service|doesn't have a default payment method</regex>
+                </matcher>
+                <expression>regex.matches(formattedMessage)</expression>
+            </evaluator>
+            <OnMatch>DENY</OnMatch>
+        </filter>
     </appender>
 
     <!-- Logs only SQL. SQL executed within a prepared statement is automatically shown with it's bind arguments replaced with the data bound at that position, for greatly increased readability. -->
@@ -442,16 +452,7 @@ sudo aws s3 cp s3://killbill-secret/killbill.conf /etc/tomcat/conf.d/killbill.co
 #               -Dcom.sun.management.jmxremote.local.only=false
 #               -Djava.rmi.server.hostname=localhost
 #               -Dcom.sun.management.jmxremote.rmi.port=9051
-#               -XX:+CMSClassUnloadingEnabled
 #               -XX:-OmitStackTraceInFastThrow
-#               -XX:+UseParNewGC
-#               -XX:+UseConcMarkSweepGC
-#               -XX:+CMSConcurrentMTEnabled
-#               -XX:+ScavengeBeforeFullGC
-#               -XX:+CMSScavengeBeforeRemark
-#               -XX:+CMSParallelRemarkEnabled
-#               -XX:+UseCMSInitiatingOccupancyOnly
-#               -XX:CMSInitiatingOccupancyFraction=50
 #               -XX:NewSize=100m
 #               -XX:MaxNewSize=256m
 #               -XX:SurvivorRatio=10

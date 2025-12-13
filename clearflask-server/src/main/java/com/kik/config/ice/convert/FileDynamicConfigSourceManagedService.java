@@ -1,10 +1,7 @@
 package com.kik.config.ice.convert;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
-import com.google.inject.Injector;
 import com.google.inject.Module;
-import com.google.inject.Singleton;
+import com.google.inject.*;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.source.DynamicConfigSource;

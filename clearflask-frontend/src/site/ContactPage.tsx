@@ -1,7 +1,19 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import MomentUtils from '@date-io/moment';
-import { Box, Button, CardActions, CardHeader, Checkbox, Container, FormControlLabel, Grid, Paper, TextField, Typography } from '@material-ui/core';
+import {
+  Box,
+  Button,
+  CardActions,
+  CardHeader,
+  Checkbox,
+  Container,
+  FormControlLabel,
+  Grid,
+  Paper,
+  TextField,
+  Typography,
+} from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import { DateTimePicker } from '@material-ui/pickers/DateTimePicker';
 import MuiPickersUtilsProvider from '@material-ui/pickers/MuiPickersUtilsProvider';
@@ -89,7 +101,13 @@ const forms: ContactForm[] = [
     fields: [
       { attrName: 'details', type: 'multiline', title: 'What are you looking for?', required: false },
       { attrName: 'appointment', type: 'datetime', title: 'When are you available?', required: false },
-      { attrName: SUPPORT_MESSAGE_FIELD_CONTACT, title: 'Email', placeholder: 'name@company.com', required: true, fillWithAccountEmail: true },
+      {
+        attrName: SUPPORT_MESSAGE_FIELD_CONTACT,
+        title: 'Email',
+        placeholder: 'name@company.com',
+        required: true,
+        fillWithAccountEmail: true,
+      },
     ],
   },
   {
@@ -101,7 +119,13 @@ const forms: ContactForm[] = [
     fields: [
       { attrName: 'details', type: 'multiline', title: 'What can we help you with?', required: true },
       { attrName: 'company', title: 'Company/Product name', placeholder: 'Sirius Cybernetics', required: false },
-      { attrName: SUPPORT_MESSAGE_FIELD_CONTACT, title: 'Email', placeholder: 'name@company.com', required: true, fillWithAccountEmail: true },
+      {
+        attrName: SUPPORT_MESSAGE_FIELD_CONTACT,
+        title: 'Email',
+        placeholder: 'name@company.com',
+        required: true,
+        fillWithAccountEmail: true,
+      },
     ],
   },
   {
@@ -112,7 +136,13 @@ const forms: ContactForm[] = [
     imagePath: '/img/support/support.svg',
     fields: [
       { attrName: 'issue', type: 'multiline', title: 'Issue', required: true },
-      { attrName: SUPPORT_MESSAGE_FIELD_CONTACT, title: 'Contact', placeholder: 'name@example.com', required: true, fillWithAccountEmail: true },
+      {
+        attrName: SUPPORT_MESSAGE_FIELD_CONTACT,
+        title: 'Contact',
+        placeholder: 'name@example.com',
+        required: true,
+        fillWithAccountEmail: true,
+      },
       { attrName: SUPPORT_MESSAGE_FIELD_IMPORTANT_FLAG, type: 'checkbox', title: 'Requires immediate attention' },
     ],
   },
@@ -124,21 +154,30 @@ const forms: ContactForm[] = [
     imagePath: '/img/support/question.svg',
     fields: [
       { attrName: 'message', type: 'multiline', title: 'Inquiry', required: true },
-      { attrName: SUPPORT_MESSAGE_FIELD_CONTACT, title: 'Contact', placeholder: 'name@example.com', required: true, fillWithAccountEmail: true },
+      {
+        attrName: SUPPORT_MESSAGE_FIELD_CONTACT,
+        title: 'Contact',
+        placeholder: 'name@example.com',
+        required: true,
+        fillWithAccountEmail: true,
+      },
     ],
   },
 ];
 
 interface Props {
 }
+
 interface ConnectProps {
   accountStatus?: Status;
   accountEmail?: string;
 }
+
 interface State {
   isSubmitting?: boolean;
   // Also includes dynamic fields not covered by this interface
 }
+
 class ContactPage extends Component<Props & RouteComponentProps & ConnectProps & WithStyles<typeof styles, true>, State> {
 
   constructor(props) {
@@ -159,39 +198,41 @@ class ContactPage extends Component<Props & RouteComponentProps & ConnectProps &
     if (!prefixMatch) return null;
     return (
       <MuiAnimatedSwitch>
-        <Route exact key='success' path={`${prefixMatch}/success`} render={props => (
+        <Route exact key="success" path={`${prefixMatch}/success`} render={props => (
           <div className={classNames(this.props.classes.page, this.props.classes.growAndFlex)}>
-            <Box display='flex' justifyContent='center'>
-              <Message severity='success' message='Your message has been sent!' />
+            <Box display="flex" justifyContent="center">
+              <Message severity="success" message="Your message has been sent!" />
             </Box>
           </div>
         )} />
         {forms.map(form => (
           <Route exact key={form.type} path={`${prefixMatch}/${form.type}`} render={props => (
             <div className={classNames(this.props.classes.page, this.props.classes.growAndFlex)}>
-              <Container maxWidth='md'>
-                <Grid container spacing={10} alignItems='center'>
+              <Container maxWidth="md">
+                <Grid container spacing={10} alignItems="center">
                   <Grid item xs={12} md={6} lg={7}>
-                    <Typography component="h1" variant="h3" color="textPrimary">{form.title}</Typography>
-                    <Typography component="h2" variant="h5" color="textSecondary">{form.subtitle}</Typography>
+                    <Typography component="h1" variant="h3"
+                                color="textPrimary">{form.title}</Typography>
+                    <Typography component="h2" variant="h5"
+                                color="textSecondary">{form.subtitle}</Typography>
                     {form.imagePath && (
                       <img
-                        alt=''
+                        alt=""
                         className={this.props.classes.imageForm}
                         src={form.imagePath}
                       />
                     )}
                   </Grid>
                   <Grid item xs={12} sm={8} md={6} lg={5}>
-                    <Paper variant='outlined'>
-                      <Box display='flex' flexDirection='column'>
+                    <Paper variant="outlined">
+                      <Box display="flex" flexDirection="column">
                         {form.fields.map(field => field.type === 'checkbox' ? (
                           <FormControlLabel
                             className={this.props.classes.field}
                             disabled={this.state.isSubmitting}
                             control={(
                               <Checkbox
-                                color='primary'
+                                color="primary"
                                 checked={this.state[`field_${form.type}_${field.attrName}`] && true || false}
                                 onChange={e => this.setState({ [`field_${form.type}_${field.attrName}`]: !this.state[`field_${form.type}_${field.attrName}`] })}
                               />
@@ -199,16 +240,16 @@ class ContactPage extends Component<Props & RouteComponentProps & ConnectProps &
                             label={field.title}
                           />
                         ) : (field.type === 'datetime' ? (
-                          <MuiPickersUtilsProvider utils={MomentUtils} locale='en'>
+                          <MuiPickersUtilsProvider utils={MomentUtils} locale="en">
                             <DateTimePicker
                               disablePast
-                              variant='inline'
-                              inputVariant='outlined'
-                              size='small'
+                              variant="inline"
+                              inputVariant="outlined"
+                              size="small"
                               views={['date', 'hours']}
                               ampm={false}
                               disableToolbar
-                              format='MMMM Do H:mm'
+                              format="MMMM Do H:mm"
                               autoOk
                               initialFocusedDate={new Date()}
                               className={this.props.classes.field}
@@ -220,22 +261,22 @@ class ContactPage extends Component<Props & RouteComponentProps & ConnectProps &
                                 if (date.isBefore(moment().add(2, 'd'))) return true;
                                 const weekday = date.format('dddd');
                                 if (weekday === 'Saturday' || weekday === 'Sunday') return true;
-                                return false
+                                return false;
                               }}
                               helperText={field.helperText}
                               value={this.state[`field_${form.type}_${field.attrName}`] || null}
                               onChange={val => {
                                 if (!val) return;
-                                val.tz(moment.tz.guess())
+                                val.tz(moment.tz.guess());
                                 val = val ? val.minutes(0).seconds(0) : val;
-                                return this.setState({ [`field_${form.type}_${field.attrName}`]: val })
+                                return this.setState({ [`field_${form.type}_${field.attrName}`]: val });
                               }}
                             />
                           </MuiPickersUtilsProvider>
                         ) : (
                           <TextField
-                            variant='outlined'
-                            size='small'
+                            variant="outlined"
+                            size="small"
                             className={this.props.classes.field}
                             disabled={this.state.isSubmitting}
                             label={field.title}
@@ -250,7 +291,7 @@ class ContactPage extends Component<Props & RouteComponentProps & ConnectProps &
                         )))}
                         <SubmitButton
                           className={this.props.classes.submitButton}
-                          color='primary'
+                          color="primary"
                           isSubmitting={this.state.isSubmitting}
                           disabled={form.fields.some(field => field.required
                             && !this.state[`field_${form.type}_${field.attrName}`]
@@ -262,7 +303,7 @@ class ContactPage extends Component<Props & RouteComponentProps & ConnectProps &
                               if (field.type === 'datetime') {
                                 content[field.attrName] = this.state[`field_${form.type}_${field.attrName}`]?.format('MMMM Do H:mm zz') || '';
                               } else {
-                                content[field.attrName] = this.state[`field_${form.type}_${field.attrName}`] || (field.fillWithAccountEmail && this.props.accountEmail) || ''
+                                content[field.attrName] = this.state[`field_${form.type}_${field.attrName}`] || (field.fillWithAccountEmail && this.props.accountEmail) || '';
                               }
                             });
                             ServerAdmin.get().dispatchAdmin().then(d => d.supportMessage({
@@ -270,8 +311,8 @@ class ContactPage extends Component<Props & RouteComponentProps & ConnectProps &
                                 content: {
                                   ...content,
                                   [SUPPORT_MESSAGE_FIELD_TYPE]: form.type,
-                                }
-                              }
+                                },
+                              },
                             }))
                               .then(() => {
                                 this.setState({ isSubmitting: false });
@@ -293,20 +334,22 @@ class ContactPage extends Component<Props & RouteComponentProps & ConnectProps &
             </div>
           )} />
         ))}
-        <Route key='default' path={prefixMatch} render={props => (
+        <Route key="default" path={prefixMatch} render={props => (
           <div className={classNames(this.props.classes.page, this.props.classes.growAndFlex)}>
-            <Container maxWidth='md'>
-              <Grid container spacing={5} alignItems='stretch' alignContent='stretch'>
+            <Container maxWidth="md">
+              <Grid container spacing={5} alignItems="stretch" alignContent="stretch">
                 <Grid item xs={12}>
                   <img
-                    alt=''
+                    alt=""
                     className={this.props.classes.image}
-                    src='/img/support/main.svg'
+                    src="/img/support/main.svg"
                   />
-                  <Typography component="h1" variant="h2" color="textPrimary">How can we help?</Typography>
+                  <Typography component="h1" variant="h2" color="textPrimary">How can we
+                    help?</Typography>
                 </Grid>
                 {forms.filter(form => !form.hideFromMainPage).map(form => (
-                  <Grid key={form.title} item xs={12} sm={6} md={4} className={this.props.classes.growAndFlex}>
+                  <Grid key={form.title} item xs={12} sm={6} md={4}
+                        className={this.props.classes.growAndFlex}>
                     <CardHeader
                       title={form.title}
                       subheader={form.subtitle}

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import { Button, Checkbox, FormControlLabel, InputAdornment, Table, TableBody, TableCell, TableRow, TextField, Typography } from '@material-ui/core';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { Theme, WithStyles, createStyles, withStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
 import AndroidIcon from '@material-ui/icons/Android';
 import IosIcon from '@material-ui/icons/Apple';
@@ -11,6 +11,7 @@ import FilterIcon from '@material-ui/icons/TuneSharp';
 import BrowserIcon from '@material-ui/icons/Web';
 import classNames from 'classnames';
 import React, { Component } from 'react';
+import { WithTranslation, withTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import TruncateEllipsis from 'react-truncate-markup';
 import * as Admin from '../../api/admin';
@@ -20,13 +21,13 @@ import ExplorerTemplate from '../../app/comps/ExplorerTemplate';
 import { MaxContentWidth } from '../../app/comps/Post';
 import SelectionPicker from '../../app/comps/SelectionPicker';
 import Loader from '../../app/utils/Loader';
-import CreditView from '../../common/config/CreditView';
-import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
-import { userLabelsToSearch, userSearchToLabels } from '../../common/search/searchUtil';
+import { Orientation, contentScrollApplyStyles } from '../../common/ContentScroll';
 import SubmitButton from '../../common/SubmitButton';
 import UserDisplay from '../../common/UserDisplay';
-import debounce, { SearchTypeDebounceTime } from '../../common/util/debounce';
+import CreditView from '../../common/config/CreditView';
+import { userLabelsToSearch, userSearchToLabels } from '../../common/search/searchUtil';
 import { WithMediaQuery, withMediaQuery } from '../../common/util/MediaQuery';
+import debounce, { SearchTypeDebounceTime } from '../../common/util/debounce';
 
 const searchWidth = 100;
 const styles = (theme: Theme) => createStyles({
@@ -136,7 +137,7 @@ interface State {
   searchCursor?: string;
   searchOptions?: Partial<Admin.UserSearchAdmin>;
 }
-class UserExplorer extends Component<Props & WithMediaQuery & ConnectProps & WithStyles<typeof styles, true>, State> {
+class UserExplorer extends Component<Props & WithMediaQuery & ConnectProps & WithTranslation<'app'> & WithStyles<typeof styles, true>, State> {
   readonly updateSearchText: (name?: string, email?: string) => void;
   readonly createInputRef: React.RefObject<HTMLInputElement> = React.createRef();
 
@@ -208,7 +209,7 @@ class UserExplorer extends Component<Props & WithMediaQuery & ConnectProps & Wit
                   style={{ margin: 'auto', display: 'block' }}
                   onClick={() => this.search(this.state.searchText, undefined, this.state.searchCursor)}
                 >
-                  Show more
+                  {this.props.t('show-more')}
                 </Button>
               )}
             </>
@@ -320,9 +321,7 @@ class UserExplorer extends Component<Props & WithMediaQuery & ConnectProps & Wit
               style={{
                 alignSelf: 'flex-end',
               }}
-            >
-              Submit
-              </SubmitButton>
+            >{this.props.t('submit')}</SubmitButton>
           </div>
         )}
         searchSize={searchWidth}
@@ -392,4 +391,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
   };
   return connectProps;
 })(withStyles(styles, { withTheme: true })(
-  withMediaQuery(theme => theme.breakpoints.down('xs'))(UserExplorer)));
+  withMediaQuery(theme => theme.breakpoints.down('xs'))(withTranslation('app', { withRef: true })(UserExplorer))));

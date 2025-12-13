@@ -1,17 +1,17 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import { Button, Table, TableBody, TableCell, TableRow, Typography } from '@material-ui/core';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { Theme, WithStyles, createStyles, withStyles } from '@material-ui/core/styles';
 import { Component } from 'react';
-import { withTranslation, WithTranslation } from 'react-i18next';
+import { WithTranslation, withTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
-import TimeAgo from 'react-timeago';
 import * as Client from '../../api/client';
 import { ReduxState, Server } from '../../api/server';
-import { contentScrollApplyStyles, Orientation } from '../../common/ContentScroll';
+import { Orientation, contentScrollApplyStyles } from '../../common/ContentScroll';
 import ErrorMsg from '../ErrorMsg';
+import TimeAgoI18n from '../utils/TimeAgoI18n';
 
 const styles = (theme: Theme) => createStyles({
   table: (props: Props) => ({
@@ -79,7 +79,7 @@ class NotificationList extends Component<Props & ConnectProps & WithTranslation<
                     onClick: () => this.clearNotification(notification),
                   }}
                 >
-                  <TableCell key='date'><Typography><TimeAgo date={notification.created} /></Typography></TableCell>
+                  <TableCell key='date'><Typography><TimeAgoI18n date={notification.created} /></Typography></TableCell>
                   <TableCell key='description'><Typography>{notification.description}</Typography></TableCell>
                 </TableRow>
               ))}

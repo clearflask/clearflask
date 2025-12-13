@@ -1,0 +1,108 @@
+# Default values for clearflask-dependencies
+# This chart provides optional infrastructure components for ClearFlask
+
+## MySQL / MariaDB for search and filtering
+mysql:
+  enabled: true
+  image:
+    repository: mariadb
+    tag: "10.5"
+    pullPolicy: IfNotPresent
+
+  # MySQL root password
+  auth:
+    rootPassword: "clearflask"
+    database: "clearflask"
+
+  # Persistence for MySQL data
+  persistence:
+    enabled: true
+    storageClass: ""  # Use default storage class
+    accessMode: ReadWriteOnce
+    size: 20Gi
+
+  # Resource limits
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 3306
+
+## LocalStack for DynamoDB, S3, and SES emulation
+localstack:
+  enabled: true
+  image:
+    repository: localstack/localstack
+    tag: "0.14.3"
+    pullPolicy: IfNotPresent
+
+  # Services to enable
+  services: "dynamodb,ses,s3"
+
+  # Persistence for LocalStack data
+  persistence:
+    enabled: true
+    storageClass: ""  # Use default storage class
+    accessMode: ReadWriteOnce
+    size: 10Gi
+
+  # Resource limits
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+  # AWS configuration
+  aws:
+    defaultRegion: "us-east-1"
+    hostnameExternal: "localstack"
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    edgePort: 4566
+    healthPort: 4571
+
+## ElasticSearch for advanced search (optional)
+elasticsearch:
+  enabled: false
+  image:
+    repository: docker.elastic.co/elasticsearch/elasticsearch
+    tag: "7.10.0"
+    pullPolicy: IfNotPresent
+
+  # Persistence for ElasticSearch data
+  persistence:
+    enabled: true
+    storageClass: ""  # Use default storage class
+    accessMode: ReadWriteOnce
+    size: 50Gi
+
+  # Resource limits
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "1000m"
+    limits:
+      memory: "4Gi"
+      cpu: "2000m"
+
+  # ElasticSearch configuration
+  config:
+    discoveryType: "single-node"
+    javaOpts: "-Xms2g -Xmx2g"
+
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 9200

@@ -1,0 +1,209 @@
+### SPDX-FileCopyrightText: 2024 Matus Faro <matus@smotana.com>
+### SPDX-License-Identifier: Apache-2.0
+components:
+  schemas:
+    Convo:
+      type: object
+      required:
+        - convoId
+        - created
+        - title
+      properties:
+        convoId:
+          type: string
+        created:
+          type: string
+          format: date-time
+        title:
+          type: string
+    ConvoMessage:
+      type: object
+      required:
+        - messageId
+        - created
+        - content
+      properties:
+        messageId:
+          type: string
+        created:
+          type: string
+          format: date-time
+        authorType:
+          type: string
+          enum: [ USER, AI, ALERT ]
+        content:
+          type: string
+        inputTokenCount:
+          type: integer
+          format: int64
+        outputTokenCount:
+          type: integer
+          format: int64
+    ConvoMessageCreate:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+        overridePrompt:
+          # Superadmin only
+          type: string
+
+/project/{projectId}/superadmin/llm/prompt:
+  get:
+    operationId: promptGetSuperAdmin
+    tags: [ LlmSuperAdmin ]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: PromptGetResponse
+              type: object
+              required:
+                - prompt
+              properties:
+                prompt:
+                  type: string
+/project/{projectId}/admin/llm/convo/list:
+  get:
+    operationId: convoListAdmin
+    tags: [ LlmAdmin ]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: ConvoListResponse
+              type: object
+              required:
+                - results
+              properties:
+                results:
+                  type: array
+                  items:
+                    $ref: 'api-llm.yaml#/components/schemas/Convo'
+/project/{projectId}/admin/llm/convo/{convoId}:
+  get:
+    operationId: convoDetailsAdmin
+    tags: [ LlmAdmin ]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: convoId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: ConvoDetailsResponse
+              type: object
+              required:
+                - results
+              properties:
+                results:
+                  type: array
+                  items:
+                    $ref: 'api-llm.yaml#/components/schemas/ConvoMessage'
+  delete:
+    operationId: convoDeleteAdmin
+    tags: [ LlmAdmin ]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: convoId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
+/project/{projectId}/admin/llm/convo/{convoId}/message:
+  put:
+    operationId: messageCreateAdmin
+    tags: [ LlmAdmin ]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: convoId
+        description: If 'new', a new convo is created
+        in: path
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-llm.yaml#/components/schemas/ConvoMessageCreate'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: CreateMessageResponse
+              type: object
+              required:
+                - convoId
+                - message
+                - responseMessageId
+              properties:
+                convoId:
+                  type: string
+                message:
+                  $ref: 'api-llm.yaml#/components/schemas/ConvoMessage'
+                responseMessageId:
+                  type: string
+/project/{projectId}/admin/llm/convo/{convoId}/message/{messageId}:
+  get:
+    x-sse: true
+    operationId: messageStreamGetAdmin
+    tags: [ LlmAdmin ]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: convoId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: messageId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          text/event-stream: { }

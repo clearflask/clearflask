@@ -12,7 +12,6 @@ CREATE FUNCTION vote_wilson(
     BEGIN
         DECLARE numberOfSuccesses BIGINT;
         DECLARE numberOfTrials BIGINT;
-        DECLARE zSquared DOUBLE;
         DECLARE mean DOUBLE;
         DECLARE factor DOUBLE;
         DECLARE modifiedSuccessRatio DOUBLE;
@@ -24,7 +23,6 @@ CREATE FUNCTION vote_wilson(
         IF numberOfTrials = 0 THEN
             RETURN 0;
         END IF;
-        SET zSquared = z * z;
         SET mean = numberOfSuccesses / numberOfTrials;
         SET factor = 1 / (1 + (1 / numberOfTrials * zSquared));
         SET modifiedSuccessRatio = mean + (1 / (2 * numberOfTrials) * zSquared);

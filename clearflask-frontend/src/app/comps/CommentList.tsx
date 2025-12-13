@@ -26,7 +26,7 @@ interface Props {
   expectedCommentCount: number;
   parentCommentId?: string;
   mergedPostId?: string;
-  newCommentsAllowed?: boolean; // TODO add comment replies
+  newCommentsAllowed?: boolean;
   loggedInUser?: Client.User;
   logIn: () => Promise<void>;
   onAuthorClick?: (commentId: string, userId: string) => void;
@@ -77,25 +77,29 @@ class CommentListRaw extends Component<Props & ConnectProps & WithStyles<typeof 
                 isBlurry={this.props.settings.demoBlurryShadow}
                 loggedInUser={this.props.loggedInUser}
                 replyOpen={!!this.state[`replyOpen${comment.commentId}`]}
-                onReplyClicked={() => this.setState({ [`replyOpen${comment.commentId}`]: true })}
+                onReplyClicked={this.props.newCommentsAllowed !== false
+                  ? () => this.setState({ [`replyOpen${comment.commentId}`]: true })
+                  : undefined}
                 logIn={this.props.logIn}
                 disableOnClick={this.props.disableOnClick}
                 onAuthorClick={(this.props.onAuthorClick && !this.props.disableOnClick)
                   ? userId => this.props.onAuthorClick && this.props.onAuthorClick(comment.commentId, userId)
                   : undefined}
               />
-              <CommentReply
-                className={this.props.classes.commentIndent}
-                server={this.props.server}
-                collapseIn={!!this.state[`replyOpen${comment.commentId}`]}
-                focusOnIn
-                ideaId={this.props.ideaId}
-                parentCommentId={comment.commentId}
-                mergedPostId={mergedPostId}
-                logIn={this.props.logIn}
-                onSubmitted={() => this.setState({ [`replyOpen${comment.commentId}`]: undefined })}
-                onBlurAndEmpty={() => this.setState({ [`replyOpen${comment.commentId}`]: undefined })}
-              />
+              {this.props.newCommentsAllowed !== false && (
+                <CommentReply
+                  className={this.props.classes.commentIndent}
+                  server={this.props.server}
+                  collapseIn={!!this.state[`replyOpen${comment.commentId}`]}
+                  focusOnIn
+                  ideaId={this.props.ideaId}
+                  parentCommentId={comment.commentId}
+                  mergedPostId={mergedPostId}
+                  logIn={this.props.logIn}
+                  onSubmitted={() => this.setState({ [`replyOpen${comment.commentId}`]: undefined })}
+                  onBlurAndEmpty={() => this.setState({ [`replyOpen${comment.commentId}`]: undefined })}
+                />
+              )}
               {comment.childCommentCount > 0 && (
                 <CommentList
                   {...this.props}

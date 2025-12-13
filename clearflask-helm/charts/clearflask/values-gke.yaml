@@ -1,0 +1,158 @@
+# Values for Google GKE deployment
+# This configuration uses GCP managed services and LocalStack for DynamoDB compatibility
+
+global:
+  domain: "example.com"  # CHANGE THIS to your domain
+
+server:
+  replicaCount: 2
+
+  config:
+    environment: "PRODUCTION_SELF_HOST"
+    searchEngine: "READWRITE_MYSQL"  # Using Cloud SQL
+    startupWaitUntilDeps: true
+    createIndexesOnStartup: true
+    superAdminEmail: "^admin@example\\.com$"  # CHANGE THIS
+    signupEnabled: true
+    authCookieSecure: true
+
+  secrets:
+    # REQUIRED: Generate these secrets before installing
+    # tokenSignerPrivKey: ""  # openssl rand -base64 172 | tr -d '\n'
+    # cursorSharedKey: ""  # openssl rand -base64 16
+    # ssoSecretKey: ""  # uuidgen
+    # connectToken: ""  # uuidgen
+    browserPush:
+      publicKey: "BI_27q_GDMSYPCoLc5rPUyBMQ3CMUCmjfblbqVoDNcl2CRCAUmtCSgU2-g8SdaJlCqTFBi0Z1eU4maehFNX595M="
+      privateKey: "AKBBxKqCjroXt2ohL8yHSEpREoRzmtBb6Zk0g4zEDp4H"
+
+  # Workload Identity
+  serviceAccount:
+    create: true
+    annotations:
+      iam.gke.io/gcp-service-account: "clearflask-server@PROJECT_ID.iam.gserviceaccount.com"  # CHANGE THIS
+
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "1000m"
+    limits:
+      memory: "4Gi"
+      cpu: "2000m"
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 20
+
+connect:
+  replicaCount: 2
+
+  config:
+    disableAutoFetchCertificate: true
+    forceRedirectHttpToHttps: true
+
+  # Workload Identity
+  serviceAccount:
+    create: true
+    annotations:
+      iam.gke.io/gcp-service-account: "clearflask-connect@PROJECT_ID.iam.gserviceaccount.com"  # CHANGE THIS
+
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 30
+
+ingress:
+  enabled: true
+  className: "gce"  # Using GKE Ingress
+
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: "clearflask-ip"  # CHANGE THIS
+    networking.gke.io/managed-certificates: "clearflask-cert"
+    kubernetes.io/ingress.allow-http: "false"
+
+  hosts:
+    - host: "example.com"  # CHANGE THIS
+      paths:
+        - path: /api
+          pathType: Prefix
+          backend: server
+        - path: /
+          pathType: Prefix
+          backend: connect
+
+  tls:
+    enabled: true
+    secretName: clearflask-tls
+
+  certManager:
+    enabled: false  # Using GCP Managed Certificates
+
+# Network policies
+networkPolicy:
+  enabled: true
+
+# External services configuration
+externalServices:
+  # DynamoDB via LocalStack (in-cluster)
+  dynamodb:
+    endpoint: "http://clearflask-deps-localstack:4566"
+    region: "us-east-1"
+    signingRegion: "us-east-1"
+    productionRegion: "us-east-1"
+
+  # Google Cloud Storage with S3 API compatibility
+  s3:
+    endpoint: "https://storage.googleapis.com"  # S3-compatible endpoint
+    bucketName: "clearflask-production-uploads"  # CHANGE THIS
+    createBucket: false
+    scheme: "https"
+    hostname: "storage.googleapis.com/clearflask-production-uploads"  # CHANGE THIS
+    proxyEnabled: false
+    signingRegion: "auto"
+    productionRegion: "auto"
+
+  # Cloud SQL for MySQL
+  mysql:
+    enabled: true
+    host: "127.0.0.1"  # Via Cloud SQL Proxy sidecar
+    port: 3306
+    database: "clearflask"
+    user: "clearflask"
+    password: ""  # Use Secret Manager
+
+  # ElasticSearch (disabled)
+  elasticsearch:
+    enabled: false
+
+  # Email via SMTP (SendGrid, etc.)
+  email:
+    provider: "smtp"
+    smtp:
+      strategy: "SMTP_TLS"
+      host: "smtp.sendgrid.net"  # CHANGE THIS
+      port: 587
+      user: "apikey"  # CHANGE THIS
+      password: ""  # CHANGE THIS
+      displayName: "ClearFlask"
+      fromEmailLocalPart: "support"
+      fromEmailDomainOverride: ""
+
+  # Credentials for LocalStack
+  aws:
+    accessKeyId: "test"
+    secretKey: "test"
+
+# Monitoring
+monitoring:
+  serviceMonitor:
+    enabled: false  # Use Google Cloud Monitoring instead

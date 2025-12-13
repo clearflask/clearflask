@@ -2,17 +2,23 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.smotana.clearflask.core.push;
 
+import com.google.common.collect.ImmutableList;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.NotifySubscribers;
-import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.ProjectStore.InvitationModel;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore.TransactionModel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Value;
 
+import java.time.Instant;
 import java.util.Optional;
+
+import static com.smotana.clearflask.store.AccountStore.Account;
 
 public interface NotificationService {
 
@@ -24,11 +30,13 @@ public interface NotificationService {
 
     void onForgotPassword(ConfigAdmin configAdmin, UserModel user);
 
-    void onAccountSignup(AccountStore.Account account);
+    void onAccountSignup(Account account);
 
-    void onTrialEnded(String accountId, String accountEmail, boolean hasPaymentMethod);
+    void onTrialEnding(Account account, Instant trialEnd);
 
-    void onInvoicePaymentSuccess(String accountId, String accountEmail, String invoiceIdStr);
+    void onTrialEnded(Account account, boolean hasPaymentMethod);
+
+    void onInvoicePaymentSuccess(String accountId, String accountEmail, String invoiceIdStr, boolean isCardExpiringSoon);
 
     void onPaymentFailed(String accountId, String accountEmail, long amount, boolean requiresAction, boolean hasPaymentMethod);
 
@@ -43,4 +51,43 @@ public interface NotificationService {
     void onEmailLogin(ConfigAdmin configAdmin, UserModel user, String token);
 
     void onPostCreated(Project project, IdeaModel idea, NotifySubscribers notifySubscribers, UserModel author);
+
+    void onDigest(Account account, Digest projects);
+
+    void onProjectDeletionImminent(Account account);
+
+    @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    class Digest {
+        String from;
+        String to;
+        ImmutableList<DigestProject> projects;
+    }
+
+    @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    class DigestProject {
+        UserModel author;
+        String name;
+        String link;
+        ImmutableList<DigestSection> sections;
+    }
+
+    @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    class DigestSection {
+        String sectionName;
+        ImmutableList<DigestItem> items;
+    }
+
+    @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    class DigestItem {
+        String text;
+        String link;
+    }
 }

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import { Button, Collapse, Fade, InputProps, TextField } from '@material-ui/core';
-import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { Theme, WithStyles, createStyles, withStyles } from '@material-ui/core/styles';
 import ListCheckIcon from "@material-ui/icons/CheckBox";
 import CodeIcon from "@material-ui/icons/Code";
 import BoldIcon from "@material-ui/icons/FormatBold";
@@ -15,21 +15,22 @@ import ImageIcon from "@material-ui/icons/Image";
 import LinkIcon from "@material-ui/icons/Link";
 import MoreIcon from "@material-ui/icons/MoreHoriz";
 import classNames from 'classnames';
-import { withSnackbar, WithSnackbarProps } from 'notistack';
+import { WithSnackbarProps, withSnackbar } from 'notistack';
 import Quill, { DeltaStatic, RangeStatic, Sources } from 'quill';
 import Delta from "quill-delta";
 import ImageResize from 'quill-image-resize';
 import React from 'react';
 import Dropzone, { DropzoneRef } from 'react-dropzone';
 import ReactQuill, { UnprivilegedEditor } from 'react-quill';
+import { MaxContentWidth } from '../app/comps/Post';
 import ClosablePopper, { AnchorBoundsGetter } from './ClosablePopper';
+import { QuillViewStyle } from './RichViewer';
 import Heading2Icon from './icon/Heading2Icon';
 import Heading3Icon from './icon/Heading3Icon';
 import Heading4Icon from './icon/Heading4Icon';
 import QuillBlockExtended from './quill-format-block';
 import QuillFormatLinkExtended, { sanitize } from './quill-format-link';
 import ToolbarExtended from './quill-image-resize-toolbar';
-import { QuillViewStyle } from './RichViewer';
 import debounce from './util/debounce';
 import { dataImageToBlob } from './util/imageUtil';
 
@@ -101,6 +102,9 @@ const styles = (theme: Theme) => createStyles({
     width: '100%',
   },
   quill: {
+    '& .ql-container img': {
+      maxWidth: MaxContentWidth,
+    },
     '& .ql-container .ql-clipboard': {
       left: -100000,
       height: 1,

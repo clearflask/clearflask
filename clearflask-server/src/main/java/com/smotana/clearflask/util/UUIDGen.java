@@ -33,13 +33,7 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -142,7 +136,9 @@ public class UUIDGen {
         return new UUID(createTime(fromUnixTimestamp(when, nanos)), clockSeqAndNode);
     }
 
-    /** creates a type 1 uuid from raw bytes. */
+    /**
+     * creates a type 1 uuid from raw bytes.
+     */
     public static UUID getUUID(ByteBuffer raw) {
         return new UUID(raw.getLong(raw.position()), raw.getLong(raw.position() + 8));
     }
@@ -155,7 +151,9 @@ public class UUIDGen {
         return buffer;
     }
 
-    /** decomposes a uuid into raw bytes. */
+    /**
+     * decomposes a uuid into raw bytes.
+     */
     public static byte[] decompose(UUID uuid) {
         long most = uuid.getMostSignificantBits();
         long least = uuid.getLeastSignificantBits();
@@ -237,7 +235,7 @@ public class UUIDGen {
     /**
      * Converts a 100-nanoseconds precision timestamp into the 16 byte representation
      * of a type 1 UUID (a time-based UUID).
-     *
+     * <p>
      * To specify a 100-nanoseconds precision timestamp, one should provide a milliseconds timestamp and
      * a number {@code 0 <= n < 10000} such that n*100 is the number of nanoseconds within that millisecond.
      *

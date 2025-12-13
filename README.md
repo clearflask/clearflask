@@ -2,13 +2,16 @@
   <a href="https://clearflask.com/" rel="noopener" target="_blank">
     <img width="100" src="./clearflask-frontend/public/img/clearflask-logo.png" alt="Logo">
     <br />
-    <img width="300" src="./clearflask-frontend/public/img/clearflask-text.png" alt="ClearFlask">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="./clearflask-frontend/public/img/clearflask-text-dark.png">
+      <img width="300" src="./clearflask-frontend/public/img/clearflask-text.png" alt="ClearFlask">
+    </picture>
   </a>
 </p>
 
 <div align="center">
   <a href="https://github.com/clearflask/clearflask/actions?query=workflow%3A%22CI%22">
-    <img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/clearflask/clearflask/maven.yml?style=for-the-badge">
+    <img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/clearflask/clearflask/ci.yml?style=for-the-badge">
   </a>
   <a href="https://github.com/clearflask/clearflask/releases">
     <img alt="GitHub release" src="https://img.shields.io/github/v/release/clearflask/clearflask?include_prereleases&sort=semver&style=for-the-badge">
@@ -19,20 +22,23 @@
 </div>
 
 <div align="center">
-
-Listen to your users during product development with [ClearFlask](https://clearflask.com/)
-<br />Open-source Feedback Management Tool.
-
-<br />
-
-<img width="1024" src="./clearflask-frontend/public/img/landing/demo-page-feedback-classic.png" alt="Demo">
+  Open-source Feedback Management Tool.
+  <br />
+  Alternative to <a href="https://canny.io">Canny</a> and <a href="https://uservoice.com/">UserVoice</a>.
+</div>
 
 <br />
 
-<img width="1024" src="./clearflask-frontend/public/img/landing/demo-dashboard-roadmap.png" alt="Demo">
-
-<img width="1024" src="./clearflask-frontend/public/img/landing/demo-dashboard-feedback.png" alt="Demo">
-
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=oOw4pxyK6vs" rel="noopener" target="_blank">
+    <img width="1024" src="./clearflask-resources/clearflask-video-link.png" alt="Video link">
+  </a>
+  <br />
+  <img width="1024" src="./clearflask-frontend/public/img/landing/demo-page-feedback-classic.png" alt="Demo">
+  <br />
+  <img width="1024" src="./clearflask-frontend/public/img/landing/demo-dashboard-roadmap.png" alt="Demo">
+  <br />
+  <img width="1024" src="./clearflask-frontend/public/img/landing/demo-dashboard-feedback.png" alt="Demo">
 </div>
 
 ### Contents
@@ -40,8 +46,10 @@ Listen to your users during product development with [ClearFlask](https://clearf
 - [Managed hosting](#managed-hosting)
 - [Self hosting](#self-hosting)
     - [Quick start](#quick-start)
+    - [Kubernetes deployment](#kubernetes-deployment)
     - [Deploy dependencies](#deploy-dependencies)
         - [Via Docker](#via-docker)
+        - [Via Kubernetes](#via-kubernetes)
         - [Via AWS](#via-aws)
     - [Deploy ClearFlask](#deploy-clearflask)
         - [Setup](#setup)
@@ -74,19 +82,67 @@ docker-compose --profile with-deps up
 
 Point your browser at [http://localhost](http://localhost) and create an account using email `admin@localhost`.
 
-If you wish to host it remotely other than `localhost`, read the [DNS section](#dns).
+You also want to setup outgoing mail, read the [Email section](#email).
 
-Otherwise read on to deploy a long-term installation.
+If you wish to host it on your domain other than `localhost`, read the [DNS section](#dns) and then
+setup [SSL/TLS certificates](#certificate-management).
 
-## Deploy dependencies
+## Kubernetes deployment
 
-There are several dependencies you need for running ClearFlask:
+For self-hosting, we provide Kubernetes Helm charts.
 
-- **ScyllaDB** or **AWS DynamoDB** or API-compatible alternative
+### Installation
+
+1. Add the Helm repository:
+
+```shell
+helm repo add clearflask https://clearflask.github.io/clearflask
+helm repo update
+```
+
+2. Install dependencies (MySQL + LocalStack):
+
+```shell
+helm install clearflask-deps clearflask/clearflask-dependencies \
+  --set mysql.enabled=true \
+  --set localstack.enabled=true
+```
+
+3. Generate secrets and install ClearFlask:
+
+```shell
+TOKEN_SIGNER=$(openssl rand -base64 172 | tr -d '\n')
+CURSOR_KEY=$(openssl rand -base64 16)
+SSO_SECRET=$(uuidgen)
+CONNECT_TOKEN=$(uuidgen)
+
+helm install clearflask clearflask/clearflask \
+  --set global.domain=yourdomain.com \
+  --set server.config.searchEngine=READWRITE_MYSQL \
+  --set server.secrets.tokenSignerPrivKey="$TOKEN_SIGNER" \
+  --set server.secrets.cursorSharedKey="$CURSOR_KEY" \
+  --set server.secrets.ssoSecretKey="$SSO_SECRET" \
+  --set server.secrets.connectToken="$CONNECT_TOKEN"
+```
+
+4. Access your instance:
+
+```shell
+kubectl port-forward svc/clearflask-connect 3000:80
+# Visit http://localhost:3000
+```
+
+See the [Helm Chart documentation](clearflask-helm/README.md) for more information.
+
+## Replace dependencies
+
+There are several dependencies that you can swap out for ClearFlask:
+
+- **AWS DynamoDB** or **Localstack** or API-compatible alternative (ScyllaDB is not fully compatible)
 - **MinIO** or **AWS S3** or API-compatible alternative
 - One of:
-  - **MySQL** or **Aurora**
-  - **ElasticSearch** or **OpenSearch**
+    - **MySQL** or **Aurora**
+    - **ElasticSearch** or **OpenSearch**
 - **Email service via SMTP** or **AWS SES**
 
 And a few optional:
@@ -97,11 +153,33 @@ And a few optional:
 
 ### Via Docker
 
-Although not intended for production, you can spin up all dependencies via Docker.
+You can spin up all dependencies via Docker.
 
 Simply add the `--profile with-deps` to your `docker-compose` command when starting ClearFlask.
 
 All database content will be persisted to local filesystem under `data` folder.
+
+### Via Kubernetes
+
+Production-ready Helm charts are available:
+
+```shell
+helm repo add clearflask https://clearflask.github.io/clearflask
+helm repo update
+
+helm install clearflask-deps clearflask/clearflask-dependencies \
+  --set mysql.enabled=true \
+  --set localstack.enabled=true
+```
+
+This deploys:
+
+- **MySQL/MariaDB** for search and filtering with persistent storage (20Gi default)
+- **LocalStack** for DynamoDB, S3, and SES emulation with persistent storage (10Gi default)
+- **ElasticSearch** (optional) for advanced search with persistent storage (50Gi default)
+
+All databases are persistent by default using PersistentVolumeClaims. See
+the [Helm Chart documentation](clearflask-helm/README.md) for configuration options.
 
 ### Via AWS
 
@@ -152,7 +230,8 @@ IAM actions, all in these categories:
 - Write
 - Tagging
 
-Alternatively you can deploy it yourself (cheaper) or host it on Elastic. Or you can choose to use MySQL/Aurora as a cheaper alternative.
+Alternatively you can deploy it yourself (cheaper) or host it on Elastic. Or you can choose to use MySQL/Aurora as a
+cheaper alternative.
 
 ##### AWS SES
 
@@ -171,8 +250,45 @@ Alternatively use any other email provider and fill out the SMTP settings
 
 ClearFlask consists of two components:
 
-- Tomcat application for serving API requests
-- NodeJS for SSR, dynamic cert management and serving static files
+- **clearflask-server**: Tomcat application for serving API requests
+- **clearflask-connect**: NodeJS for SSR, dynamic cert management and serving static files
+
+### Via Kubernetes (Recommended for Production)
+
+**No build required** - uses pre-built Docker images.
+
+```shell
+# Add Helm repository
+helm repo add clearflask https://clearflask.github.io/clearflask
+helm repo update
+
+# Generate required secrets
+TOKEN_SIGNER=$(openssl rand -base64 172 | tr -d '\n')
+CURSOR_KEY=$(openssl rand -base64 16)
+SSO_SECRET=$(uuidgen)
+CONNECT_TOKEN=$(uuidgen)
+
+# Install ClearFlask
+helm install clearflask clearflask/clearflask \
+  --set global.domain=yourdomain.com \
+  --set server.config.searchEngine=READWRITE_MYSQL \
+  --set server.secrets.tokenSignerPrivKey="$TOKEN_SIGNER" \
+  --set server.secrets.cursorSharedKey="$CURSOR_KEY" \
+  --set server.secrets.ssoSecretKey="$SSO_SECRET" \
+  --set server.secrets.connectToken="$CONNECT_TOKEN"
+```
+
+Features:
+
+- Horizontal Pod Autoscaling
+- Zero-downtime rolling updates
+- Built-in health checks
+- TLS certificate management
+
+For detailed configuration options, deployment scenarios (AWS EKS, GKE, AKS), and troubleshooting, see
+the [Helm Chart documentation](clearflask-helm/README.md).
+
+### Via Docker (Quick Start)
 
 ### Setup
 
@@ -181,6 +297,50 @@ ClearFlask consists of two components:
 3. Carefully read and modify `server/config-selfhost.cfg`.
 4. Carefully read and modify `connect/connect.config.json`.
 5. Adjust the Docker Compose service file to add/remove dependencies if you are hosting them outside of Docker
+
+#### Email
+
+By default, email is configured for AWS SES pointing to your Localstack (which doesn't do anything).
+
+You can choose to setup your own SMTP server or use AWS SES.
+
+##### Email using SMTP
+
+Change the configuration to SMTP:
+
+- `com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.useService`: `smtp`
+
+Then you need to gather your SMTP settings and fill out the following:
+
+- `com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.smtpStrategy`: `SMTP_TLS`
+  (SMTP_TLS, SMTPS, SMTP)
+- `com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.smtpHost`: `smtp.gmail.com`
+  (e.g. smtp.gmail.com)
+- `com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.smtpPort`: `587`
+  (587 for SMTP_TLS, 465 for SMTPS, 25 for SMTP)
+- `com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.smtpUser`: `my.name@gmail.com`
+  (e.g. my.name@gmail.com)
+- `com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.smtpPassword`: `asdfqwerzxcvasdf`
+  (To get this working, you need to enable IMAP if not enabled. If you use 2FA, you need to generate an app password and
+  use it here)
+- `com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.emailDisplayName`: `ClearFlask`
+  (e.g. 'ClearFlask for MyCompany')
+- `com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.fromEmailLocalPart`: `my.name`
+  (first part of your email, for my.name@gmail.com, it would be 'my.name')
+- `com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.fromEmailDomainOverride`: `gmail.com`
+  (domain part of your email, for my.name@gmail.com, it would be 'gmail.com')
+
+##### Email using AWS SES
+
+Change the configuration to SMTP:
+
+- `com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.useService`: `ses`
+
+Then fill out the SES settings:
+
+- `com.smotana.clearflask.core.email.AmazonSimpleEmailServiceProvider$Config.region`: `us-east-1`
+- `com.smotana.clearflask.core.email.AmazonSimpleEmailServiceProvider$Config.serviceEndpoint`: (Leave blank, unless you
+  need to override)
 
 #### DNS
 
@@ -203,7 +363,46 @@ correctly pointing to your server, it is publicly accessible, and set the follow
 
 Once you load your site for the first time, a Certificate is auto-magically fetched for you.
 
+##### Static certificate
+
+If you wish to use your own certificate, set the following properties:
+
+- `connect.config.json:disableAutoFetchCertificate`: `false`
+- `connect.config.json:forceRedirectHttpToHttps`: `true`
+- `config-selfhost.cfg:com.smotana.clearflask.web.security.AuthCookieImpl$Config.authCookieSecure`: `true`
+- `config-selfhost.cfg:com.smotana.clearflask.security.CertFetcherImpl$Config.staticCert`: `<SEE BELOW>`
+
+For the `staticCert` property value, this has to be a JSON object with the following structure, but you need to put it
+in a single line:
+
+```json
+{
+    "cert": {
+        "cert": "-----BEGIN CERTIFICATE-----\nMIIFFjCC...",
+        "chain": "-----BEGIN CERTIFICATE-----\nMIIE/jCC",
+        "subject": "feedback.example.com",
+        "altnames": [
+            "feedback.example.com"
+        ],
+        "issuedAt": 1709572939000,
+        "expiresAt": 1741108939000
+    },
+    "keypair": {
+        "privateKeyPem": "-----BEGIN PRIVATE KEY-----\nMIIEvwIB..."
+    }
+}
+```
+
+Note that you have to put this into a single line. The cert, chain and keypair will replace any literal `\n` into a
+newline.
+
+This approach is not recommended as you will have to update this certificate manually.
+
 ##### Self-managed behind reverse proxy
+
+ClearFlask wasn't designed to be deployed on a subpath (e.g. `example.com/clearflask/`), rather it is
+intended to be deployed either directly on a domain or a subdomain. (e.g. `examplefeedback.com` or
+`feedback.example.com`)
 
 If you are managing TLS certificates behind a reverse proxy, redirect all `http` requests to `https`, set the following
 config:
@@ -224,7 +423,8 @@ Although discouraged, you can run ClearFlask over HTTP only. Ensure these settin
 
 For you to manage the dashboard, you need to whitelist an email to be able to create a super-admin account:
 
-`config-selfhost.cfg:com.smotana.clearflask.web.security.SuperAdminPredicate$Config.superAdminEmailRegex`: `^admin@yoursite.com$`
+`config-selfhost.cfg:com.smotana.clearflask.web.security.SuperAdminPredicate$Config.superAdminEmailRegex`:
+`^admin@yoursite.com$`
 
 After you sign-up, disable further signups using:
 
@@ -302,7 +502,8 @@ all the steps in reverse order.
 #### Migrate from ElasticSearch to Mysql
 
 1. Double check you are using ElasticSearch, you may have this property
-   set: `config-selfhost.cfg:com.smotana.clearflask.web.Application$Config.defaultSearchEngine`: `READWRITE_ELASTICSEARCH`
+   set: `config-selfhost.cfg:com.smotana.clearflask.web.Application$Config.defaultSearchEngine`:
+   `READWRITE_ELASTICSEARCH`
    . If it is missing, the default is ElasticSearch
 2. Edit `docker-compose.yml`:
     1. Uncomment `clearflask-server` container's JMX ports `9950:9950` and `9951:9951`
@@ -329,6 +530,12 @@ all the steps in reverse order.
     2. Comment out `clearflask-server` container's JMX ports `9950:9950` and `9951:9951`
     3. Restart the server
 10. Remove the leftover data stored by the now non-functional ElasticSearch container.
+
+### Telemetry
+
+To disable any telemetry, set the following configuration property:
+
+`config-selfhost.cfg:com.smotana.clearflask.Application$Config.enableTelemetry`: `false`
 
 # Contributing
 
@@ -384,6 +591,26 @@ from your IDE. Otherwise you will have to alwasy spin up all dependencies.
 ### Run locally
 
 There are several ways to run locally depending on what you want to test.
+
+#### Kubernetes (Full Production Stack)
+
+Intended for testing production deployment locally. **No build required** - uses pre-built Docker images.
+
+```shell
+git clone https://github.com/clearflask/clearflask.git
+cd clearflask/clearflask-helm
+./local-start.sh
+```
+
+Access via port-forward at [http://localhost:3000](http://localhost:3000).
+
+Cleanup:
+
+```shell
+./local-stop.sh
+```
+
+Note: For testing code changes, you would need to build and push new Docker images first.
 
 #### Frontend + Mock backend
 

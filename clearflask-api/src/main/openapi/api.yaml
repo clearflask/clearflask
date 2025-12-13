@@ -66,12 +66,25 @@ paths:
   /project/{projectId}/notificationclear/{notificationId}/clear:
     $ref: 'api-notification.yaml#/~1project~1{projectId}~1notificationclear~1{notificationId}'
   # api-content.yaml
+  /project/{projectId}/content/proxy/userId/{userId}/file/{file}:
+    $ref: 'api-content.yaml#/~1project~1{projectId}~1content~1proxy~1userId~1{userId}~1file~1{file}'
   /project/{projectId}/content/upload:
     $ref: 'api-content.yaml#/~1project~1{projectId}~1content~1upload'
   /project/{projectId}/admin/content/uploadAs:
     $ref: 'api-content.yaml#/~1project~1{projectId}~1admin~1content~1uploadAs'
   /project/{projectId}/profilepic/upload:
     $ref: 'api-content.yaml#/~1project~1{projectId}~1profilepic~1upload'
+  # api-llm.yaml
+  /project/{projectId}/superadmin/llm/prompt:
+    $ref: 'api-llm.yaml#/~1project~1{projectId}~1superadmin~1llm~1prompt'
+  /project/{projectId}/admin/llm/convo/list:
+    $ref: 'api-llm.yaml#/~1project~1{projectId}~1admin~1llm~1convo~1list'
+  /project/{projectId}/admin/llm/convo/{convoId}:
+    $ref: 'api-llm.yaml#/~1project~1{projectId}~1admin~1llm~1convo~1{convoId}'
+  /project/{projectId}/admin/llm/convo/{convoId}/message:
+    $ref: 'api-llm.yaml#/~1project~1{projectId}~1admin~1llm~1convo~1{convoId}~1message'
+  /project/{projectId}/admin/llm/convo/{convoId}/message/{messageId}:
+    $ref: 'api-llm.yaml#/~1project~1{projectId}~1admin~1llm~1convo~1{convoId}~1message~1{messageId}'
   # api-admin.yaml
   /support/message:
     $ref: 'api-account.yaml#/~1support~1message'
@@ -95,6 +108,8 @@ paths:
     $ref: 'api-account.yaml#/~1superadmin~1account~1loginas'
   /superadmin/accountsearch:
     $ref: 'api-account.yaml#/~1superadmin~1accountsearch'
+  /superadmin/account/projectownerswap:
+    $ref: 'api-account.yaml#/~1superadmin~1account~1projectownerswap'
   /admin/account/coupon:
     $ref: 'api-account.yaml#/~1admin~1account~1coupon'
   /superadmin/coupon/generate:
@@ -119,6 +134,8 @@ paths:
     $ref: 'api-account.yaml#/~1admin~1account~1github~1repos'
   /admin/account/delete:
     $ref: 'api-account.yaml#/~1admin~1account~1delete'
+  /superadmin/account/delete:
+    $ref: 'api-account.yaml#/~1superadmin~1account~1delete'
   /project/{projectId}/admin/subscription/idea:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1subscription~1idea'
   /project/{projectId}/admin/idea/search:
@@ -183,6 +200,8 @@ paths:
     $ref: 'api-project.yaml#/~1project~1{projectId}~1admin~1export'
   /project/{projectId}/admin/admins:
     $ref: 'api-project.yaml#/~1project~1{projectId}~1admin~1admins'
+  /license/check:
+    $ref: 'api-account.yaml#/~1license~1check'
   # api-connect.yaml
   /connect/cert/challenge/http:
     $ref: 'api-sni.yaml#/~1connect~1cert~1challenge~1http'

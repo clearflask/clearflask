@@ -220,5 +220,7 @@
   "blog": "Blogg",
   "cookie-consent": "Informasjonskapsel samtykke",
   "free-forever": "Gratis for alltid",
-  "you-have-unsaved-changes": "Du har ulagrede endringer"
+  "you-have-unsaved-changes": "Du har ulagrede endringer",
+  "empty": "Tom",
+  "notifications": "Varsler"
 }

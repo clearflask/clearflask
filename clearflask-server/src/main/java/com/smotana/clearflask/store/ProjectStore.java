@@ -3,24 +3,15 @@
 package com.smotana.clearflask.store;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.smotana.clearflask.api.model.Category;
-import com.smotana.clearflask.api.model.ConfigAdmin;
-import com.smotana.clearflask.api.model.GitHub;
-import com.smotana.clearflask.api.model.IdeaStatus;
-import com.smotana.clearflask.api.model.InvitationAdmin;
-import com.smotana.clearflask.api.model.VersionedConfig;
-import com.smotana.clearflask.api.model.VersionedConfigAdmin;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.util.IdUtil;
 import com.smotana.clearflask.web.Application;
 import io.dataspray.singletable.DynamoTable;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Value;
+import lombok.*;
 
 import java.util.List;
 import java.util.Optional;
@@ -51,10 +42,14 @@ public interface ProjectStore {
 
     ListResponse listProjects(Optional<String> cursorOpt, int pageSize, boolean populateCache);
 
-    /** Get global search engine */
+    /**
+     * Get global search engine
+     */
     SearchEngine getSearchEngine();
 
-    /** Get global search engine */
+    /**
+     * Get global search engine
+     */
     SearchEngine getSearchEngineForProject(String projectId);
 
     Project createProject(String accountId, String projectId, VersionedConfigAdmin versionedConfigAdmin);
@@ -78,7 +73,9 @@ public interface ProjectStore {
 
     ImmutableList<InvitationModel> getInvitations(String projectId);
 
-    /** @return projectId */
+    /**
+     * @return projectId
+     */
     String acceptInvitation(String invitationId, String accepteeAccountId);
 
     void revokeInvitation(String projectId, String invitationId);
@@ -87,6 +84,8 @@ public interface ProjectStore {
 
     Project removeAdmin(String projectId, String adminAccountId);
 
+    Project changeOwner(String projectId, String newOwnerAccountId);
+
     @Value
     class ListResponse {
         ImmutableList<Project> projects;
@@ -94,6 +93,10 @@ public interface ProjectStore {
     }
 
     interface Project {
+        String getName();
+
+        String getLink();
+
         ProjectModel getModel();
 
         String getAccountId();
@@ -109,6 +112,8 @@ public interface ProjectStore {
         VersionedConfigAdmin getVersionedConfigAdmin();
 
         double getCategoryExpressionWeight(String categoryId, String expression);
+
+        ImmutableCollection<Category> getCategories();
 
         Optional<Category> getCategory(String categoryId);
 
@@ -158,7 +163,9 @@ public interface ProjectStore {
         @NonNull
         String projectId;
 
-        /** Config version mainly used to make sure we don't overwrite each other's changes */
+        /**
+         * Config version mainly used to make sure we don't overwrite each other's changes
+         */
         @NonNull
         String version;
 
@@ -178,7 +185,7 @@ public interface ProjectStore {
 
         /**
          * Version for auto-upgrades.
-         *
+         * <p>
          * Currently only for ElasticSearch schema updates
          */
         Long projectVersion;
@@ -239,13 +246,19 @@ public interface ProjectStore {
         @NonNull
         String inviteeName;
 
-        @NonNull
+        /**
+         * Should be NonNull, however some projects in the past had an empty string as name so we need to handle nulls
+         */
         String projectName;
 
         String isAcceptedByAccountId;
 
         @NonNull
         Long ttlInEpochSec;
+
+        public String getProjectNameNonNull() {
+            return Strings.isNullOrEmpty(projectName) ? projectId : projectName;
+        }
 
         public boolean isAccepted() {
             return !Strings.isNullOrEmpty(getIsAcceptedByAccountId());

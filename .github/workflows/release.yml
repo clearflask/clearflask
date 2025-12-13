@@ -1,0 +1,97 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      versionType:
+        type: choice
+        description: 'Version type'
+        required: true
+        default: 'patch'
+        options:
+          - major
+          - minor
+          - patch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+    permissions:
+      packages: write
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'corretto'
+          architecture: x64
+          cache: 'maven'
+      - name: Cache local Maven repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      - name: Setup FFmpeg
+        uses: FedericoCarboni/setup-ffmpeg@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Initialize Git
+        timeout-minutes: 1
+        run: |
+          git config --global user.name 'Matus Faro'
+          git config --global user.email 'matus@matus.io'
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # Maven Release Plugin requires cloning repository via SSH
+      - name: Write SSH keys
+        run: |
+          install -m 600 -D /dev/null ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+      - name: Maven release
+        timeout-minutes: 60
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: make release-${{ github.event.inputs.versionType }}
+
+      - name: Update Helm charts with new version
+        id: get-version
+        run: |
+          # Get the new version from the latest git tag
+          NEW_VERSION=$(git describe --tags --abbrev=0)
+          echo "New version: $NEW_VERSION"
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+          # Update clearflask chart - version matches app version
+          sed -i "s/^version: .*/version: $NEW_VERSION/" clearflask-helm/charts/clearflask/Chart.yaml
+          sed -i "s/^appVersion: .*/appVersion: \"$NEW_VERSION\"/" clearflask-helm/charts/clearflask/Chart.yaml
+          sed -i "s/tag: \".*\"/tag: \"$NEW_VERSION\"/" clearflask-helm/charts/clearflask/values.yaml
+
+          # Update clearflask-dependencies chart to match main version
+          sed -i "s/^version: .*/version: $NEW_VERSION/" clearflask-helm/charts/clearflask-dependencies/Chart.yaml
+
+          # Commit and push
+          git add clearflask-helm/charts/*/Chart.yaml clearflask-helm/charts/clearflask/values.yaml
+          git commit -m "chore(helm): update charts to version $NEW_VERSION"
+          git push origin master
+
+  publish-helm:
+    needs: build
+    uses: ./.github/workflows/helm-release.yml
+    with:
+      version: ${{ needs.build.outputs.version }}
+    permissions:
+      contents: write
+      pages: write
+      id-token: write

@@ -19,7 +19,10 @@ import com.smotana.clearflask.util.GitHubSignatureVerifier;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
+import org.kohsuke.github.GHBaseEvent;
 import org.kohsuke.github.GHEventPayload;
+import org.kohsuke.github.GHEventPayload.Installation;
+import org.kohsuke.github.GHEventPayload.InstallationRepositories;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
 
@@ -29,13 +32,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -87,15 +84,11 @@ public class GitHubResource {
         checkSignature(payload, eventGuid);
         String eventType = getEventType(eventGuid);
 
-        // Common webhook properties
-        // https://docs.github.com/en/developers/webhooks-and-events/webhooks/webhook-events-and-payloads#webhook-payload-object-common-properties
-        GHEventPayload event = parseEventPayload(GitHub.offline(), payload, GHEventPayload.class);
-
         switch (eventType) {
             case "installation":
-                GHEventPayload.Installation installation = parseEventPayload(GitHub.offline(), payload, GHEventPayload.Installation.class);
+                Installation installation = parseEventPayload(GitHub.offline(), payload, Installation.class);
                 log.info("Detected installation {}, installationId {}",
-                        event.getAction(), installation.getInstallation().getId());
+                        installation.getAction(), installation.getInstallation().getId());
                 List<GHRepository> repositories;
                 try {
                     repositories = installation.getRepositories();
@@ -104,10 +97,10 @@ public class GitHubResource {
                 }
                 repositories.forEach(ghRepository -> log.info(
                         "Detected repository {} as part of installation, name {} repoId {} installationId {}",
-                        event.getAction(), ghRepository.getFullName(), ghRepository.getId(), installation.getInstallation().getId()));
+                        installation.getAction(), ghRepository.getFullName(), ghRepository.getId(), installation.getInstallation().getId()));
                 break;
             case "installation_repositories":
-                GHEventPayload.InstallationRepositories installationRepositories = parseEventPayload(GitHub.offline(), payload, GHEventPayload.InstallationRepositories.class);
+                InstallationRepositories installationRepositories = parseEventPayload(GitHub.offline(), payload, InstallationRepositories.class);
                 installationRepositories.getRepositoriesAdded().forEach(ghRepository -> log.info(
                         "Detected repository added, name {} repoId {} installationId {}",
                         ghRepository.getFullName(), ghRepository.getId(), installationRepositories.getInstallation().getId()));
@@ -116,6 +109,8 @@ public class GitHubResource {
                         ghRepository.getFullName(), ghRepository.getId(), installationRepositories.getInstallation().getId()));
                 break;
             case "github_app_authorization":
+                // GitHubAppAuthorizationEvent is not yet added, using base event
+                GHBaseEvent event = parseEventPayload(GitHub.offline(), payload, GHBaseEvent.class);
                 if ("revoked".equals(event.getAction())) {
                     // Ideally we should unlink the repository from our side however:
                     // 1. We actually don't have permission to (https://github.community/t/delete-a-webhook-from-unwanted-repository/14124/3)

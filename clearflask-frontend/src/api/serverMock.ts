@@ -3,23 +3,24 @@
 import jsonwebtoken from 'jsonwebtoken';
 import cloneDeep from 'lodash.clonedeep';
 import * as ConfigEditor from '../common/config/configEditor';
-import { Action, RestrictedActions, TeammatePlanId } from '../common/config/settings/UpgradeWrapper';
+import {Action, RestrictedActions, TeammatePlanId} from '../common/config/settings/UpgradeWrapper';
 import WebNotification from '../common/notification/webNotification';
-import { notEmpty } from '../common/util/arrayUtil';
-import { isProd } from '../common/util/detectEnv';
+import {notEmpty} from '../common/util/arrayUtil';
+import {isProd} from '../common/util/detectEnv';
 import stringToSlug from '../common/util/slugger';
 import randomUuid from '../common/util/uuid';
 import windowIso from '../common/windowIso';
-import { mock } from '../mocker';
+import {mock} from '../mocker';
 import * as Admin from './admin';
 import * as Client from './client';
 import ServerAdmin from './serverAdmin';
+import {capitalize} from '../common/util/stringUtil';
+import {loremIpsum} from 'lorem-ipsum';
 
 /** Not really a secret, don't bother stealing this */
 export const SSO_SECRET_KEY = '63195fc1-d8c0-4909-9039-e15ce3c96dce';
 
 export const SuperAdminEmail = `admin@${windowIso.parentDomain}`;
-const termsProjects = 'You can create separate projects each having their own set of users and content';
 const TeammatePlan: Admin.Plan = {
   basePlanId: TeammatePlanId, title: 'Teammate',
   perks: [
@@ -27,34 +28,177 @@ const TeammatePlan: Admin.Plan = {
     { desc: 'No billing' },
   ],
 };
-const AvailablePlans: { [planId: string]: Admin.Plan } = {
-  'starter3-monthly': {
-    basePlanId: 'starter3-monthly', title: 'Starter',
-    pricing: { basePrice: 10, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Monthly },
-    perks: [
-      { desc: 'Unlimited projects', terms: termsProjects },
-      { desc: 'Unlimited teammates' },
-      { desc: 'Unlimited users' },
-    ],
-  },
-  'standard3-monthly': {
-    basePlanId: 'standard3-monthly', title: 'Standard',
-    pricing: { basePrice: 100, baseMau: 0, unitPrice: 0, unitMau: 0, admins: { amountIncluded: 5, additionalPrice: 25 }, period: Admin.PlanPricingPeriodEnum.Monthly },
-    perks: [
-      { desc: 'Private projects' },
-      { desc: 'Integrations & API' },
-      { desc: 'SSO and OAuth' },
-    ],
-  },
-  'flat-yearly': {
-    basePlanId: 'flat-yearly', title: 'Business',
-    perks: [
-      { desc: 'Customized plan' },
-      { desc: 'Annual pricing' },
-      { desc: 'Support & SLA' },
-    ],
+
+// Raw body result of calling https://clearflask.com/api/v1/admin/plan
+const adminPlanResult = {
+  'plans': [{
+    'basePlanId': 'cloud-free',
+    'title': 'Starter',
+    'perks': [{ 'desc': 'Unlimited admins/posts' }, {
+      'desc': 'Private projects',
+      'terms': 'Create a private project so only authorized users can view and provide feedback',
+    }, { 'desc': 'Whitelabel & API' }],
+  }, {
+    'basePlanId': 'cloud-monthly',
+    'title': 'Growth',
+    'pricing': {
+      'basePrice': 49,
+      'baseMau': 0,
+      'unitMau': 0,
+      'unitPrice': 0,
+      'admins': { 'amountIncluded': 3, 'additionalPrice': 12 },
+      'period': 'Monthly',
+    },
+    'perks': [{ 'desc': 'Unlimited admins/posts' }, {
+      'desc': 'Private projects',
+      'terms': 'Create a private project so only authorized users can view and provide feedback',
+    }, { 'desc': 'Whitelabel & API' }],
+  }, {
+    'basePlanId': 'cloud-yearly',
+    'title': 'Pro',
+    'pricing': { 'basePrice': 490, 'baseMau': 0, 'unitMau': 0, 'unitPrice': 0, 'period': 'Yearly' },
+    'perks': [{ 'desc': 'No limits' }, { 'desc': '2-Month Discount' }],
+  }, {
+    'basePlanId': 'selfhost-monthly',
+    'title': 'Monthly',
+    'pricing': { 'basePrice': 18, 'baseMau': 0, 'unitMau': 0, 'unitPrice': 0, 'period': 'Monthly' },
+    'perks': [{ 'desc': 'Unlimited admins/posts' }, {
+      'desc': 'Private projects',
+      'terms': 'Create a private project so only authorized users can view and provide feedback',
+    }, { 'desc': 'Whitelabel & API' }],
+  }, {
+    'basePlanId': 'selfhost-yearly',
+    'title': 'Yearly',
+    'pricing': { 'basePrice': 180, 'baseMau': 0, 'unitMau': 0, 'unitPrice': 0, 'period': 'Yearly' },
+    'perks': [{ 'desc': 'No limits' }, { 'desc': '2-Month Discount' }],
+  }, {
+    'basePlanId': 'selfhost-yearly2',
+    'title': 'Yearly',
+    'pricing': { 'basePrice': 450, 'baseMau': 0, 'unitMau': 0, 'unitPrice': 0, 'period': 'Yearly' },
+    'perks': [{ 'desc': 'No limits' }, { 'desc': '2-Month Discount' }],
+  }], 'featuresTable': {
+    'plans': ['Starter', 'Growth', 'Pro'],
+    'features': [{
+      'feature': 'Projects',
+      'values': ['No limit', 'No limit', 'No limit'],
+      'terms': 'You can create separate projects each having their own set of users and content',
+    }, { 'feature': 'Users', 'values': ['No limit', 'No limit', 'No limit'] }, {
+      'feature': 'Posts',
+      'values': ['100', 'No limit', 'No limit'],
+      'terms': 'Keep your project tidy and delete old posts to stay within the limits.',
+    }, {
+      'feature': 'Teammates',
+      'values': ['1', '3 +$', 'No limit'],
+      'terms': 'Amount of administrators, product managers or support team members you can have on each project including yourself.',
+    }, {
+      'feature': 'Credit System',
+      'values': ['Yes', 'Yes', 'Yes'],
+      'terms': 'Credit System allows fine-grained prioritization of value for each idea.',
+    }, { 'feature': 'Roadmap', 'values': ['Yes', 'Yes', 'Yes'] }, {
+      'feature': 'Content customization',
+      'values': ['Yes', 'Yes', 'Yes'],
+    }, { 'feature': 'Custom domain', 'values': ['No', 'Yes', 'Yes'] }, {
+      'feature': 'Private projects',
+      'values': ['No', 'Yes', 'Yes'],
+      'terms': 'Create a private project so only authorized users can view and provide feedback',
+    }, {
+      'feature': 'SSO and OAuth',
+      'values': ['No', 'Yes', 'Yes'],
+      'terms': 'Use your existing user accounts to log into ClearFlask with Single Sign-On or external OAuth provider such as Google, Github or Facebook',
+    }, {
+      'feature': 'API',
+      'values': ['No', 'Yes', 'Yes'],
+      'terms': 'Integrate with any external service via our API and webhooks',
+    }, {
+      'feature': 'GitHub integration',
+      'values': ['No', 'Yes', 'Yes'],
+      'terms': 'Synchronize GitHub issues with ClearFlask',
+    }, {
+      'feature': 'Intercom integration',
+      'values': ['No', 'Yes', 'Yes'],
+      'terms': 'Add Intercom widget on every page',
+    }, {
+      'feature': 'Tracking integrations',
+      'values': ['No', 'Yes', 'Yes'],
+      'terms': 'Include Google Analytics or Hotjar on every page',
+    }, {
+      'feature': 'Site template',
+      'values': ['No', 'Yes', 'Yes'],
+      'terms': 'Use your own HTML template to display parts of the site',
+    }, {
+      'feature': 'Whitelabel',
+      'values': ['No', 'Yes', 'Yes'],
+      'terms': 'Remove ClearFlask branding',
+    }, { 'feature': 'Priority support', 'values': ['No', 'No', 'Yes'] }],
+  }, 'featuresTableSelfhost': {
+    'plans': ['Free', 'Month', 'Year'],
+    'features': [{
+      'feature': 'Projects',
+      'values': ['No limit', 'No limit', 'No limit'],
+      'terms': 'You can create separate projects each having their own set of users and content',
+    }, { 'feature': 'Users', 'values': ['No limit', 'No limit', 'No limit'] }, {
+      'feature': 'Posts',
+      'values': ['100', 'No limit', 'No limit'],
+      'terms': 'Keep your project tidy and delete old posts to stay within the limits.',
+    }, {
+      'feature': 'Teammates',
+      'values': ['3', 'No limit', 'No limit'],
+      'terms': 'Amount of administrators, product managers or support team members you can have on each project including yourself.',
+    }, {
+      'feature': 'Credit System',
+      'values': ['Yes', 'Yes', 'Yes'],
+      'terms': 'Credit System allows fine-grained prioritization of value for each idea.',
+    }, { 'feature': 'Roadmap', 'values': ['Yes', 'Yes', 'Yes'] }, {
+      'feature': 'Content customization',
+      'values': ['Yes', 'Yes', 'Yes'],
+    }, { 'feature': 'Custom domain', 'values': ['Yes', 'Yes', 'Yes'] }, {
+      'feature': 'Private projects',
+      'values': ['No', 'Yes', 'Yes'],
+      'terms': 'Create a private project so only authorized users can view and provide feedback',
+    }, {
+      'feature': 'SSO and OAuth',
+      'values': ['No', 'Yes', 'Yes'],
+      'terms': 'Use your existing user accounts to log into ClearFlask with Single Sign-On or external OAuth provider such as Google, Github or Facebook',
+    }, {
+      'feature': 'API',
+      'values': ['No', 'Yes', 'Yes'],
+      'terms': 'Integrate with any external service via our API and webhooks',
+    }, {
+      'feature': 'GitHub integration',
+      'values': ['No', 'Yes', 'Yes'],
+      'terms': 'Synchronize GitHub issues with ClearFlask',
+    }, {
+      'feature': 'Intercom integration',
+      'values': ['No', 'Yes', 'Yes'],
+      'terms': 'Add Intercom widget on every page',
+    }, {
+      'feature': 'Tracking integrations',
+      'values': ['No', 'Yes', 'Yes'],
+      'terms': 'Include Google Analytics or Hotjar on every page',
+    }, {
+      'feature': 'Site template',
+      'values': ['No', 'Yes', 'Yes'],
+      'terms': 'Use your own HTML template to display parts of the site',
+    }, {
+      'feature': 'Whitelabel',
+      'values': ['No', 'Yes', 'Yes'],
+      'terms': 'Remove ClearFlask branding',
+    }, {
+      'feature': 'Search engine',
+      'values': ['Yes', 'Yes', 'Yes'],
+      'terms': 'Search powered by ElasticSearch for fast and accurate search capability',
+    }, { 'feature': 'Priority support', 'values': ['No', 'Yes', 'Yes'] }],
   },
 };
+
+const AvailablePlans: { [planId: string]: Admin.Plan } = adminPlanResult.plans.reduce((plans, plan) => {
+  plans[plan.basePlanId] = plan;
+  return plans;
+}, {});
+const FeaturesTable: Admin.FeaturesTable | undefined = adminPlanResult.featuresTable;
+const FeaturesTableSelfhost: Admin.FeaturesTable | undefined = adminPlanResult.featuresTableSelfhost;
+
+export const DefaultMockUserPlanId = Object.keys(AvailablePlans)[0];
 const AllPlans: { [planId: string]: Admin.Plan } = {
   ...AvailablePlans,
   'pro-lifetime': {
@@ -65,23 +209,6 @@ const AllPlans: { [planId: string]: Admin.Plan } = {
       { desc: '1 Project' },
     ],
   },
-};
-const FeaturesTable: Admin.FeaturesTable | undefined = {
-  plans: ['Starter', 'Standard', 'Flat'],
-  features: [
-    { feature: 'Projects', values: ['No limit', 'No limit', 'No limit'] },
-    { feature: 'Tracked users', values: ['No limit', 'No limit', 'No limit'] },
-    { feature: 'Teammates', values: ['1', '8', 'No limit'] },
-    { feature: 'Roadmap', values: ['Yes', 'Yes', 'Yes'] },
-    { feature: 'Changelog', values: ['Yes', 'Yes', 'Yes'] },
-    { feature: 'Credit System', values: ['Yes', 'Yes', 'Yes'] },
-    { feature: 'Content customization', values: ['Yes', 'Yes', 'Yes'] },
-    { feature: 'Private projects', values: ['No', 'Yes', 'Yes'], terms: 'Create a private project so only authorized users can view and provide feedback.' },
-    { feature: 'SSO and OAuth', values: ['No', 'Yes', 'Yes'], terms: 'Use your existing user accounts to log into ClearFlask' },
-    { feature: 'Site template', values: ['No', 'Yes', 'Yes'], terms: 'Use your own HTML template to display parts of the site.' },
-    { feature: 'Volume discount', values: ['No', 'No', 'Yes'] },
-    { feature: 'Billing & Invoicing', values: ['No', 'No', 'Yes'], terms: 'Customized billing and invoicing.' },
-  ],
 };
 
 interface CommentWithAuthorWithParentPath extends Client.CommentWithVote {
@@ -133,6 +260,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       admins: Array<Admin.ProjectAdmin>;
       invitations: Array<Admin.InvitationAdmin>;
       isExternal: boolean;
+      llmConvos: { [userId: string]: { [convoId: string]: Admin.ConvoDetailsResponse & Admin.Convo } }
     }
   } = {};
   nextCommentId = 10000;
@@ -155,23 +283,28 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     console.log('Received support message with content:', request.supportMessage.content);
     return this.returnLater(undefined);
   }
+
   plansGet(): Promise<Admin.PlansGetResponse> {
     return this.returnLater({
       plans: Object.values(AvailablePlans),
       featuresTable: FeaturesTable,
+      featuresTableSelfhost: FeaturesTableSelfhost,
     });
   }
+
   plansGetSuperAdmin(): Promise<Admin.AllPlansGetResponse> {
     return this.returnLater({
       plans: Object.values(AllPlans),
     });
   }
+
   legalGet(): Promise<Admin.LegalResponse> {
     return this.returnLater({
       terms: 'Here are Terms of Service',
       privacy: 'Here is a privacy policy.',
     });
   }
+
   accountBindAdmin(request: Admin.AccountBindAdminRequest): Promise<Admin.AccountBindAdminResponse> {
     if (this.loggedIn && this.account) {
       return this.returnLater({
@@ -185,10 +318,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
           name: 'Joe Doe',
           email: 'joe-doe@example.com',
           password: 'unused-in-server-mock',
-          basePlanId: request.accountBindAdmin.oauthToken.basePlanId || 'standard3-monthly',
+          basePlanId: request.accountBindAdmin.oauthToken.basePlanId || DefaultMockUserPlanId,
           invitationId: request.accountBindAdmin.oauthToken.invitationId,
           couponId: request.accountBindAdmin.oauthToken.couponId,
-        }
+        },
       }).then(account => ({
         account,
         isSuperAdmin: !!this.superLoggedIn || !!account.isSuperAdmin,
@@ -198,6 +331,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       isSuperAdmin: false,
     });
   }
+
   accountLoginAdmin(request: Admin.AccountLoginAdminRequest): Promise<Admin.AccountAdmin> {
     if (!this.account
       || request.accountLogin.email !== this.account.email
@@ -210,6 +344,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     }
     return this.returnLater(this.account);
   }
+
   accountLoginAsSuperAdmin(request: Admin.AccountLoginAsSuperAdminRequest): Promise<Admin.AccountAdmin> {
     if (!this.superLoggedIn) {
       return this.throwLater(403, 'Not allowed');
@@ -221,24 +356,40 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     this.loggedIn = true;
     return this.returnLater(this.account);
   }
+
   accountSearchSuperAdmin(request: Admin.AccountSearchSuperAdminRequest): Promise<Admin.AccountSearchResponse> {
     if (!this.superLoggedIn) {
       return this.throwLater(403, 'Not allowed');
     }
     return this.returnLater(this.filterCursor([this.account]
-      .filter(notEmpty)
-      .filter(account => !request.accountSearchSuperAdmin.searchText
-        || account.name && account.name.indexOf(request.accountSearchSuperAdmin.searchText) >= 0
-        || account.email && account.email.indexOf(request.accountSearchSuperAdmin.searchText) >= 0),
+        .filter(notEmpty)
+        .filter(account => !request.accountSearchSuperAdmin.searchText
+          || account.name && account.name.indexOf(request.accountSearchSuperAdmin.searchText) >= 0
+          || account.email && account.email.indexOf(request.accountSearchSuperAdmin.searchText) >= 0),
       this.DEFAULT_LIMIT, request.cursor));
   }
+
+  projectOwnerSwapSuperAdmin(request: Admin.ProjectOwnerSwapSuperAdminRequest): Promise<void> {
+    if (!this.superLoggedIn) {
+      return this.throwLater(403, 'Not allowed');
+    }
+    // TODO
+    return this.returnLater(undefined);
+  }
+
   accountViewCouponAdmin(request: Admin.AccountViewCouponAdminRequest): Promise<Admin.ViewCouponResponse> {
     const redeemedByYou = this.account?.acceptedCoupons.has(request.couponId);
     return this.returnLater({
       redeemedByYou,
       plan: (redeemedByYou || request.couponId.length < 3) ? undefined : {
         basePlanId: 'coupon-monthly', title: 'Standard',
-        pricing: { basePrice: 0, baseMau: 100, unitPrice: 10, unitMau: 100, period: Admin.PlanPricingPeriodEnum.Monthly },
+        pricing: {
+          basePrice: 0,
+          baseMau: 100,
+          unitPrice: 10,
+          unitMau: 100,
+          period: Admin.PlanPricingPeriodEnum.Monthly,
+        },
         perks: [
           { desc: 'Private projects' },
           { desc: 'Teammates' },
@@ -247,11 +398,13 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       },
     });
   }
+
   accountAcceptCouponAdmin(request: Admin.AccountAcceptCouponAdminRequest): Promise<Admin.AccountAdmin> {
     if (!this.account) return this.throwLater(403, 'Not logged in');
     this.account?.acceptedCoupons.add(request.couponId);
     return this.returnLater(this.account);
   }
+
   couponGenerateSuperAdmin(request: Admin.CouponGenerateSuperAdminRequest): Promise<Admin.FileDownload> {
     if (!this.superLoggedIn) {
       return this.throwLater(403, 'Not allowed');
@@ -262,20 +415,22 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       blob: new Blob(['COUPON1\nCOUPON2\nCOUPON3\n'], { type: 'text/plain' }),
     }, undefined);
   }
+
   accountLogoutAdmin(): Promise<void> {
     this.loggedIn = false;
     this.superLoggedIn = false;
     return this.returnLater(undefined);
   }
+
   accountSignupAdmin(request: Admin.AccountSignupAdminRequest): Promise<Admin.AccountAdmin> {
     const account: Admin.AccountAdmin = {
       accountId: randomUuid(),
       basePlanId: (request.accountSignupAdmin.invitationId
-        ? TeammatePlanId
-        : (request.accountSignupAdmin.couponId
-          ? 'pro-lifetime'
-          : request.accountSignupAdmin.basePlanId))
-        || 'standard3-monthly',
+          ? TeammatePlanId
+          : (request.accountSignupAdmin.couponId
+            ? 'pro-lifetime'
+            : request.accountSignupAdmin.basePlanId))
+        || DefaultMockUserPlanId,
       name: request.accountSignupAdmin.name,
       email: request.accountSignupAdmin.email,
       isSuperAdmin: request.accountSignupAdmin.email === SuperAdminEmail || undefined,
@@ -294,7 +449,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       planId: account.basePlanId,
       acceptedInvitations: new Set(request.accountSignupAdmin.invitationId ? [request.accountSignupAdmin.invitationId] : []),
       acceptedCoupons: new Set(request.accountSignupAdmin.couponId ? [request.accountSignupAdmin.couponId] : []),
-      ...account
+      ...account,
     };
     if (request.accountSignupAdmin.invitationId) {
       // Create external project
@@ -306,6 +461,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     }
     return this.returnLater(account);
   }
+
   gitHubGetReposAdmin(request: Admin.GitHubGetReposAdminRequest): Promise<Admin.AvailableRepos> {
     return this.returnLater({
       repos: [
@@ -313,6 +469,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       ],
     });
   }
+
   accountDeleteAdmin(): Promise<void> {
     if (!this.account) return this.throwLater(403, 'Not logged in');
     this.loggedIn = false;
@@ -321,6 +478,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     this.accountPass = undefined;
     return this.returnLater(undefined);
   }
+
+  accountDeleteSuperAdmin(request: Admin.AccountDeleteSuperAdminRequest): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+
   accountUpdateAdmin(request: Admin.AccountUpdateAdminRequest): Promise<Admin.AccountAdmin> {
     if (!this.account) return this.throwLater(403, 'Not logged in');
     if (request.accountUpdateAdmin.name) this.account.name = request.accountUpdateAdmin.name;
@@ -332,15 +494,15 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (request.accountUpdateAdmin.basePlanId) {
       this.account.planId = request.accountUpdateAdmin.basePlanId;
       this.account.basePlanId = request.accountUpdateAdmin.basePlanId;
-    };
+    }
     if (request.accountUpdateAdmin.apiKey) {
       this.account.apiKey = request.accountUpdateAdmin.apiKey;
       if (RestrictedActions[this.account.basePlanId]?.has(Action.API_KEY)) {
         // Auto-upgrade test, simulate Java-land background upgrade
         setTimeout(() => {
           if (this.account) {
-            this.account.planId = 'standard3-monthly';
-            this.account.basePlanId = 'standard3-monthly';
+            this.account.planId = DefaultMockUserPlanId;
+            this.account.basePlanId = DefaultMockUserPlanId;
           }
         }, 500);
       }
@@ -351,8 +513,10 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         ...request.accountUpdateAdmin.attrs,
       };
     }
+    if (request.accountUpdateAdmin.digestOptOutForProjectIds !== undefined) this.account.digestOptOutForProjectIds = request.accountUpdateAdmin.digestOptOutForProjectIds;
     return this.returnLater(this.account);
   }
+
   accountAttrsUpdateAdmin(request: Admin.AccountAttrsUpdateAdminRequest): Promise<Admin.AccountAdmin> {
     if (!this.account) return this.throwLater(403, 'Not logged in');
     if (!!request.accountAttrsUpdateAdmin.attrs) {
@@ -363,6 +527,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     }
     return this.returnLater(this.account);
   }
+
   accountUpdateSuperAdmin(request: Admin.AccountUpdateSuperAdminRequest): Promise<Admin.AccountAdmin> {
     if (!this.account) return this.throwLater(403, 'Not logged in');
     if (request.accountUpdateSuperAdmin.changeToFlatPlanWithYearlyPrice !== undefined) {
@@ -380,15 +545,18 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       };
       this.account.planId = newPlanId;
       this.account.basePlanId = basePlanId;
-    };
+    }
+    ;
     if (request.accountUpdateSuperAdmin.addons !== undefined) {
       this.account.addons = {
         ...this.account.addons,
         ...request.accountUpdateSuperAdmin.addons,
       };
-    };
+    }
+    ;
     return this.returnLater(this.account);
   }
+
   accountViewInvitationAdmin(request: Admin.AccountViewInvitationAdminRequest): Promise<Admin.InvitationResult> {
     return this.returnLater({
       inviteeName: 'John Doe',
@@ -397,12 +565,14 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       isAcceptedByYou: this.account?.acceptedInvitations.has(request.invitationId),
     });
   }
+
   accountAcceptInvitationAdmin(request: Admin.AccountAcceptInvitationAdminRequest): Promise<Admin.AccountAcceptInvitationResponse> {
     if (!this.account) return this.throwLater(403, 'Not logged in');
     this.account.acceptedInvitations.add(request.invitationId);
     this.getProject(request.invitationId); // Create project
     return this.returnLater({ projectId: request.invitationId });
   }
+
   projectAdminsInviteAdmin(request: Admin.ProjectAdminsInviteAdminRequest): Promise<Admin.ProjectAdminsInviteResult> {
     const invitation: Admin.InvitationAdmin = {
       invitationId: randomUuid(),
@@ -412,12 +582,14 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     project.invitations.push(invitation);
     return this.returnLater({ invitation: invitation });
   }
+
   projectAdminsListAdmin(request: Admin.ProjectAdminsListAdminRequest): Promise<Admin.ProjectAdminsListResult> {
     return this.returnLater({
       admins: this.getProject(request.projectId).admins,
       invitations: this.getProject(request.projectId).invitations,
     });
   }
+
   projectAdminsRemoveAdmin(request: Admin.ProjectAdminsRemoveAdminRequest): Promise<void> {
     const project = this.getProject(request.projectId);
     if (request.accountId) project.admins = project.admins
@@ -426,6 +598,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       .filter(invitation => invitation.invitationId !== request.invitationId);
     return this.returnLater(undefined);
   }
+
   accountBillingAdmin(): Promise<Admin.AccountBilling> {
     if (!this.account) return this.throwLater(403, 'Not logged in');
     const billingPeriodEnd = new Date();
@@ -438,13 +611,15 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       payment: (this.account.subscriptionStatus === Admin.SubscriptionStatus.ActiveTrial
         || this.account.subscriptionStatus === Admin.SubscriptionStatus.NoPaymentMethod) ? undefined : {
         brand: 'mastercard',
-        last4: "4242",
+        last4: '4242',
         expiryMonth: 7,
         expiryYear: 2032,
       },
       billingPeriodEnd: this.account.subscriptionStatus === Admin.SubscriptionStatus.ActiveTrial ? undefined : billingPeriodEnd,
       trackedUsers: 341,
       postCount: 32,
+      teammateCount: 4,
+      teammateMax: 8,
       availablePlans: Object.values(AvailablePlans).filter(p => p.basePlanId !== 'flat-yearly'),
       invoices: {
         cursor: 'one more',
@@ -452,7 +627,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
           date: invoiceDate,
           status: 'paid',
           amount: 300,
-          description: "Enterprise plan monthly",
+          description: 'Enterprise plan monthly',
           invoiceId: 'a5423e91-2df7-4a04-b38c-9919b0c160cd',
         }],
       },
@@ -463,19 +638,23 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         actionType: 'stripe-next-action',
         actionData: {
           'paymentIntentClientSecret': 'client-secret',
-        }
+        },
       },
+      purchasedLicenseKey: 'b216a348-7c77-448a-b031-9ec2fb18337d',
     });
   }
+
   accountBillingSyncPaymentsAdmin(): Promise<void> {
     return this.returnLater(undefined);
   }
+
   accountCreditAdjustmentSuperAdmin(request: Admin.AccountCreditAdjustmentSuperAdminRequest): Promise<void> {
     if (!this.superLoggedIn) {
       return this.throwLater(403, 'Not allowed');
     }
     return this.returnLater(undefined);
   }
+
   invoicesSearchAdmin(request: Admin.InvoicesSearchAdminRequest): Promise<Admin.Invoices> {
     const invoiceDate = new Date();
     invoiceDate.setDate(invoiceDate.getDate() - 24);
@@ -490,14 +669,16 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       }],
     });
   }
+
   invoiceHtmlGetAdmin(request: Admin.InvoiceHtmlGetAdminRequest): Promise<Admin.InvoiceHtmlResponse> {
     if (request.invoiceId === 'a5423e91-2df7-4a04-b38c-9919b0c160cd') {
       return this.returnLater({
-        invoiceHtml: "This is an invoice <b>test</b>",
+        invoiceHtml: 'This is an invoice <b>test</b>',
       });
     }
     return this.throwLater(404, 'Invoice does not exist');
   }
+
   commentCreate(request: Client.CommentCreateRequest): Promise<Client.Comment> {
     var loggedInUser;
     if (request.commentCreate['author']) {
@@ -513,7 +694,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         ...parentComment.parentIdPath,
         request.commentCreate.parentCommentId,
       ]
-      : []
+      : [];
     const comment: CommentWithAuthorWithParentPath = {
       ideaId: request.ideaId,
       commentId: '' + (this.nextCommentId++),
@@ -543,9 +724,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       vote: Client.VoteOption.Upvote,
     });
   }
+
   commentDelete(request: Client.CommentDeleteRequest): Promise<Client.CommentWithVote> {
     return this.commentDeleteAdmin(request);
   }
+
   ideaGetAll(request: Client.IdeaGetAllRequest): Promise<Client.IdeaGetAllResponse> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     return this.returnLater({
@@ -557,6 +740,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       }).filter(notEmpty),
     });
   }
+
   mockMergedPostAsComment(parentIdeaId: string, mergedIdea: Admin.Idea): CommentWithAuthorWithParentPath {
     return {
       parentIdPath: [],
@@ -574,6 +758,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       voteValue: mergedIdea.voteValue || 0,
     };
   }
+
   ideaCommentSearch(request: Client.IdeaCommentSearchRequest): Promise<Client.IdeaCommentSearchResponse> {
     const idea: Admin.Idea = this.getImmutable(
       this.getProject(request.projectId).ideas,
@@ -594,24 +779,26 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         !request.ideaCommentSearch.excludeChildrenCommentIds.some(ec =>
           ec === comment.commentId
           || comment.parentIdPath.some(pc => ec === pc)))
-      .filter(comment => !minCommentIdToExclude || comment.commentId > minCommentIdToExclude)
+      .filter(comment => !minCommentIdToExclude || comment.commentId > minCommentIdToExclude),
     ].map(comment => {
       return {
         ...comment,
         author: comment.authorUserId ? this.getProject(request.projectId).users.find(user => user.userId === comment.authorUserId)! : undefined,
         vote: loggedInUser ? this.getProject(request.projectId).commentVotes.find(vote => vote.voterUserId === comment.commentId && vote.voterUserId === loggedInUser.userId) : undefined,
-      }
+      };
     }), [(l, r) => l.created.getTime() - r.created.getTime()]);
     return this.returnLater({
       results: data.slice(0, Math.min(data.length, 10)),
     });
   }
+
   commentSearch(request: Client.CommentSearchRequest): Promise<Client.CommentSearchResponse> {
     return this.returnLater(this.filterCursor(this.sort(this.getProject(request.projectId).comments
-      .filter(comment => comment.authorUserId === request.commentSearch.filterAuthorId)
-      , [(l, r) => l.created.getTime() - r.created.getTime()])
+          .filter(comment => comment.authorUserId === request.commentSearch.filterAuthorId)
+        , [(l, r) => l.created.getTime() - r.created.getTime()])
       , request.commentSearch.limit || this.DEFAULT_LIMIT, request.cursor));
   }
+
   commentUpdate(request: Client.CommentUpdateRequest): Promise<Client.CommentWithVote> {
     const comment: CommentWithAuthorWithParentPath = this.getImmutable(
       this.getProject(request.projectId).comments,
@@ -620,13 +807,15 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     comment.edited = new Date();
     return this.returnLater(comment);
   }
+
   commentSearchAdmin(request: Admin.CommentSearchAdminRequest): Promise<Admin.CommentSearchAdminResponse> {
     return this.returnLater(this.filterCursor(this.getProject(request.projectId).comments
-      .filter(comment => !request.commentSearchAdmin.searchText
-        || comment.authorName && comment.authorName.indexOf(request.commentSearchAdmin.searchText) >= 0
-        || comment.content && comment.content.indexOf(request.commentSearchAdmin.searchText) >= 0)
+        .filter(comment => !request.commentSearchAdmin.searchText
+          || comment.authorName && comment.authorName.indexOf(request.commentSearchAdmin.searchText) >= 0
+          || comment.content && comment.content.indexOf(request.commentSearchAdmin.searchText) >= 0)
       , request.commentSearchAdmin.limit || this.DEFAULT_LIMIT, request.cursor));
   }
+
   transactionSearch(request: Client.TransactionSearchRequest): Promise<Client.TransactionSearchResponse> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     if (!loggedInUser) return this.throwLater(403, 'Not logged in');
@@ -635,7 +824,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       || request.transactionSearch.filterCreatedEnd !== undefined
       || request.transactionSearch.filterCreatedStart !== undefined
       || request.transactionSearch.filterTransactionTypes !== undefined
-    ) throw new Error("Filters not implemented.");
+    ) throw new Error('Filters not implemented.');
     const balance = this.getProject(request.projectId).balances[loggedInUser.userId] || 0;
     const transactions = this.getProject(request.projectId).transactions.filter(t => t.userId === loggedInUser.userId);
     transactions.sort((l, r) => r.created.valueOf() - l.created.valueOf());
@@ -644,22 +833,26 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       balance: { balance },
     });
   }
+
   creditIncome(request: Admin.CreditIncomeRequest): Promise<void> {
-    throw new Error("Method not implemented.");
+    throw new Error('Method not implemented.');
   }
+
   ideaCreate(request: Client.IdeaCreateRequest): Promise<Client.IdeaWithVote> {
     return this.ideaCreateAdmin({
       projectId: request.projectId,
       ideaCreateAdmin: {
         ...request.ideaCreate,
         statusId: this.getProject(request.projectId).config.config.content.categories
-          .find(c => c.categoryId === request.ideaCreate.categoryId)!.workflow.entryStatus
+          .find(c => c.categoryId === request.ideaCreate.categoryId)!.workflow.entryStatus,
       },
     });
   }
+
   ideaDelete(request: Client.IdeaDeleteRequest): Promise<void> {
     return this.ideaDeleteAdmin(request);
   }
+
   ideaGet(request: Client.IdeaGetRequest): Promise<Client.IdeaWithVote> {
     const idea = this.getProject(request.projectId).ideas.find(idea => idea.ideaId === request.ideaId);
     if (!idea) return this.throwLater(404, 'Idea not found');
@@ -667,6 +860,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     const vote = loggedInUser ? this.getProject(request.projectId).votes.find(vote => vote.ideaId === idea.ideaId && vote.voterUserId === loggedInUser.userId) : undefined;
     return this.returnLater({ ...idea, vote: vote || {} });
   }
+
   ideaSearch(request: Client.IdeaSearchRequest): Promise<Client.IdeaWithVoteSearchResponse> {
     return this.ideaSearchGeneric({
       ...request,
@@ -675,9 +869,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       },
     });
   }
+
   ideaSearchAdmin(request: Admin.IdeaSearchAdminRequest): Promise<Admin.IdeaSearchResponse> {
     return this.ideaSearchGeneric(request);
   }
+
   ideaSearchGeneric(request: Admin.IdeaSearchAdminRequest): Promise<Client.IdeaWithVoteSearchResponse> {
     var searchText;
     if (!!request.ideaSearchAdmin.similarToIdeaId) {
@@ -695,60 +891,70 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       : allIdeas;
     const categories = this.getProject(request.projectId).config.config.content.categories;
     return this.returnLater(this.filterCursor(this.sort(ideas
-      .filter(idea => request.ideaSearchAdmin.filterAuthorId === undefined
-        || (idea.authorUserId === request.ideaSearchAdmin.filterAuthorId))
-      .filter(idea => !request.ideaSearchAdmin.fundedByMeAndActive
-        || !idea.statusId
-        || categories.find(c => c.categoryId === idea.categoryId)!
-          .workflow
-          .statuses
-          .find(s => s.statusId === idea.statusId)!
-          .disableFunding !== true)
-      .filter(idea => request.ideaSearchAdmin.filterCreatedStart === undefined
-        || (idea.created >= request.ideaSearchAdmin.filterCreatedStart))
-      .filter(idea => request.ideaSearchAdmin.similarToIdeaId === undefined
-        || (idea.ideaId !== request.ideaSearchAdmin.similarToIdeaId))
-      .filter(idea => request.ideaSearchAdmin.filterCreatedEnd === undefined
-        || (idea.created <= request.ideaSearchAdmin.filterCreatedEnd))
-      .filter(idea => !request.ideaSearchAdmin.filterTagIds
-        || request.ideaSearchAdmin.filterTagIds.length === 0
-        || (request.ideaSearchAdmin.filterTagIds.filter(tagId => idea.tagIds && idea.tagIds.includes(tagId)).length > 0
-          !== !!request.ideaSearchAdmin.invertTag))
-      .filter(idea => !request.ideaSearchAdmin.filterCategoryIds
-        || (request.ideaSearchAdmin.filterCategoryIds.includes(idea.categoryId)
-          !== !!request.ideaSearchAdmin.invertCategory))
-      .filter(idea => request.ideaSearchAdmin.filterStatusIds === undefined
-        || request.ideaSearchAdmin.filterStatusIds.length === 0
-        || ((idea.statusId && request.ideaSearchAdmin.filterStatusIds.includes(idea.statusId))
-          !== !!request.ideaSearchAdmin.invertStatus))
-      .filter(idea => searchText === undefined
-        || idea.title.indexOf(searchText) >= 0
-        || (idea.description || '').indexOf(searchText) >= 0)
-      .map(idea => {
-        const loggedInUser = this.getProject(request.projectId).loggedInUser;
-        const vote = loggedInUser ? this.getProject(request.projectId).votes.find(vote => vote.ideaId === idea.ideaId && vote.voterUserId === loggedInUser.userId) : undefined;
-        return { ...idea, vote: vote || {} };
-      })
-      , [(l, r) => {
-        switch (request.ideaSearchAdmin.sortBy) {
-          default: case Admin.IdeaSearchAdminSortByEnum.Trending: return this.calcTrendingScore(r) - this.calcTrendingScore(l);
-          case Admin.IdeaSearchAdminSortByEnum.Top: return (this.calcScore(r) - this.calcScore(l));
-          case Admin.IdeaSearchAdminSortByEnum.New: return r.created.getTime() - l.created.getTime();
-          case Admin.IdeaSearchAdminSortByEnum.Random: return Math.random() - 0.5;
-          case Admin.IdeaSearchAdminSortByEnum.DragAndDrop: return (r.order || r.created.getTime()) - (l.order || l.created.getTime());
-        }
-      }])
+          .filter(idea => request.ideaSearchAdmin.filterAuthorId === undefined
+            || (idea.authorUserId === request.ideaSearchAdmin.filterAuthorId))
+          .filter(idea => !request.ideaSearchAdmin.fundedByMeAndActive
+            || !idea.statusId
+            || categories.find(c => c.categoryId === idea.categoryId)!
+              .workflow
+              .statuses
+              .find(s => s.statusId === idea.statusId)!
+              .disableFunding !== true)
+          .filter(idea => request.ideaSearchAdmin.filterCreatedStart === undefined
+            || (idea.created >= request.ideaSearchAdmin.filterCreatedStart))
+          .filter(idea => request.ideaSearchAdmin.similarToIdeaId === undefined
+            || (idea.ideaId !== request.ideaSearchAdmin.similarToIdeaId))
+          .filter(idea => request.ideaSearchAdmin.filterCreatedEnd === undefined
+            || (idea.created <= request.ideaSearchAdmin.filterCreatedEnd))
+          .filter(idea => !request.ideaSearchAdmin.filterTagIds
+            || request.ideaSearchAdmin.filterTagIds.length === 0
+            || (request.ideaSearchAdmin.filterTagIds.filter(tagId => idea.tagIds && idea.tagIds.includes(tagId)).length > 0
+              !== !!request.ideaSearchAdmin.invertTag))
+          .filter(idea => !request.ideaSearchAdmin.filterCategoryIds
+            || (request.ideaSearchAdmin.filterCategoryIds.includes(idea.categoryId)
+              !== !!request.ideaSearchAdmin.invertCategory))
+          .filter(idea => request.ideaSearchAdmin.filterStatusIds === undefined
+            || request.ideaSearchAdmin.filterStatusIds.length === 0
+            || ((idea.statusId && request.ideaSearchAdmin.filterStatusIds.includes(idea.statusId))
+              !== !!request.ideaSearchAdmin.invertStatus))
+          .filter(idea => searchText === undefined
+            || idea.title.indexOf(searchText) >= 0
+            || (idea.description || '').indexOf(searchText) >= 0)
+          .map(idea => {
+            const loggedInUser = this.getProject(request.projectId).loggedInUser;
+            const vote = loggedInUser ? this.getProject(request.projectId).votes.find(vote => vote.ideaId === idea.ideaId && vote.voterUserId === loggedInUser.userId) : undefined;
+            return { ...idea, vote: vote || {} };
+          })
+        , [(l, r) => {
+          switch (request.ideaSearchAdmin.sortBy) {
+            default:
+            case Admin.IdeaSearchAdminSortByEnum.Trending:
+              return this.calcTrendingScore(r) - this.calcTrendingScore(l);
+            case Admin.IdeaSearchAdminSortByEnum.Top:
+              return (this.calcScore(r) - this.calcScore(l));
+            case Admin.IdeaSearchAdminSortByEnum.New:
+              return r.created.getTime() - l.created.getTime();
+            case Admin.IdeaSearchAdminSortByEnum.Random:
+              return Math.random() - 0.5;
+            case Admin.IdeaSearchAdminSortByEnum.DragAndDrop:
+              return (r.order || r.created.getTime()) - (l.order || l.created.getTime());
+          }
+        }])
       , request.ideaSearchAdmin.limit || this.DEFAULT_LIMIT, request.cursor), 1000);
   }
+
   ideaHistogramAdmin(request: Admin.IdeaHistogramAdminRequest): Promise<Admin.HistogramResponse> {
     return this.genericHistogramAdmin(request.projectId, request.ideaHistogramSearchAdmin);
   }
+
   commentHistogramAdmin(request: Admin.CommentHistogramAdminRequest): Promise<Admin.HistogramResponse> {
     return this.genericHistogramAdmin(request.projectId, request.histogramSearchAdmin);
   }
+
   userHistogramAdmin(request: Admin.UserHistogramAdminRequest): Promise<Admin.HistogramResponse> {
     return this.genericHistogramAdmin(request.projectId, request.histogramSearchAdmin);
   }
+
   genericHistogramAdmin(projectId: string, search: Admin.HistogramSearchAdmin): Promise<Admin.HistogramResponse> {
     var start = search.filterCreatedStart;
     var end = search.filterCreatedEnd;
@@ -788,6 +994,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
 
     return this.returnLater(results, undefined);
   }
+
   ideaCategoryAggregateAdmin(request: Admin.IdeaCategoryAggregateAdminRequest): Promise<Admin.IdeaAggregateResponse> {
     const project = this.getProject(request.projectId);
     if (!project) return this.throwLater(404, 'Project not found');
@@ -807,6 +1014,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       });
     return this.returnLater(results);
   }
+
   ideaUpdate(request: Client.IdeaUpdateRequest): Promise<Client.Idea> {
     return this.ideaUpdateAdmin({
       ...request,
@@ -815,6 +1023,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       },
     });
   }
+
   async configBindSlug(request: Client.ConfigBindSlugRequest): Promise<Client.ConfigBindSlugResult> {
     const project = await this.getProjectBySlug(request.slug);
     if (!project) return this.throwLater(404, 'Project does not exist or was deleted by owner');
@@ -823,6 +1032,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       config: project.config,
     });
   }
+
   async userBindSlug(request: Client.UserBindSlugRequest): Promise<Client.UserBindResponse> {
     const project = await this.getProjectBySlug(request.slug);
     if (!project) return this.throwLater(404, 'Project does not exist or was deleted by owner');
@@ -831,6 +1041,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       ...request,
     });
   }
+
   async configAndUserBindSlug(request: Client.ConfigAndUserBindSlugRequest): Promise<Client.ConfigAndUserBindSlugResult> {
     const project = await this.getProjectBySlug(request.slug);
     if (!project) return this.throwLater(404, 'Project does not exist or was deleted by owner');
@@ -844,12 +1055,13 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       user: userBind.user,
     });
   }
+
   userCreate(request: Client.UserCreateRequest): Promise<Client.UserCreateResponse> {
     if (request.userCreate.email && this.getProject(request.projectId).users.some(u => u.email === request.userCreate.email)) {
       return this.returnLater({ requiresEmailLogin: true });
     }
     if ((this.getProject(request.projectId).config.config.users.onboarding.notificationMethods.email?.verification === Client.EmailSignupVerificationEnum.Required
-      || this.getProject(request.projectId).config.config.users.onboarding.notificationMethods.email?.allowedDomains !== undefined)
+        || this.getProject(request.projectId).config.config.users.onboarding.notificationMethods.email?.allowedDomains !== undefined)
       && request.userCreate.email
       && request.userCreate.emailVerification !== '123456') {
       return this.returnLater({ requiresEmailVerification: true });
@@ -867,6 +1079,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       };
     });
   }
+
   userDelete(request: Client.UserDeleteRequest): Promise<void> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     if (!loggedInUser) return this.throwLater(403, 'Not logged in');
@@ -877,6 +1090,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     this.getProject(request.projectId).loggedInUser = undefined;
     return this.returnLater(undefined);
   }
+
   async userBind(request: Client.UserBindRequest): Promise<Client.UserBindResponse> {
     const project = this.getProject(request.projectId);
     if (!project) return this.throwLater(404, 'Project not found');
@@ -913,11 +1127,14 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       } : undefined,
     });
   }
+
   async verifySsoTokenIfExists(project, ssoToken?: string) {
   }
+
   forgotPassword(request: Client.ForgotPasswordRequest): Promise<void> {
     return this.returnLater(undefined);
   }
+
   userLogin(request: Client.UserLoginRequest): Promise<Client.UserMeWithBalance> {
     const user = this.getProject(request.projectId).users.find(user => user.email === request.userLogin.email);
     if (!user) return this.throwLater(404, 'Incorrect email or password');
@@ -931,10 +1148,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     this.getProject(request.projectId).loggedInUser = user;
     return this.returnLater(user);
   }
+
   userLogout(request: Client.UserLogoutRequest): Promise<void> {
     this.getProject(request.projectId).loggedInUser = undefined;
     return this.returnLater(undefined);
   }
+
   userUpdate(request: Client.UserUpdateRequest): Promise<Client.UserMeWithBalance> {
     const user: Admin.UserAdmin = this.getImmutable(
       this.getProject(request.projectId).users,
@@ -947,15 +1166,19 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     }
     if (request.userUpdate.iosPushToken !== undefined) {
       user.iosPush = request.userUpdate.iosPushToken !== '';
-    };
+    }
+    ;
     if (request.userUpdate.androidPushToken !== undefined) {
       user.androidPush = request.userUpdate.androidPushToken !== '';
-    };
+    }
+    ;
     if (request.userUpdate.browserPushToken !== undefined) {
       user.browserPush = request.userUpdate.browserPushToken !== '';
-    };
+    }
+    ;
     return this.returnLater(user);
   }
+
   ideaVoteGetOwn(request: Client.IdeaVoteGetOwnRequest): Promise<Client.IdeaVoteGetOwnResponse> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     if (!loggedInUser) return this.throwLater(403, 'Not logged in');
@@ -975,6 +1198,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       }, {}),
     });
   }
+
   commentVoteGetOwn(request: Client.CommentVoteGetOwnRequest): Promise<Client.CommentVoteGetOwnResponse> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     if (!loggedInUser) return this.throwLater(403, 'Not logged in');
@@ -986,6 +1210,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       }, {}),
     });
   }
+
   notificationClear(request: Client.NotificationClearRequest): Promise<void> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     if (!loggedInUser) return this.throwLater(403, 'Not logged in');
@@ -994,6 +1219,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         || notification.notificationId !== request.notificationId);
     return this.returnLater(undefined);
   }
+
   notificationClearAll(request: Client.NotificationClearAllRequest): Promise<void> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     if (!loggedInUser) return this.throwLater(403, 'Not logged in');
@@ -1001,6 +1227,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       .filter(notification => notification.userId !== loggedInUser.userId);
     return this.returnLater(undefined);
   }
+
   notificationSearch(request: Client.NotificationSearchRequest): Promise<Client.NotificationSearchResponse> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     if (!loggedInUser) return this.throwLater(403, 'Not logged in');
@@ -1008,6 +1235,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       .filter(notification => notification.userId === loggedInUser.userId);
     return this.returnLater(this.filterCursor<Client.Notification>(notifications, 10, request.cursor));
   }
+
   commentDeleteAdmin(request: Admin.CommentDeleteAdminRequest): Promise<Admin.Comment> {
     const comment: CommentWithAuthorWithParentPath = this.getImmutable(
       this.getProject(request.projectId).comments,
@@ -1019,9 +1247,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     comment.edited = new Date();
     return this.returnLater(comment);
   }
+
   transactionSearchAdmin(request: Admin.TransactionSearchAdminRequest): Promise<Admin.TransactionSearchAdminResponse> {
-    throw new Error("Method not implemented.");
+    throw new Error('Method not implemented.');
   }
+
   async ideaCreateAdmin(request: Admin.IdeaCreateAdminRequest): Promise<Admin.IdeaWithVote> {
     const author = this.getProject(request.projectId).users.find(user => user.userId === request.ideaCreateAdmin.authorUserId);
     if (!author) return this.throwLater(404, 'Author of idea not found');
@@ -1062,6 +1292,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       },
     });
   }
+
   ideaDeleteAdmin(request: Admin.IdeaDeleteAdminRequest): Promise<void> {
     const ideaIndex = this.getProject(request.projectId).ideas.findIndex(idea => idea.ideaId === request.ideaId);
     if (ideaIndex !== -1) {
@@ -1069,12 +1300,15 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     }
     return this.returnLater(undefined);
   }
+
   ideaDeleteBulkAdmin(request: Admin.IdeaDeleteBulkAdminRequest): Promise<void> {
-    throw new Error("Method not implemented.");
+    throw new Error('Method not implemented.');
   }
+
   ideaGetAdmin(request: Admin.IdeaGetAdminRequest): Promise<Admin.Idea> {
     return this.ideaGetAdmin(request);
   }
+
   ideaUpdateAdmin(request: Admin.IdeaUpdateAdminRequest): Promise<Admin.Idea> {
     const idea: Admin.Idea = this.getImmutable(
       this.getProject(request.projectId).ideas,
@@ -1097,9 +1331,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (request.ideaUpdateAdmin.fundGoal !== undefined) idea.fundGoal = request.ideaUpdateAdmin.fundGoal;
     if (!request.ideaUpdateAdmin.suppressNotifications) {
       // Should send notifications here
-    };
+    }
+    ;
     return this.returnLater(idea);
   }
+
   ideaLinkAdmin(request: Admin.IdeaLinkAdminRequest): Promise<Admin.IdeaConnectResponse> {
     const idea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.ideaId);
     const parentIdea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.parentIdeaId);
@@ -1109,6 +1345,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     parentIdea.linkedFromPostIds = [...(parentIdea.linkedFromPostIds || []), idea.ideaId];
     return this.returnLater({ idea, parentIdea });
   }
+
   ideaUnLinkAdmin(request: Admin.IdeaUnLinkAdminRequest): Promise<Admin.IdeaConnectResponse> {
     const idea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.ideaId);
     const parentIdea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.parentIdeaId);
@@ -1118,13 +1355,16 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     parentIdea.linkedFromPostIds = parentIdea.linkedFromPostIds?.filter(ideaId => ideaId !== idea.ideaId);
     return this.returnLater({ idea, parentIdea });
   }
+
   ideaVotersGetAdmin(request: Admin.IdeaVotersGetAdminRequest): Promise<Admin.IdeaVotersAdminResponse> {
     return this.returnLater(this.filterCursor(this.getProject(request.projectId).users
       , this.DEFAULT_LIMIT, request.cursor));
   }
+
   ideaMerge(request: Client.IdeaMergeRequest): Promise<Client.IdeaConnectResponse> {
     return this.ideaMergeAdmin(request);
   }
+
   ideaMergeAdmin(request: Admin.IdeaMergeAdminRequest): Promise<Admin.IdeaConnectResponse> {
     const idea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.ideaId);
     const parentIdea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.parentIdeaId);
@@ -1152,6 +1392,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     }
     return this.returnLater({ idea, parentIdea });
   }
+
   ideaUnMergeAdmin(request: Admin.IdeaUnMergeAdminRequest): Promise<Admin.IdeaConnectResponse> {
     const idea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.ideaId);
     const parentIdea: Admin.Idea = this.getImmutable(this.getProject(request.projectId).ideas, idea => idea.ideaId === request.parentIdeaId);
@@ -1173,6 +1414,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     }
     return this.returnLater({ idea, parentIdea });
   }
+
   ideaDraftCreateAdmin(request: Admin.IdeaDraftCreateAdminRequest): Promise<Admin.IdeaDraftAdmin> {
     const draft: Admin.IdeaDraftAdmin = {
       ...request.ideaCreateAdmin,
@@ -1182,18 +1424,21 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     this.getProject(request.projectId).drafts.unshift(draft);
     return this.returnLater(draft);
   }
+
   ideaDraftGetAdmin(request: Admin.IdeaDraftGetAdminRequest): Promise<Admin.IdeaDraftAdmin> {
     const draft = this.getProject(request.projectId).drafts
       .find(draft => request.draftId === draft.draftId);
     if (!draft) return this.throwLater(404, 'Draft not found');
     return this.returnLater(draft);
   }
+
   ideaDraftSearchAdmin(request: Admin.IdeaDraftSearchAdminRequest): Promise<Admin.IdeaDraftSearchResponse> {
     return this.returnLater(this.filterCursor(this.getProject(request.projectId).drafts
-      .filter(draft => !request.ideaDraftSearch.filterCategoryIds
-        || request.ideaDraftSearch.filterCategoryIds.includes(draft.categoryId)),
+        .filter(draft => !request.ideaDraftSearch.filterCategoryIds
+          || request.ideaDraftSearch.filterCategoryIds.includes(draft.categoryId)),
       this.DEFAULT_LIMIT, request.cursor), 1000);
   }
+
   ideaDraftUpdateAdmin(request: Admin.IdeaDraftUpdateAdminRequest): Promise<void> {
     const draftIndex = this.getProject(request.projectId).drafts.findIndex(draft => draft.draftId === request.draftId);
     if (draftIndex === -1) return this.throwLater(404, 'Draft not found');
@@ -1206,16 +1451,19 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     };
     return this.returnLater(undefined);
   }
+
   ideaDraftDeleteAdmin(request: Admin.IdeaDraftDeleteAdminRequest): Promise<void> {
     const draftIndex = this.getProject(request.projectId).drafts.findIndex(draft => draft.draftId === request.draftId);
     if (draftIndex === -1) return this.throwLater(404, 'Draft not found');
     this.getProject(request.projectId).ideas.splice(draftIndex, 1);
     return this.returnLater(undefined);
   }
+
   configGetAdmin(request: Admin.ConfigGetAdminRequest): Promise<Admin.VersionedConfigAdmin> {
     if (!this.getProject(request.projectId)) return this.throwLater(404, 'Project not found');
     return this.returnLater(this.getProject(request.projectId).config);
   }
+
   async configGetAllAndUserBindAllAdmin(): Promise<Admin.ConfigAndBindAllResult> {
     if (!this.loggedIn) return this.throwLater(403, 'Not logged in');
     const byProjectId = {};
@@ -1231,11 +1479,13 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       byProjectId,
     });
   }
+
   configSetAdmin(request: Admin.ConfigSetAdminRequest): Promise<Admin.VersionedConfigAdmin> {
     if (request.versionLast !== undefined && this.getProject(request.projectId).config.version !== request.versionLast) this.throwLater(412, 'Config changed since last reload');
     this.getProject(request.projectId).config = { config: request.configAdmin, version: randomUuid() };
     return this.returnLater(this.getProject(request.projectId).config);
   }
+
   async projectCreateAdmin(request: Admin.ProjectCreateAdminRequest): Promise<Admin.NewProjectResult> {
     if (!this.loggedIn) return this.throwLater(403, 'Not logged in');
     const projectId = request.configAdmin.projectId || `${request.configAdmin.slug}-${randomUuid().substring(0, 3)}`;
@@ -1247,10 +1497,12 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       user: await this.getOrCreateAdminUser(projectId),
     });
   }
+
   projectDeleteAdmin(request: Admin.ProjectDeleteAdminRequest): Promise<void> {
     this.deleteProject(request.projectId);
     return this.returnLater(undefined);
   }
+
   projectExportAdmin(request: Admin.ProjectExportAdminRequest): Promise<Admin.FileDownload> {
     return this.returnLater({
       filename: `${request.projectId}.csv`,
@@ -1258,11 +1510,13 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       blob: new Blob(['a,b\n1,4'], { type: 'application/csv' }),
     }, undefined);
   }
+
   projectImportPostAdmin(request: Admin.ProjectImportPostAdminRequest): Promise<Admin.ImportResponse> {
     return this.returnLater({
       userFacingMessage: 'Imported successfully',
     });
   }
+
   userCreateAdmin(request: Admin.UserCreateAdminRequest): Promise<Admin.UserAdmin> {
     const user: Admin.UserAdmin = {
       userId: randomUuid(),
@@ -1294,6 +1548,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     }
     return this.returnLater(user);
   }
+
   userDeleteAdmin(request: Admin.UserDeleteAdminRequest): Promise<void> {
     const userIdIndex = this.getProject(request.projectId).users.findIndex(user => user.userId === request.userId);
     if (userIdIndex === -1) return this.throwLater(404, 'User not found');
@@ -1303,16 +1558,20 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     }
     return this.returnLater(undefined);
   }
+
   userDeleteBulkAdmin(request: Admin.UserDeleteBulkAdminRequest): Promise<void> {
-    throw new Error("Method not implemented.");
+    throw new Error('Method not implemented.');
   }
+
   userGet(request: Client.UserGetRequest): Promise<Client.User> {
     return this.userGetAdmin(request);
   }
+
   userGetAdmin(request: Admin.UserGetAdminRequest): Promise<Admin.UserAdmin> {
     const user = this.getProject(request.projectId).users.find(user => user.userId === request.userId);
     return user ? this.returnLater(user) : this.throwLater(404, 'User not found');
   }
+
   userSearchAdmin(request: Admin.UserSearchAdminRequest): Promise<Admin.UserSearchResponse> {
     return this.returnLater(this.filterCursor(this.getProject(request.projectId).users
       .filter(user => request.userSearchAdmin.isMod === undefined || request.userSearchAdmin.isMod === user.isMod)
@@ -1324,6 +1583,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         balance: this.getProject(request.projectId).balances[user.userId],
       })), this.DEFAULT_LIMIT, request.cursor));
   }
+
   userUpdateAdmin(request: Admin.UserUpdateAdminRequest): Promise<Admin.UserAdmin> {
     const user: Admin.UserAdmin = this.getImmutable(
       this.getProject(request.projectId).users,
@@ -1352,12 +1612,14 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     }
     if (request.userUpdateAdmin.isMod !== undefined) {
       user.isMod = request.userUpdateAdmin.isMod;
-    };
+    }
+    ;
     return this.returnLater({
       ...user,
       balance,
     });
   }
+
   ideaVoteUpdate(request: Client.IdeaVoteUpdateRequest): Promise<Client.IdeaVoteUpdateResponse> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     if (!loggedInUser) return this.throwLater(403, 'Not logged in');
@@ -1376,7 +1638,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       balance = this.getProject(request.projectId).balances[loggedInUser.userId] || 0;
       balance -= fundDiff;
       if (balance < 0) return this.throwLater(403, 'Insufficient funds');
-      const fundersCountDiff = ((vote.fundAmount || 0) + fundDiff > 0 ? 1 : 0) - ((vote.fundAmount || 0) > 0 ? 1 : 0)
+      const fundersCountDiff = ((vote.fundAmount || 0) + fundDiff > 0 ? 1 : 0) - ((vote.fundAmount || 0) > 0 ? 1 : 0);
       transaction = {
         userId: loggedInUser.userId,
         transactionId: randomUuid(),
@@ -1384,7 +1646,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         amount: fundDiff,
         transactionType: Admin.TransactionType.Vote,
         targetId: request.ideaId,
-        summary: `Funding for "${idea.title.length > 50 ? idea.title.substring(0, 47) + '...' : idea.title}"`
+        summary: `Funding for "${idea.title.length > 50 ? idea.title.substring(0, 47) + '...' : idea.title}"`,
       };
       this.getProject(request.projectId).transactions.push(transaction);
       vote.fundAmount = (vote.fundAmount || 0) + request.ideaVoteUpdate.fundDiff;
@@ -1450,14 +1712,14 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       expressionsToAdd.forEach(expression => {
         const weight = expressing?.limitEmojiSet ? expressing.limitEmojiSet.find(e => e.display === expression)?.weight || 0 : 1;
         idea.expressionsValue! += weight;
-        idea.expressions![expression] = (idea.expressions![expression] || 0) + 1
-      })
+        idea.expressions![expression] = (idea.expressions![expression] || 0) + 1;
+      });
       expressionsToRemove.forEach(expression => {
         const weight = expressing?.limitEmojiSet ? expressing.limitEmojiSet.find(e => e.display === expression)?.weight || 0 : 1;
         idea.expressionsValue! -= weight;
-        idea.expressions![expression] = (idea.expressions![expression] || 0) - 1
+        idea.expressions![expression] = (idea.expressions![expression] || 0) - 1;
         if (idea.expressions![expression] <= 0) delete idea.expressions![expression];
-      })
+      });
       vote.expression = Array.from(expressionsSet);
     }
     return this.returnLater({
@@ -1467,6 +1729,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       ...(balance !== undefined ? { balance: { balance } } : {}),
     });
   }
+
   commentVoteUpdate(request: Client.CommentVoteUpdateRequest): Promise<Client.CommentVoteUpdateResponse> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     if (!loggedInUser) return this.throwLater(403, 'Not logged in');
@@ -1510,6 +1773,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       comment,
     });
   }
+
   categorySubscribe(request: Client.CategorySubscribeRequest): Promise<Admin.UserMe> {
     const loggedInUser = this.getProject(request.projectId).loggedInUser;
     if (!loggedInUser) return this.throwLater(403, 'Not logged in');
@@ -1522,31 +1786,39 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     loggedInUser.categorySubscriptions = [...subscribedToSet];
     return this.returnLater(loggedInUser);
   }
+
   accountNoopAdmin(): Promise<void> {
     return this.returnLater(undefined);
   }
+
   ideaSubscribeAdmin(request: Admin.IdeaSubscribeAdminRequest): Promise<void> {
-    throw new Error("Method not implemented.");
+    throw new Error('Method not implemented.');
   }
+
   ideaUnsubscribeAdmin(request: Admin.IdeaUnsubscribeAdminRequest): Promise<void> {
-    throw new Error("Method not implemented.");
+    throw new Error('Method not implemented.');
   }
+
   userSubscribeAdmin(request: Admin.UserSubscribeAdminRequest): Promise<void> {
-    throw new Error("Method not implemented.");
+    throw new Error('Method not implemented.');
   }
+
   userUnsubscribeAdmin(request: Admin.UserUnsubscribeAdminRequest): Promise<void> {
-    throw new Error("Method not implemented.");
+    throw new Error('Method not implemented.');
   }
+
   commentSubscribeAdmin(request: Admin.CommentSubscribeAdminRequest): Promise<void> {
-    throw new Error("Method not implemented.");
+    throw new Error('Method not implemented.');
   }
+
   commentUnsubscribeAdmin(request: Admin.CommentUnsubscribeAdminRequest): Promise<void> {
-    throw new Error("Method not implemented.");
+    throw new Error('Method not implemented.');
   }
 
   contentUploadAsAdmin(request: Admin.ContentUploadAsAdminRequest): Promise<Admin.ContentUploadAsAdminResponse> {
     return this.contentUpload(request);
   }
+
   async contentUpload(request: Client.ContentUploadRequest): Promise<Client.ContentUploadResponse> {
     const data = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
@@ -1559,6 +1831,198 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     });
     return this.returnLater({ url: data });
   }
+
+  convoDeleteAdmin(request: Admin.ConvoDeleteAdminRequest): Promise<void> {
+    const loggedInUser = this.getProject(request.projectId).loggedInUser;
+    if (!loggedInUser) return this.throwLater(403, 'Not logged in');
+    const convos = this.getProject(request.projectId)
+      .llmConvos[loggedInUser.userId] || {};
+    delete convos[request.convoId];
+    return this.returnLater(undefined);
+  }
+
+  convoDetailsAdmin(request: Admin.ConvoDetailsAdminRequest): Promise<Admin.ConvoDetailsResponse> {
+    const loggedInUser = this.getProject(request.projectId).loggedInUser;
+    if (!loggedInUser) return this.throwLater(403, 'Not logged in');
+    const convo = this.getProject(request.projectId)
+      .llmConvos[loggedInUser.userId]
+      ?.[request.convoId];
+    if (!convo) return this.throwLater(404, 'Convo not found');
+    return this.returnLater(convo);
+  }
+
+  convoListAdmin(request: Admin.ConvoListAdminRequest): Promise<Admin.ConvoListResponse> {
+    const loggedInUser = this.getProject(request.projectId).loggedInUser;
+    if (!loggedInUser) return this.throwLater(403, 'Not logged in');
+    const convos = Object.values(this.getProject(request.projectId)
+      .llmConvos[loggedInUser.userId] || {});
+    return this.returnLater({
+      results: convos,
+    });
+  }
+
+  messageCreateAdmin(request: Admin.MessageCreateAdminRequest): Promise<Admin.CreateMessageResponse> {
+    const loggedInUser = this.getProject(request.projectId).loggedInUser;
+    if (!loggedInUser) return this.throwLater(403, 'Not logged in');
+    var convo: Admin.ConvoDetailsResponse & Admin.Convo;
+    if (request.convoId !== 'new') {
+      convo = this.getProject(request.projectId)
+        .llmConvos[loggedInUser.userId]
+        ?.[request.convoId];
+    } else {
+      var convos = this.getProject(request.projectId)
+        .llmConvos[loggedInUser.userId];
+      if (!convos) {
+        convos = {};
+        this.getProject(request.projectId)
+          .llmConvos[loggedInUser.userId] = convos;
+      }
+      convo = {
+        convoId: randomUuid(),
+        results: [],
+        created: new Date(),
+        title: request.convoMessageCreate.content,
+      };
+      convos[convo.convoId] = convo;
+    }
+    const message: Admin.ConvoMessage = {
+      messageId: randomUuid(),
+      authorType: Admin.ConvoMessageAuthorTypeEnum.USER,
+      content: request.convoMessageCreate.content,
+      created: new Date(),
+    };
+    convo.results.push(message);
+    const responseMessageId = randomUuid();
+    return this.returnLater({
+      convoId: convo.convoId,
+      message,
+      responseMessageId,
+    });
+  }
+
+  messageStreamGetAdmin(request: Admin.MessageStreamGetAdminRequest): EventSource {
+    const loggedInUser = this.getProject(request.projectId).loggedInUser!;
+    const convo = this.getProject(request.projectId)
+      .llmConvos[loggedInUser.userId][request.convoId]!;
+    const messageStr = 'The most requested feature appears to be related to issues with uploading images and manual sorting in the roadmap. Here are the key posts highlighting these requests:\n\n1. **Manual Sorting Issue in the Roadmap**\n   - **Post Title**: Issue with manual sorting in the roadmap\n   - **Author**: [Tomek](https://product.clearflask.com/user/tomek-x1rcq)\n   - **Content**: As a roadmap manager, I’d like to sort entries in my roadmap so I can set and see work sequence and priorities. Manual sorting works in "Now" column, however in "Later" or "Next" my changes do not save and entries are sorted in a random order.\n   - **Post Link**: [View Post](https://product.clearflask.com/post/github-150-2378398488-392216038)\n\n2. **Image Uploading Issue**\n   - **Post Title**: Pasting an image link fails to upload image properly\n   - **Author**: [Matus Faro](https://product.clearflask.com/user/matus-faro-xzhd)\n   - **Content**: Pasting an image link to a post fails to properly upload the image. The img tag src is directly set and an upload is not triggered. On save, image is sanitized away.\n   - **Post Link**: [View Post](https://product.clearflask.com/post/github-152-2426441703-392216038)\n\nThese posts indicate that users are facing challenges with both manual sorting in the roadmap and issues related to image uploads.';
+
+    const eventSource = {
+      close: () => {
+      },
+    } as EventSource;
+    const sendNextToken = (nextToken: string) => {
+      eventSource.onmessage?.({
+        type: 'token',
+        data: nextToken,
+      } as MessageEvent);
+    };
+    const sendMessage = () => {
+      const message: Admin.ConvoMessage = Math.random() > 0.8 ? {
+        messageId: request.messageId,
+        authorType: Admin.ConvoMessageAuthorTypeEnum.ALERT,
+        content: capitalize(loremIpsum({
+          units: 'words',
+          count: Math.round(Math.random() * 5 + 3),
+        })),
+        created: new Date(),
+      } : {
+        messageId: request.messageId,
+        authorType: Admin.ConvoMessageAuthorTypeEnum.AI,
+        content: messageStr,
+        created: new Date(),
+        inputTokenCount: 1403,
+        outputTokenCount: 87,
+      };
+      convo.results.push(message);
+      eventSource.onmessage?.({
+        type: 'message',
+        data: JSON.stringify(message),
+      } as MessageEvent);
+    };
+    let tokenCount = 0;
+    (messageStr.match(/[\s\S]{1,8}/g) || []).forEach(token => {
+      setTimeout(() => sendNextToken(token),
+        tokenCount * 50 // fixed delay between tokens
+        + 300 // static initial delay
+        + Math.floor(Math.random() * 50) - 25, // Jitter
+      );
+      tokenCount++;
+    });
+    setTimeout(sendMessage, tokenCount * 100 + 300);
+    return eventSource;
+  }
+
+  promptGetSuperAdmin(request: Admin.PromptGetSuperAdminRequest): Promise<Admin.PromptGetResponse> {
+    return this.returnLater({
+      prompt: '# Intro\n' +
+        'You are a helpful ClearFlask Agent.\n' +
+        'ClearFlask is a feedback management platform that helps collect, prioritize, and act on feedback.\n' +
+        'ClearFlask customers integrate the platform into their own product to gather insights on their own users.\n' +
+        '\n' +
+        '# Project information\n' +
+        'Customer is using ClearFlask and configured a project used for collecting feedback for their product.\n' +
+        'projectName: "Example"\n' +
+        `projectId: "${request.projectId}"\n` +
+        'projectUrl: "https://ai-test-example.localhost:8080"\n' +
+        'When linking to specific feedback, use the following format:\n' +
+        '"{projectUrl}/post/{postId}"\n' +
+        'When linking to specific user, use the following format:\n' +
+        '"{projectUrl}/user/{userId}"\n' +
+        '\n' +
+        '## Categories\n' +
+        'Each project typically has multiple categories of Posts.\n' +
+        'Typical categories are:\n' +
+        '- Feedback: users contribute various feedback with feature requests and bug reports\n' +
+        '- Roadmap: customer created items describing the project\'s current, near and long term roadmap features\n' +
+        '- Changelog: customer created items describing the project\'s accomplishments or announcements.\n' +
+        'This project has the following categories configured:\n' +
+        '### Category\n' +
+        'categoryName: "feedback"\n' +
+        'categoryId: "feedback-d17bcb4f-2cec-4920-bbd9-2790dcced6c4"\n' +
+        '    Users can create this category.\n' +
+        '    Posts can have these statuses:\n' +
+        '    - statusName:"new" statusId:"ea859598-07a7-497f-b51c-ccc8ed63bbc8"\n' +
+        '    - statusName:"considering" statusId:"8303da4e-40d4-45d9-9af3-ceae2921efd5"\n' +
+        '    - statusName:"accepted" statusId:"accepted-22840db2-4d9f-4e01-a4f0-63c4759cfc4a"\n' +
+        '    - statusName:"closed" statusId:"417f8708-a4d4-4818-bd31-b4a0ba01d73c"\n' +
+        '### Category\n' +
+        'categoryName: "task"\n' +
+        'categoryId: "roadmap-757864b1-351b-4204-b657-dc717596ebf9"\n' +
+        '    Users cannot create this category directly.\n' +
+        '    Posts can have these statuses:\n' +
+        '    - statusName:"ideas" statusId:"backlog-4b1d0716-1678-4052-a0f6-46a39c6e3c78"\n' +
+        '    - statusName:"later" statusId:"1d273049-9155-44fc-8aa9-48fa7e3b40e1"\n' +
+        '    - statusName:"next" statusId:"1abd5b22-526d-4fb7-93fa-88d1b12f1e9f"\n' +
+        '    - statusName:"now" statusId:"4553c46d-67c0-4517-8c02-9477843143d7"\n' +
+        '    - statusName:"completed" statusId:"completed-b9b2ec87-c8dc-4e00-a1fb-e8a180275b55"\n' +
+        '    - statusName:"cancelled" statusId:"closed-2d5da0f2-f4ec-4fdd-8add-2a19c049d747"\n' +
+        '### Category\n' +
+        'categoryName: "announcements"\n' +
+        'categoryId: "changelog-99ec00f8-7a84-4d8e-998f-11d9e7f2ad99"\n' +
+        '    Users cannot create this category directly.\n' +
+        '\n' +
+        '# User onboarding\n' +
+        'Each user of the customer\'s project has to have an account to contribute feedback.\n' +
+        'The project is PUBLIC. PUBLIC means open to the world while PRIVATE means only users with an account can see it.\n' +
+        '            Users can sign-up with email.\n' +
+        '            Users can sign-up by providing their web browser\'s Push API.\n' +
+        '\n' +
+        '# Tools available\n' +
+        'To answer customer\'s questions about what users are saying, you have access to the following tools:\n' +
+        'searchPosts: You can search for posts\n' +
+        '- Optionally filter by categories such as only feedback when seeking posts submitted by users.\n' +
+        '\n' +
+        '# Customer\'s account\n' +
+        'accountId: "matus-faro-h3bq"\n' +
+        'name: "Matus Faro"\n' +
+        'email: "my@email.com"\n' +
+        'Always refer to the customer either by their exact name or shortened version of it.\n' +
+        '\n' +
+        '# Other\n' +
+        'Now is 2024-10-05T01:30:09.146844-04:00[America/Toronto].\n',
+    });
+  }
+
 
   // **** Private methods
 
@@ -1628,6 +2092,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
         ],
         invitations: [],
         isExternal: false,
+        llmConvos: {},
       };
       this.db[projectId] = project;
     }
@@ -1745,7 +2210,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       headers.set('x-cf-challenge', JSON.stringify({
         version: 'RECAPTCHA_V2',
         // Recaptcha 'clearflask-localhost2' site key
-        challenge: '6LewiegbAAAAAH4Epm0Burza9qNvWsCoNhTHsmug'
+        challenge: '6LewiegbAAAAAH4Epm0Burza9qNvWsCoNhTHsmug',
       }));
     }
     // eslint-disable-next-line no-throw-literal

@@ -1,0 +1,48 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "clearflask.fullname" . }}
+  labels:
+    {{- include "clearflask.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+    {{- if $.Values.ingress.certManager.enabled }}
+    cert-manager.io/cluster-issuer: {{ $.Values.ingress.certManager.issuer | quote }}
+    {{- end }}
+  {{- end }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        {{- range .Values.ingress.hosts }}
+        - {{ .host | quote }}
+        {{- end }}
+      secretName: {{ .Values.ingress.tls.secretName }}
+  {{- end }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                {{- if eq .backend "server" }}
+                name: {{ include "clearflask.server.fullname" $ }}
+                port:
+                  number: {{ $.Values.server.service.port }}
+                {{- else if eq .backend "connect" }}
+                name: {{ include "clearflask.connect.fullname" $ }}
+                port:
+                  number: 80
+                {{- end }}
+          {{- end }}
+    {{- end }}
+{{- end }}

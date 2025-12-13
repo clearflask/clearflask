@@ -4,11 +4,8 @@ package com.smotana.clearflask.store.mysql;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Ints;
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
 import com.google.inject.Module;
-import com.google.inject.Provider;
-import com.google.inject.Singleton;
+import com.google.inject.*;
 import com.google.inject.name.Named;
 import com.smotana.clearflask.api.model.HistogramInterval;
 import com.smotana.clearflask.api.model.HistogramResponse;
@@ -22,16 +19,7 @@ import lombok.SneakyThrows;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.jooq.Condition;
-import org.jooq.CreateIndexIncludeStep;
-import org.jooq.DSLContext;
-import org.jooq.Field;
-import org.jooq.JoinType;
-import org.jooq.Queries;
-import org.jooq.Query;
-import org.jooq.Record;
-import org.jooq.Table;
-import org.jooq.TableField;
+import org.jooq.*;
 import org.jooq.exception.DataAccessException;
 import org.jooq.exception.SQLStateClass;
 import org.jooq.impl.DSL;
@@ -44,10 +32,8 @@ import java.sql.SQLSyntaxErrorException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.Comparator;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.regex.Matcher;
@@ -62,14 +48,14 @@ public class MysqlUtil {
     @Named("cursor")
     private ServerSecret serverSecretCursor;
 
-    private final Pattern similarTextExtractor = Pattern.compile("(\\w{4,})");
+    private final Pattern similarTextExtractor = Pattern.compile("(\\w{2,})");
 
     @SafeVarargs
     public final Condition similarToCondition(String text, TableField<?, String>... fields) {
         Matcher matcher = similarTextExtractor.matcher(text);
         Condition condition = DSL.noCondition();
         int words = 0;
-        while (matcher.find() && ++words < 3) {
+        while (matcher.find() && ++words <= 6) {
             for (TableField<?, String> field : fields) {
                 condition = condition.or(field.like("%" + matcher.group(1) + "%"));
             }
@@ -202,6 +188,7 @@ public class MysqlUtil {
                         .map(record -> new HistogramResponsePoints(
                                 LocalDate.of(record.component1(), record.component2(), record.component3()),
                                 record.component4().longValue()))
+                        .sorted(Comparator.comparing(HistogramResponsePoints::getTs))
                         .collect(ImmutableList.toImmutableList())));
 
         CompletionStage<Void> hitsCompletionStage = mysql.get().select(

@@ -5,6 +5,7 @@ import { createStyles, makeStyles, Theme, WithStyles, withStyles } from '@materi
 import EditIcon from '@material-ui/icons/Edit';
 import classNames from 'classnames';
 import React, { Component, useRef, useState } from 'react';
+import { useTranslation, withTranslation, WithTranslation } from 'react-i18next';
 import { shallowEqual, useSelector } from 'react-redux';
 import * as Admin from '../../api/admin';
 import * as Client from '../../api/client';
@@ -87,7 +88,7 @@ interface State {
   fundGoal?: string;
   suppressNotifications?: boolean;
 }
-class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styles, true>, State> {
+class PostEdit extends Component<Props & WithMediaQuery & WithTranslation<'app'> & WithStyles<typeof styles, true>, State> {
   state: State = {};
 
   render() {
@@ -224,7 +225,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
                             color='primary'
                           />
                         )}
-                        label={`Notify subscribers of ${notifyReasons}`}
+                        label={this.props.t('notify-subscribers-of', { reasons: notifyReasons })}
                       />
                     </Collapse>
                   </Grid>
@@ -320,7 +321,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithStyles<typeof styl
   }
 }
 export default withStyles(styles, { withTheme: true })(
-  withMediaQuery(theme => theme.breakpoints.down('xs'))(PostEdit));
+  withMediaQuery(theme => theme.breakpoints.down('xs'))(withTranslation('app', { withRef: true })(PostEdit)));
 
 export const PostEditTitleInline = (props: {
   children?: any; // If set, shown before editing, click to edit
@@ -446,6 +447,7 @@ export const PostEditTitle = (props: {
   autoFocusAndSelect?: boolean;
   TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
 }) => {
+  const { t } = useTranslation('app');
   const [value, setValue] = useDebounceProp<string | undefined>(
     props.value,
     newValue => props.onChange(newValue === undefined ? '' : newValue),
@@ -455,7 +457,7 @@ export const PostEditTitle = (props: {
     <TextFieldCmpt
       variant='outlined'
       size='small'
-      label='Title'
+      label={t('title')}
       fullWidth
       value={value === undefined ? '' : value}
       onChange={e => setValue(e.target.value)}
@@ -484,6 +486,7 @@ export const PostEditDescription = (props: {
   forceOutline?: boolean;
   RichEditorProps?: Partial<React.ComponentPropsWithoutRef<typeof RichEditor>>;
 }) => {
+  const { t } = useTranslation('app');
   const imageUploadRef = useRef<RichEditorImageUpload>(null);
   const [value, setValue] = useDebounceProp<string | undefined>(
     props.value,
@@ -497,7 +500,7 @@ export const PostEditDescription = (props: {
         variant='outlined'
         size='small'
         disabled={props.isSubmitting}
-        label='Details (optional)'
+        label={t('details-optional')}
         fullWidth
         iAgreeInputIsSanitized
         value={value === undefined ? '' : value}
@@ -594,6 +597,7 @@ export const PostEditResponse = (props: {
   forceOutline?: boolean;
   RichEditorProps?: Partial<React.ComponentPropsWithoutRef<typeof RichEditor>>;
 }) => {
+  const { t } = useTranslation('app');
   const imageUploadRef = useRef<RichEditorImageUpload>(null);
   const [value, setValue] = useDebounceProp<string | undefined>(
     props.value,
@@ -609,7 +613,7 @@ export const PostEditResponse = (props: {
         variant='outlined'
         size='small'
         disabled={props.isSubmitting}
-        label={props.bare ? undefined : 'Response'}
+        label={props.bare ? undefined : t('response')}
         fullWidth
         iAgreeInputIsSanitized
         value={value === undefined ? '' : value}
@@ -639,6 +643,7 @@ export const PostEditStatus = (props: {
   bare?: boolean;
   TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
 }) => {
+  const { t } = useTranslation('app');
   const category = useSelector<ReduxState, Client.Category | undefined>(state => state.conf.conf?.content.categories.find(c => c.categoryId === props.categoryId), shallowEqual);
   if (!category?.workflow.statuses.length) return null;
   return (
@@ -647,7 +652,7 @@ export const PostEditStatus = (props: {
       workflow={category?.workflow}
       variant='outlined'
       size='small'
-      label='Status'
+      label={t('status')}
       initialStatusId={props.initialValue}
       statusId={props.value}
       onChange={props.onChange}
@@ -689,7 +694,6 @@ export const PostEditTagsInline = (props: {
     return props.children;
   }
 
-  const clickToEdit = !!props.children;
   return isEditing ? (
     <PostEditTags
       value={unsavedTagIds || post.tagIds}
@@ -720,7 +724,7 @@ export const PostEditTagsInline = (props: {
       TextFieldProps={props.TextFieldProps}
     />
   ) : (
-    <ClickToEdit isEditing={isEditing || !clickToEdit} setIsEditing={setIsEditing}>
+    <ClickToEdit isEditing={isEditing} setIsEditing={setIsEditing}>
       {props.children || props.noContentLabel || null}
     </ClickToEdit>
   );
@@ -737,6 +741,7 @@ export const PostEditTags = (props: {
   bare?: boolean;
   TextFieldProps?: Partial<React.ComponentProps<typeof TextField>>;
 }) => {
+  const { t } = useTranslation('app');
   const category = useSelector<ReduxState, Client.Category | undefined>(state => state.conf.conf?.content.categories.find(c => c.categoryId === props.categoryId), shallowEqual);
   const isModOrAdminLoggedIn = props.server.isModOrAdminLoggedIn();
   if (!category || !CategoryTagsSelectable(category, isModOrAdminLoggedIn)) return null;
@@ -744,7 +749,7 @@ export const PostEditTags = (props: {
     <TagSelect
       variant='outlined'
       size='small'
-      label='Tags'
+      label={t('tags')}
       disabled={props.isSubmitting}
       category={category}
       tagIds={props.value}
@@ -801,6 +806,7 @@ export const PostSaveButton = (props: {
   onSave: (doNotify: boolean) => void;
   onCancel?: () => void;
 }) => {
+  const { t } = useTranslation('app');
   const classes = useStyles();
   const [doNotify, setNotify] = useState<boolean>(!!props.showNotify);
   return (
@@ -819,7 +825,7 @@ export const PostSaveButton = (props: {
                   size='small'
                 />
               )}
-              label='Notify subscribers'
+              label={t('notify-subscribers')}
             />
           )}
           <div className={classes.grow} />

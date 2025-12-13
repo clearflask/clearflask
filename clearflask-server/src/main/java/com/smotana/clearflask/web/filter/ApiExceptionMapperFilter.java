@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.smotana.clearflask.web.filter;
 
+import com.google.common.base.Predicates;
 import com.google.common.base.Strings;
+import com.google.common.base.Throwables;
+import com.google.common.collect.FluentIterable;
 import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -19,8 +22,8 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
-import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.util.Optional;
 
 @Slf4j
 public class ApiExceptionMapperFilter implements Filter {
@@ -47,22 +50,18 @@ public class ApiExceptionMapperFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
         try {
             filterChain.doFilter(request, response);
+        } catch (ApiException ex) {
+            logApiException(ex);
+            throw ex;
         } catch (ServletException ex) {
             String ignoreMessageRegex = config.ignoreMessageRegex();
-            if (ex.getRootCause() instanceof ApiException) {
-                Response.Status status = ((ApiException) ex.getRootCause()).getStatus();
-                switch (status.getFamily()) {
-                    case INFORMATIONAL:
-                    case SUCCESSFUL:
-                    case REDIRECTION:
-                    case CLIENT_ERROR:
-                        log.trace("Thrown API exception", ex);
-                        break;
-                    case SERVER_ERROR:
-                    case OTHER:
-                        log.warn("Thrown API exception", ex);
-                        break;
-                }
+            Optional<ApiException> apiExceptionOpt = FluentIterable.from(Throwables.getCausalChain(ex))
+                    .filter(Predicates.instanceOf(ApiException.class))
+                    .first()
+                    .toJavaUtil()
+                    .map(ApiException.class::cast);
+            if (apiExceptionOpt.isPresent()) {
+                logApiException(apiExceptionOpt.get());
             } else if (Strings.isNullOrEmpty(ignoreMessageRegex)
                     || ex.getRootCause() == null
                     || ex.getRootCause().getMessage() == null
@@ -74,12 +73,32 @@ public class ApiExceptionMapperFilter implements Filter {
             throw ex;
         } catch (IOException ex) {
             log.trace("Uncaught IO Exception", ex);
+        } catch (RuntimeException ex) {
+            log.warn("Uncaught exception", ex);
+            throw ex;
+        }
+    }
+
+    private void logApiException(ApiException ex) {
+        switch (ex.getStatus().getFamily()) {
+            case INFORMATIONAL:
+            case SUCCESSFUL:
+            case REDIRECTION:
+            case CLIENT_ERROR:
+                log.trace("Thrown API exception", ex);
+                break;
+            case SERVER_ERROR:
+            case OTHER:
+                log.warn("Thrown API exception", ex);
+                break;
         }
     }
 
     @Override
     public void destroy() {
+        // Nothing to do
     }
+
 
     public static Module module() {
         return new AbstractModule() {

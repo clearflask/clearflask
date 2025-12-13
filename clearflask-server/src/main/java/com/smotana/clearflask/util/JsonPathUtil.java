@@ -20,8 +20,8 @@ public class JsonPathUtil {
 
     public static Optional<String> findFirstAsString(String jsonPath, String input) {
         return extractStrings(JsonPath.compile(jsonPath).<List<Object>>read(input, Configuration.builder().options(
-                Option.ALWAYS_RETURN_LIST,
-                Option.SUPPRESS_EXCEPTIONS).build())
+                        Option.ALWAYS_RETURN_LIST,
+                        Option.SUPPRESS_EXCEPTIONS).build())
                 .stream())
                 .filter(not(Strings::isNullOrEmpty))
                 .findFirst();

@@ -5,10 +5,10 @@ components:
     Plan:
       type: object
       required:
-      - basePlanId
-      - title
-      - period
-      - perks
+        - basePlanId
+        - title
+        - period
+        - perks
       properties:
         basePlanId:
           type: string
@@ -18,11 +18,11 @@ components:
         pricing:
           type: object
           required:
-          - basePrice
-          - baseMau
-          - unitMau
-          - unitPrice
-          - period
+            - basePrice
+            - baseMau
+            - unitMau
+            - unitPrice
+            - period
           properties:
             basePrice:
               type: integer
@@ -39,8 +39,8 @@ components:
             admins:
               type: object
               required:
-              - amountIncluded
-              - additionalPrice
+                - amountIncluded
+                - additionalPrice
               properties:
                 amountIncluded:
                   type: integer
@@ -51,16 +51,17 @@ components:
             period:
               type: string
               enum:
-              - Monthly
-              - Quarterly
-              - Yearly
+                - Monthly
+                - Quarterly
+                - Yearly
+                - Lifetime
         perks:
           type: array
           items:
             title: PlanPerk
             type: object
             required:
-            - desc
+              - desc
             properties:
               desc:
                 type: string
@@ -73,8 +74,8 @@ components:
     FeaturesTable:
       type: object
       required:
-      - plans
-      - features
+        - plans
+        - features
       properties:
         plans:
           type: array
@@ -85,8 +86,8 @@ components:
           items:
             type: object
             required:
-            - feature
-            - values
+              - feature
+              - values
             properties:
               feature:
                 type: string
@@ -101,8 +102,8 @@ components:
     AccountLogin:
       type: object
       required:
-      - email
-      - password
+        - email
+        - password
       properties:
         email:
           type: string
@@ -111,7 +112,7 @@ components:
     AccountLoginAs:
       type: object
       required:
-      - email
+        - email
       properties:
         email:
           type: string
@@ -119,16 +120,43 @@ components:
       type: object
       properties:
         searchText:
-          type: string
           description: Search by name and email.
+          type: string
+        filterStatus:
+          description: Filter by statuses.
+          type: array
+          items:
+            $ref: 'api-account.yaml#/components/schemas/SubscriptionStatus'
+        invertStatus:
+          type: boolean
+        filterPlanid:
+          description: Filter by plan IDs.
+          type: array
+          items:
+            type: string
+        invertPlanid:
+          type: boolean
+        filterCreatedStart:
+          type: string
+          format: date-time
+        filterCreatedEnd:
+          type: string
+          format: date-time
+    ProjectOwnerSwapSuperAdmin:
+      type: object
+      properties:
+        projectId:
+          type: string
+        newOwnerAccountId:
+          type: string
     AccountBindAdmin:
       type: object
       properties:
         oauthToken:
           type: object
           required:
-          - id
-          - code
+            - id
+            - code
           properties:
             id:
               type: string
@@ -144,10 +172,10 @@ components:
     AccountSignupAdmin:
       type: object
       required:
-      - name
-      - email
-      - password
-      - basePlanId
+        - name
+        - email
+        - password
+        - basePlanId
       properties:
         name:
           type: string
@@ -157,6 +185,9 @@ components:
           type: string
         basePlanId:
           type: string
+        requestedPrice:
+          type: integer
+          format: int64
         invitationId:
           type: string
         couponId:
@@ -164,9 +195,9 @@ components:
     Account:
       type: object
       required:
-      - accountId
-      - name
-      - email
+        - accountId
+        - name
+        - email
       properties:
         accountId:
           type: string
@@ -177,13 +208,13 @@ components:
     AccountAdmin:
       type: object
       required:
-      - accountId
-      - basePlanId
-      - subscriptionStatus
-      - plan
-      - name
-      - email
-      - cfJwt
+        - accountId
+        - basePlanId
+        - subscriptionStatus
+        - plan
+        - name
+        - email
+        - cfJwt
       properties:
         accountId:
           type: string
@@ -213,17 +244,21 @@ components:
           type: object
           additionalProperties:
             type: string
+        digestOptOutForProjectIds:
+          type: array
+          items:
+            type: string
     SubscriptionStatus:
       type: string
       enum:
-      - Active
-      - ActiveTrial
-      - ActivePaymentRetry
-      - ActiveNoRenewal
-      - Limited
-      - NoPaymentMethod
-      - Blocked
-      - Cancelled
+        - Active
+        - ActiveTrial
+        - ActivePaymentRetry
+        - ActiveNoRenewal
+        - Limited
+        - NoPaymentMethod
+        - Blocked
+        - Cancelled
     AccountAttrsUpdateAdmin:
       type: object
       properties:
@@ -247,8 +282,8 @@ components:
         paymentToken:
           type: object
           required:
-          - type
-          - token
+            - type
+            - token
           properties:
             type:
               type: string
@@ -260,15 +295,28 @@ components:
           type: boolean
         resume:
           type: boolean
+        addExtraTeammates:
+          type: integer
+          format: int64
         # Deprecated, use the /admin/account/update/attrs endpoint instead
         attrs:
           type: object
           additionalProperties:
             type: string
+        # Provide a license key, an empty string removes it
+        applyLicenseKey:
+          type: string
+        digestOptOutForProjectIds:
+          type: array
+          items:
+            type: string
     AccountUpdateSuperAdmin:
       type: object
       properties:
         changeToFlatPlanWithYearlyPrice:
+          type: integer
+          format: int64
+        changeToSponsorPlanWithMonthlyPrice:
           type: integer
           format: int64
         addons:
@@ -278,12 +326,12 @@ components:
     AccountBilling:
       type: object
       required:
-      - plan
-      - subscriptionStatus
-      - availablePlans
-      - invoices
-      - accountReceivable
-      - accountPayable
+        - plan
+        - subscriptionStatus
+        - availablePlans
+        - invoices
+        - accountReceivable
+        - accountPayable
       properties:
         plan:
           $ref: 'api-account.yaml#/components/schemas/Plan'
@@ -292,9 +340,9 @@ components:
         payment:
           type: object
           required:
-          - last4
-          - expiryMonth
-          - expiryYear
+            - last4
+            - expiryMonth
+            - expiryYear
           properties:
             brand:
               type: string
@@ -313,6 +361,12 @@ components:
           type: integer
           format: int64
         postCount:
+          type: integer
+          format: int64
+        teammateCount:
+          type: integer
+          format: int64
+        teammateMax:
           type: integer
           format: int64
         availablePlans:
@@ -338,11 +392,17 @@ components:
               type: object
               additionalProperties:
                 type: string
+        # In Cloud env, the license key that you purchased
+        purchasedLicenseKey:
+          type: string
+        # In Selfhost env, the license key that you set in your instance
+        appliedLicenseKey:
+          type: string
     Invoices:
       title: InvoicesSearchAdminResponse
       type: object
       required:
-      - results
+        - results
       properties:
         cursor:
           $ref: 'api-client.yaml#/components/schemas/Cursor'
@@ -352,10 +412,10 @@ components:
             title: InvoiceItem
             type: object
             required:
-            - date
-            - status
-            - amount
-            - invoiceId
+              - date
+              - status
+              - amount
+              - invoiceId
             properties:
               date:
                 type: string
@@ -372,8 +432,8 @@ components:
     CouponGenerateSuperAdmin:
       type: object
       required:
-      - amount
-      - basePlanId
+        - amount
+        - basePlanId
       properties:
         amount:
           type: integer
@@ -386,9 +446,9 @@ components:
     AccountCreditAdjustment:
       type: object
       required:
-      - accountId
-      - amount
-      - description
+        - accountId
+        - amount
+        - description
       properties:
         accountId:
           type: string
@@ -397,11 +457,20 @@ components:
           format: int64
         description:
           type: string
+    AccountDeleteSuperAdmin:
+      type: object
+      required:
+        - accountOrEmailIds
+      properties:
+        accountOrEmailIds:
+          type: array
+          items:
+            type: string
 
 /support/message:
   post:
     operationId: supportMessage
-    tags: [Support]
+    tags: [ Support ]
     requestBody:
       required: true
       content:
@@ -410,7 +479,7 @@ components:
             type: object
             title: SupportMessage
             required:
-            - content
+              - content
             properties:
               content:
                 additionalProperties:
@@ -421,7 +490,7 @@ components:
 /admin/plan:
   get:
     operationId: plansGet
-    tags: [PlanAdmin]
+    tags: [ PlanAdmin ]
     parameters:
     responses:
       '200':
@@ -431,7 +500,7 @@ components:
               title: PlansGetResponse
               type: object
               required:
-              - plans
+                - plans
               properties:
                 plans:
                   type: array
@@ -439,10 +508,12 @@ components:
                     $ref: 'api-account.yaml#/components/schemas/Plan'
                 featuresTable:
                   $ref: 'api-account.yaml#/components/schemas/FeaturesTable'
+                featuresTableSelfhost:
+                  $ref: 'api-account.yaml#/components/schemas/FeaturesTable'
 /superadmin/plan:
   get:
     operationId: plansGetSuperAdmin
-    tags: [PlanSuperAdmin]
+    tags: [ PlanSuperAdmin ]
     parameters:
     responses:
       '200':
@@ -452,7 +523,7 @@ components:
               title: AllPlansGetResponse
               type: object
               required:
-              - plans
+                - plans
               properties:
                 plans:
                   type: array
@@ -461,7 +532,7 @@ components:
 /admin/legal:
   get:
     operationId: legalGet
-    tags: [AccountAdmin]
+    tags: [ AccountAdmin ]
     responses:
       '200':
         content:
@@ -470,8 +541,8 @@ components:
               title: LegalResponse
               type: object
               required:
-              - terms
-              - privacy
+                - terms
+                - privacy
               properties:
                 terms:
                   type: string
@@ -480,7 +551,7 @@ components:
 /admin/account/signup:
   post:
     operationId: accountSignupAdmin
-    tags: [AccountAdmin]
+    tags: [ AccountAdmin ]
     requestBody:
       required: true
       content:
@@ -496,7 +567,7 @@ components:
 /admin/account/bind:
   post:
     operationId: accountBindAdmin
-    tags: [AccountAdmin]
+    tags: [ AccountAdmin ]
     requestBody:
       required: true
       content:
@@ -511,7 +582,7 @@ components:
               title: AccountBindAdminResponse
               type: object
               required:
-              - isSuperAdmin
+                - isSuperAdmin
               properties:
                 account:
                   $ref: 'api-account.yaml#/components/schemas/AccountAdmin'
@@ -525,7 +596,7 @@ components:
 /admin/account/login:
   post:
     operationId: accountLoginAdmin
-    tags: [AccountAdmin]
+    tags: [ AccountAdmin ]
     requestBody:
       required: true
       content:
@@ -542,7 +613,7 @@ components:
   get:
     description: Used for checking whether you are signed in
     operationId: accountNoopAdmin
-    tags: [AccountAdmin]
+    tags: [ AccountAdmin ]
     responses:
       '200':
         $ref: 'api-client.yaml#/components/responses/Ok'
@@ -551,13 +622,13 @@ components:
 /admin/account/invitation:
   get:
     operationId: accountViewInvitationAdmin
-    tags: [AccountAdmin]
+    tags: [ AccountAdmin ]
     parameters:
-    - name: invitationId
-      in: query
-      required: true
-      schema:
-        type: string
+      - name: invitationId
+        in: query
+        required: true
+        schema:
+          type: string
     responses:
       '200':
         content:
@@ -566,9 +637,9 @@ components:
               title: InvitationResult
               type: object
               required:
-              - inviteeName
-              - projectName
-              - role
+                - inviteeName
+                - projectName
+                - role
               properties:
                 inviteeName:
                   type: string
@@ -577,20 +648,20 @@ components:
                 role:
                   type: string
                   enum:
-                  - Admin
+                    - Admin
                 isAcceptedByYou:
                   type: boolean
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'
   post:
     operationId: accountAcceptInvitationAdmin
-    tags: [AccountAdmin]
+    tags: [ AccountAdmin ]
     parameters:
-    - name: invitationId
-      in: query
-      required: true
-      schema:
-        type: string
+      - name: invitationId
+        in: query
+        required: true
+        schema:
+          type: string
     responses:
       '200':
         content:
@@ -608,7 +679,7 @@ components:
 /superadmin/account/loginas:
   post:
     operationId: accountLoginAsSuperAdmin
-    tags: [AccountSuperAdmin]
+    tags: [ AccountSuperAdmin ]
     requestBody:
       required: true
       content:
@@ -624,12 +695,12 @@ components:
 /superadmin/accountsearch:
   post:
     operationId: accountSearchSuperAdmin
-    tags: [AccountSuperAdmin]
+    tags: [ AccountSuperAdmin ]
     parameters:
-    - name: cursor
-      in: query
-      schema:
-        $ref: 'api-client.yaml#/components/schemas/Cursor'
+      - name: cursor
+        in: query
+        schema:
+          $ref: 'api-client.yaml#/components/schemas/Cursor'
     requestBody:
       required: true
       content:
@@ -652,16 +723,29 @@ components:
                   type: array
                   items:
                     $ref: 'api-account.yaml#/components/schemas/Account'
+/superadmin/account/projectownerswap:
+  patch:
+    operationId: projectOwnerSwapSuperAdmin
+    tags: [ AccountSuperAdmin ]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-account.yaml#/components/schemas/ProjectOwnerSwapSuperAdmin'
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
 /admin/account/coupon:
   get:
     operationId: accountViewCouponAdmin
-    tags: [AccountAdmin]
+    tags: [ AccountAdmin ]
     parameters:
-    - name: couponId
-      in: query
-      required: true
-      schema:
-        type: string
+      - name: couponId
+        in: query
+        required: true
+        schema:
+          type: string
     responses:
       '200':
         content:
@@ -676,13 +760,13 @@ components:
                   type: boolean
   post:
     operationId: accountAcceptCouponAdmin
-    tags: [AccountAdmin]
+    tags: [ AccountAdmin ]
     parameters:
-    - name: couponId
-      in: query
-      required: true
-      schema:
-        type: string
+      - name: couponId
+        in: query
+        required: true
+        schema:
+          type: string
     responses:
       '200':
         content:
@@ -692,7 +776,7 @@ components:
 /superadmin/coupon/generate:
   post:
     operationId: couponGenerateSuperAdmin
-    tags: [AccountSuperAdmin]
+    tags: [ AccountSuperAdmin ]
     requestBody:
       required: true
       content:
@@ -709,14 +793,14 @@ components:
 /admin/account/logout:
   post:
     operationId: accountLogoutAdmin
-    tags: [AccountAdmin]
+    tags: [ AccountAdmin ]
     responses:
       '200':
         $ref: 'api-client.yaml#/components/responses/Ok'
 /admin/account/update:
   post:
     operationId: accountUpdateAdmin
-    tags: [AccountAdmin]
+    tags: [ AccountAdmin ]
     requestBody:
       required: true
       content:
@@ -732,7 +816,7 @@ components:
 /admin/account/update/attrs:
   post:
     operationId: accountAttrsUpdateAdmin
-    tags: [AccountAdmin]
+    tags: [ AccountAdmin ]
     requestBody:
       required: true
       content:
@@ -748,7 +832,7 @@ components:
 /admin/account/updateSuper:
   post:
     operationId: accountUpdateSuperAdmin
-    tags: [AccountSuperAdmin]
+    tags: [ AccountSuperAdmin ]
     requestBody:
       required: true
       content:
@@ -764,12 +848,12 @@ components:
 /admin/account/billing:
   get:
     operationId: accountBillingAdmin
-    tags: [AccountAdmin]
+    tags: [ AccountAdmin ]
     parameters:
-    - name: refreshPayments
-      in: query
-      schema:
-        type: boolean
+      - name: refreshPayments
+        in: query
+        schema:
+          type: boolean
     responses:
       '200':
         content:
@@ -779,12 +863,12 @@ components:
 /admin/account/billing/invoices:
   get:
     operationId: invoicesSearchAdmin
-    tags: [AccountAdmin]
+    tags: [ AccountAdmin ]
     parameters:
-    - name: cursor
-      in: query
-      schema:
-        $ref: 'api-client.yaml#/components/schemas/Cursor'
+      - name: cursor
+        in: query
+        schema:
+          $ref: 'api-client.yaml#/components/schemas/Cursor'
     responses:
       '200':
         content:
@@ -794,13 +878,13 @@ components:
 /admin/account/billing/invoice/{invoiceId}:
   get:
     operationId: invoiceHtmlGetAdmin
-    tags: [AccountAdmin]
+    tags: [ AccountAdmin ]
     parameters:
-    - name: invoiceId
-      in: path
-      required: true
-      schema:
-        type: string
+      - name: invoiceId
+        in: path
+        required: true
+        schema:
+          type: string
     responses:
       '200':
         content:
@@ -809,14 +893,14 @@ components:
               title: InvoiceHtmlResponse
               type: object
               required:
-              - invoiceHtml
+                - invoiceHtml
               properties:
                 invoiceHtml:
                   type: string
 /superadmin/account/billing/credit:
   post:
     operationId: accountCreditAdjustmentSuperAdmin
-    tags: [AccountSuperAdmin]
+    tags: [ AccountSuperAdmin ]
     requestBody:
       required: true
       content:
@@ -829,13 +913,13 @@ components:
 /admin/account/github/repos:
   post:
     operationId: gitHubGetReposAdmin
-    tags: [AccountAdmin]
+    tags: [ AccountAdmin ]
     parameters:
-    - name: code
-      in: query
-      required: true
-      schema:
-        type: string
+      - name: code
+        in: query
+        required: true
+        schema:
+          type: string
     responses:
       '200':
         content:
@@ -844,7 +928,7 @@ components:
               title: AvailableRepos
               type: object
               required:
-              - repos
+                - repos
               properties:
                 repos:
                   type: array
@@ -852,9 +936,9 @@ components:
                     title: AvailableRepo
                     type: object
                     required:
-                    - installationId
-                    - repositoryId
-                    - name
+                      - installationId
+                      - repositoryId
+                      - name
                     properties:
                       installationId:
                         type: integer
@@ -867,7 +951,35 @@ components:
 /admin/account/delete:
   delete:
     operationId: accountDeleteAdmin
-    tags: [AccountAdmin]
+    tags: [ AccountAdmin ]
     responses:
       '200':
         $ref: 'api-client.yaml#/components/responses/Ok'
+/superadmin/account/delete:
+  delete:
+    operationId: accountDeleteSuperAdmin
+    tags: [ AccountSuperAdmin ]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-account.yaml#/components/schemas/AccountDeleteSuperAdmin'
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
+/license/check:
+  post:
+    operationId: licenseCheck
+    tags: [ Account ]
+    parameters:
+      - name: license
+        in: query
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
+      '401':
+        $ref: 'api-client.yaml#/components/responses/Unauthorized'

@@ -9,11 +9,8 @@ import com.google.common.collect.Maps;
 import com.google.common.io.Resources;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
+import com.google.inject.*;
 import com.google.inject.Module;
-import com.google.inject.Provider;
-import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
@@ -26,19 +23,10 @@ import org.killbill.billing.catalog.api.TimeUnit;
 import org.killbill.billing.client.KillBillClientException;
 import org.killbill.billing.client.KillBillHttpClient;
 import org.killbill.billing.client.RequestOptions;
-import org.killbill.billing.client.api.gen.CatalogApi;
-import org.killbill.billing.client.api.gen.InvoiceApi;
-import org.killbill.billing.client.api.gen.OverdueApi;
-import org.killbill.billing.client.api.gen.PluginInfoApi;
-import org.killbill.billing.client.api.gen.TenantApi;
+import org.killbill.billing.client.api.gen.*;
 import org.killbill.billing.client.model.DateTimes;
 import org.killbill.billing.client.model.PluginInfos;
-import org.killbill.billing.client.model.gen.Duration;
-import org.killbill.billing.client.model.gen.Overdue;
-import org.killbill.billing.client.model.gen.OverdueCondition;
-import org.killbill.billing.client.model.gen.OverdueStateConfig;
-import org.killbill.billing.client.model.gen.Tenant;
-import org.killbill.billing.client.model.gen.TenantKeyValue;
+import org.killbill.billing.client.model.gen.*;
 import org.killbill.billing.overdue.api.OverdueCancellationPolicy;
 import org.w3c.dom.Document;
 import rx.Observable;
@@ -75,9 +63,20 @@ public class KillBillSync extends ManagedService {
             .add("catalog008.xml")
             .add("catalog009.xml")
             .add("catalog010.xml")
+            .add("catalog011.xml")
+            .add("catalog012.xml")
+            .add("catalog013.xml")
+            .add("catalog014.xml")
+            .add("catalog015.xml")
+            .add("catalog016.xml")
+            .add("catalog017.xml")
+            .add("catalog018.xml")
+            .add("catalog019.xml")
+            .add("catalog020.xml")
             .build();
     private static final String PER_TENANT_CONFIG = "\"org.killbill.payment.retry.days=1,2,3\"," +
             "\"org.killbill.billing.server.notifications.retries=1m,2h,1d,2d\"";
+    public static final int CANCEL_AFTER_DURATION_IN_DAYS = 90;
     private static final Overdue OVERDUE = new Overdue()
             .setInitialReevaluationInterval(1)
             .addOverdueStatesItem(new OverdueStateConfig()
@@ -85,9 +84,9 @@ public class KillBillSync extends ManagedService {
                     .setCondition(new OverdueCondition()
                             .setTimeSinceEarliestUnpaidInvoiceEqualsOrExceeds(new Duration()
                                     .setUnit(TimeUnit.DAYS)
-                                    .setNumber(21)))
+                                    .setNumber(CANCEL_AFTER_DURATION_IN_DAYS)))
                     .setExternalMessage("Plan cancelled")
-                    .setIsBlockChanges(true)
+                    .setIsBlockChanges(false)
                     .setIsClearState(false)
                     .setIsDisableEntitlement(false)
                     .setSubscriptionCancellationPolicy(OverdueCancellationPolicy.END_OF_TERM))
@@ -104,7 +103,8 @@ public class KillBillSync extends ManagedService {
                     .setSubscriptionCancellationPolicy(OverdueCancellationPolicy.NONE)
                     .setAutoReevaluationIntervalDays(20));
     /**
-     * Reports extracted from: https://github.com/killbill/killbill-analytics-plugin/blob/master/src/main/resources/seed_reports.sh
+     * Reports extracted from:
+     * https://github.com/killbill/killbill-analytics-plugin/blob/master/src/main/resources/seed_reports.sh
      */
     private static final ImmutableList<ReportConfigurationJson> DEFAULT_ANALYTICS_REPORTS = ImmutableList.<ReportConfigurationJson>builder()
             // Dashboard views

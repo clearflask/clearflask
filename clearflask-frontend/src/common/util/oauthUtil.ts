@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
-import windowIso from "../windowIso";
-import { isProd } from "./detectEnv";
-import randomUuid from "./uuid";
+import windowIso from '../windowIso';
+import { isProd } from './detectEnv';
+import randomUuid from './uuid';
 
 const SUCCESS_LOCALSTORAGE_EVENT_KEY_PREFIX = 'login-success';
 export const OAUTH_CODE_PARAM_NAME = 'code';
@@ -117,6 +117,7 @@ export class OAuthFlow {
       extraData,
     };
     const oauthStateStr = encodeURIComponent(JSON.stringify(oauthState));
+    // Use sessionStorage for CSRF tokens (more secure, per-tab isolation)
     sessionStorage.setItem(`${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${provider.clientId}`, oauthCsrfToken);
     return oauthStateStr;
   }
@@ -126,7 +127,9 @@ export class OAuthFlow {
     const params = new URL(windowIso.location.href).searchParams;
     const oauthCode = params.get(OAUTH_CODE_PARAM_NAME);
     const oauthStateStr = params.get(OAUTH_STATE_PARAM_NAME);
-    if (!oauthStateStr || !oauthCode) return undefined;
+    if (!oauthStateStr || !oauthCode) {
+      return undefined;
+    }
 
     var oauthState: OAuthState | undefined;
     try {
@@ -140,22 +143,36 @@ export class OAuthFlow {
         && oauthStateCandidate.cid
         && typeof oauthStateCandidate.cid === 'string') {
         oauthState = oauthStateCandidate;
+      } else {
+        console.log("Invalid oauth state format", oauthStateCandidate);
       }
     } catch (e) {
       oauthState = undefined;
+      console.log("Failed to parse oauth state", oauthStateStr, e);
     }
     if (!oauthState) return undefined;
-    if (oauthState.accountType !== this.props.accountType) return undefined;
+    if (oauthState.accountType !== this.props.accountType) {
+      console.log("Account type mismatch", oauthState.accountType, this.props.accountType)
+      return undefined;
+    }
 
-    const oauthCsrfExpected = windowIso.sessionStorage.getItem(`${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${oauthState.cid}`);
-    if (oauthCsrfExpected !== oauthState?.csrf) return undefined;
-    windowIso.sessionStorage.removeItem(`${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${oauthState.cid}`)
+    const storageKey = `${OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX}-${oauthState.cid}`;
+    const oauthCsrfExpected = sessionStorage.getItem(storageKey);
+    if (oauthCsrfExpected !== oauthState?.csrf) {
+      console.log("CSRF mismatch", oauthCsrfExpected, oauthState?.csrf);
+      return undefined;
+    }
+    // Clean up CSRF token after successful validation
+    sessionStorage.removeItem(storageKey);
 
-    return {
+    const oAuthToken: OAuthToken = {
       id: oauthState.cid,
       code: oauthCode,
       extraData: oauthState.extraData,
-    };
+    }
+    console.log("OAuth success", oAuthToken);
+
+    return oAuthToken;
   }
 
   listenForSuccess(onSuccess: () => void): Unsubscribe {

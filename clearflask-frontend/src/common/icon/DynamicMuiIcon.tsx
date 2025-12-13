@@ -18,6 +18,7 @@ import PinIcon from './PinIcon';
 import TwitchIcon from './TwitchIcon';
 import UnLinkAltIcon from './UnLinkAltIcon';
 import VisitIcon from './VisitIcon';
+import AiIcon from './AiIcon';
 
 const IconOverrides = {
   'Google': GoogleIcon,
@@ -34,6 +35,7 @@ const IconOverrides = {
   'LinkAlt': LinkAltIcon,
   'UnLinkAlt': UnLinkAltIcon,
   'OpenSource': OpenSourceIcon,
+  'AI': AiIcon,
 };
 
 const DynamicMuiIcon = (props: {

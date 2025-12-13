@@ -22,22 +22,9 @@ import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.IdeaStatus;
 import com.smotana.clearflask.api.model.NotifySubscribers;
 import com.smotana.clearflask.core.ManagedService;
-import com.smotana.clearflask.core.push.message.EmailLogin;
-import com.smotana.clearflask.core.push.message.EmailVerify;
-import com.smotana.clearflask.core.push.message.OnAccountSignup;
-import com.smotana.clearflask.core.push.message.OnCommentReply;
+import com.smotana.clearflask.core.push.message.*;
 import com.smotana.clearflask.core.push.message.OnCommentReply.AuthorType;
-import com.smotana.clearflask.core.push.message.OnCreditChange;
-import com.smotana.clearflask.core.push.message.OnEmailChanged;
-import com.smotana.clearflask.core.push.message.OnForgotPassword;
-import com.smotana.clearflask.core.push.message.OnInvoicePaymentSuccess;
-import com.smotana.clearflask.core.push.message.OnModInvite;
-import com.smotana.clearflask.core.push.message.OnPaymentFailed;
-import com.smotana.clearflask.core.push.message.OnPostCreated;
-import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange.SubscriptionAction;
-import com.smotana.clearflask.core.push.message.OnTeammateInvite;
-import com.smotana.clearflask.core.push.message.OnTrialEnded;
 import com.smotana.clearflask.core.push.provider.BrowserPushService;
 import com.smotana.clearflask.core.push.provider.EmailService;
 import com.smotana.clearflask.store.AccountStore.Account;
@@ -118,6 +105,8 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     @Inject
     private OnCommentReply onCommentReply;
     @Inject
+    private OnTrialEnding onTrialEnding;
+    @Inject
     private OnTrialEnded onTrialEnded;
     @Inject
     private OnAccountSignup accountSignup;
@@ -145,6 +134,10 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     private EmailLogin emailLogin;
     @Inject
     private Sanitizer sanitizer;
+    @Inject
+    private OnDigest onDigest;
+    @Inject
+    private OnProjectDeletionImminent onProjectDeletionImminent;
 
     private ListeningExecutorService executor;
 
@@ -388,7 +381,25 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     }
 
     @Override
-    public void onTrialEnded(String accountId, String accountEmail, boolean hasPaymentMethod) {
+    public void onTrialEnding(Account account, Instant trialEnd) {
+        if (!config.enabled()) {
+            log.debug("Not enabled, skipping");
+            return;
+        }
+        submit(() -> {
+            String link = "https://" + configApp.domain() + "/dashboard/billing";
+            checkState(!Strings.isNullOrEmpty(account.getEmail()));
+
+            try {
+                emailService.send(onTrialEnding.email(account, link, trialEnd));
+            } catch (Exception ex) {
+                log.warn("Failed to send email notification", ex);
+            }
+        });
+    }
+
+    @Override
+    public void onTrialEnded(Account account, boolean hasPaymentMethod) {
         if (!config.enabled()) {
             log.debug("Not enabled, skipping");
             return;
@@ -398,10 +409,10 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
             if (!hasPaymentMethod) {
                 link += "/billing";
             }
-            checkState(!Strings.isNullOrEmpty(accountEmail));
+            checkState(!Strings.isNullOrEmpty(account.getEmail()));
 
             try {
-                emailService.send(onTrialEnded.email(link, accountId, accountEmail, hasPaymentMethod));
+                emailService.send(onTrialEnded.email(account, link, hasPaymentMethod));
             } catch (Exception ex) {
                 log.warn("Failed to send email notification", ex);
             }
@@ -409,7 +420,7 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     }
 
     @Override
-    public void onInvoicePaymentSuccess(String accountId, String accountEmail, String invoiceIdStr) {
+    public void onInvoicePaymentSuccess(String accountId, String accountEmail, String invoiceIdStr, boolean isCardExpiringSoon) {
         if (!config.enabled()) {
             log.debug("Not enabled, skipping");
             return;
@@ -419,7 +430,7 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
             checkState(!Strings.isNullOrEmpty(accountEmail));
 
             try {
-                emailService.send(onInvoicePaymentSuccess.email(link, accountId, accountEmail));
+                emailService.send(onInvoicePaymentSuccess.email(link, accountId, accountEmail, isCardExpiringSoon));
             } catch (Exception ex) {
                 log.warn("Failed to send email notification", ex);
             }
@@ -634,6 +645,39 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
                 emailService.send(accountSignup.email(account, link));
             } catch (Exception ex) {
                 log.warn("Failed to send email signup", ex);
+            }
+        });
+    }
+
+    @Override
+    public void onDigest(Account account, Digest projects) {
+        if (!config.enabled()) {
+            log.debug("Not enabled, skipping");
+            return;
+        }
+        submit(() -> {
+            try {
+                emailService.send(onDigest.email(account, projects));
+            } catch (Exception ex) {
+                log.warn("Failed to send email digest", ex);
+            }
+        });
+    }
+
+    @Override
+    public void onProjectDeletionImminent(Account account) {
+        if (!config.enabled()) {
+            log.debug("Not enabled, skipping");
+            return;
+        }
+        submit(() -> {
+            String link = "https://" + configApp.domain() + "/dashboard/billing";
+            checkState(!Strings.isNullOrEmpty(account.getEmail()));
+
+            try {
+                emailService.send(onProjectDeletionImminent.email(account, link));
+            } catch (Exception ex) {
+                log.warn("Failed to send email notification", ex);
             }
         });
     }

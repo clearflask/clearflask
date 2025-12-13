@@ -24,8 +24,14 @@ public class OnInvoicePaymentSuccess {
         @DefaultValue("Invoice payment")
         String subjectTemplate();
 
+        @DefaultValue("[Card expiring soon] Invoice payment")
+        String subjectTemplateExpiring();
+
         @DefaultValue("Your payment has been received, thank you. ")
         String content();
+
+        @DefaultValue("Your payment has been received, thank you.\n\nYour card is expiring soon, please update your billing details.")
+        String contentExpiring();
     }
 
     @Inject
@@ -37,11 +43,11 @@ public class OnInvoicePaymentSuccess {
     @Inject
     private EmailTemplates emailTemplates;
 
-    public Email email(String link, String accountId, String accountEmail) {
+    public Email email(String link, String accountId, String accountEmail, boolean isCardExpiringSoon) {
         checkArgument(!Strings.isNullOrEmpty(accountEmail));
 
-        String subject = config.subjectTemplate();
-        String content = config.content();
+        String subject = isCardExpiringSoon ? config.subjectTemplateExpiring() : config.subjectTemplate();
+        String content = isCardExpiringSoon ? config.contentExpiring() : config.content();
 
         String templateHtml = emailTemplates.getNotificationTemplateHtml();
         String templateText = emailTemplates.getNotificationTemplateText();

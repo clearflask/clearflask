@@ -8,17 +8,14 @@ import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.store.ContentStore;
 import com.smotana.clearflask.testutil.AbstractTest;
-import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import javax.ws.rs.core.Response;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 @Slf4j
 public class SanitizerTest extends AbstractTest {
@@ -117,12 +114,6 @@ public class SanitizerTest extends AbstractTest {
     }
 
     @Test(timeout = 10_000L)
-    public void testDomain() throws Exception {
-        assertSanitizeDomain("sandbox.smotana.com", false);
-        assertSanitizeDomain("feedback.example.com", true);
-    }
-
-    @Test(timeout = 10_000L)
     public void testImg() throws Exception {
         String uploadDomain = "upload.clearflask.com";
         String signedQuery = "?signed";
@@ -170,24 +161,11 @@ public class SanitizerTest extends AbstractTest {
                 "o<img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z/C/HgAGgwJ/lK3Q6wAAAABJRU5ErkJggg==\" />");
     }
 
-    void assertSanitizeDomain(String domain, boolean expectFailure) {
-        try {
-            sanitizer.domain(domain, false);
-            if (expectFailure) {
-                fail("Expected failure");
-            }
-        } catch (ApiException ex) {
-            if (ex.getStatus().getStatusCode() == Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()) {
-                // It's fine, test was probably performed without network connection
-                return;
-            }
-            if (!expectFailure) {
-                throw ex;
-            }
-        }
-    }
-
     void assertSanitize(String message, String expHtml, String inpHtml) {
-        assertEquals(message, expHtml, sanitizer.richHtml(inpHtml, "msg", "'" + message + "'", PROJECT_ID, false));
+        assertEquals(message,
+                expHtml.replaceAll("noreferrer|noopener|ugc", "{REL}"),
+                sanitizer.richHtml(inpHtml, "msg", "'" + message + "'", PROJECT_ID, false)
+                        // rel attribute is returned in random order
+                        .replaceAll("noreferrer|noopener|ugc", "{REL}"));
     }
 }

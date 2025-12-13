@@ -13,11 +13,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.common.util.concurrent.*;
 import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
@@ -27,30 +23,19 @@ import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.PathNotFoundException;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
-import com.smotana.clearflask.api.model.AvailableRepo;
-import com.smotana.clearflask.api.model.AvailableRepos;
-import com.smotana.clearflask.api.model.Category;
-import com.smotana.clearflask.api.model.CommentUpdate;
-import com.smotana.clearflask.api.model.ConfigAdmin;
-import com.smotana.clearflask.api.model.GitHubStatusSync;
-import com.smotana.clearflask.api.model.IdeaStatus;
-import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
-import com.smotana.clearflask.api.model.NotifySubscribers;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.core.push.NotificationService;
-import com.smotana.clearflask.store.CommentStore;
+import com.smotana.clearflask.store.*;
 import com.smotana.clearflask.store.CommentStore.CommentAndIndexingFuture;
 import com.smotana.clearflask.store.CommentStore.CommentModel;
-import com.smotana.clearflask.store.GitHubStore;
-import com.smotana.clearflask.store.IdeaStore;
 import com.smotana.clearflask.store.IdeaStore.IdeaAndIndexingFuture;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
-import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
-import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.util.ColorUtil;
@@ -69,21 +54,10 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
-import org.kohsuke.github.GHAppInstallation;
-import org.kohsuke.github.GHEvent;
-import org.kohsuke.github.GHEventPayload;
+import org.kohsuke.github.*;
 import org.kohsuke.github.GHEventPayload.Issue;
-import org.kohsuke.github.GHEventPayload.IssueComment;
-import org.kohsuke.github.GHHook;
-import org.kohsuke.github.GHIssue;
-import org.kohsuke.github.GHIssueComment;
-import org.kohsuke.github.GHIssueState;
-import org.kohsuke.github.GHLabel;
-import org.kohsuke.github.GHRepository;
-import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
-import org.kohsuke.github.GitHubClientUtil;
-import org.kohsuke.github.HttpException;
+import org.kohsuke.github.GHEventPayload.IssueComment;
 
 import javax.ws.rs.core.Response;
 import java.awt.*;
@@ -539,7 +513,7 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                     // ghIssueComment.getChanges().getBody()
                     // https://github.com/hub4j/github-api/issues/1243
                     // Need to extract it ourselves here
-                    boolean bodyChanged = changesBodyJsonPath.read(payload) != null;
+                    boolean bodyChanged = jsonPathExists(changesBodyJsonPath, payload);
                     if (bodyChanged) {
                         commentStore.updateComment(project.getProjectId(), postId, commentId, ghIssueComment.getComment().getUpdatedAt().toInstant(), CommentUpdate.builder()
                                 .content(markdownAndQuillUtil.markdownToQuill(project.getProjectId(), "gh-comment", commentId, ghIssueComment.getComment().getBody())).build());
@@ -624,12 +598,12 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                     // ghRelease.getChanges().getBody()
                     // https://github.com/hub4j/github-api/issues/1243
                     // Need to extract it ourselves here
-                    if (changesNameJsonPath.read(payload) != null) {
+                    if (jsonPathExists(changesNameJsonPath, payload)) {
                         updateBuilder.title(ghRelease.getRelease().getName());
                         updated = true;
                     }
                     String bodyQuill = markdownAndQuillUtil.markdownToQuill(project.getProjectId(), "gh-new-post", ideaId, ghRelease.getRelease().getBody());
-                    if (changesBodyJsonPath.read(payload) != null) {
+                    if (jsonPathExists(changesBodyJsonPath, payload)) {
                         updateBuilder.description(bodyQuill);
                         updated = true;
                     }
@@ -844,6 +818,14 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                 throw th;
             }
         });
+    }
+
+    private <T> boolean jsonPathExists(JsonPath path, String payload) {
+        try {
+            return path.read(payload) != null;
+        } catch (PathNotFoundException ex) {
+            return false;
+        }
     }
 
     public static Module module() {

@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import { shallowEqual, useSelector } from 'react-redux';
-import SwaggerUI from "swagger-ui-react";
-import "swagger-ui-react/swagger-ui.css";
+import SwaggerUI from 'swagger-ui-react';
+import 'swagger-ui-react/swagger-ui.css';
 import { ReduxStateAdmin } from './api/serverAdmin';
 import UpgradeWrapper, { Action } from './common/config/settings/UpgradeWrapper';
 import windowIso from './common/windowIso';
@@ -18,16 +18,26 @@ const ApiDocs = (props: {
         onComplete={(instance) => {
           !!apiKey && instance.preauthorizeApiKey('ApiKeyAuth', apiKey);
         }}
-        docExpansion='none'
-        tryItOutEnabled
-        parameterMacro={(operation: any, parameter: any) => {
-          if (parameter.name === 'projectId' && !!props.projectId) {
-            parameter.default = props.projectId;
-            parameter.example = props.projectId;
-          }
+        docExpansion="none"
+        defaultModelRendering="model"
+        defaultModelExpandDepth={5}
+        deepLinking
+        displayRequestDuration
+        displayOperationId
+        requestSnippetsEnabled
+        showCommonExtensions
+        showExtensions
+        showMutatedRequest
+        {...{
+          parameterMacro: (operation: any, parameter: any) => {
+            if (parameter.name === 'projectId' && !!props.projectId) {
+              parameter.default = props.projectId;
+              parameter.example = props.projectId;
+            }
+          },
         }}
       />
     </UpgradeWrapper>
   );
-}
+};
 export default ApiDocs;

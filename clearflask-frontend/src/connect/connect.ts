@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import * as Sentry from "@sentry/node";
-import { Integrations } from "@sentry/tracing";
+import {Integrations} from "@sentry/tracing";
 import cluster from 'cluster';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
@@ -9,18 +9,18 @@ import express from 'express';
 import fs from 'fs';
 import http from 'http';
 import httpp from 'http-proxy';
-import https, { ServerOptions } from 'https';
+import https, {ServerOptions} from 'https';
 import i18nextMiddleware from 'i18next-http-middleware';
 import MapExpire from 'map-expire/MapExpire';
 import path from 'path';
 import process from 'process';
 import serveStatic from 'serve-static';
-import tls, { SecureContext } from 'tls';
-import { CertGetOrCreateResponse } from "../api/connect";
-import { getI18n } from '../i18n-ssr';
+import tls, {SecureContext} from 'tls';
+import {CertGetOrCreateResponse} from "../api/connect";
+import {getI18n} from '../i18n-ssr';
 import connectConfig from './config';
 import httpx from './httpx';
-import reactRenderer, { replaceParentDomain } from './renderer';
+import reactRenderer, {replaceParentDomain} from './renderer';
 import ServerConnect from './serverConnect';
 
 Sentry.init({
@@ -39,15 +39,26 @@ const urlsSkipCache = new Set([
 const apiBasePathWs = connectConfig.apiBasePath.replace(/[a-z]+:\/\//i, 'ws://');
 
 function createApiProxy() {
-  const serverHttpp = httpp.createProxyServer({ xfwd: true });
+  const serverHttpp = httpp.createProxyServer({
+    xfwd: true,
+    preserveHeaderKeyCase: true,
+  });
+
+  serverHttpp.on('proxyReq', (proxyReq, req, res, options) => {
+    if (req.headers.accept === 'text/event-stream') {
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+    }
+  });
+
   serverHttpp.on('error', function (err, req, res) {
     console.error(err);
     res.writeHead(500, { 'Content-Type': 'text/javascript' });
     res.end(JSON.stringify({
       userFacingMessage: 'Oops, something went wrong',
     }));
-    return;
   });
+
   return serverHttpp;
 }
 
@@ -111,6 +122,14 @@ const sniCallback: ServerOptions['SNICallback'] = async (servername, callback) =
   callback(null, secureContext);
 }
 
+function addHealthRoute(server, serverApi) {
+  server.get('/api/health', function (req, res) {
+    serverApi.web(req, res, {
+      target: connectConfig.apiBasePath,
+    });
+  });
+}
+
 function addAcmeRoute(server) {
   server.get('/.well-known/acme-challenge/:key', async function (req, res) {
     const key = req.params.key;
@@ -146,8 +165,21 @@ function createApp(serverApi) {
   const reactRender = reactRenderer();
 
   serverApp.use(cookieParser());
-  serverApp.use(compression());
+  serverApp.use(compression({
+    filter: (req, res) => {
+      // Do not compress Server-Sent Events
+      if (res.getHeader('Content-Type') === 'text/event-stream') {
+        return false;
+      }
+      return compression.filter(req, res);
+    }
+  }));
 
+  // Health check and acme challenge before http->https redirect
+  addHealthRoute(serverApp, serverApi);
+  addAcmeRoute(serverApp);
+
+  // Redirect http to https
   if (connectConfig.forceRedirectHttpToHttps) {
     serverApp.set('trust proxy', true);
     serverApp.use((req, res, next) => {
@@ -178,15 +210,13 @@ function createApp(serverApi) {
       serverApp.get(`/${file}`, function (req, res) {
         replaceAndSend(res, file);
       });
-    })
+    });
   } else {
     serverApp.get('/api/openapi.yaml', function (req, res) {
       res.header('Cache-Control', `public, max-age=${7 * 24 * 60 * 60}`);
       res.sendFile(path.resolve(connectConfig.publicPath, 'api', 'openapi.yaml'));
     });
   }
-
-  addAcmeRoute(serverApp);
 
   serverApp.use(serveStatic(connectConfig.publicPath, {
     index: false,
@@ -239,13 +269,14 @@ if (!connectConfig.disableAutoFetchCertificate) {
     // App
     const serverApp = createApp(serverApi);
 
-    // ACME challenger
-    const serverAcme = express();
-    addAcmeRoute(serverAcme);
-    serverAcme.use('*', serverApp);
+    // Http Listener
+    const serverHttpListener = express();
+    addHealthRoute(serverHttpListener, serverApi)
+    addAcmeRoute(serverHttpListener);
+    serverHttpListener.use('*', serverApp);
 
     // Http
-    const serverHttp = http.createServer(serverAcme);
+    const serverHttp = http.createServer(serverHttpListener);
 
     // Https
     const serverHttps = https.createServer({

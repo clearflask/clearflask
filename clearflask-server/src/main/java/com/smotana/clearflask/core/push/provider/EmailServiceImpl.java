@@ -22,6 +22,7 @@ import com.amazonaws.services.simpleemailv2.model.TooManyRequestsException;
 import com.google.common.base.Charsets;
 import com.google.common.base.Enums;
 import com.google.common.base.Strings;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.GuavaRateLimiters;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.AbstractModule;
@@ -34,17 +35,17 @@ import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
-import org.simplejavamail.api.email.EmailPopulatingBuilder;
-import org.simplejavamail.api.mailer.AsyncResponse;
-import org.simplejavamail.api.mailer.Mailer;
-import org.simplejavamail.api.mailer.config.TransportStrategy;
 import org.simplejavamail.email.EmailBuilder;
+import org.simplejavamail.email.EmailPopulatingBuilder;
+import org.simplejavamail.mailer.Mailer;
 import org.simplejavamail.mailer.MailerBuilder;
+import org.simplejavamail.mailer.config.TransportStrategy;
 import rx.Observable;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Slf4j
 @Singleton
@@ -54,11 +55,13 @@ public class EmailServiceImpl implements EmailService {
         @DefaultValue("true")
         boolean enabled();
 
-        /** Valid options: ses smtp */
+        /**
+         * Valid options: ses smtp
+         */
         @DefaultValue("ses")
         String useService();
 
-        @DefaultValue("noreply")
+        @DefaultValue("support")
         String fromEmailLocalPart();
 
         @DefaultValue("")
@@ -77,13 +80,15 @@ public class EmailServiceImpl implements EmailService {
 
         Observable<Duration> rateLimitCapacityObservable();
 
-        @DefaultValue(value = "TRIAL_ENDED,ACCOUNT_SIGNUP,INVOICE_PAYMENT_SUCCESS", innerType = String.class)
+        @DefaultValue(value = "TRIAL_ENDING,TRIAL_ENDED,ACCOUNT_SIGNUP,INVOICE_PAYMENT_SUCCESS,PAYMENT_FAILURE,WEEKLY_DIGEST,PROJECT_DELETION_IMMINENT", innerType = String.class)
         List<String> bccOnTagTypes();
 
-        @DefaultValue(value = "events@clearflask.com", innerType = String.class)
+        @DefaultValue(value = "", innerType = String.class)
         List<String> bccEmails();
 
-        /** Valid options: TransportStrategy */
+        /**
+         * Valid options: TransportStrategy
+         */
         @DefaultValue("SMTP_TLS")
         String smtpStrategy();
 
@@ -98,6 +103,21 @@ public class EmailServiceImpl implements EmailService {
 
         @DefaultValue("")
         String smtpPassword();
+
+        @DefaultValue("TLSv1.2")
+        String smtpTlsProtocols();
+
+        Observable<String> smtpHostObservable();
+
+        Observable<Integer> smtpPortObservable();
+
+        Observable<String> smtpUserObservable();
+
+        Observable<String> smtpPasswordObservable();
+
+        Observable<String> smtpStrategyObservable();
+
+        Observable<String> smtpTlsProtocolsObservable();
     }
 
     @Inject
@@ -110,7 +130,7 @@ public class EmailServiceImpl implements EmailService {
     private GuavaRateLimiters guavaRateLimiters;
 
     private RateLimiter rateLimiter;
-    private Optional<Mailer> smtpOpt = Optional.empty();
+    private volatile Optional<Mailer> smtpOpt = Optional.empty();
 
     @Inject
     private void setup() {
@@ -124,6 +144,13 @@ public class EmailServiceImpl implements EmailService {
                 Duration.ofMinutes(10).getSeconds());
 
         config.rateLimitPerSecondObservable().subscribe(rateLimitPerSecond -> rateLimiter.setRate(rateLimitPerSecond));
+
+        config.smtpHostObservable().subscribe(host -> smtpOpt = Optional.empty());
+        config.smtpPortObservable().subscribe(port -> smtpOpt = Optional.empty());
+        config.smtpUserObservable().subscribe(user -> smtpOpt = Optional.empty());
+        config.smtpPasswordObservable().subscribe(pass -> smtpOpt = Optional.empty());
+        config.smtpStrategyObservable().subscribe(strategy -> smtpOpt = Optional.empty());
+        config.smtpTlsProtocolsObservable().subscribe(protos -> smtpOpt = Optional.empty());
     }
 
     @Override
@@ -156,7 +183,7 @@ public class EmailServiceImpl implements EmailService {
                     .withToAddresses(email.getToAddress());
             if (config.bccOnTagTypes() != null
                     && config.bccOnTagTypes().contains(email.getTypeTag())) {
-                destination.withBccAddresses(config.bccEmails());
+                destination.withBccAddresses(getBccEmails());
             }
 
             SendEmailResult sendEmailResult;
@@ -204,6 +231,7 @@ public class EmailServiceImpl implements EmailService {
                     email.getToAddress(), email.getProjectOrAccountId(), sendEmailResult.getMessageId(), email.getSubject());
         } else {
             if (this.smtpOpt.isEmpty()) {
+                System.setProperty("mail.smtp.ssl.protocols", config.smtpTlsProtocols());
                 this.smtpOpt = Optional.of(MailerBuilder
                         .withSMTPServer(
                                 config.smtpHost(),
@@ -212,7 +240,6 @@ public class EmailServiceImpl implements EmailService {
                                 config.smtpPassword())
                         .withTransportStrategy(Enums.getIfPresent(TransportStrategy.class, config.smtpStrategy())
                                 .or(TransportStrategy.SMTP_TLS))
-                        .async()
                         .buildMailer());
             }
             EmailPopulatingBuilder emailBuilder = EmailBuilder.startingBlank()
@@ -223,21 +250,27 @@ public class EmailServiceImpl implements EmailService {
                     .withPlainText(email.getContentText());
             if (config.bccOnTagTypes() != null
                     && config.bccOnTagTypes().contains(email.getTypeTag())) {
-                emailBuilder.bcc(String.join(",", config.bccEmails()));
+                Set<String> bccEmails = getBccEmails();
+                if (!bccEmails.isEmpty()) {
+                    emailBuilder.bcc(String.join(",", bccEmails));
+                }
             }
-            AsyncResponse asyncResponse = this.smtpOpt.get().sendMail(emailBuilder
-                    .buildEmail(), true);
-            if (asyncResponse != null) {
-                asyncResponse.onException(ex -> {
-                    if (LogUtil.rateLimitAllowLog("emailpush-smtp-exception")) {
-                        log.warn("SMTP Email cannot be delivered, strategy {} host {}",
-                                config.smtpStrategy(), config.smtpHost(), ex);
-                    }
-                });
-                asyncResponse.onSuccess(() -> log.trace("Email sent to {} project/account id {} to {} subject {}",
-                        email.getToAddress(), email.getProjectOrAccountId(), email.getToAddress(), email.getSubject()));
-            }
+            this.smtpOpt.get().sendMail(emailBuilder.buildEmail(), true);
+            log.info("Sending email to {} subject '{}' project/account id {} ",
+                    email.getToAddress(), email.getProjectOrAccountId(), email.getSubject());
         }
+    }
+
+    private Set<String> getBccEmails() {
+        Set<String> bccEmails = Sets.newHashSet();
+        if (configApp.enableTelemetry()) {
+            bccEmails.add("events@clearflask.com");
+        }
+        Optional.ofNullable(config.bccEmails())
+                .ifPresent(configBccEmails -> configBccEmails.stream()
+                        .filter(email -> !Strings.isNullOrEmpty(email))
+                        .forEach(bccEmails::add));
+        return bccEmails;
     }
 
     public static Module module() {

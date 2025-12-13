@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.smotana.clearflask</groupId>
     <artifactId>clearflask-parent</artifactId>
-    <version>1.6.2-SNAPSHOT</version>
+    <version>2.3.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>clearflask-parent</name>
@@ -20,41 +19,51 @@
 
     <properties>
         <java.version>11</java.version>
+        <JAVA_VERSION>${java.version}</JAVA_VERSION>
         <COPYING.path>${basedir}/COPYING</COPYING.path>
-        <sentry.version>5.1.1</sentry.version>
-        <guava.version>30.1.1-jre</guava.version>
-        <slf4j.version>1.7.25</slf4j.version>
-        <logback.version>1.2.9</logback.version>
-        <!-- Last recommended version cross compatible for OpenSearch and ElasticSearch
-             https://opensearch.org/docs/latest/clients/index/ -->
+        <sentry.version>8.0.0-beta.3</sentry.version>
+        <guava.version>33.3.1-jre</guava.version>
+        <guice.version>4.2.3</guice.version>
+        <slf4j.version>2.1.0-alpha1</slf4j.version>
+        <!-- 1.3.x is required for javax jdk8 (https://github.com/qos-ch/logback/discussions/585) -->
+        <logback.version>1.3.14</logback.version>
+        <!--
+            Last recommended version cross compatible for OpenSearch and ElasticSearch
+            https://opensearch.org/docs/latest/clients/index/
+            Must be compatible with lucene.version as well.
+        -->
         <elasticsearch.version>7.13.4</elasticsearch.version>
+        <!--
+            8.x is last minor version supporting Java 11
+            Must be compatible with elasticsearch.version as well.
+        -->
         <lucene.version>8.8.2</lucene.version>
         <!-- 3.16 is last minor version supporting Java 11 -->
-        <jooq.version>3.16.10</jooq.version>
-        <ice.version>1.0.8</ice.version>
-        <curator.version>4.0.1</curator.version>
-        <!-- If I still can't upgrade to 2.27+,
-             try downgrading to 2.22.2 if this gets resolved:
-             https://github.com/oracle/oci-java-sdk/issues/78 -->
-        <jersey.version>2.27</jersey.version>
-        <awssdk.version>1.12.75</awssdk.version>
-        <hk2.version>2.5.0-b62</hk2.version>
+        <jooq.version>3.16.23</jooq.version>
+        <ice.version>1.0.9</ice.version>
+        <curator.version>5.7.1</curator.version>
+        <jersey.version>2.45</jersey.version>
+        <awssdk.version>1.12.778</awssdk.version>
         <jjwt.version>0.11.2</jjwt.version>
         <sqlite4java>1.0.392</sqlite4java>
         <node.version>v14.15.1</node.version>
         <frontend-maven-plugin.version>1.12.1</frontend-maven-plugin.version>
         <pnpm.version>v7.12.1</pnpm.version>
         <license-maven-plugin.version>4.1</license-maven-plugin.version>
-        <projectlombok.version>1.18.22</projectlombok.version>
-        <twelvemonkeys.version>3.7.1</twelvemonkeys.version>
-        <batik.version>1.14</batik.version>
+        <projectlombok.version>1.18.36</projectlombok.version>
+        <twelvemonkeys.version>3.12.0</twelvemonkeys.version>
+        <batik.version>1.18</batik.version>
         <!-- Kik Ice fails with 1.11+ due to InvocationHandlerAdapter method signature change -->
         <bytebuddy.version>1.10.22</bytebuddy.version>
-        <bouncycastle.version>1.70</bouncycastle.version>
+        <mockito.version>4.0.0</mockito.version>
+        <!-- Don't jump on the bouncy castle -->
+        <bouncycastle.version>1.79</bouncycastle.version>
         <githubReleaseVersion>${project.version}</githubReleaseVersion>
-        <skipTests/>
-        <skipITs/>
+        <skipTests />
+        <skipITs />
         <skipLicenseUpdate>true</skipLicenseUpdate>
+        <!-- For HTTPS, use "scm:git:https://github.com/clearflask/clearflask.git" -->
+        <scmConnection>scm:git:git@github.com:clearflask/clearflask.git</scmConnection>
     </properties>
 
     <modules>
@@ -69,8 +78,8 @@
 
     <scm>
         <url>https://github.com/clearflask/clearflask</url>
-        <connection>scm:git:git@github.com:clearflask/clearflask.git</connection>
-        <developerConnection>scm:git:git@github.com:clearflask/clearflask.git</developerConnection>
+        <connection>${scmConnection}</connection>
+        <developerConnection>${scmConnection}</developerConnection>
         <tag>HEAD</tag>
     </scm>
 
@@ -174,7 +183,6 @@
                 <version>3.0.0-M4</version>
                 <configuration>
                     <releaseProfiles>docker-images-push</releaseProfiles>
-                    <signTag>true</signTag>
                     <tagNameFormat>@{project.version}</tagNameFormat>
                     <scmCommentPrefix>[release]</scmCommentPrefix>
                 </configuration>
@@ -280,7 +288,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-resources-plugin</artifactId>
-                    <version>3.1.0</version>
+                    <version>3.3.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -288,9 +296,9 @@
                     <version>3.1.1</version>
                 </plugin>
                 <plugin>
-                    <groupId>io.fabric8</groupId>
+                    <groupId>`io.fabric8`</groupId>
                     <artifactId>docker-maven-plugin</artifactId>
-                    <version>0.36.1</version>
+                    <version>0.45.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -336,7 +344,22 @@
             <dependency>
                 <groupId>io.dataspray</groupId>
                 <artifactId>single-table</artifactId>
-                <version>0.0.8</version>
+                <version>0.0.12</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.amazonaws</groupId>
+                        <artifactId>aws-java-sdk-dynamodb</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.amazonaws</groupId>
+                        <artifactId>aws-java-sdk-core</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>io.dataspray.umbrella.integration</groupId>
+                <artifactId>umbrella-tomcat-javax</artifactId>
+                <version>0.0.7</version>
             </dependency>
 
             <dependency>
@@ -352,12 +375,12 @@
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-to-slf4j</artifactId>
-                <version>2.13.3</version>
+                <version>2.24.2</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>jcl-over-slf4j</artifactId>
-                <version>1.7.30</version>
+                <version>2.1.0-alpha1</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
@@ -382,7 +405,7 @@
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
-                <version>2.8.9</version>
+                <version>2.11.0</version>
             </dependency>
             <dependency>
                 <groupId>com.dampcake</groupId>
@@ -392,12 +415,12 @@
             <dependency>
                 <groupId>com.jayway.jsonpath</groupId>
                 <artifactId>json-path</artifactId>
-                <version>2.5.0</version>
+                <version>2.9.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-csv</artifactId>
-                <version>1.8</version>
+                <version>1.12.0</version>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.jersey.core</groupId>
@@ -408,19 +431,12 @@
                 <groupId>org.glassfish.jersey.connectors</groupId>
                 <artifactId>jersey-apache-connector</artifactId>
                 <version>${jersey.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <!-- Exclude and upgrade due to https://github.com/aws/aws-sdk-java/issues/1919 -->
-                        <groupId>org.apache.httpcomponents</groupId>
-                        <artifactId>httpclient</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
-                <!-- Exclude and upgrade due to https://github.com/aws/aws-sdk-java/issues/1919 -->
+                <!-- Upgrade due to https://github.com/aws/aws-sdk-java/issues/1919 -->
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
-                <version>4.5.13</version>
+                <version>4.5.14</version>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.jersey.media</groupId>
@@ -450,22 +466,22 @@
             <dependency>
                 <groupId>com.google.inject</groupId>
                 <artifactId>guice</artifactId>
-                <version>4.2.3</version>
+                <version>${guice.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.inject.extensions</groupId>
                 <artifactId>guice-assistedinject</artifactId>
-                <version>4.0</version>
+                <version>${guice.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.inject.extensions</groupId>
                 <artifactId>guice-multibindings</artifactId>
-                <version>4.2.3</version>
+                <version>${guice.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.inject.extensions</groupId>
                 <artifactId>guice-servlet</artifactId>
-                <version>4.2.3</version>
+                <version>${guice.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
@@ -476,6 +492,15 @@
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
                 <version>${projectlombok.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-bom</artifactId>
+                <!-- Killbill client relies on this version and higher versions are incompatible -->
+                <version>4.1.60.Final</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
 
             <dependency>
@@ -554,7 +579,7 @@
             <dependency>
                 <groupId>org.apache.xmlgraphics</groupId>
                 <artifactId>xmlgraphics-commons</artifactId>
-                <version>2.6</version>
+                <version>2.10</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.xmlgraphics</groupId>
@@ -576,6 +601,26 @@
                         <artifactId>fop</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-bom</artifactId>
+                <!-- 0.35.x is last minor version supporting Java 11 -->
+                <version>0.35.0</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mapdb</groupId>
+                <artifactId>mapdb</artifactId>
+                <version>3.1.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.samskivert</groupId>
+                <artifactId>jmustache</artifactId>
+                <version>1.16</version>
             </dependency>
 
             <dependency>
@@ -632,7 +677,7 @@
             <dependency>
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
-                <version>8.0.30</version>
+                <version>8.0.33</version>
             </dependency>
             <dependency>
                 <!-- Ensures all AWS SDKs are version compatible -->
@@ -643,19 +688,386 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>javax.mail</groupId>
-                <artifactId>mail</artifactId>
-                <version>1.4.7</version>
+                <!-- Explicitly pull in core with explicit version same as bom since apparently the bom above doesn't work -->
+                <groupId>com.amazonaws</groupId>
+                <artifactId>aws-java-sdk-core</artifactId>
+                <version>${awssdk.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.mail</groupId>
+                <artifactId>javax.mail</artifactId>
+                <!-- Same as logback-core parent pom.xml javax.mail.version property -->
+                <version>1.6.2</version>
             </dependency>
             <dependency>
                 <groupId>org.simplejavamail</groupId>
                 <artifactId>simple-java-mail</artifactId>
-                <version>6.6.1</version>
+                <!-- Last version to support javax.mail (https://github.com/bbottema/simple-java-mail)-->
+                <version>5.1.7</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>
                 <artifactId>jsr305</artifactId>
                 <version>3.0.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcutil-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>javax.ws.rs</groupId>
+                <artifactId>javax.ws.rs-api</artifactId>
+                <version>2.1.1</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.servlet</groupId>
+                <artifactId>javax.servlet-api</artifactId>
+                <version>4.0.1</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>javax.validation</groupId>
+                <artifactId>validation-api</artifactId>
+                <version>2.0.1.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.core</groupId>
+                <artifactId>jersey-server</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.containers</groupId>
+                <artifactId>jersey-container-servlet-core</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.containers</groupId>
+                <artifactId>jersey-container-servlet</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.inject</groupId>
+                <artifactId>jersey-hk2</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.media</groupId>
+                <artifactId>jersey-media-sse</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.hk2</groupId>
+                <artifactId>guice-bridge</artifactId>
+                <version>2.6.1</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.stripe</groupId>
+                <artifactId>stripe-java</artifactId>
+                <version>28.1.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.billing</groupId>
+                <artifactId>killbill-client-java</artifactId>
+                <version>1.2.6</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.billing.plugin</groupId>
+                <artifactId>killbill-plugin-api-notification</artifactId>
+                <version>0.26.4</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.billing.plugin.java</groupId>
+                <artifactId>payment-test-plugin</artifactId>
+                <!-- Compatibility matrix https://github.com/killbill/killbill-payment-test-plugin -->
+                <version>7.0.5</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.billing.plugin.java</groupId>
+                <artifactId>stripe-plugin</artifactId>
+                <!-- Compatibility matrix https://github.com/killbill/killbill-stripe-plugin -->
+                <version>7.3.3</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.billing.plugin.java</groupId>
+                <artifactId>analytics-plugin</artifactId>
+                <!-- Compatibility matrix https://github.com/killbill/killbill-analytics-plugin -->
+                <version>7.2.7</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.billing</groupId>
+                <artifactId>killbill-catalog</artifactId>
+                <version>0.22.33</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.kohsuke</groupId>
+                <artifactId>github-api</artifactId>
+                <version>1.326</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.squareup.okhttp3</groupId>
+                        <artifactId>okhttp</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.squareup.okhttp3</groupId>
+                        <artifactId>okhttp-urlconnection</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <!-- For github-api -->
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>2.18.1</version>
+            </dependency>
+            <dependency>
+                <!-- For github-api -->
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>2.18.1</version>
+            </dependency>
+            <dependency>
+                <!-- For github-api -->
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>2.18.1</version>
+            </dependency>
+            <dependency>
+                <!-- For github-api -->
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-joda</artifactId>
+                <version>2.18.1</version>
+            </dependency>
+            <dependency>
+                <!-- For github-api -->
+                <groupId>com.infradna.tool</groupId>
+                <artifactId>bridge-method-annotation</artifactId>
+                <version>1.24</version>
+            </dependency>
+            <dependency>
+                <!-- For github-api -->
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>2.18.0</version>
+            </dependency>
+
+            <!-- https://stackoverflow.com/questions/43574426/how-to-resolve-java-lang-noclassdeffounderror-javax-xml-bind-jaxbexception-in-j -->
+            <dependency>
+                <groupId>javax.xml.bind</groupId>
+                <artifactId>jaxb-api</artifactId>
+                <version>2.4.0-b180830.0359</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.xml.bind</groupId>
+                <artifactId>jaxb-core</artifactId>
+                <version>4.0.5</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.xml.bind</groupId>
+                <artifactId>jaxb-impl</artifactId>
+                <version>4.0.5</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.activation</groupId>
+                <artifactId>activation</artifactId>
+                <version>1.1.1</version>
+            </dependency>
+
+            <dependency>
+                <groupId>javax.annotation</groupId>
+                <artifactId>jsr250-api</artifactId>
+                <version>1.0</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.websocket</groupId>
+                <artifactId>javax.websocket-api</artifactId>
+                <version>1.1</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.github.rholder</groupId>
+                <artifactId>guava-retrying</artifactId>
+                <version>2.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.reflections</groupId>
+                <artifactId>reflections</artifactId>
+                <version>0.10.2</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>3.16.3</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.simschla</groupId>
+                <artifactId>fast-and-simple-minify</artifactId>
+                <version>1.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+                <version>1.12.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-math3</artifactId>
+                <version>3.6.1</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-lang</groupId>
+                <artifactId>commons-lang</artifactId>
+                <version>2.6</version>
+            </dependency>
+            <dependency>
+                <groupId>nl.martijndwars</groupId>
+                <artifactId>web-push</artifactId>
+                <version>5.1.1</version>
+            </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>${bytebuddy.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy-agent</artifactId>
+                <version>${bytebuddy.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
+                <artifactId>owasp-java-html-sanitizer</artifactId>
+                <version>20240325.1</version>
+            </dependency>
+            <dependency>
+                <groupId>dnsjava</groupId>
+                <artifactId>dnsjava</artifactId>
+                <version>3.6.2</version>
+            </dependency>
+            <dependency>
+                <groupId>com.vladsch.flexmark</groupId>
+                <artifactId>flexmark-all</artifactId>
+                <version>0.64.8</version>
+            </dependency>
+            <dependency>
+                <groupId>org.shredzone.acme4j</groupId>
+                <artifactId>acme4j-client</artifactId>
+                <version>3.4.0</version>
+            </dependency>
+            <dependency>
+                <groupId>io.castle</groupId>
+                <artifactId>castle-java</artifactId>
+                <!-- Last version on java 8, later uses 17 -->
+                <version>2.3.2</version>
+            </dependency>
+
+            <!-- test-only deps -->
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>5.10.0</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <scope>test</scope>
+                <version>4.13.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-test</artifactId>
+                <scope>test</scope>
+                <version>${curator.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.test-framework</groupId>
+                <artifactId>jersey-test-framework-core</artifactId>
+                <version>${jersey.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.test-framework.providers</groupId>
+                <artifactId>jersey-test-framework-provider-grizzly2</artifactId>
+                <version>${jersey.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <scope>test</scope>
+                <version>${mockito.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-inline</artifactId>
+                <version>${mockito.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.elasticsearch.test</groupId>
+                <artifactId>framework</artifactId>
+                <version>${elasticsearch.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.amazonaws</groupId>
+                <artifactId>DynamoDBLocal</artifactId>
+                <version>1.12.0</version>
+                <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>log4j-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>log4j-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.amazonaws</groupId>
+                        <artifactId>aws-java-sdk-dynamodb</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.amazonaws</groupId>
+                        <artifactId>aws-java-sdk-core</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.xerial</groupId>
+                <artifactId>sqlite-jdbc</artifactId>
+                <version>3.47.0.0</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>com.almworks.sqlite4java</groupId>
@@ -699,317 +1111,16 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk15on</artifactId>
-                <!-- Also required for acme4j-utils -->
-                <version>${bouncycastle.version}</version>
-            </dependency>
-            <dependency>
-                <!-- Required for acme4j-utils -->
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk15on</artifactId>
-                <version>${bouncycastle.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>javax.ws.rs</groupId>
-                <artifactId>javax.ws.rs-api</artifactId>
-                <version>2.1.1</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.servlet</groupId>
-                <artifactId>javax.servlet-api</artifactId>
-                <version>4.0.1</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.validation</groupId>
-                <artifactId>validation-api</artifactId>
-                <version>2.0.0.Final</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jersey.core</groupId>
-                <artifactId>jersey-server</artifactId>
-                <version>${jersey.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jersey.containers</groupId>
-                <artifactId>jersey-container-servlet-core</artifactId>
-                <version>${jersey.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jersey.inject</groupId>
-                <artifactId>jersey-hk2</artifactId>
-                <version>${jersey.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.hk2</groupId>
-                <artifactId>guice-bridge</artifactId>
-                <version>${hk2.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.stripe</groupId>
-                <artifactId>stripe-java</artifactId>
-                <version>20.26.0</version>
-            </dependency>
-            <dependency>
-                <groupId>org.kill-bill.billing</groupId>
-                <artifactId>killbill-client-java</artifactId>
-                <version>1.1.10</version>
-            </dependency>
-            <dependency>
-                <groupId>org.kill-bill.billing.plugin</groupId>
-                <artifactId>killbill-plugin-api-notification</artifactId>
-                <version>0.26.4</version>
-            </dependency>
-            <dependency>
-                <groupId>org.kill-bill.billing.plugin.java</groupId>
-                <artifactId>payment-test-plugin</artifactId>
-                <!-- Compatibility matrix https://github.com/killbill/killbill-payment-test-plugin -->
-                <version>7.0.4</version>
-            </dependency>
-            <dependency>
-                <groupId>org.kill-bill.billing.plugin.java</groupId>
-                <artifactId>stripe-plugin</artifactId>
-                <!-- Compatibility matrix https://github.com/killbill/killbill-stripe-plugin -->
-                <version>7.0.4</version>
-            </dependency>
-            <dependency>
-                <groupId>org.kill-bill.billing.plugin.java</groupId>
-                <artifactId>analytics-plugin</artifactId>
-                <!-- Compatibility matrix https://github.com/killbill/killbill-analytics-plugin -->
-                <version>7.0.8</version>
-            </dependency>
-            <dependency>
-                <groupId>org.kill-bill.billing</groupId>
-                <artifactId>killbill-catalog</artifactId>
-                <version>0.22.20</version>
+                <groupId>io.github.ganadist.sqlite4java</groupId>
+                <artifactId>libsqlite4java-osx-aarch64</artifactId>
+                <version>${sqlite4java}</version>
+                <type>dylib</type>
                 <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.kohsuke</groupId>
-                <artifactId>github-api</artifactId>
-                <version>1.133</version>
-            </dependency>
-            <dependency>
-                <!-- For github-api -->
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>2.13.4.1</version>
-            </dependency>
-            <dependency>
-                <!-- For github-api -->
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>2.13.4</version>
-            </dependency>
-            <dependency>
-                <!-- For github-api -->
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-annotations</artifactId>
-                <version>2.13.4</version>
-            </dependency>
-            <dependency>
-                <!-- For github-api -->
-                <groupId>com.fasterxml.jackson.datatype</groupId>
-                <artifactId>jackson-datatype-joda</artifactId>
-                <version>2.13.4</version>
-            </dependency>
-            <dependency>
-                <!-- For github-api -->
-                <groupId>com.infradna.tool</groupId>
-                <artifactId>bridge-method-annotation</artifactId>
-                <version>1.21</version>
-            </dependency>
-            <dependency>
-                <!-- For github-api -->
-                <groupId>commons-io</groupId>
-                <artifactId>commons-io</artifactId>
-                <version>2.8.0</version>
-            </dependency>
-
-            <!-- https://stackoverflow.com/questions/43574426/how-to-resolve-java-lang-noclassdeffounderror-javax-xml-bind-jaxbexception-in-j -->
-            <dependency>
-                <groupId>javax.xml.bind</groupId>
-                <artifactId>jaxb-api</artifactId>
-                <version>2.2.11</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.xml.bind</groupId>
-                <artifactId>jaxb-core</artifactId>
-                <version>2.2.11</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.xml.bind</groupId>
-                <artifactId>jaxb-impl</artifactId>
-                <version>2.2.11</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.activation</groupId>
-                <artifactId>activation</artifactId>
-                <version>1.1.1</version>
-            </dependency>
-
-            <dependency>
-                <groupId>javax.annotation</groupId>
-                <artifactId>jsr250-api</artifactId>
-                <version>1.0</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.websocket</groupId>
-                <artifactId>javax.websocket-api</artifactId>
-                <version>1.1</version>
-                <scope>provided</scope>
-            </dependency>
-            <dependency>
-                <groupId>com.github.rholder</groupId>
-                <artifactId>guava-retrying</artifactId>
-                <version>2.0.0</version>
-            </dependency>
-            <dependency>
-                <groupId>org.reflections</groupId>
-                <artifactId>reflections</artifactId>
-                <version>0.9.11</version>
-            </dependency>
-            <dependency>
-                <groupId>com.google.protobuf</groupId>
-                <artifactId>protobuf-java</artifactId>
-                <version>3.16.3</version>
-            </dependency>
-            <dependency>
-                <groupId>io.jsonwebtoken</groupId>
-                <artifactId>jjwt-api</artifactId>
-                <version>${jjwt.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.jsonwebtoken</groupId>
-                <artifactId>jjwt-impl</artifactId>
-                <version>${jjwt.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.jsonwebtoken</groupId>
-                <artifactId>jjwt-jackson</artifactId>
-                <version>${jjwt.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.simschla</groupId>
-                <artifactId>fast-and-simple-minify</artifactId>
-                <version>1.0</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-text</artifactId>
-                <version>1.10.0</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-math3</artifactId>
-                <version>3.6.1</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-lang</groupId>
-                <artifactId>commons-lang</artifactId>
-                <version>2.6</version>
-            </dependency>
-            <dependency>
-                <groupId>nl.martijndwars</groupId>
-                <artifactId>web-push</artifactId>
-                <version>5.1.0</version>
-            </dependency>
-            <dependency>
-                <groupId>net.bytebuddy</groupId>
-                <artifactId>byte-buddy</artifactId>
-                <version>${bytebuddy.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>net.bytebuddy</groupId>
-                <artifactId>byte-buddy-agent</artifactId>
-                <version>${bytebuddy.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
-                <artifactId>owasp-java-html-sanitizer</artifactId>
-                <version>20211018.2</version>
-            </dependency>
-            <dependency>
-                <groupId>dnsjava</groupId>
-                <artifactId>dnsjava</artifactId>
-                <version>3.3.1</version>
-            </dependency>
-            <dependency>
-                <groupId>com.vladsch.flexmark</groupId>
-                <artifactId>flexmark-all</artifactId>
-                <version>0.62.2</version>
-            </dependency>
-            <dependency>
-                <groupId>org.shredzone.acme4j</groupId>
-                <artifactId>acme4j-client</artifactId>
-                <version>2.12</version>
-            </dependency>
-            <dependency>
-                <groupId>org.shredzone.acme4j</groupId>
-                <artifactId>acme4j-utils</artifactId>
-                <version>2.12</version>
-            </dependency>
-
-            <!-- test-only deps -->
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <scope>test</scope>
-                <version>4.13.1</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.curator</groupId>
-                <artifactId>curator-test</artifactId>
-                <scope>test</scope>
-                <version>${curator.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jersey.test-framework</groupId>
-                <artifactId>jersey-test-framework-core</artifactId>
-                <version>${jersey.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jersey.test-framework.providers</groupId>
-                <artifactId>jersey-test-framework-provider-grizzly2</artifactId>
-                <version>${jersey.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-core</artifactId>
-                <scope>test</scope>
-                <version>4.0.0</version>
-            </dependency>
-            <dependency>
-                <groupId>org.elasticsearch.test</groupId>
-                <artifactId>framework</artifactId>
-                <version>${elasticsearch.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>com.amazonaws</groupId>
-                <artifactId>DynamoDBLocal</artifactId>
-                <version>1.12.0</version>
-                <scope>test</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.logging.log4j</groupId>
-                        <artifactId>log4j-api</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.logging.log4j</groupId>
-                        <artifactId>log4j-core</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.elasticsearch.plugin</groupId>
                 <artifactId>transport-netty4-client</artifactId>
-                <version>5.1.1</version>
+                <version>7.17.25</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>

@@ -15,50 +15,18 @@ import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
 import com.smotana.clearflask.api.IdeaAdminApi;
 import com.smotana.clearflask.api.IdeaApi;
-import com.smotana.clearflask.api.model.Category;
-import com.smotana.clearflask.api.model.ConfigAdmin;
-import com.smotana.clearflask.api.model.HistogramResponse;
-import com.smotana.clearflask.api.model.Hits;
-import com.smotana.clearflask.api.model.Idea;
-import com.smotana.clearflask.api.model.IdeaAggregateResponse;
-import com.smotana.clearflask.api.model.IdeaConnectResponse;
-import com.smotana.clearflask.api.model.IdeaCreate;
-import com.smotana.clearflask.api.model.IdeaCreateAdmin;
-import com.smotana.clearflask.api.model.IdeaDraftAdmin;
-import com.smotana.clearflask.api.model.IdeaDraftSearch;
-import com.smotana.clearflask.api.model.IdeaDraftSearchResponse;
-import com.smotana.clearflask.api.model.IdeaGetAll;
-import com.smotana.clearflask.api.model.IdeaGetAllResponse;
-import com.smotana.clearflask.api.model.IdeaHistogramSearchAdmin;
-import com.smotana.clearflask.api.model.IdeaSearch;
-import com.smotana.clearflask.api.model.IdeaSearchAdmin;
-import com.smotana.clearflask.api.model.IdeaSearchResponse;
-import com.smotana.clearflask.api.model.IdeaUpdate;
-import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
-import com.smotana.clearflask.api.model.IdeaVote;
-import com.smotana.clearflask.api.model.IdeaVotersAdminResponse;
-import com.smotana.clearflask.api.model.IdeaWithVote;
-import com.smotana.clearflask.api.model.IdeaWithVoteSearchResponse;
-import com.smotana.clearflask.api.model.SubscriptionListenerIdea;
-import com.smotana.clearflask.api.model.VoteOption;
-import com.smotana.clearflask.api.model.Workflow;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.Billing.UsageType;
 import com.smotana.clearflask.core.push.NotificationService;
 import com.smotana.clearflask.security.limiter.Limit;
-import com.smotana.clearflask.store.CommentStore;
-import com.smotana.clearflask.store.DraftStore;
-import com.smotana.clearflask.store.GitHubStore;
-import com.smotana.clearflask.store.IdeaStore;
+import com.smotana.clearflask.store.*;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.IdeaStore.SearchResponse;
-import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.ProjectStore.WebhookListener.ResourceType;
-import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.UserStore.UserSession;
-import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider;
 import com.smotana.clearflask.util.BloomFilters;
@@ -295,7 +263,9 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
-        ImmutableCollection<IdeaModel> ideaModels = ideaStore.getIdeas(projectId, ImmutableList.copyOf(ideaGetAll.getPostIds())).values();
+        ImmutableCollection<IdeaModel> ideaModels = ideaStore.getIdeas(projectId, ideaGetAll.getPostIds().stream()
+                .filter(Objects::nonNull)
+                .collect(ImmutableList.toImmutableList())).values();
         return new IdeaGetAllResponse(userOpt.map(user -> toIdeasWithVotes(user, ideaModels))
                 .orElseGet(() -> ideaModels.stream()
                         .map(ideaModel -> ideaModel.toIdeaWithVote(

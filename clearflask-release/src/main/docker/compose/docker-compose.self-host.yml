@@ -22,9 +22,9 @@ services:
     image: ghcr.io/clearflask/clearflask-server:latest
     ports:
       - 8080:8080
-      # JMX (Disabled by default)
-      # - 9950:9950
-      # - 9951:9951
+      # JMX
+      - 9950:9950
+      - 9951:9951
     environment:
       - CLEARFLASK_ENVIRONMENT=PRODUCTION_SELF_HOST
       - CLEARFLASK_CREATE_SERVER_CONFIG_IF_MISSING=1
@@ -37,14 +37,15 @@ services:
       retries: 2
   # MySQL (enabled by default as an alternative to ElasticSearch)
   mysql-db:
-    image: mysql:5.7
+    image: mariadb:10.5
     command:
       - 'mysqld'
+      - '--port=3306'
       - '--sql-mode=IGNORE_SPACE'
       - '--explicit-defaults-for-timestamp'
       - '--secure-file-priv=/tmp'
     volumes:
-      - ./killbill-db:/docker-entrypoint-initdb.d
+      - ./data/mysql:/var/lib/mysql
     ports:
       - 3306:3306
     environment:
@@ -66,7 +67,7 @@ services:
   localstack:
     profiles:
       - with-deps
-    image: localstack/localstack
+    image: localstack/localstack:0.14.3
     expose:
       - 4566
       - 4571
@@ -80,5 +81,6 @@ services:
       - USE_SSL=0
       - FORCE_NONINTERACTIVE=true
       - DATA_DIR=/tmp/localstack/data
+      - LEGACY_PERSISTENCE=1
     volumes:
       - ./data/localstack:/tmp/localstack

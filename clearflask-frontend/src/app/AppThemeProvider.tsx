@@ -25,6 +25,23 @@ declare module '@material-ui/core/styles/createMuiTheme' {
   interface ThemeOptions extends ThemeCustomProps { }
 }
 
+/**
+ * Sanitize font family input to prevent CSS injection attacks.
+ * Removes dangerous characters that could be used for CSS injection
+ * (semicolons, curly braces, etc.) while preserving valid font family syntax.
+ */
+const sanitizeFontFamily = (fontFamily: string | undefined): string | undefined => {
+  if (!fontFamily) return undefined;
+  // Remove characters that could be used for CSS injection
+  // Allow: letters, numbers, spaces, quotes, commas, hyphens, underscores
+  const sanitized = fontFamily.replace(/[;{}()<>\\]/g, '');
+  // Return undefined if the result is empty or significantly different (potential attack)
+  if (!sanitized.trim() || sanitized.length < fontFamily.length * 0.5) {
+    return undefined;
+  }
+  return sanitized;
+};
+
 export const ComponentPropsOverrides: ComponentsProps = {
   MuiModal: {
     disableEnforceFocus: true,
@@ -99,9 +116,8 @@ class AppThemeProvider extends Component<Props> {
           },
         },
         typography: {
-          // TODO sanitize input, currently you can inject custom css with "; inject: me"
           /* If changed, change in index.html, Main.tsx */
-          fontFamily: this.props.config.style.typography.fontFamily || '"Inter", -apple-system-body, BlinkMacSystemFont, SFUI, HelveticaNeue, Helvetica, Arial, sans-serif',
+          fontFamily: sanitizeFontFamily(this.props.config.style.typography.fontFamily) || '"Inter", -apple-system-body, BlinkMacSystemFont, SFUI, HelveticaNeue, Helvetica, Arial, sans-serif',
           fontSize: this.props.config.style.typography.fontSize || 14,
         },
         transitions: {

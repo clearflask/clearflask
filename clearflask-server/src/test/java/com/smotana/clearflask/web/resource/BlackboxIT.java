@@ -72,7 +72,8 @@ public class BlackboxIT extends AbstractBlackboxIT {
                 "smotana",
                 "unittest@clearflask.com",
                 "password",
-                "growth2-monthly",
+                "flat-yearly",
+                null,
                 null,
                 null));
         String accountId = accountStore.getAccountByEmail(accountAdmin.getEmail()).get().getAccountId();
@@ -100,9 +101,6 @@ public class BlackboxIT extends AbstractBlackboxIT {
                 .resume(true)
                 .build());
         refreshStatus(accountId);
-        accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
-                .basePlanId("standard2-monthly")
-                .build());
         dumpDynamoTable();
         accountResource.accountDeleteAdmin();
         dumpDynamoTable();

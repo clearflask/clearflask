@@ -5,7 +5,8 @@
 import loadable from '@loadable/component';
 import { AppBar, Container, Drawer, Grid, Hidden, IconButton, Link as MuiLink, Toolbar } from '@material-ui/core';
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
-import CodeIcon from "@material-ui/icons/Code";
+import WorkIcon from '@material-ui/icons/Work';
+import CodeIcon from '@material-ui/icons/Code';
 import CompareIcon from '@material-ui/icons/CompareArrows';
 import CollectIcon from '@material-ui/icons/ContactSupportOutlined';
 import DocsIcon from '@material-ui/icons/DescriptionRounded';
@@ -14,7 +15,6 @@ import RoadmapIcon from '@material-ui/icons/EqualizerRounded';
 import FeedbackIcon from '@material-ui/icons/Feedback';
 import MenuIcon from '@material-ui/icons/Menu';
 import StatusIcon from '@material-ui/icons/Notifications';
-import BlogIcon from '@material-ui/icons/RssFeed';
 import AnalyzeIcon from '@material-ui/icons/ShowChart';
 import DemoIcon from '@material-ui/icons/Slideshow';
 import classNames from 'classnames';
@@ -64,6 +64,7 @@ const LandingPublicRoadmap = loadable(() => import(/* webpackChunkName: "Landing
 const LandingCompare = loadable(() => import(/* webpackChunkName: "LandingCompare" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCompare, fallback: (<Loading />) });
 const LandingEmbedFeedbackPage = loadable<any, any>(() => import(/* webpackChunkName: "LandingEmbedFeedbackPage" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingEmbedFeedbackPage, fallback: (<Loading />) });
 const LandingOpenSource = loadable(() => import(/* webpackChunkName: "LandingOpenSource" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingOpenSource, fallback: (<Loading />) });
+const LandingCompany = loadable(() => import(/* webpackChunkName: "LandingCompany" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCompany, fallback: (<Loading />) });
 const LandingPromo = loadable(() => import(/* webpackChunkName: "LandingPromo" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingPromo, fallback: (<Loading />) });
 
 const styles = (theme: Theme) => createStyles({
@@ -192,14 +193,15 @@ class Site extends Component<ConnectProps & WithTranslation<'site'> & RouteCompo
       {
         type: 'dropdown', title: this.props.t('resources'), items: [
           { type: 'button', link: `/open-source`, title: this.props.t('open-source'), icon: OpenSourceIcon },
-          { type: 'button', link: '/roadmap', title: this.props.t('our-roadmap'), icon: RoadmapIcon, iconClassName: this.props.classes.roadmapIcon },
-          { type: 'button', link: '/feedback', title: this.props.t('feedback'), icon: FeedbackIcon },
-          { type: 'button', link: '/blog', title: this.props.t('blog'), icon: BlogIcon },
+          // { type: 'button', link: '/blog', title: this.props.t('blog'), icon: BlogIcon },
           // { type: 'button', link: urlAddCfJwt(`${windowIso.location.protocol}//product.${windowIso.location.host}/blog`, this.props.account), linkIsExternal: true, title: 'Blog', icon: BlogIcon },
+          { type: 'button', link: '/roadmap', title: this.props.t('our-roadmap'), icon: RoadmapIcon, iconClassName: this.props.classes.roadmapIcon },
+          { type: 'button', link: `/company`, title: 'Company', icon: WorkIcon },
           { type: 'divider' },
           { type: 'button', link: urlAddCfJwt(`${windowIso.location.protocol}//product.${windowIso.location.host}/docs`, this.props.account), linkIsExternal: true, title: 'Docs', icon: DocsIcon },
           { type: 'button', link: `${windowIso.location.protocol}//${windowIso.location.host}/api`, linkIsExternal: true, title: 'API', icon: CodeIcon },
           { type: 'button', link: 'https://stats.uptimerobot.com/jM01vFY31w/', linkIsNewWindowNoFollow: true, title: 'Status', icon: StatusIcon },
+          { type: 'button', link: '/feedback', title: this.props.t('feedback'), icon: FeedbackIcon },
         ]
       },
     ];
@@ -375,6 +377,10 @@ class Site extends Component<ConnectProps & WithTranslation<'site'> & RouteCompo
             <Route exact path='/pricing'>
               <SetTitle title={this.props.t('pricing')} />
               <PricingPage />
+            </Route>
+            <Route exact path="/company">
+              <SetTitle title="Company" />
+              <LandingCompany />
             </Route>
 
             {!isProd() && (

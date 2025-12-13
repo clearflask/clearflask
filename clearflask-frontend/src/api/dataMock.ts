@@ -1,13 +1,13 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
-import { loremIpsum } from "lorem-ipsum";
-import { CreateTemplateOptions } from "../common/config/configTemplater";
-import { ChangelogCategoryIdPrefix } from "../common/config/template/changelog";
-import { saltHashPassword } from "../common/util/auth";
-import { textToHtml } from "../common/util/richEditorUtil";
-import { capitalize } from "../common/util/stringUtil";
-import * as Admin from "./admin";
-import ServerMock, { SuperAdminEmail } from "./serverMock";
+import { loremIpsum } from 'lorem-ipsum';
+import { CreateTemplateOptions } from '../common/config/configTemplater';
+import { ChangelogCategoryIdPrefix } from '../common/config/template/changelog';
+import { saltHashPassword } from '../common/util/auth';
+import { textToHtml } from '../common/util/richEditorUtil';
+import { capitalize } from '../common/util/stringUtil';
+import * as Admin from './admin';
+import ServerMock, { DefaultMockUserPlanId, SuperAdminEmail } from './serverMock';
 
 interface MockedComment {
   content?: string;
@@ -134,7 +134,7 @@ class DataMock {
       await this.mockItem(
         config.projectId, postCategory.categoryId, user1,
         'Finance page typo',
-        "You accidentally spelt the word your as you're on the finance page under my finances tab",
+        'You accidentally spelt the word your as you\'re on the finance page under my finances tab',
         undefined,
         opts.fundingAllowed ? 12300 : undefined, opts.fundingAllowed ? 10000 : undefined,
         opts.votingAllowed ? 1 : undefined,
@@ -144,7 +144,7 @@ class DataMock {
       await this.mockItem(
         config.projectId, postCategory.categoryId, user1,
         'Upload images to comments',
-        "I want to upload screenshots of issues in comments please.",
+        'I want to upload screenshots of issues in comments please.',
         undefined,
         opts.fundingAllowed ? 8300 : undefined, opts.fundingAllowed ? 70000 : undefined,
         opts.votingAllowed ? 2 : undefined,
@@ -181,9 +181,9 @@ class DataMock {
       await this.mockItem(
         config.projectId, changelogCategory.categoryId, user1,
         'Partnership with local bakery',
-        "We have long awaited to partner with a local bakery for all of our baked goods."
-        + " We are now announcing a long term partnership to bring baked goods for all of our customers."
-        + " To sign up for the early access, visit our page to start receiving our beta bread.",
+        'We have long awaited to partner with a local bakery for all of our baked goods.'
+        + ' We are now announcing a long term partnership to bring baked goods for all of our customers.'
+        + ' To sign up for the early access, visit our page to start receiving our beta bread.',
         undefined, undefined, undefined, undefined,
         this.fakeExpressions(changelogCategory, 1),
         undefined, undefined,
@@ -191,9 +191,9 @@ class DataMock {
       await this.mockItem(
         config.projectId, changelogCategory.categoryId, user2,
         'Introducing email integration',
-        "Now you can email your customers directly to keep them updated on your delivery status."
-        + " Visit your settings page to enable email notifications."
-        + " Email notifications have shown to increase retention lift by 12% on average.",
+        'Now you can email your customers directly to keep them updated on your delivery status.'
+        + ' Visit your settings page to enable email notifications.'
+        + ' Email notifications have shown to increase retention lift by 12% on average.',
         undefined, undefined, undefined, undefined,
         this.fakeExpressions(changelogCategory, 3),
         undefined, undefined,
@@ -204,9 +204,9 @@ class DataMock {
       await this.mockItem(
         config.projectId, helpCategory.categoryId, user1,
         'Changing your email',
-        "If you wish to change your email, go to the settings, preferences, change email."
-        + " After submitting, you will receive a confirmation email to ensure you own that email address."
-        + " Once confirmed, your email has been successfully changed.",
+        'If you wish to change your email, go to the settings, preferences, change email.'
+        + ' After submitting, you will receive a confirmation email to ensure you own that email address.'
+        + ' Once confirmed, your email has been successfully changed.',
         undefined, undefined, undefined, undefined,
         this.fakeExpressions(helpCategory, 2),
         undefined,
@@ -215,8 +215,8 @@ class DataMock {
       await this.mockItem(
         config.projectId, helpCategory.categoryId, user1,
         'Changing your shipping address',
-        "If you wish to change your shipping address, go to the settings, preferences, change address."
-        + " After submitting, you will receive a confirmation that your shipping address has been saved.",
+        'If you wish to change your shipping address, go to the settings, preferences, change address.'
+        + ' After submitting, you will receive a confirmation that your shipping address has been saved.',
         undefined, undefined, undefined, undefined,
         this.fakeExpressions(helpCategory, 2),
         undefined,
@@ -225,9 +225,9 @@ class DataMock {
       await this.mockItem(
         config.projectId, helpCategory.categoryId, user1,
         'Forgot password',
-        "If you've forgotten your password to your account, use the Forgot Password link on the sign-in page."
-        + " If you are unsuccessful, please send us an email at support@example.com so we can help you recover your password."
-        + " You will be required to prove the ownership of the account by answering questions.",
+        'If you\'ve forgotten your password to your account, use the Forgot Password link on the sign-in page.'
+        + ' If you are unsuccessful, please send us an email at support@example.com so we can help you recover your password.'
+        + ' You will be required to prove the ownership of the account by answering questions.',
         undefined, undefined, undefined, undefined,
         this.fakeExpressions(helpCategory, 1),
         undefined,
@@ -236,9 +236,9 @@ class DataMock {
       await this.mockItem(
         config.projectId, helpCategory.categoryId, user2,
         'Product has not arrived yet',
-        "If you are waiting for your product and it has been less than three weeks,"
-        + " please give it a little bit more time as our shipping provider may be backlogged especially during holidays."
-        + " If it has been more than three weeks, contact us at support@example.com for us to check your status.",
+        'If you are waiting for your product and it has been less than three weeks,'
+        + ' please give it a little bit more time as our shipping provider may be backlogged especially during holidays.'
+        + ' If it has been more than three weeks, contact us at support@example.com for us to check your status.',
         undefined, undefined, undefined, undefined,
         this.fakeExpressions(helpCategory, 3),
         undefined,
@@ -247,9 +247,9 @@ class DataMock {
       await this.mockItem(
         config.projectId, helpCategory.categoryId, user2,
         'My credit card was denied',
-        "Due to fraud prevention, we have many checks to ensure all transactions are legitimate."
-        + " If your credit card was denied, ensure the billing address and personal information is correct."
-        + " if you still cannot get your transaction processed, try another credit card.",
+        'Due to fraud prevention, we have many checks to ensure all transactions are legitimate.'
+        + ' If your credit card was denied, ensure the billing address and personal information is correct.'
+        + ' if you still cannot get your transaction processed, try another credit card.',
         undefined, undefined, undefined, undefined,
         this.fakeExpressions(helpCategory, 3),
         undefined,
@@ -258,8 +258,8 @@ class DataMock {
       await this.mockItem(
         config.projectId, helpCategory.categoryId, user2,
         'Product has arrived broken',
-        "If your product has arrived broken, contact us at support@example.com to get the issue resolved."
-        + " Please take pictures of your received product and attach it to the email.",
+        'If your product has arrived broken, contact us at support@example.com to get the issue resolved.'
+        + ' Please take pictures of your received product and attach it to the email.',
         undefined, undefined, undefined, undefined,
         this.fakeExpressions(helpCategory, 3),
         undefined,
@@ -287,8 +287,14 @@ class DataMock {
       projectId: this.projectId,
       ideaCreateAdmin: {
         authorUserId: user.userId,
-        title: idea.title || capitalize(loremIpsum({ units: 'words', count: idea.titleWords || Math.round(Math.random() * 10 + 3) })),
-        description: idea.description ? textToHtml(idea.description) : (idea.descriptionWords ? textToHtml(capitalize(loremIpsum({ units: 'words', count: idea.descriptionWords }))) : undefined),
+        title: idea.title || capitalize(loremIpsum({
+          units: 'words',
+          count: idea.titleWords || Math.round(Math.random() * 10 + 3),
+        })),
+        description: idea.description ? textToHtml(idea.description) : (idea.descriptionWords ? textToHtml(capitalize(loremIpsum({
+          units: 'words',
+          count: idea.descriptionWords,
+        }))) : undefined),
         categoryId: 'demoCategoryId', // From configTemplater.demoCategory
         tagIds: [],
         statusId: idea.status,
@@ -488,9 +494,8 @@ class DataMock {
         name: 'Matus Faro',
         email: SuperAdminEmail,
         password: saltHashPassword('pass'),
-        // basePlanId: 'pro-lifetime',
-        basePlanId: 'growth2-monthly',
-      }
+        basePlanId: DefaultMockUserPlanId,
+      },
     });
   }
 
@@ -509,9 +514,9 @@ class DataMock {
         ...{
           userId: 'me',
         },
-      }
+      },
     });
-    me = await ServerMock.get().userLogin({
+    await ServerMock.get().userLogin({
       projectId: this.projectId,
       userLogin: { email, password },
     });
@@ -522,7 +527,7 @@ class DataMock {
         transactionCreate: {
           amount: bankBalance,
           summary: 'Mock amount given, spend it wisely',
-        }
+        },
       },
     });
     return me;
@@ -569,8 +574,8 @@ class DataMock {
           if (userMe && category.categoryId.startsWith(ChangelogCategoryIdPrefix)) {
             promises.push(Promise.resolve(userMe)
               .then((user: Admin.User) =>
-                this.mockDraft(category, user)
-              )
+                this.mockDraft(category, user),
+              ),
             );
           }
           [undefined, ...category.workflow.statuses].forEach((status: Admin.IdeaStatus | undefined) => {
@@ -578,8 +583,8 @@ class DataMock {
             while (n-- > 0) {
               promises.push((userMe && n === 1 ? Promise.resolve(userMe) : this.mockUser())
                 .then((user: Admin.User) =>
-                  this.mockIdea(category, status, user)
-                )
+                  this.mockIdea(category, status, user),
+                ),
               );
             }
           });
@@ -732,22 +737,29 @@ class DataMock {
 
     await this.mockDetailedComments([
       {
-        content: 'Also, it would be great if the black color can be a pure black in order to save mobile battery life.', author: 'John', voteValue: 43, children: [
+        content: 'Also, it would be great if the black color can be a pure black in order to save mobile battery life.',
+        author: 'John',
+        voteValue: 43,
+        children: [
           {
-            content: 'That\'s a great idea, we will work on that right away', author: 'Charlotte', authorIsMod: true, voteValue: 22, children: [
+            content: 'That\'s a great idea, we will work on that right away',
+            author: 'Charlotte',
+            authorIsMod: true,
+            voteValue: 22,
+            children: [
               {
                 content: 'Thank you for the quick response', author: 'John', voteValue: 2, created: new Date(),
               },
-            ]
+            ],
           },
           {
             content: 'Even better, you can choose the shade of the color', author: 'Daisy', voteValue: 12, children: [
               {
                 content: 'I don\'t think they have time to do that', author: 'John', voteValue: -5,
-              }
-            ]
+              },
+            ],
           },
-        ]
+        ],
       },
     ], idea);
 
@@ -828,7 +840,7 @@ class DataMock {
                 units: 'sentences',
                 count: Math.round(Math.random() * 3 + 1),
               }))),
-            }
+            },
           });
         }
         return comment;
@@ -856,6 +868,7 @@ class DataMock {
   }
 
   lastMockDate?: Date;
+
   mockDate(): Date {
     if (this.lastMockDate === undefined) {
       this.lastMockDate = new Date();

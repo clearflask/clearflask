@@ -1,0 +1,115 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "clearflask.server.fullname" . }}
+  labels:
+    {{- include "clearflask.server.labels" . | nindent 4 }}
+data:
+  config-selfhost.cfg: |
+    ### ClearFlask Server Configuration ###
+
+    # Domain configuration
+    com.smotana.clearflask.web.Application$Config.domain={{ include "clearflask.domain" . }}
+
+    # Search engine choice
+    com.smotana.clearflask.web.Application$Config.defaultSearchEngine={{ .Values.server.config.searchEngine }}
+
+    # Startup behavior
+    com.smotana.clearflask.web.Application$Config.startupWaitUntilDeps={{ .Values.server.config.startupWaitUntilDeps }}
+    com.smotana.clearflask.web.Application$Config.createIndexesOnStartup={{ .Values.server.config.createIndexesOnStartup }}
+
+    # Authentication cookie security
+    com.smotana.clearflask.web.security.AuthCookieImpl$Config.authCookieSecure={{ .Values.server.config.authCookieSecure }}
+
+    # Super admin access
+    com.smotana.clearflask.web.security.SuperAdminPredicate$Config.superAdminEmailRegex={{ .Values.server.config.superAdminEmail }}
+    com.smotana.clearflask.web.resource.AccountResource$Config.signupEnabled={{ .Values.server.config.signupEnabled }}
+
+    {{- if .Values.externalServices.dynamodb.endpoint }}
+    # DynamoDB configuration
+    com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider$Config.serviceEndpoint={{ .Values.externalServices.dynamodb.endpoint }}
+    com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider$Config.signingRegion={{ .Values.externalServices.dynamodb.signingRegion }}
+    {{- end }}
+    com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider$Config.productionRegion={{ .Values.externalServices.dynamodb.productionRegion }}
+
+    {{- if .Values.externalServices.mysql.enabled }}
+    # MySQL configuration
+    com.smotana.clearflask.store.mysql.DefaultMysqlProvider$Config.host={{ .Values.externalServices.mysql.host }}
+    com.smotana.clearflask.store.mysql.DefaultMysqlProvider$Config.port={{ .Values.externalServices.mysql.port }}
+    com.smotana.clearflask.store.mysql.DefaultMysqlProvider$Config.databaseName={{ .Values.externalServices.mysql.database }}
+    com.smotana.clearflask.store.mysql.DefaultMysqlProvider$Config.user={{ .Values.externalServices.mysql.user }}
+    {{- end }}
+
+    {{- if .Values.externalServices.elasticsearch.enabled }}
+    # ElasticSearch configuration
+    com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider$Config.serviceEndpoint={{ .Values.externalServices.elasticsearch.endpoint }}
+    {{- if .Values.externalServices.elasticsearch.compatibilityHeader }}
+    com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider$Config.elasticCompatibilityHeader=true
+    {{- end }}
+    {{- end }}
+
+    # AWS Credentials
+    {{- if .Values.externalServices.aws.accessKeyId }}
+    com.smotana.clearflask.store.ConfigAwsCredentialsProvider$Config.awsAccessKeyId={{ .Values.externalServices.aws.accessKeyId }}
+    {{- end }}
+    {{- if .Values.externalServices.aws.secretKey }}
+    com.smotana.clearflask.store.ConfigAwsCredentialsProvider$Config.awsSecretKey={{ .Values.externalServices.aws.secretKey }}
+    {{- end }}
+
+    # S3 configuration
+    {{- if .Values.externalServices.s3.endpoint }}
+    com.smotana.clearflask.store.s3.DefaultS3ClientProvider$Config.serviceEndpoint={{ .Values.externalServices.s3.endpoint }}
+    com.smotana.clearflask.store.s3.DefaultS3ClientProvider$Config.signingRegion={{ .Values.externalServices.s3.signingRegion }}
+    {{- if .Values.externalServices.s3.dnsResolverTo }}
+    com.smotana.clearflask.store.s3.DefaultS3ClientProvider$Config.dnsResolverTo={{ .Values.externalServices.s3.dnsResolverTo }}
+    {{- end }}
+    {{- end }}
+    com.smotana.clearflask.store.s3.DefaultS3ClientProvider$Config.productionRegion={{ .Values.externalServices.s3.productionRegion }}
+    com.smotana.clearflask.store.impl.S3ContentStore$Config.bucketName={{ .Values.externalServices.s3.bucketName }}
+    com.smotana.clearflask.store.impl.S3ContentStore$Config.scheme={{ .Values.externalServices.s3.scheme }}
+    com.smotana.clearflask.store.impl.S3ContentStore$Config.hostname={{ .Values.externalServices.s3.hostname }}
+    com.smotana.clearflask.store.impl.S3ContentStore$Config.createBucket={{ .Values.externalServices.s3.createBucket }}
+    {{- if .Values.externalServices.s3.proxyEnabled }}
+    com.smotana.clearflask.store.impl.S3ContentStore$Config.proxyEnabled=true
+    com.smotana.clearflask.store.impl.S3ContentStore$Config.proxyResolveTo={{ .Values.externalServices.s3.dnsResolverTo }}
+    {{- end }}
+
+    # Email configuration
+    {{- if eq .Values.externalServices.email.provider "ses" }}
+    com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.useService=ses
+    com.smotana.clearflask.core.email.AmazonSimpleEmailServiceProvider$Config.region={{ .Values.externalServices.email.ses.region }}
+    {{- if .Values.externalServices.email.ses.endpoint }}
+    com.smotana.clearflask.core.email.AmazonSimpleEmailServiceProvider$Config.serviceEndpoint={{ .Values.externalServices.email.ses.endpoint }}
+    {{- end }}
+    {{- else if eq .Values.externalServices.email.provider "smtp" }}
+    com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.useService=smtp
+    com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.smtpStrategy={{ .Values.externalServices.email.smtp.strategy }}
+    com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.smtpHost={{ .Values.externalServices.email.smtp.host }}
+    com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.smtpPort={{ .Values.externalServices.email.smtp.port }}
+    {{- if .Values.externalServices.email.smtp.user }}
+    com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.smtpUser={{ .Values.externalServices.email.smtp.user }}
+    {{- end }}
+    com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.emailDisplayName={{ .Values.externalServices.email.smtp.displayName }}
+    com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.fromEmailLocalPart={{ .Values.externalServices.email.smtp.fromEmailLocalPart }}
+    {{- if .Values.externalServices.email.smtp.fromEmailDomainOverride }}
+    com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.fromEmailDomainOverride={{ .Values.externalServices.email.smtp.fromEmailDomainOverride }}
+    {{- end }}
+    {{- end }}
+
+    {{- if .Values.server.secrets.recaptcha.enabled }}
+    # ReCAPTCHA configuration
+    com.smotana.clearflask.security.limiter.challenge.CaptchaChallenger$Config.enabled=true
+    {{- end }}
+
+    {{- if .Values.server.secrets.github.enabled }}
+    # GitHub integration
+    com.smotana.clearflask.store.github.GitHubStoreImpl$Config.enabled=true
+    {{- end }}
+
+    # Browser Push Notifications (VAPID)
+    {{- if .Values.server.secrets.browserPush.publicKey }}
+    com.smotana.clearflask.core.push.provider.BrowserPushServiceImpl$Config.publicKey={{ .Values.server.secrets.browserPush.publicKey }}
+    {{- end }}
+    {{- if .Values.server.secrets.browserPush.privateKey }}
+    com.smotana.clearflask.core.push.provider.BrowserPushServiceImpl$Config.privateKey={{ .Values.server.secrets.browserPush.privateKey }}
+    {{- end }}

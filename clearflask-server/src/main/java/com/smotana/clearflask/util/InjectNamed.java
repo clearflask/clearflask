@@ -2,15 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.smotana.clearflask.util;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  * Specifies that a given field is a dynamically injected property based on Named name.
- *
+ * <p>
  * See NamedProviderBinding javadoc for more details.
  */
 @Target(value = {ElementType.FIELD})

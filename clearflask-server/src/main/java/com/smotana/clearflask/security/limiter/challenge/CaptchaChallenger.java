@@ -71,13 +71,19 @@ public class CaptchaChallenger implements Challenger {
     private class RecaptchaV2Response {
         @SerializedName("success")
         private final boolean success;
-        /** timestamp of the challenge load (ISO format yyyy-MM-dd'T'HH:mm:ssZZ) */
+        /**
+         * timestamp of the challenge load (ISO format yyyy-MM-dd'T'HH:mm:ssZZ)
+         */
         @SerializedName("challenge_ts")
         private final String challengeTs;
-        /** the hostname of the site where the reCAPTCHA was solved */
+        /**
+         * the hostname of the site where the reCAPTCHA was solved
+         */
         @SerializedName("hostname")
         private final String hostname;
-        /** Optional error codes */
+        /**
+         * Optional error codes
+         */
         @SerializedName("error-codes")
         private final ImmutableList<String> errorCodes;
 

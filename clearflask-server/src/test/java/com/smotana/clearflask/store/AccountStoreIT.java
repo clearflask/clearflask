@@ -2,11 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.smotana.clearflask.store;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import com.google.common.collect.*;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
@@ -21,29 +17,15 @@ import com.smotana.clearflask.store.ProjectStore.SearchEngine;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
-import com.smotana.clearflask.store.impl.DynamoElasticAccountStore;
-import com.smotana.clearflask.store.impl.DynamoElasticIdeaStore;
-import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
-import com.smotana.clearflask.store.impl.DynamoProjectStore;
-import com.smotana.clearflask.store.impl.DynamoVoteStore;
+import com.smotana.clearflask.store.impl.*;
 import com.smotana.clearflask.store.mysql.MysqlCustomFunction;
 import com.smotana.clearflask.store.mysql.MysqlUtil;
 import com.smotana.clearflask.store.mysql.model.tables.JooqIdea;
 import com.smotana.clearflask.testutil.AbstractIT;
-import com.smotana.clearflask.util.ChatwootUtil;
-import com.smotana.clearflask.util.DefaultServerSecret;
-import com.smotana.clearflask.util.IdUtil;
-import com.smotana.clearflask.util.IntercomUtil;
-import com.smotana.clearflask.util.ProjectUpgraderImpl;
-import com.smotana.clearflask.util.ServerSecretTest;
+import com.smotana.clearflask.util.*;
 import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
-import io.dataspray.singletable.DynamoTable;
-import io.dataspray.singletable.IndexSchema;
-import io.dataspray.singletable.ShardPageResult;
-import io.dataspray.singletable.SingleTable;
-import io.dataspray.singletable.SingleTableTestUtil;
-import io.dataspray.singletable.TableSchema;
+import io.dataspray.singletable.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
@@ -132,7 +114,7 @@ public class AccountStoreIT extends AbstractIT {
     @Test(timeout = 30_000L)
     public void testAccount() throws Exception {
         Account account = new Account(
-                store.genAccountId(),
+                store.genAccountId("name"),
                 "my@email.com",
                 SubscriptionStatus.ACTIVETRIAL,
                 null,
@@ -144,6 +126,10 @@ public class AccountStoreIT extends AbstractIT {
                 ImmutableSet.of(),
                 null,
                 ImmutableMap.of(),
+                null,
+                null,
+                ImmutableSet.of(),
+                null,
                 null);
         store.createAccount(account).getIndexingFuture().get();
         assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
@@ -252,7 +238,7 @@ public class AccountStoreIT extends AbstractIT {
     @Test(timeout = 30_000L)
     public void testSession() throws Exception {
         Account account = new Account(
-                store.genAccountId(),
+                store.genAccountId("name"),
                 "my@email.com",
                 SubscriptionStatus.ACTIVETRIAL,
                 null,
@@ -264,6 +250,10 @@ public class AccountStoreIT extends AbstractIT {
                 ImmutableSet.of(),
                 null,
                 ImmutableMap.of(),
+                null,
+                null,
+                ImmutableSet.of(),
+                null,
                 null);
         store.createAccount(account).getIndexingFuture().get();
 
@@ -304,7 +294,7 @@ public class AccountStoreIT extends AbstractIT {
     @Test(timeout = 30_000L)
     public void testAccountAttrs() throws Exception {
         Account account = new Account(
-                store.genAccountId(),
+                store.genAccountId("name"),
                 "my@email.com",
                 SubscriptionStatus.ACTIVETRIAL,
                 null,
@@ -317,6 +307,10 @@ public class AccountStoreIT extends AbstractIT {
                 null,
                 // Prior to adding attrs, all accounts have this as null
                 // test the creation of this map
+                null,
+                null,
+                null,
+                ImmutableSet.of(),
                 null,
                 null);
 
@@ -382,8 +376,48 @@ public class AccountStoreIT extends AbstractIT {
     }
 
     @Test(timeout = 30_000L)
+    public void testWeeklyDigestOptOut() throws Exception {
+        Account account = new Account(
+                store.genAccountId("name"),
+                "my@email.com",
+                SubscriptionStatus.ACTIVETRIAL,
+                null,
+                "planId1",
+                Instant.now(),
+                "name",
+                "password",
+                ImmutableSet.of(),
+                ImmutableSet.of(),
+                null,
+                // Prior to adding attrs, all accounts have this as null
+                // test the creation of this map
+                null,
+                null,
+                null,
+                ImmutableSet.of(),
+                null,
+                null);
+
+        ImmutableSet<String> digestOptOutExpected = ImmutableSet.of();
+        account = store.createAccount(account).getAccount();
+        assertEquals(digestOptOutExpected, account.getDigestOptOutForProjectIds());
+
+        digestOptOutExpected = ImmutableSet.of("asdf");
+        account = store.setWeeklyDigestOptOut(account.getAccountId(), digestOptOutExpected);
+        assertEquals(digestOptOutExpected, account.getDigestOptOutForProjectIds());
+
+        digestOptOutExpected = ImmutableSet.of();
+        account = store.setWeeklyDigestOptOut(account.getAccountId(), digestOptOutExpected);
+        assertEquals(digestOptOutExpected, account.getDigestOptOutForProjectIds());
+
+        digestOptOutExpected = ImmutableSet.of("asdffafadsfasd", "fadfvdvfd");
+        account = store.setWeeklyDigestOptOut(account.getAccountId(), digestOptOutExpected);
+        assertEquals(digestOptOutExpected, account.getDigestOptOutForProjectIds());
+    }
+
+    @Test(timeout = 30_000L)
     public void testAccountSearch() throws Exception {
-        String accountId1 = store.genAccountId();
+        String accountId1 = store.genAccountId("Adsfagregerghrthshgfdsg");
         Account account1 = new Account(
                 accountId1,
                 "whateveryo@example.com",
@@ -397,8 +431,12 @@ public class AccountStoreIT extends AbstractIT {
                 ImmutableSet.of(),
                 null,
                 ImmutableMap.of(),
+                null,
+                null,
+                ImmutableSet.of(),
+                null,
                 null);
-        String accountId2 = store.genAccountId();
+        String accountId2 = store.genAccountId("POIPLMQWPEEBQWNBENWQMNVEM");
         Account account2 = new Account(
                 accountId2,
                 "mysomethingemail@gmail.io",
@@ -412,6 +450,10 @@ public class AccountStoreIT extends AbstractIT {
                 ImmutableSet.of(),
                 null,
                 ImmutableMap.of(),
+                null,
+                null,
+                ImmutableSet.of(),
+                null,
                 null);
 
         store.createAccount(account1).getIndexingFuture().get();
@@ -459,7 +501,7 @@ public class AccountStoreIT extends AbstractIT {
     @Test(timeout = 30_000L)
     public void testShouldSendTrialEnded() throws Exception {
         Account account = new Account(
-                store.genAccountId(),
+                store.genAccountId("name"),
                 "my@email.com",
                 SubscriptionStatus.ACTIVETRIAL,
                 null,
@@ -472,6 +514,10 @@ public class AccountStoreIT extends AbstractIT {
                 null,
                 // Prior to adding attrs, all accounts have this as null
                 // test the creation of this map
+                null,
+                null,
+                null,
+                ImmutableSet.of(),
                 null,
                 null);
         account = store.createAccount(account).getAccount();
@@ -503,7 +549,9 @@ public class AccountStoreIT extends AbstractIT {
         }
     }
 
-    /** Excludes GSI 2 for testing upgrade */
+    /**
+     * Excludes GSI 2 for testing upgrade
+     */
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor
@@ -516,7 +564,9 @@ public class AccountStoreIT extends AbstractIT {
         String accountId;
     }
 
-    /** Upgrade completed, ignoring test */
+    /**
+     * Upgrade completed, ignoring test
+     */
     @Ignore
     @Test(timeout = 30_000L)
     public void testUpgradeAddGsi2ToAccountEmail() throws Exception {

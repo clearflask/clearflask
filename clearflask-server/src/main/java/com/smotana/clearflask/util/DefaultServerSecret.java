@@ -105,7 +105,8 @@ public final class DefaultServerSecret implements ServerSecret {
             SecretKeySpec keySpec = new SecretKeySpec(key, KEY_SPEC);
             encryptCipher.init(Cipher.ENCRYPT_MODE, keySpec, new GCMParameterSpec(AUTH_TAG_LENGTH, initVector));
             return encryptCipher;
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | InvalidAlgorithmParameterException ex) {
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException |
+                 InvalidAlgorithmParameterException ex) {
             throw new RuntimeException("Unable to create cipher for key", ex);
         }
     }
@@ -116,7 +117,8 @@ public final class DefaultServerSecret implements ServerSecret {
             SecretKeySpec keySpec = new SecretKeySpec(key, KEY_SPEC);
             decryptCipher.init(Cipher.DECRYPT_MODE, keySpec, new GCMParameterSpec(AUTH_TAG_LENGTH, initVector));
             return decryptCipher;
-        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | InvalidAlgorithmParameterException ex) {
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException |
+                 InvalidAlgorithmParameterException ex) {
             throw new RuntimeException("Unable to create cipher for key", ex);
         }
     }

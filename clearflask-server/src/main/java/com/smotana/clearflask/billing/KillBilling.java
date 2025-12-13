@@ -44,34 +44,9 @@ import org.killbill.billing.catalog.api.PhaseType;
 import org.killbill.billing.catalog.api.ProductCategory;
 import org.killbill.billing.client.KillBillClientException;
 import org.killbill.billing.client.KillBillHttpClient;
-import org.killbill.billing.client.api.gen.AccountApi;
-import org.killbill.billing.client.api.gen.BundleApi;
-import org.killbill.billing.client.api.gen.CatalogApi;
-import org.killbill.billing.client.api.gen.CreditApi;
-import org.killbill.billing.client.api.gen.InvoiceApi;
-import org.killbill.billing.client.api.gen.PaymentApi;
-import org.killbill.billing.client.api.gen.PaymentMethodApi;
-import org.killbill.billing.client.api.gen.SubscriptionApi;
-import org.killbill.billing.client.api.gen.UsageApi;
-import org.killbill.billing.client.model.Bundles;
-import org.killbill.billing.client.model.InvoiceItems;
-import org.killbill.billing.client.model.PaymentMethods;
-import org.killbill.billing.client.model.Payments;
-import org.killbill.billing.client.model.PlanDetails;
-import org.killbill.billing.client.model.gen.Account;
-import org.killbill.billing.client.model.gen.EventSubscription;
-import org.killbill.billing.client.model.gen.Invoice;
-import org.killbill.billing.client.model.gen.OverdueState;
-import org.killbill.billing.client.model.gen.PaymentMethod;
-import org.killbill.billing.client.model.gen.PaymentMethodPluginDetail;
-import org.killbill.billing.client.model.gen.PaymentTransaction;
-import org.killbill.billing.client.model.gen.PhasePrice;
-import org.killbill.billing.client.model.gen.PlanDetail;
-import org.killbill.billing.client.model.gen.PluginProperty;
-import org.killbill.billing.client.model.gen.Subscription;
-import org.killbill.billing.client.model.gen.SubscriptionUsageRecord;
-import org.killbill.billing.client.model.gen.UnitUsageRecord;
-import org.killbill.billing.client.model.gen.UsageRecord;
+import org.killbill.billing.client.api.gen.*;
+import org.killbill.billing.client.model.*;
+import org.killbill.billing.client.model.gen.*;
 import org.killbill.billing.entitlement.api.Entitlement;
 import org.killbill.billing.entitlement.api.Entitlement.EntitlementState;
 import org.killbill.billing.entitlement.api.SubscriptionEventType;
@@ -85,11 +60,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -103,9 +74,13 @@ import static com.smotana.clearflask.billing.KillBillClientProvider.STRIPE_PLUGI
 @Singleton
 public class KillBilling extends ManagedService implements Billing {
 
-    /** If changed, also change in catalogXXX.xml */
+    /**
+     * If changed, also change in catalogXXX.xml
+     */
     public static final String TRACKED_USER_UNIT_NAME = "tracked-user";
-    /** If changed, also change in catalogXXX.xml */
+    /**
+     * If changed, also change in catalogXXX.xml
+     */
     public static final String TRACKED_TEAMMATE_UNIT_NAME = "tracked-teammate";
 
     public interface Config {
@@ -121,15 +96,21 @@ public class KillBilling extends ManagedService implements Billing {
         @DefaultValue("true")
         boolean finalizeInvoiceEnabled();
 
-        /** Used in testing for deterministic number of invoices */
+        /**
+         * Used in testing for deterministic number of invoices
+         */
         @DefaultValue("true")
         boolean reuseDraftInvoices();
 
-        /** Retry creating account again assuming it failed before */
+        /**
+         * Retry creating account again assuming it failed before
+         */
         @DefaultValue("true")
         boolean createAccountIfNotExists();
 
-        /** Retry creating subscription again assuming it failed before */
+        /**
+         * Retry creating subscription again assuming it failed before
+         */
         @DefaultValue("true")
         boolean createSubscriptionIfNotExists();
 
@@ -141,9 +122,6 @@ public class KillBilling extends ManagedService implements Billing {
 
         @DefaultValue("P7D")
         Duration scanUncommitedInvoicesCommitYoungerThan();
-
-        @DefaultValue("true")
-        boolean enableDeleteProjectForBlockedAccount();
     }
 
     @Inject
@@ -177,6 +155,8 @@ public class KillBilling extends ManagedService implements Billing {
     private ProjectResource projectResource;
     @Inject
     private PlanStore planStore;
+    @Inject
+    private PlanVerifyStore planVerifyStore;
     @Inject
     private UserStore userStore;
     @Inject
@@ -224,7 +204,7 @@ public class KillBilling extends ManagedService implements Billing {
     }
 
     @Extern
-    private Account createAccount(AccountStore.Account accountInDyn) {
+    public Account createAccount(AccountStore.Account accountInDyn) {
         Account account;
         try {
             log.trace("Creating account {}", accountInDyn);
@@ -259,8 +239,43 @@ public class KillBilling extends ManagedService implements Billing {
         return account;
     }
 
+    private Optional<List<PhasePrice>> getUserChosenPriceOverrides(String accountId, String planId, Optional<Long> recurringPriceOpt) {
+        if (!PlanStore.ALLOW_USER_CHOOSE_PRICING_FOR_PLANS.contains(planId)) {
+            if (recurringPriceOpt.isPresent()) {
+                log.warn("Account {} requested a recurring price for a plan {} that doesn't support it",
+                        accountId, planId);
+                throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
+                        "Failed to setup your subscription, try again later");
+            }
+            return Optional.empty();
+        }
+        if (recurringPriceOpt.isEmpty()) {
+            return Optional.empty();
+        }
+        if (recurringPriceOpt.get() > PlanStore.ALLOW_USER_CHOOSE_PRICING_MAX) {
+            log.warn("Account {} requested monthly price above allowed limit {}",
+                    accountId, recurringPriceOpt.get());
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
+                    "Failed to setup your subscription, try again later");
+        }
+        if (recurringPriceOpt.get() < PlanStore.ALLOW_USER_CHOOSE_PRICING_MIN) {
+            log.warn("Account {} requested monthly price below allowed limit {}",
+                    accountId, recurringPriceOpt.get());
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
+                    "Failed to setup your subscription, try again later");
+        }
+        return Optional.of(ImmutableList.of(
+                new PhasePrice(
+                        planId,
+                        planId + "-evergreen",
+                        PhaseType.EVERGREEN.name(),
+                        null,
+                        BigDecimal.valueOf(recurringPriceOpt.get()),
+                        null)));
+    }
+
     @Extern
-    private Subscription createSubscription(AccountStore.Account accountInDyn, Account account) {
+    public Subscription createSubscription(AccountStore.Account accountInDyn, Account account) {
         Subscription subscription;
         try {
             subscription = kbSubscription.createSubscription(new Subscription()
@@ -269,9 +284,15 @@ public class KillBilling extends ManagedService implements Billing {
                             .setPhaseType(PlanStore.PLANS_WITHOUT_TRIAL.contains(accountInDyn.getPlanid())
                                     ? PhaseType.EVERGREEN
                                     : PhaseType.TRIAL)
-                            .setPlanName(accountInDyn.getPlanid()),
+                            .setPlanName(accountInDyn.getPlanid())
+                            .setPriceOverrides(getUserChosenPriceOverrides(
+                                    accountInDyn.getAccountId(),
+                                    accountInDyn.getPlanid(),
+                                    Optional.ofNullable(accountInDyn.getRequestedRecurringPrice()))
+                                    .orElse(null)),
                     null,
                     null,
+                    false,
                     false,
                     false,
                     true,
@@ -447,18 +468,18 @@ public class KillBilling extends ManagedService implements Billing {
 
     /**
      * Note: Any changes to the logic needs to be updated here and properly tested.
-     *
+     * <p>
      * Preview below state diagram with https://www.planttext.com/
-     *
+     * <p>
      * [*] --> ActiveTrial
-     *
+     * <p>
      * ActiveTrial : - Phase is TRIAL
      * ActiveTrial --> Active : Reach MAU limit (With payment)
      * ActiveTrial --> NoPaymentMethod : Reach MAU limit (Without payment)
      * ActiveTrial --> ActiveTrial : Add payment
      * ActiveTrial --> ActiveTrial : Change plan
      * ActiveTrial --> [*] : Delete account
-     *
+     * <p>
      * Active : - Subscription active
      * Active : - No outstanding balance
      * Active : - Not overdue
@@ -468,35 +489,35 @@ public class KillBilling extends ManagedService implements Billing {
      * Active --> Active : Update payment
      * Active --> Active : Change plan
      * Active --> [*] : Delete account
-     *
+     * <p>
      * Limited : - Subscription active
      * Limited : - Limited functionality
      * Limited : - ie exceeded plan max posts
      * Limited --> Active : Plan within limits
      * Limited --> [*] : Delete account
-     *
+     * <p>
      * Blocked : - Not TRIAL phase
      * Blocked : - Phase is BLOCKED
      * Blocked :   or Overdue cancelled
      * Blocked --> [*] : Delete account
-     *
+     * <p>
      * Cancelled : Subscription is cancelled
      * Cancelled --> Active : User resumes
      * Cancelled --> Active : Update payment method
      * Cancelled --> [*] : Delete account
-     *
+     * <p>
      * ActiveNoRenewal : Subscription pending cancel
      * ActiveNoRenewal --> Active : User resumes
      * ActiveNoRenewal --> Cancelled : Expires
      * ActiveNoRenewal --> Active : Update payment method
      * ActiveNoRenewal --> [*] : Delete account
-     *
+     * <p>
      * NoPaymentMethod : - No payment method
      * NoPaymentMethod : - Outstanding balance
      * NoPaymentMethod : - Not overdue cancelled
      * NoPaymentMethod --> Active : Add payment
      * NoPaymentMethod --> [*] : Delete account
-     *
+     * <p>
      * ActivePaymentRetry : - Has payment method
      * ActivePaymentRetry : - Outstanding balance
      * ActivePaymentRetry : - Overdue unpaid
@@ -558,7 +579,7 @@ public class KillBilling extends ManagedService implements Billing {
 
     private boolean isAccountLimited(String accountId, String planId) {
         try {
-            planStore.verifyAccountMeetsLimits(planId, accountId);
+            planVerifyStore.verifyAccountMeetsLimits(planId, accountId);
         } catch (ApiException ex) {
             return true;
         }
@@ -576,17 +597,8 @@ public class KillBilling extends ManagedService implements Billing {
                 // Trial ends email notification
                 if (accountStore.shouldSendTrialEndedNotification(account.getExternalKey(), subscription.getPlanName())) {
                     Optional<PaymentMethodDetails> paymentOpt = getDefaultPaymentMethodDetails(account.getAccountId());
-                    notificationService.onTrialEnded(account.getExternalKey(), account.getEmail(), paymentOpt.isPresent());
-                }
-            } else if (BLOCKED.equals(currentStatus)) {
-                // Delete all projects to free up resources
-                if (config.enableDeleteProjectForBlockedAccount()) {
                     AccountStore.Account accountInDyn = accountStore.getAccount(account.getExternalKey(), false).get();
-                    accountInDyn.getProjectIds()
-                            .forEach(projectId -> projectResource.projectDeleteAdmin(accountInDyn, projectId));
-                } else {
-                    log.error("ACTION REQUIRED: Project not deleted for blocked account, status {} account {} email {} reason {}",
-                            currentStatus, account.getExternalKey(), account.getEmail(), reason);
+                    notificationService.onTrialEnded(accountInDyn, paymentOpt.isPresent());
                 }
             }
         }
@@ -644,6 +656,7 @@ public class KillBilling extends ManagedService implements Billing {
             if (!transactionOpt.isPresent()) {
                 return Optional.empty();
             }
+            log.trace("Found transaction with requires_action {}", transactionOpt.get());
 
             Optional<String> paymentIntentIdOpt = transactionOpt.get().getProperties().stream()
                     .filter(pluginProperty -> "id".equals(pluginProperty.getKey()))
@@ -657,7 +670,7 @@ public class KillBilling extends ManagedService implements Billing {
             PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentIntentIdOpt.get());
             if (!"requires_action".equals(paymentIntent.getStatus())
                     || paymentIntent.getNextAction() == null) {
-                log.warn("Payment intent in KillBill unresolved while Stripe is resolved, triggering sync for accountIdKb {}", accountIdKb);
+                log.warn("Payment intent in KillBill unresolved while Stripe is resolved, triggering sync for accountIdKb {} payment intent status {} next action {}", accountIdKb, paymentIntent.getStatus(), paymentIntent.getNextAction());
                 syncActions(accountIdKb);
                 return Optional.empty();
             }
@@ -751,6 +764,7 @@ public class KillBilling extends ManagedService implements Billing {
                         null,
                         true,
                         false,
+                        false,
                         true,
                         TimeUnit.MILLISECONDS.toSeconds(config.callTimeoutInMillis()),
                         null,
@@ -766,7 +780,7 @@ public class KillBilling extends ManagedService implements Billing {
 
     @Extern
     @Override
-    public Subscription changePlan(String accountId, String planId) {
+    public Subscription changePlan(String accountId, String planId, Optional<Long> recurringPriceOpt) {
         try {
             Account accountInKb = getAccount(accountId);
             Subscription subscriptionInKb = getSubscription(accountId);
@@ -839,7 +853,9 @@ public class KillBilling extends ManagedService implements Billing {
                             .setBundleExternalKey(accountId)
                             .setAccountId(accountInKb.getAccountId())
                             .setPlanName(planId)
-                            .setPhaseType(newPhase),
+                            .setPhaseType(newPhase)
+                            .setPriceOverrides(getUserChosenPriceOverrides(accountId, planId, recurringPriceOpt)
+                                    .orElse(null)),
                     null,
                     true,
                     TimeUnit.MILLISECONDS.toSeconds(config.callTimeoutInMillis()),
@@ -910,22 +926,24 @@ public class KillBilling extends ManagedService implements Billing {
         }
     }
 
+    /**
+     * If changed, also change in UpgradeWrapper.tsx:canAutoUpgrade
+     */
     @Override
     public boolean tryAutoUpgradePlan(AccountStore.Account accountInDyn, String requiredPlanId) {
         boolean allowUpgrade = false;
         if (ACTIVETRIAL.equals(accountInDyn.getStatus())
-                && getDefaultPaymentMethodDetails(accountInDyn.getAccountId()).isEmpty()
-                && "standard3-monthly".equals(requiredPlanId)) {
+                && getDefaultPaymentMethodDetails(accountInDyn.getAccountId()).isEmpty()) {
             allowUpgrade = true;
-        } else if (PlanStore.TEAMMATE_PLAN_ID.equals(accountInDyn.getPlanid())
-                && ImmutableSet.of("starter3-monthly", "standard3-monthly").equals(requiredPlanId)) {
-            allowUpgrade = true;
+            // Disabled for teammate plan
+            //        } else if (PlanStore.TEAMMATE_PLAN_ID.equals(accountInDyn.getPlanid())) {
+            //            allowUpgrade = true;
         }
 
         if (allowUpgrade) {
             usageExecutor.submit(() -> {
                 try {
-                    changePlan(accountInDyn.getAccountId(), requiredPlanId);
+                    changePlan(accountInDyn.getAccountId(), requiredPlanId, Optional.empty());
                 } catch (Throwable th) {
                     log.error("Failed to auto upgrade accountId {} to plan {}",
                             accountInDyn.getAccountId(), requiredPlanId, th);
@@ -934,6 +952,11 @@ public class KillBilling extends ManagedService implements Billing {
         }
 
         return allowUpgrade;
+    }
+
+    @Override
+    public Optional<AccountStore.Account> tryAutoUpgradeAfterSelfhostLicenseAdded(AccountStore.Account accountInDyn) {
+        return Optional.empty(); // Not for Killbill, only for selfhosted
     }
 
     /**
@@ -956,6 +979,7 @@ public class KillBilling extends ManagedService implements Billing {
                         false, // "We don't support fetching migration invoices and specifying a start date" -kb
                         false,
                         true,
+                        null,
                         null,
                         KillBillUtil.roDefault());
             } else {
@@ -1004,25 +1028,28 @@ public class KillBilling extends ManagedService implements Billing {
         }
     }
 
+    /**
+     * Fetch invoice HTML from KillBill. If accountId is specified, ensure that the invoice belongs to that account.
+     */
     @Extern
     @Override
-    public String getInvoiceHtml(String accountId, UUID invoiceId) {
+    public String getInvoiceHtml(UUID invoiceId, Optional<String> accountIdOpt) {
         try {
             Invoice invoice = kbInvoice.getInvoice(invoiceId, KillBillUtil.roDefault());
             if (invoice == null) {
                 throw new ApiException(Response.Status.BAD_REQUEST,
                         "Invoice doesn't exist");
             }
-            UUID accountIdKb = getAccount(accountId).getAccountId();
-            if (!invoice.getAccountId().equals(accountIdKb)) {
-                log.warn("Requested HTML for invoiceId {} with account ext id {} id {} belonging to different account id {}",
-                        invoiceId, accountId, accountIdKb, invoice.getAccountId());
-                throw new ApiException(Response.Status.BAD_REQUEST,
-                        "Invoice doesn't exist");
+            if (accountIdOpt.isPresent()) {
+                UUID accountIdKb = getAccount(accountIdOpt.get()).getAccountId();
+                if (!invoice.getAccountId().equals(accountIdKb)) {
+                    throw new ApiException(Response.Status.BAD_REQUEST,
+                            "You need to log in to the right account to view this invoice");
+                }
             }
             if (invoice.getStatus() == InvoiceStatus.DRAFT) {
                 throw new ApiException(Response.Status.BAD_REQUEST,
-                        "Invoice doesn't exist");
+                        "Invoice is still in draft");
             }
             String invoiceHtml = kbInvoice.getInvoiceAsHTML(invoice.getInvoiceId(), KillBillUtil.roDefault());
             for (org.killbill.billing.client.model.gen.InvoiceItem item : invoice.getItems()) {
@@ -1040,7 +1067,7 @@ public class KillBilling extends ManagedService implements Billing {
             invoiceHtml = invoiceHtml.replaceAll("standard3-teammates", "Teammates");
             return invoiceHtml;
         } catch (KillBillClientException ex) {
-            log.warn("Failed to get invoice HTML from KillBill for accountId {} invoiceId {}", accountId, invoiceId, ex);
+            log.warn("Failed to get invoice HTML from KillBill for invoiceId {} accountIdOpt {}", invoiceId, accountIdOpt, ex);
             throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
                     "Failed to fetch invoice", ex);
         }
@@ -1448,7 +1475,9 @@ public class KillBilling extends ManagedService implements Billing {
                 : ImmutableList.of(ControlTagType.AUTO_INVOICING_DRAFT.getId());
     }
 
-    /** If changed, also change in BillingPage.tsx */
+    /**
+     * If changed, also change in BillingPage.tsx
+     */
     private AccountBillingPaymentActionRequired getPaymentStripeAction(String paymentIntentClientSecret) {
         return new AccountBillingPaymentActionRequired("stripe-next-action", ImmutableMap.of(
                 "paymentIntentClientSecret", paymentIntentClientSecret));

@@ -3,17 +3,20 @@
 /** Intentional comment to prevent licence-maven-plugin from deleting the below line */
 /// <reference path="../@types/transform-media-imports.d.ts"/>
 import { Box, Grid, Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, Typography } from '@material-ui/core';
-import { createStyles, Theme, useTheme, withStyles, WithStyles } from '@material-ui/core/styles';
+import { createStyles, Theme, useTheme, WithStyles, withStyles } from '@material-ui/core/styles';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
 import CheckIcon from '@material-ui/icons/CheckRounded';
+import GithubIcon from '@material-ui/icons/GitHub';
 import classNames from 'classnames';
 import React, { Component } from 'react';
 import ReactGA from 'react-ga';
-import { withTranslation, WithTranslation } from 'react-i18next';
+import ReactGA4 from 'react-ga4';
+import { WithTranslation, withTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import PricingImg from '../../public/img/landing/pricing.svg';
 import * as Admin from '../api/admin';
+import { PlanPricingPeriodEnum } from '../api/admin';
 import ServerAdmin, { ReduxStateAdmin } from '../api/serverAdmin';
 import Loader from '../app/utils/Loader';
 import HelpPopper from '../common/HelpPopper';
@@ -21,15 +24,16 @@ import ImgIso from '../common/ImgIso';
 import { isProd } from '../common/util/detectEnv';
 import { trackingBlock } from '../common/util/trackingDelay';
 import { PRE_SELECTED_BASE_PLAN_ID, SIGNUP_PROD_ENABLED } from './AccountEnterPage';
-import Background from './landing/Background';
-import { LandingCustomers } from './LandingPages';
 import PricingPlan from './PricingPlan';
 import PricingSlider from './PricingSlider';
+import Background from './landing/Background';
+import { SelfhostServicePlans } from '../common/config/settings/UpgradeWrapper';
 
 /** If changed, also update PlanStore.java */
 export const StopTrialAfterActiveUsersReaches = 10;
 export const EstimatedPercUsersBecomeTracked = 0.05;
 export const FlatYearlyStartingPrice = 1000;
+export const AllowUserChoosePricingForPlans = new Set(['sponsor-monthly']);
 
 const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
   {
@@ -37,17 +41,69 @@ const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
     body: (
       <>
         <p>
-          Our entire stack is open sourced under the Apache-2.0 license and free to use. The commercial cloud hosting and the self-hosted installations are from the same repository.
+          Our entire stack is open sourced under the Apache-2.0 license and free to use. The commercial cloud
+          hosting and the self-hosted installations are from the same repository.
         </p>
       </>
     ),
   },
   {
+    heading: 'Why is there an option for a license for self-hosting?',
+    body: (
+      <>
+        <p>
+          Self-hosting is free and includes all functionality. If you wish to get additional support, you may
+          purchase
+          a license to get additional support.
+        </p>
+      </>
+    ),
+  },
+  // {
+  //   heading: 'How does the Post limit work?',
+  //   body: (
+  //     <>
+  //       <p>
+  //         A customer feedback, roadmap task or an announcement counts towards your Post Limit. Once you reach
+  //         your
+  //         limit,
+  //         your account will be temporarily limited until you delete older posts or upgrade your plan.
+  //       </p>
+  //     </>
+  //   ),
+  // },
+  {
     heading: 'Can I import/export data?',
     body: (
       <>
         <p>
-          Yes, we provide both import and export functionality via CSV format. You can easily switch between our cloud-hosted plans and a self-hosted installation.
+          Yes, we provide both import and export functionality via CSV format. You can switch between our
+          cloud-hosting
+          to a self-hosting installation.
+        </p>
+      </>
+    ),
+  },
+  {
+    heading: 'What is a teammate?',
+    body: (
+      <>
+        <p>
+          A teammate is a user with access to the ClearFlask admin dashboard. They can manage feedback, users,
+          and settings. You count as one teammate and any additional teammates may cost extra depending on the
+          plan.
+        </p>
+      </>
+    ),
+  },
+  {
+    heading: 'Can I add a teammate later?',
+    body: (
+      <>
+        <p>
+          For recurring plans, you will be charged based on the number of teammates you had during the billing
+          period.
+          For lifetime plans, you can purchase additional teammate slots at any time.
         </p>
       </>
     ),
@@ -77,7 +133,7 @@ const styles = (theme: Theme) => createStyles({
     '& > *': {
       margin: theme.spacing(4),
       minWidth: 250,
-    }
+    },
   },
   pricingSlider: {
     height: 250,
@@ -126,18 +182,22 @@ const styles = (theme: Theme) => createStyles({
 
 interface Props {
 }
+
 interface ConnectProps {
   callOnMount?: () => void,
   plans?: Admin.Plan[];
   featuresTable?: Admin.FeaturesTable;
+  featuresTableSelfhost?: Admin.FeaturesTable;
 }
+
 interface State {
-  tab: 'business' | 'starter',
   highlightedBasePlanid?: string;
+  tab: 'selfhost' | 'cloud',
 }
+
 class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site'> & RouteComponentProps & WithStyles<typeof styles, true>, State> {
   state: State = {
-    tab: 'business',
+    tab: 'cloud',
   };
 
   constructor(props) {
@@ -147,14 +207,16 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
   }
 
   render() {
+
+    // Community self-hosted plan
     const communityPlan: Admin.Plan = {
-      basePlanId: 'community',
-      title: 'Community',
+      basePlanId: 'self-host',
+      title: 'Open-source',
       pricing: { basePrice: 0, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Monthly },
       perks: [
-        { desc: 'Open-source' },
-        { desc: 'Quickstart deploy' },
-        { desc: 'Community supported' },
+        { desc: 'Open-source Apache 2.0' },
+        { desc: 'All features' },
+        { desc: 'Community support' },
       ],
     };
     const communityPlanCmpt = (
@@ -162,34 +224,112 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
         key={communityPlan.basePlanId}
         plan={communityPlan}
         selected={this.state.highlightedBasePlanid === communityPlan.basePlanId}
-        overrideMauTerms={[
-          'Self-hosted',
-          'Own your data',
-        ]}
-        actionTitle='Install it'
-        remark='Join our community'
+        actionIcon={(<GithubIcon />)}
+        actionTitle="Deploy"
+        remark="Free forever"
         actionOnClick={() => {
           trackingBlock(() => {
-            ReactGA.event({
-              category: 'pricing',
-              action: 'click-plan',
-              label: 'community',
-            });
+            [ReactGA4, ReactGA].forEach(ga =>
+              ga.event({
+                category: 'pricing',
+                action: 'click-plan',
+                label: communityPlan.basePlanId,
+              }),
+            );
           });
         }}
-        actionToExt='https://github.com/clearflask/clearflask#self-hosting'
+        actionToExt="https://github.com/clearflask/clearflask#self-hosting"
       />
     );
-    const pricingSlider = (
-      <PricingSlider
-        key='pricingSlider'
-        className={this.props.classes.pricingSlider}
-        plans={[communityPlan, ...(this.props.plans || [])]}
+
+    const talkPlanSelfHost: Admin.Plan = {
+      basePlanId: 'talk',
+      title: 'Enterprise',
+      perks: [
+        { desc: 'Dedicated expert agent' },
+        { desc: 'Custom SLA & Support' },
+        { desc: 'Features & Customization' },
+      ],
+      pricing: {
+        basePrice: 0,
+        baseMau: 0,
+        unitMau: 0,
+        unitPrice: 0,
+        period: PlanPricingPeriodEnum.Yearly,
+      },
+    };
+    const talkPlanSelfHostCmpt = (
+      <PricingPlan
+        key={talkPlanSelfHost.basePlanId}
+        customPrice="#"
+        plan={talkPlanSelfHost}
+        selected={this.state.highlightedBasePlanid === talkPlanSelfHost.basePlanId}
+        remark={this.props.t('let-us-help-you')}
+        actionTitle="Talk to us"
+        actionTo="/contact/sales"
+        actionOnClick={() => {
+          trackingBlock(() => {
+            [ReactGA4, ReactGA].forEach(ga =>
+              ga.event({
+                category: 'pricing',
+                action: 'click-plan',
+                label: talkPlanSelfHost.basePlanId,
+              }),
+            );
+          });
+        }}
       />
     );
-    const plansAll: JSX.Element[] = [];
+
+    const talkPlanCloud: Admin.Plan = {
+      basePlanId: 'talk',
+      title: 'Enterprise',
+      perks: [
+        { desc: 'Dedicated expert agent' },
+        { desc: 'Custom SLA & Support' },
+        { desc: 'Features & Customization' },
+      ],
+      pricing: {
+        basePrice: 0,
+        baseMau: 0,
+        unitMau: 0,
+        unitPrice: 0,
+        period: PlanPricingPeriodEnum.Yearly,
+      },
+    };
+    const talkPlanCloudCmpt = (
+      <PricingPlan
+        key={talkPlanCloud.basePlanId}
+        customPrice="#"
+        plan={talkPlanCloud}
+        selected={this.state.highlightedBasePlanid === talkPlanCloud.basePlanId}
+        remark={this.props.t('let-us-help-you')}
+        actionTitle="Talk to us"
+        actionTo="/contact/sales"
+        actionOnClick={() => {
+          trackingBlock(() => {
+            [ReactGA4, ReactGA].forEach(ga =>
+              ga.event({
+                category: 'pricing',
+                action: 'click-plan',
+                label: talkPlanCloud.basePlanId,
+              }),
+            );
+          });
+        }}
+      />
+    );
+
+    const plansSelfHost: JSX.Element[] = [];
+    const plansCloud: JSX.Element[] = [];
     for (const plan of this.props.plans || []) {
-      const pricingPlan = (
+      const pricingPlan = AllowUserChoosePricingForPlans.has(plan.basePlanId) ? (
+        <PricingSlider
+          key="pricingSlider"
+          className={this.props.classes.pricingSlider}
+          plan={plan}
+        />
+      ) : (
         <PricingPlan
           key={plan.basePlanId}
           customPrice={plan.basePlanId === 'flat-yearly' ? FlatYearlyStartingPrice + '+' : undefined}
@@ -199,19 +339,21 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
           ] : undefined}
           plan={plan}
           selected={this.state.highlightedBasePlanid === plan.basePlanId}
-          actionTitle={plan.basePlanId !== 'flat-yearly' && (SIGNUP_PROD_ENABLED || !isProd()) ? 'Get started' : 'Talk to us'}
-          remark={plan.basePlanId === 'starter-unlimited'
-            ? this.props.t('free-forever')
+          actionTitle={SelfhostServicePlans.includes(plan.basePlanId) ? 'Buy license' : 'Get started'}
+          remark={SelfhostServicePlans.includes(plan.basePlanId)
+            ? 'Automatic renewal'
             : (plan.pricing
               ? this.props.t('free-14-day-trial')
-              : this.props.t('let-us-help-you'))}
+              : this.props.t('free-forever'))}
           actionOnClick={() => {
             trackingBlock(() => {
-              ReactGA.event({
-                category: 'pricing',
-                action: 'click-plan',
-                label: plan.basePlanId,
-              });
+              [ReactGA4, ReactGA].forEach(ga =>
+                ga.event({
+                  category: 'pricing',
+                  action: 'click-plan',
+                  label: plan.basePlanId,
+                }),
+              );
             });
           }}
           actionTo={plan.basePlanId !== 'flat-yearly' && (SIGNUP_PROD_ENABLED || !isProd())
@@ -222,14 +364,24 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
             : '/contact/sales'}
         />
       );
-      plansAll.push(pricingPlan);
+      if (SelfhostServicePlans.includes(plan.basePlanId)) {
+        plansSelfHost.push(pricingPlan);
+      } else {
+        plansCloud.push(pricingPlan);
+      }
     }
 
-    const plansStarterGrouped = this.groupPlans([
+    const plansGroupedSelfhost = this.groupPlans([
       communityPlanCmpt,
-      pricingSlider,
+      ...plansSelfHost,
+      talkPlanSelfHostCmpt,
     ]);
-    const plansBusinessGrouped = this.groupPlans(plansAll);
+    const plansGroupedCloud = this.groupPlans([
+      ...plansCloud,
+      talkPlanCloudCmpt,
+    ]);
+
+    const featuresTable = this.state.tab === 'cloud' ? this.props.featuresTable : this.props.featuresTableSelfhost;
 
     return (
       <>
@@ -237,14 +389,15 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
           d: 'M 0 49.98 C 0 120 16 137 94 136 C 361 122 252 -31 500 49.98 L 500 0 L 0 0 Z',
           viewBox: '0 0 500 150',
           flexible: true,
-        }} height={500} align='top'>
+        }} height={500} align="top">
           <div className={this.props.classes.section}>
             <div className={this.props.classes.header}>
               <div>
-                <Typography component="h2" variant="h2" color="textPrimary">{this.props.t('pricing')}</Typography>
+                <Typography component="h2" variant="h2"
+                            color="textPrimary">{this.props.t('pricing')}</Typography>
               </div>
               <ImgIso
-                alt=''
+                alt=""
                 className={this.props.classes.image}
                 src={PricingImg.pathname}
                 aspectRatio={PricingImg.aspectRatio}
@@ -258,28 +411,26 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
           <Loader loaded={!!this.props.plans} skipFade>
             <Tabs
               centered
-              variant='standard'
-              scrollButtons='off'
+              variant="standard"
+              scrollButtons="off"
               value={this.state.tab}
               onChange={(e, newTab) => this.setState({ tab: newTab as any })}
             >
-              <Tab value='business' label='For most businesses' className={this.props.classes.tab} />
-              <Tab value='starter' label='For very Small businesses' className={this.props.classes.tab} />
+              <Tab value="selfhost" label="Self-hosted" className={this.props.classes.tab} />
+              <Tab value="cloud" label="Cloud" className={this.props.classes.tab} />
             </Tabs>
             <div className={classNames(this.props.classes.section, this.props.classes.sectionPlans)}>
-              {this.state.tab === 'starter' && plansStarterGrouped}
-              {this.state.tab === 'business' && plansBusinessGrouped}
-              {/* <Slide unmountOnExit mountOnEnter direction='right' in={this.state.tab === 'business'}><div>{plansBusinessGrouped}</div></Slide>
-              <Slide unmountOnExit mountOnEnter direction='left' in={this.state.tab === 'starter'}><div>{plansStarterGrouped}</div></Slide> */}
+              {this.state.tab === 'selfhost' && plansGroupedSelfhost}
+              {this.state.tab === 'cloud' && plansGroupedCloud}
             </div>
           </Loader>
-          <LandingCustomers />
+          {/* <LandingCustomers /> */}
           <br />
           <br />
-          {this.props.featuresTable && (
+          {featuresTable && (
             <div className={this.props.classes.section}>
-              <FeatureList name='Features' planNames={this.props.featuresTable.plans}>
-                {this.props.featuresTable.features.map((feature, index) => (
+              <FeatureList name="Features" planNames={featuresTable.plans}>
+                {featuresTable.features.map((feature, index) => (
                   <FeatureListItem
                     key={feature.feature}
                     planContents={this.mapFeaturesTableValues(feature.values)}
@@ -288,9 +439,10 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
                   />
                 ))}
               </FeatureList>
-              {this.props.featuresTable.extraTerms && (
-                <Box display='flex' justifyContent='center'>
-                  <Typography variant='caption' component='div'>{this.props.featuresTable.extraTerms}</Typography>
+              {featuresTable.extraTerms && (
+                <Box display="flex" justifyContent="center">
+                  <Typography variant="caption"
+                              component="div">{featuresTable.extraTerms}</Typography>
                 </Box>
               )}
             </div>
@@ -299,15 +451,15 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
           <br />
           <br />
           <div className={this.props.classes.section}>
-            <Grid container spacing={5} alignItems='stretch' justify='center'>
+            <Grid container spacing={5} alignItems="stretch" justify="center">
               {Faq.map((faqItem, index) => (
                 <Grid key={index} item xs={12} sm={6}>
                   <div className={this.props.classes.faqItem}>
-                    <Typography component='div' variant='h5'>
+                    <Typography component="div" variant="h5">
                       {faqItem.heading}
                     </Typography>
                     <br />
-                    <Typography component='div' variant='body1' color='textSecondary'>
+                    <Typography component="div" variant="body1" color="textSecondary">
                       {faqItem.body}
                     </Typography>
                   </div>
@@ -323,9 +475,12 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
   mapFeaturesTableValues(values: string[]): (string | boolean)[] {
     return values.map(value => {
       switch (value) {
-        case 'Yes': return true;
-        case 'No': return false;
-        default: return value;
+        case 'Yes':
+          return true;
+        case 'No':
+          return false;
+        default:
+          return value;
       }
     });
   }
@@ -360,7 +515,7 @@ const FeatureList = withStyles(styles, { withTheme: true })((props: WithStyles<t
       >
         <TableHead>
           <TableRow>
-            <TableCell key='feature'><Typography variant='h6'>{props.name}</Typography></TableCell>
+            <TableCell key="feature"><Typography variant="h6">{props.name}</Typography></TableCell>
             {props.planNames.map(planName => (
               <TableCell key={planName}>{planName}</TableCell>
             ))}
@@ -380,8 +535,8 @@ const FeatureListItem = (props: {
   helpText?: string
 }) => {
   return (
-    <TableRow key='name'>
-      <TableCell key='feature'>
+    <TableRow key="name">
+      <TableCell key="feature">
         {props.name}
         {props.helpText && (
           <>
@@ -393,18 +548,19 @@ const FeatureListItem = (props: {
       {props.planContents.map((content, index) => (
         <TableCell key={index}>
           {content === true
-            ? (<CheckIcon fontSize='inherit' />)
+            ? (<CheckIcon fontSize="inherit" />)
             : content}
         </TableCell>
       ))}
     </TableRow>
   );
-}
+};
 
 export default connect<ConnectProps, {}, Props, ReduxStateAdmin>((state, ownProps) => {
   const newProps: ConnectProps = {
     plans: state.plans.plans.plans,
     featuresTable: state.plans.plans.featuresTable,
+    featuresTableSelfhost: state.plans.plans.featuresTableSelfhost,
   };
   if (state.plans.plans.status === undefined) {
     newProps.callOnMount = () => {

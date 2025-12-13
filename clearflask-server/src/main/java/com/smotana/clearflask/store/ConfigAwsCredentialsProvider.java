@@ -2,13 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.smotana.clearflask.store;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.AWSCredentialsProviderChain;
-import com.amazonaws.auth.EC2ContainerCredentialsProviderWrapper;
-import com.amazonaws.auth.EnvironmentVariableCredentialsProvider;
-import com.amazonaws.auth.SystemPropertiesCredentialsProvider;
-import com.amazonaws.auth.WebIdentityTokenCredentialsProvider;
+import com.amazonaws.auth.*;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.google.common.base.Strings;
 import com.google.inject.AbstractModule;
@@ -25,6 +19,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Singleton
 public class ConfigAwsCredentialsProvider extends AWSCredentialsProviderChain {
+
+    static {
+        System.setProperty("aws.java.v1.disableDeprecationAnnouncement", "true");
+    }
 
     public interface Config {
         @DefaultValue("")
@@ -44,7 +42,7 @@ public class ConfigAwsCredentialsProvider extends AWSCredentialsProviderChain {
                           public String getAWSAccessKeyId() {
                               return Strings.emptyToNull(config.awsAccessKeyId());
                           }
-    
+
                           @Override
                           public String getAWSSecretKey() {
                               return Strings.emptyToNull(config.awsSecretKey());

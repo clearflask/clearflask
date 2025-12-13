@@ -5,11 +5,7 @@ package com.smotana.clearflask.web.util;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.common.util.concurrent.*;
 import com.google.gson.Gson;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -49,7 +45,7 @@ import java.util.function.Supplier;
 public class WebhookServiceImpl extends ManagedService implements WebhookService {
 
     public interface Config {
-        @DefaultValue("true")
+        @DefaultValue("false")
         boolean enabled();
     }
 
@@ -82,6 +78,9 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
 
     @Override
     public ListenableFuture<Void> eventUserNew(UserStore.UserModel user) {
+        if (!config.enabled()) {
+            return Futures.immediateFuture(null);
+        }
         return handleEvent(ResourceType.USER, SubscriptionEventTypeUser.NEW.name(), user.getProjectId(), () -> {
             Map<String, Object> map = Maps.newHashMap();
             map.put("event_type", SubscriptionEventTypeUser.NEW.name());
@@ -92,6 +91,9 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
 
     @Override
     public ListenableFuture<Void> eventCommentNew(IdeaStore.IdeaModel idea, CommentStore.CommentModel comment, UserStore.UserModel user) {
+        if (!config.enabled()) {
+            return Futures.immediateFuture(null);
+        }
         return handleEvent(ResourceType.COMMENT, SubscriptionEventTypeComment.NEW.name(), idea.getProjectId(), () -> {
             Map<String, Object> map = Maps.newHashMap();
             map.put("event_type", SubscriptionEventTypeComment.NEW.name());
@@ -104,6 +106,9 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
 
     @Override
     public ListenableFuture<Void> eventPostNew(IdeaStore.IdeaModel idea, UserStore.UserModel user) {
+        if (!config.enabled()) {
+            return Futures.immediateFuture(null);
+        }
         return handleEvent(ResourceType.POST, SubscriptionEventTypeIdea.NEW.name(), idea.getProjectId(), () -> {
             Map<String, Object> map = Maps.newHashMap();
             map.put("event_type", SubscriptionEventTypeIdea.NEW.name());
@@ -115,6 +120,9 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
 
     @Override
     public ListenableFuture<Void> eventPostVoteChanged(IdeaStore.IdeaModel idea, Supplier<UserStore.UserModel> userSupplier, VoteOption vote) {
+        if (!config.enabled()) {
+            return Futures.immediateFuture(null);
+        }
         return handleEvent(ResourceType.POST, SubscriptionEventTypeIdea.VOTE_CHANGED.name(), idea.getProjectId(), () -> {
             Map<String, Object> map = Maps.newHashMap();
             map.put("event_type", SubscriptionEventTypeIdea.VOTE_CHANGED.name());
@@ -127,6 +135,9 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
 
     @Override
     public ListenableFuture<Void> eventPostFundingChanged(IdeaStore.IdeaModel idea, Supplier<UserStore.UserModel> userSupplier, long fundDiff) {
+        if (!config.enabled()) {
+            return Futures.immediateFuture(null);
+        }
         return handleEvent(ResourceType.POST, SubscriptionEventTypeIdea.FUNDING_CHANGED.name(), idea.getProjectId(), () -> {
             Map<String, Object> map = Maps.newHashMap();
             map.put("event_type", SubscriptionEventTypeIdea.FUNDING_CHANGED.name());
@@ -139,6 +150,9 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
 
     @Override
     public ListenableFuture<Void> eventPostExpressionsChanged(IdeaStore.IdeaModel idea, Supplier<UserStore.UserModel> userSupplier, ImmutableSet<String> expressions) {
+        if (!config.enabled()) {
+            return Futures.immediateFuture(null);
+        }
         return handleEvent(ResourceType.POST, SubscriptionEventTypeIdea.EXPRESSIONS_CHANGED.name(), idea.getProjectId(), () -> {
             Map<String, Object> map = Maps.newHashMap();
             map.put("event_type", SubscriptionEventTypeIdea.EXPRESSIONS_CHANGED.name());
@@ -151,6 +165,9 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
 
     @Override
     public ListenableFuture<Void> eventPostResponseChanged(IdeaStore.IdeaModel idea) {
+        if (!config.enabled()) {
+            return Futures.immediateFuture(null);
+        }
         return handleEvent(ResourceType.POST, SubscriptionEventTypeIdea.RESPONSE_CHANGED.name(), idea.getProjectId(), () -> {
             Map<String, Object> map = Maps.newHashMap();
             map.put("event_type", SubscriptionEventTypeIdea.RESPONSE_CHANGED.name());
@@ -161,6 +178,9 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
 
     @Override
     public ListenableFuture<Void> eventPostStatusChanged(IdeaStore.IdeaModel idea) {
+        if (!config.enabled()) {
+            return Futures.immediateFuture(null);
+        }
         return handleEvent(ResourceType.POST, SubscriptionEventTypeIdea.STATUS_CHANGED.name(), idea.getProjectId(), () -> {
             Map<String, Object> map = Maps.newHashMap();
             map.put("event_type", SubscriptionEventTypeIdea.STATUS_CHANGED.name());
@@ -171,6 +191,9 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
 
     @Override
     public ListenableFuture<Void> eventPostTagsChanged(IdeaStore.IdeaModel idea) {
+        if (!config.enabled()) {
+            return Futures.immediateFuture(null);
+        }
         return handleEvent(ResourceType.POST, SubscriptionEventTypeIdea.TAG_CHANGED.name(), idea.getProjectId(), () -> {
             Map<String, Object> map = Maps.newHashMap();
             map.put("event_type", SubscriptionEventTypeIdea.TAG_CHANGED.name());

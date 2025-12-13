@@ -24,15 +24,7 @@ import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.util.WebhookService;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.codegen.GenerationTool;
-import org.jooq.meta.jaxb.Configuration;
-import org.jooq.meta.jaxb.Database;
-import org.jooq.meta.jaxb.ForcedType;
-import org.jooq.meta.jaxb.Generator;
-import org.jooq.meta.jaxb.Jdbc;
-import org.jooq.meta.jaxb.Logging;
-import org.jooq.meta.jaxb.OnError;
-import org.jooq.meta.jaxb.Strategy;
-import org.jooq.meta.jaxb.Target;
+import org.jooq.meta.jaxb.*;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -86,7 +78,7 @@ public class JooqCodegenIT extends AbstractIT {
 
     /**
      * Re-Generates code in {@link com.smotana.clearflask.store.mysql.model} based on tables defined in stores.
-     *
+     * <p>
      * Only re-generate changes if you are also making the change in production.
      */
     @Ignore

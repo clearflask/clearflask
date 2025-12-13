@@ -7,6 +7,7 @@ import windowIso from '../windowIso';
 import { vh } from './screenUtil';
 
 export interface Props {
+  hideOnError?: boolean;
 }
 export interface State {
   hasError?: boolean;
@@ -20,6 +21,9 @@ class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      if (this.props.hideOnError) {
+        return null;
+      }
       return (
         <Box
           display='flex'

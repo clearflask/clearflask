@@ -1,0 +1,544 @@
+{
+  "schemaVersion": 5,
+  "projectId": "aitestexample-nsun",
+  "website": "example.com",
+  "name": "Example",
+  "logoUrl": "https://example.com/favicon.ico",
+  "slug": "ai-test-example",
+  "cookieConsent": {},
+  "layout": {
+    "menu": [
+      {
+        "menuId": "73119cf6-21ff-41d5-bac5-5ee5b4958475",
+        "pageIds": [
+          "feedback-e9847149-79fa-489d-809d-22c9f64dc563"
+        ]
+      },
+      {
+        "menuId": "c060ef57-a226-4c4e-8e51-cd7a7f8ecd90",
+        "pageIds": [
+          "roadmap-16b2d133-3b2f-4fd9-beda-e45e91c7ca11"
+        ]
+      },
+      {
+        "menuId": "293c7538-2371-4b75-a024-4c481872efd3",
+        "pageIds": [
+          "changelog-fc94dc4b-d999-47a2-a238-a358e0c6db7d"
+        ]
+      }
+    ],
+    "pages": [
+      {
+        "pageId": "d889eaaf-0246-4e69-a6d2-ec0f6edc9260",
+        "name": "welcome",
+        "slug": "",
+        "title": "how-can-we-help",
+        "landing": {
+          "links": [
+            {
+              "title": "feedback",
+              "description": "how-can-we-improve-our-product",
+              "linkToPageId": "feedback-e9847149-79fa-489d-809d-22c9f64dc563"
+            },
+            {
+              "title": "roadmap",
+              "description": "see-what-were-working-on-next",
+              "linkToPageId": "roadmap-16b2d133-3b2f-4fd9-beda-e45e91c7ca11"
+            },
+            {
+              "title": "announcements",
+              "description": "check-out-our-recent-updates",
+              "linkToPageId": "changelog-fc94dc4b-d999-47a2-a238-a358e0c6db7d"
+            }
+          ]
+        },
+        "panels": []
+      },
+      {
+        "pageId": "feedback-e9847149-79fa-489d-809d-22c9f64dc563",
+        "name": "feedback",
+        "slug": "feedback",
+        "icon": "RecordVoiceOver",
+        "panels": [],
+        "feedback": {
+          "categoryId": "feedback-d17bcb4f-2cec-4920-bbd9-2790dcced6c4",
+          "related": {
+            "panel": {
+              "search": {
+                "filterCategoryIds": [
+                  "feedback-d17bcb4f-2cec-4920-bbd9-2790dcced6c4",
+                  "roadmap-757864b1-351b-4204-b657-dc717596ebf9"
+                ],
+                "limit": 3
+              },
+              "display": {
+                "titleTruncateLines": 1,
+                "descriptionTruncateLines": 2,
+                "responseTruncateLines": 0,
+                "showCommentCount": false,
+                "showCategoryName": false,
+                "showCreated": false,
+                "showAuthor": false,
+                "showStatus": false,
+                "showTags": false,
+                "showVoting": false,
+                "showVotingCount": false,
+                "showFunding": false,
+                "showExpression": false
+              },
+              "hideIfEmpty": true
+            }
+          },
+          "debate": {
+            "panel": {
+              "search": {
+                "sortBy": "Random",
+                "filterCategoryIds": [
+                  "roadmap-757864b1-351b-4204-b657-dc717596ebf9"
+                ],
+                "filterStatusIds": [
+                  "backlog-4b1d0716-1678-4052-a0f6-46a39c6e3c78"
+                ],
+                "limit": 10
+              },
+              "display": {
+                "titleTruncateLines": 2,
+                "descriptionTruncateLines": 4,
+                "responseTruncateLines": 0,
+                "showCommentCount": false,
+                "showCategoryName": false,
+                "showCreated": false,
+                "showAuthor": false,
+                "showStatus": false,
+                "showTags": false,
+                "showVoting": true,
+                "showVotingCount": false,
+                "showFunding": false,
+                "showExpression": false
+              },
+              "title": "see-what-else-were-thinking-about",
+              "hideIfEmpty": true
+            }
+          },
+          "debate2": {
+            "panel": {
+              "search": {
+                "sortBy": "Trending",
+                "filterCategoryIds": [
+                  "feedback-d17bcb4f-2cec-4920-bbd9-2790dcced6c4"
+                ],
+                "filterStatusIds": [
+                  "ea859598-07a7-497f-b51c-ccc8ed63bbc8",
+                  "8303da4e-40d4-45d9-9af3-ceae2921efd5",
+                  "417f8708-a4d4-4818-bd31-b4a0ba01d73c"
+                ],
+                "limit": 10
+              },
+              "display": {
+                "titleTruncateLines": 2,
+                "descriptionTruncateLines": 4,
+                "responseTruncateLines": 0,
+                "showCommentCount": false,
+                "showCategoryName": false,
+                "showCreated": false,
+                "showAuthor": false,
+                "showStatus": false,
+                "showTags": false,
+                "showVoting": true,
+                "showVotingCount": false,
+                "showFunding": false,
+                "showExpression": false
+              },
+              "title": "feedback-submitted-by-others",
+              "hideIfEmpty": true
+            }
+          }
+        }
+      },
+      {
+        "pageId": "roadmap-16b2d133-3b2f-4fd9-beda-e45e91c7ca11",
+        "name": "roadmap",
+        "slug": "roadmap",
+        "icon": "Roadmap",
+        "panels": [],
+        "board": {
+          "title": "heres-our-plan",
+          "panels": [
+            {
+              "search": {
+                "sortBy": "DragAndDrop",
+                "filterCategoryIds": [
+                  "roadmap-757864b1-351b-4204-b657-dc717596ebf9"
+                ],
+                "filterStatusIds": [
+                  "4553c46d-67c0-4517-8c02-9477843143d7"
+                ]
+              },
+              "display": {
+                "titleTruncateLines": 2,
+                "descriptionTruncateLines": 4,
+                "responseTruncateLines": 0,
+                "showCommentCount": false,
+                "showCategoryName": false,
+                "showCreated": false,
+                "showAuthor": false,
+                "showStatus": false,
+                "showTags": false,
+                "showVoting": true,
+                "showVotingCount": false,
+                "showFunding": false,
+                "showExpression": false
+              },
+              "title": "now",
+              "color": "rgb(59, 103, 174)",
+              "hideIfEmpty": false
+            },
+            {
+              "search": {
+                "sortBy": "DragAndDrop",
+                "filterCategoryIds": [
+                  "roadmap-757864b1-351b-4204-b657-dc717596ebf9"
+                ],
+                "filterStatusIds": [
+                  "1abd5b22-526d-4fb7-93fa-88d1b12f1e9f"
+                ]
+              },
+              "display": {
+                "titleTruncateLines": 2,
+                "descriptionTruncateLines": 4,
+                "responseTruncateLines": 0,
+                "showCommentCount": false,
+                "showCategoryName": false,
+                "showCreated": false,
+                "showAuthor": false,
+                "showStatus": false,
+                "showTags": false,
+                "showVoting": true,
+                "showVotingCount": false,
+                "showFunding": false,
+                "showExpression": false
+              },
+              "title": "next",
+              "color": "rgb(52, 90, 152)",
+              "hideIfEmpty": false
+            },
+            {
+              "search": {
+                "sortBy": "DragAndDrop",
+                "filterCategoryIds": [
+                  "roadmap-757864b1-351b-4204-b657-dc717596ebf9"
+                ],
+                "filterStatusIds": [
+                  "1d273049-9155-44fc-8aa9-48fa7e3b40e1"
+                ]
+              },
+              "display": {
+                "titleTruncateLines": 2,
+                "descriptionTruncateLines": 4,
+                "responseTruncateLines": 0,
+                "showCommentCount": false,
+                "showCategoryName": false,
+                "showCreated": false,
+                "showAuthor": false,
+                "showStatus": false,
+                "showTags": false,
+                "showVoting": true,
+                "showVotingCount": false,
+                "showFunding": false,
+                "showExpression": false
+              },
+              "title": "later",
+              "color": "rgb(39, 68, 114)",
+              "hideIfEmpty": false
+            }
+          ]
+        }
+      },
+      {
+        "pageId": "changelog-fc94dc4b-d999-47a2-a238-a358e0c6db7d",
+        "name": "announcements",
+        "slug": "announcements",
+        "title": "changes-we-made",
+        "icon": "ChangeHistory",
+        "panels": [],
+        "explorer": {
+          "search": {
+            "sortBy": "New",
+            "filterCategoryIds": [
+              "changelog-99ec00f8-7a84-4d8e-998f-11d9e7f2ad99"
+            ],
+            "limit": 10
+          },
+          "display": {
+            "titleTruncateLines": 2,
+            "descriptionTruncateLines": 10,
+            "responseTruncateLines": 0,
+            "showCommentCount": false,
+            "showCategoryName": false,
+            "showCreated": true,
+            "showAuthor": false,
+            "showStatus": false,
+            "showTags": false,
+            "showVoting": false,
+            "showVotingCount": false,
+            "showFunding": false,
+            "showExpression": false,
+            "showEdit": false
+          }
+        }
+      }
+    ]
+  },
+  "content": {
+    "categories": [
+      {
+        "categoryId": "feedback-d17bcb4f-2cec-4920-bbd9-2790dcced6c4",
+        "name": "feedback",
+        "userCreatable": true,
+        "userMergeableCategoryIds": [
+          "feedback-d17bcb4f-2cec-4920-bbd9-2790dcced6c4",
+          "roadmap-757864b1-351b-4204-b657-dc717596ebf9"
+        ],
+        "workflow": {
+          "entryStatus": "ea859598-07a7-497f-b51c-ccc8ed63bbc8",
+          "statuses": [
+            {
+              "statusId": "ea859598-07a7-497f-b51c-ccc8ed63bbc8",
+              "name": "new",
+              "nextStatusIds": [
+                "8303da4e-40d4-45d9-9af3-ceae2921efd5",
+                "accepted-22840db2-4d9f-4e01-a4f0-63c4759cfc4a",
+                "417f8708-a4d4-4818-bd31-b4a0ba01d73c",
+                "417f8708-a4d4-4818-bd31-b4a0ba01d73c"
+              ],
+              "color": "rgb(51, 51, 51)",
+              "disableFunding": false,
+              "disableVoting": false,
+              "disableExpressions": false,
+              "disableIdeaEdits": false,
+              "disableComments": false
+            },
+            {
+              "statusId": "8303da4e-40d4-45d9-9af3-ceae2921efd5",
+              "name": "considering",
+              "nextStatusIds": [
+                "accepted-22840db2-4d9f-4e01-a4f0-63c4759cfc4a",
+                "417f8708-a4d4-4818-bd31-b4a0ba01d73c"
+              ],
+              "color": "rgb(59, 103, 174)",
+              "disableFunding": false,
+              "disableVoting": false,
+              "disableExpressions": false,
+              "disableIdeaEdits": false,
+              "disableComments": false
+            },
+            {
+              "statusId": "accepted-22840db2-4d9f-4e01-a4f0-63c4759cfc4a",
+              "name": "accepted",
+              "nextStatusIds": [],
+              "color": "#3A8E31",
+              "disableFunding": false,
+              "disableVoting": false,
+              "disableExpressions": false,
+              "disableIdeaEdits": false,
+              "disableComments": false
+            },
+            {
+              "statusId": "417f8708-a4d4-4818-bd31-b4a0ba01d73c",
+              "name": "closed",
+              "nextStatusIds": [],
+              "color": "#B44A4B",
+              "disableFunding": false,
+              "disableVoting": false,
+              "disableExpressions": false,
+              "disableIdeaEdits": false,
+              "disableComments": false
+            }
+          ]
+        },
+        "support": {
+          "fund": false,
+          "vote": {
+            "enableDownvotes": false,
+            "iWantThis": {}
+          },
+          "comment": true
+        },
+        "tagging": {
+          "tags": [],
+          "tagGroups": []
+        }
+      },
+      {
+        "categoryId": "roadmap-757864b1-351b-4204-b657-dc717596ebf9",
+        "name": "task",
+        "userCreatable": false,
+        "workflow": {
+          "entryStatus": "backlog-4b1d0716-1678-4052-a0f6-46a39c6e3c78",
+          "statuses": [
+            {
+              "statusId": "backlog-4b1d0716-1678-4052-a0f6-46a39c6e3c78",
+              "name": "ideas",
+              "nextStatusIds": [
+                "1d273049-9155-44fc-8aa9-48fa7e3b40e1",
+                "closed-2d5da0f2-f4ec-4fdd-8add-2a19c049d747"
+              ],
+              "color": "rgb(51, 51, 51)",
+              "disableFunding": false,
+              "disableVoting": false,
+              "disableExpressions": false,
+              "disableIdeaEdits": false,
+              "disableComments": false
+            },
+            {
+              "statusId": "1d273049-9155-44fc-8aa9-48fa7e3b40e1",
+              "name": "later",
+              "nextStatusIds": [
+                "1abd5b22-526d-4fb7-93fa-88d1b12f1e9f",
+                "closed-2d5da0f2-f4ec-4fdd-8add-2a19c049d747"
+              ],
+              "color": "rgb(39, 68, 114)",
+              "disableFunding": false,
+              "disableVoting": false,
+              "disableExpressions": false,
+              "disableIdeaEdits": false,
+              "disableComments": false
+            },
+            {
+              "statusId": "1abd5b22-526d-4fb7-93fa-88d1b12f1e9f",
+              "name": "next",
+              "nextStatusIds": [
+                "4553c46d-67c0-4517-8c02-9477843143d7",
+                "closed-2d5da0f2-f4ec-4fdd-8add-2a19c049d747"
+              ],
+              "color": "rgb(52, 90, 152)",
+              "disableFunding": false,
+              "disableVoting": false,
+              "disableExpressions": false,
+              "disableIdeaEdits": false,
+              "disableComments": false
+            },
+            {
+              "statusId": "4553c46d-67c0-4517-8c02-9477843143d7",
+              "name": "now",
+              "nextStatusIds": [
+                "closed-2d5da0f2-f4ec-4fdd-8add-2a19c049d747",
+                "completed-b9b2ec87-c8dc-4e00-a1fb-e8a180275b55"
+              ],
+              "color": "rgb(59, 103, 174)",
+              "disableFunding": false,
+              "disableVoting": false,
+              "disableExpressions": false,
+              "disableIdeaEdits": false,
+              "disableComments": false
+            },
+            {
+              "statusId": "completed-b9b2ec87-c8dc-4e00-a1fb-e8a180275b55",
+              "name": "completed",
+              "nextStatusIds": [],
+              "color": "#3A8E31",
+              "disableFunding": false,
+              "disableVoting": false,
+              "disableExpressions": false,
+              "disableIdeaEdits": false,
+              "disableComments": false
+            },
+            {
+              "statusId": "closed-2d5da0f2-f4ec-4fdd-8add-2a19c049d747",
+              "name": "cancelled",
+              "nextStatusIds": [],
+              "color": "#B44A4B",
+              "disableFunding": false,
+              "disableVoting": false,
+              "disableExpressions": false,
+              "disableIdeaEdits": false,
+              "disableComments": false
+            }
+          ]
+        },
+        "support": {
+          "fund": false,
+          "vote": {
+            "enableDownvotes": false,
+            "iWantThis": {}
+          },
+          "comment": true
+        },
+        "tagging": {
+          "tags": [],
+          "tagGroups": []
+        }
+      },
+      {
+        "categoryId": "changelog-99ec00f8-7a84-4d8e-998f-11d9e7f2ad99",
+        "name": "announcements",
+        "userCreatable": false,
+        "subscription": {
+          "hellobar": {
+            "title": "follow-us",
+            "message": "if-interested-hearing-new-features",
+            "button": "get-notified"
+          }
+        },
+        "workflow": {
+          "statuses": []
+        },
+        "support": {
+          "fund": false,
+          "express": {
+            "limitEmojiPerIdea": true,
+            "limitEmojiSet": [
+              {
+                "display": "😃",
+                "text": "Smiley",
+                "weight": 1
+              },
+              {
+                "display": "😐",
+                "text": "Neutral",
+                "weight": -1
+              },
+              {
+                "display": "😞",
+                "text": "Disappointed",
+                "weight": -2
+              }
+            ]
+          },
+          "comment": true
+        },
+        "tagging": {
+          "tags": [],
+          "tagGroups": []
+        }
+      }
+    ]
+  },
+  "style": {
+    "animation": {
+      "enableTransitions": true
+    },
+    "palette": {
+      "darkMode": false
+    },
+    "typography": {},
+    "whitelabel": {
+      "poweredBy": "Show"
+    }
+  },
+  "users": {
+    "onboarding": {
+      "visibility": "Public",
+      "notificationMethods": {
+        "browserPush": true,
+        "email": {
+          "mode": "SignupAndLogin",
+          "password": "None",
+          "verification": "None"
+        },
+        "oauth": []
+      }
+    }
+  },
+  "integrations": {}
+}

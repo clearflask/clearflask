@@ -28,32 +28,10 @@
  */
 import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/styles';
 import DOMPurify from 'dompurify';
-import marked, { Lexer, MarkedOptions, Renderer } from 'marked';
+import { marked, Renderer } from 'marked';
 import { Component } from 'react';
 import { highlight } from './prism';
 import textToHash from './textToHash';
-
-/**
- * From https://github.com/chjj/marked/blob/6b0416d10910702f73da9cb6bb3d4c8dcb7dead7/lib/marked.js#L142-L150
- * 
- * Marked
- * 
- * Copyright (c) 2018+, MarkedJS (https://github.com/markedjs/) Copyright (c) 2011-2018, Christopher Jeffrey (https://github.com/chjj/)
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-// Monkey patch to preserve non-breaking spaces
-Lexer.prototype.lex = function lex(src) {
-  src = src
-    .replace(/\r\n|\r/g, '\n')
-    .replace(/\t/g, '    ')
-    .replace(/\u2424/g, '\n');
-  return this.token(src, true);
-};
 
 const renderer = new Renderer();
 renderer.heading = (text, level) => {
@@ -79,7 +57,8 @@ renderer.heading = (text, level) => {
 
 renderer.link = (href, title, text) => `<a href="${href}" target="_blank" rel="noopener nofollow">${text}</a>`;
 
-const markedOptions: MarkedOptions = {
+const markedOptions = {
+  async: false,
   gfm: true,
   breaks: false,
   pedantic: false,
@@ -275,7 +254,7 @@ class MarkdownElement extends Component<Props & WithStyles<typeof styles, true>>
     return (
       <div
         className={this.props.classes.markdownBody}
-        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked(this.props.text || '', markedOptions)) }}
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(this.props.text || '', markedOptions)) }}
       />
     );
   }

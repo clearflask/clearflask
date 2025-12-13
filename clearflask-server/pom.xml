@@ -4,11 +4,11 @@
     <parent>
         <artifactId>clearflask-parent</artifactId>
         <groupId>com.smotana.clearflask</groupId>
-        <version>1.6.2-SNAPSHOT</version>
+        <version>2.3.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>clearflask-server</artifactId>
-    <version>1.6.2-SNAPSHOT</version>
+    <version>2.3.0-SNAPSHOT</version>
     <packaging>war</packaging>
 
     <name>clearflask</name>
@@ -16,6 +16,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <docker.platform>linux/amd64</docker.platform>
     </properties>
 
     <dependencies>
@@ -33,6 +34,10 @@
         <dependency>
             <groupId>io.dataspray</groupId>
             <artifactId>single-table</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.dataspray.umbrella.integration</groupId>
+            <artifactId>umbrella-tomcat-javax</artifactId>
         </dependency>
 
         <dependency>
@@ -191,6 +196,23 @@
         </dependency>
 
         <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-open-ai</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mapdb</groupId>
+            <artifactId>mapdb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.samskivert</groupId>
+            <artifactId>jmustache</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-client</artifactId>
         </dependency>
@@ -228,6 +250,10 @@
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-dynamodb</artifactId>
         </dependency>
         <dependency>
@@ -247,47 +273,16 @@
             <artifactId>simple-java-mail</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.almworks.sqlite4java</groupId>
-            <artifactId>sqlite4java</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.almworks.sqlite4java</groupId>
-            <artifactId>sqlite4java-win32-x86</artifactId>
-            <type>dll</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.almworks.sqlite4java</groupId>
-            <artifactId>sqlite4java-win32-x64</artifactId>
-            <type>dll</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.almworks.sqlite4java</groupId>
-            <artifactId>libsqlite4java-osx</artifactId>
-            <type>dylib</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.almworks.sqlite4java</groupId>
-            <artifactId>libsqlite4java-linux-i386</artifactId>
-            <type>so</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.almworks.sqlite4java</groupId>
-            <artifactId>libsqlite4java-linux-amd64</artifactId>
-            <type>so</type>
-            <scope>test</scope>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
+            <artifactId>bcpkix-jdk18on</artifactId>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15on</artifactId>
+            <artifactId>bcutil-jdk18on</artifactId>
         </dependency>
 
         <dependency>
@@ -307,8 +302,16 @@
             <artifactId>jersey-container-servlet-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-servlet</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.glassfish.jersey.inject</groupId>
             <artifactId>jersey-hk2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-sse</artifactId>
         </dependency>
         <dependency>
             <groupId>org.glassfish.hk2</groupId>
@@ -449,14 +452,24 @@
             <artifactId>acme4j-client</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.shredzone.acme4j</groupId>
-            <artifactId>acme4j-utils</artifactId>
+            <groupId>io.castle</groupId>
+            <artifactId>castle-java</artifactId>
         </dependency>
 
         <!-- test-only deps -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -480,6 +493,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-inline</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.elasticsearch.test</groupId>
             <artifactId>framework</artifactId>
             <scope>test</scope>
@@ -490,9 +508,59 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.almworks.sqlite4java</groupId>
+            <artifactId>sqlite4java</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.almworks.sqlite4java</groupId>
+            <artifactId>sqlite4java-win32-x86</artifactId>
+            <type>dll</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.almworks.sqlite4java</groupId>
+            <artifactId>sqlite4java-win32-x64</artifactId>
+            <type>dll</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.almworks.sqlite4java</groupId>
+            <artifactId>libsqlite4java-osx</artifactId>
+            <type>dylib</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.almworks.sqlite4java</groupId>
+            <artifactId>libsqlite4java-linux-i386</artifactId>
+            <type>so</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.almworks.sqlite4java</groupId>
+            <artifactId>libsqlite4java-linux-amd64</artifactId>
+            <type>so</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.ganadist.sqlite4java</groupId>
+            <artifactId>libsqlite4java-osx-aarch64</artifactId>
+            <type>dylib</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.elasticsearch.plugin</groupId>
             <artifactId>transport-netty4-client</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-handler</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jooq</groupId>
@@ -506,7 +574,7 @@
             <extension>
                 <groupId>kr.motd.maven</groupId>
                 <artifactId>os-maven-plugin</artifactId>
-                <version>1.7.0</version>
+                <version>1.7.1</version>
             </extension>
         </extensions>
         <plugins>
@@ -668,11 +736,19 @@
                     <argLine>@{argLine} -Xmx1024m</argLine>
                     <trimStackTrace>false</trimStackTrace>
                     <useFile>false</useFile>
+                    <systemPropertyVariables>
+                        <sqlite4java.library.path>${project.build.directory}/native-libs</sqlite4java.library.path>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <sqlite4java.library.path>${project.build.directory}/native-libs</sqlite4java.library.path>
+                    </systemPropertyVariables>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>com.github.alexcojocaru</groupId>
@@ -683,7 +759,8 @@
                     <transportPort>9300</transportPort>
                     <httpPort>9200</httpPort>
                     <skip>${skipTests}${skipITs}</skip>
-                    <timeout>120</timeout>
+                    <instanceStartupTimeout>120</instanceStartupTimeout>
+                    <clusterStartupTimeout>120</clusterStartupTimeout>
                     <instanceCount>1</instanceCount>
                     <instanceSettings>
                         <properties>
@@ -717,10 +794,18 @@
                     <images>
                         <image>
                             <alias>mysql-db</alias>
-                            <name>mysql:5.7</name>
+                            <name>mysql:5.7@sha256:2c23f254c6b9444ecda9ba36051a9800e8934a2f5828ecc8730531db8142af83
+                            </name>
+                            <build>
+                                <createImageOptions>
+                                    <platform>${docker.platform}</platform>
+                                </createImageOptions>
+                            </build>
                             <run>
+                                <platform>${docker.platform}</platform>
                                 <cmd>
                                     mysqld
+                                    --port=3306
                                     --sql-mode=IGNORE_SPACE
                                     --explicit-defaults-for-timestamp
                                     --secure-file-priv=/tmp
@@ -750,8 +835,14 @@
                         </image>
                         <image>
                             <alias>killbill-engine</alias>
-                            <name>killbill/killbill:0.22.20</name>
+                            <name>killbill/killbill:0.22.32</name>
+                            <build>
+                                <createImageOptions>
+                                    <platform>${docker.platform}</platform>
+                                </createImageOptions>
+                            </build>
                             <run>
+                                <platform>${docker.platform}</platform>
                                 <links>
                                     <link>mysql-db</link>
                                 </links>
@@ -801,8 +892,14 @@
                         </image>
                         <image>
                             <alias>aws-services</alias>
-                            <name>localstack/localstack-full</name>
+                            <name>localstack/localstack:0.14.3</name>
+                            <build>
+                                <createImageOptions>
+                                    <platform>${docker.platform}</platform>
+                                </createImageOptions>
+                            </build>
                             <run>
+                                <platform>${docker.platform}</platform>
                                 <env>
                                     <LOCALSTACK_HOSTNAME>localhost</LOCALSTACK_HOSTNAME>
                                     <HOSTNAME_EXTERNAL>s3.localhost.localstack.cloud</HOSTNAME_EXTERNAL>
@@ -934,6 +1031,32 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-native-libs</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/native-libs</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${user.home}/.m2/repository/com/almworks/sqlite4java/</directory>
+                                    <includes>
+                                        <include>**/*.dll</include>
+                                        <include>**/*.dylib</include>
+                                        <include>**/*.so</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
@@ -944,7 +1067,7 @@
                         </goals>
                         <configuration>
                             <includeTypes>dylib,dll,so</includeTypes>
-                            <outputDirectory>${project.build.directory}/native-lib</outputDirectory>
+                            <outputDirectory>${project.build.directory}/native-libs</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>

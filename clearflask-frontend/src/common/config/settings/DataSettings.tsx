@@ -1,14 +1,14 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import { Button, Checkbox, Collapse, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel, Table, TableBody, TableCell, TableHead, TableRow, TextField } from '@material-ui/core';
-import { createStyles, Theme, WithStyles, withStyles } from '@material-ui/core/styles';
+import { Theme, WithStyles, createStyles, withStyles } from '@material-ui/core/styles';
 import UploadIcon from '@material-ui/icons/CloudUpload';
 import FileIcon from '@material-ui/icons/InsertDriveFile';
 import download from 'downloadjs';
-import { withSnackbar, WithSnackbarProps } from 'notistack';
-import React, { Component } from 'react';
+import { WithSnackbarProps, withSnackbar } from 'notistack';
+import { Component } from 'react';
 import Dropzone from 'react-dropzone';
-import { connect, Provider } from 'react-redux';
+import { Provider, connect } from 'react-redux';
 import { RouteComponentProps, withRouter } from 'react-router';
 import * as Admin from '../../../api/admin';
 import { Server } from '../../../api/server';
@@ -17,7 +17,7 @@ import { CategorySelectWithConnect } from '../../../app/comps/CategorySelect';
 import SelectionPicker, { Label } from '../../../app/comps/SelectionPicker';
 import { NeedHelpInviteTeammate, Section } from '../../../site/dashboard/ProjectSettings';
 import UserSelection from '../../../site/dashboard/UserSelection';
-import { contentScrollApplyStyles, Orientation } from '../../ContentScroll';
+import { Orientation, contentScrollApplyStyles } from '../../ContentScroll';
 import SubmitButton from '../../SubmitButton';
 import { csvPreviewLines } from '../../util/csvUtil';
 import { getTimezoneOffsetInMin } from '../../util/dateUtil';
@@ -162,7 +162,7 @@ class DataSettings extends Component<Props & ConnectProps & WithStyles<typeof st
                   })
                   if (acceptedFiles.length > 0) {
                     const acceptedFile = acceptedFiles[0];
-                    if (!acceptedFile.name.toLowerCase().endsWith(".csv")) {
+                    if (!acceptedFile.name?.toLowerCase().endsWith(".csv")) {
                       this.props.enqueueSnackbar(
                         `${acceptedFile.name}: File type must be of type .csv`,
                         { variant: 'error' });

@@ -17,6 +17,7 @@ import com.smotana.clearflask.web.security.AuthenticationFilter;
 import io.sentry.Sentry;
 import lombok.extern.slf4j.Slf4j;
 import org.glassfish.hk2.api.ServiceLocator;
+import org.glassfish.jersey.media.sse.SseFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.jvnet.hk2.guice.bridge.api.GuiceBridge;
@@ -42,17 +43,36 @@ public class Application extends ResourceConfig {
         @DefaultValue("false")
         boolean startupWaitUntilDeps();
 
-        /** Create Global ElasticSearch and/or Mysql indexes/tables on app startup */
+        /**
+         * Create Global ElasticSearch/Mysql,Dynamo indexes/tables on app startup
+         */
         @DefaultValue("false")
         boolean createIndexesOnStartup();
 
-        /** Unless otherwise override by below force config or project-specific value, this takes effect */
+        /**
+         * Unless otherwise override by below force config or project-specific value, this takes effect
+         */
         @DefaultValue("READWRITE_ELASTICSEARCH")
         SearchEngine defaultSearchEngine();
 
-        /** Force engine regardless of default or project-specific value, this takes effect if set */
+        /**
+         * Force engine regardless of default or project-specific value, this takes effect if set
+         */
         @NoDefaultValue(innerType = SearchEngine.class)
         Optional<SearchEngine> forceSearchEngine();
+
+        /**
+         * Determines whether telemetry is sent back to ClearFlask for usage and support purposes.
+         * Intended for self-hosted instances.
+         */
+        @DefaultValue("true")
+        boolean enableTelemetry();
+
+        /**
+         * Average customer's timezone.
+         */
+        @DefaultValue("America/New_York")
+        String zoneId();
     }
 
     @Inject
@@ -61,13 +81,17 @@ public class Application extends ResourceConfig {
 
         Injector injector = ServiceInjector.INSTANCE.get();
 
-        log.info("Initializing Sentry");
+        Config config = injector.getInstance(Config.class);
         ServiceInjector.Environment env = injector.getInstance(ServiceInjector.Environment.class);
-        Sentry.init(options -> {
-            options.setEnvironment(env.name());
-            options.setTracesSampleRate(env.isProduction() ? 0.1d : 1d);
-            options.setDsn("https://600460a790e34b3e884ebe25ed26944d@o934836.ingest.sentry.io/5884409");
-        });
+        if (config.enableTelemetry()) {
+            log.info("Initializing Sentry");
+            Sentry.init(options -> {
+                options.setEnvironment(env.name());
+                options.setSampleRate(1d);
+                options.setTracesSampleRate(1d);
+                options.setDsn("https://600460a790e34b3e884ebe25ed26944d@o934836.ingest.sentry.io/5884409");
+            });
+        }
 
         log.info("Initializing Application");
         // Register specific resources that are enabled via Guice bindings
@@ -77,6 +101,7 @@ public class Application extends ResourceConfig {
         register(AuthenticationFilter.class);
         register(RolesAllowedDynamicFeature.class);
         register(LimiterDynamicFeature.class);
+        register(SseFeature.class);
 
         log.info("Initializing HK2-Guice bridge");
         GuiceBridge.getGuiceBridge().initializeGuiceBridge(serviceLocator);

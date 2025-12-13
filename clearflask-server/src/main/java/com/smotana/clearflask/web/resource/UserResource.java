@@ -12,6 +12,7 @@ import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.smotana.clearflask.antispam.AntiSpam;
 import com.smotana.clearflask.api.UserAdminApi;
 import com.smotana.clearflask.api.UserApi;
 import com.smotana.clearflask.api.model.ConfigAdmin;
@@ -113,6 +114,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     private Billing billing;
     @Inject
     private UserBindUtil userBindUtil;
+    @Inject
+    private AntiSpam antiSpam;
 
     @PermitAll
     @Limit(requiredPermits = 100, challengeAfter = 3)
@@ -162,6 +165,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 100)
     @Override
     public UserCreateResponse userCreate(String projectId, UserCreate userCreate) {
+        antiSpam.onUserSignup(request, projectId, userCreate);
         if (!Strings.isNullOrEmpty(userCreate.getName())) {
             sanitizer.userName(userCreate.getName());
         }

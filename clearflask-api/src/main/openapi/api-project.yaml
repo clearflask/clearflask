@@ -69,7 +69,7 @@ components:
               items:
                 type: string
         noIndex:
-          x-clearflask-prop: { order: 6, name: 'Search indexing', description: 'Whether you want to have your page indexed and shown publicly on search results including Google Search. For private projects, no content behind the login page will be indexed. Keep in mind this is simply an indication to crawler bots and we do not have final control over whether they respect it.', falseAsUndefined: true, trueLabel: 'Not indexed', falseLabel: 'Indexed' }
+          x-clearflask-prop: { order: 6, name: 'Disable search indexing', description: 'Whether you want to have your page indexed and shown publicly on search results including Google Search. For private projects, no content behind the login page will be indexed. Keep in mind this is simply an indication to crawler bots and we do not have final control over whether they respect it.', falseAsUndefined: true, trueLabel: 'Indexing disabled', falseLabel: 'Indexing enabled' }
           type: boolean
         cookieConsent:
           $ref: 'api-project.yaml#/components/schemas/cookieConsent'
@@ -178,7 +178,6 @@ components:
           type: string
           enum: [ Public, Private ]
         accountFields:
-          x-clearflask-hide: true
           x-clearflask-prop: { order: 2, name: 'Account fields', description: 'List of fields to collect during sign-up. It is recommended to keep this at a minimum to minimize friction.' }
           title: AccountFields
           type: object
@@ -875,13 +874,16 @@ components:
       x-clearflask-page: { order: 2, name: 'Google Analytics', description: 'Add Google Analytics tracking' }
       title: GoogleAnalytics
       type: object
-      required:
-        - trackingCode
       properties:
         trackingCode:
-          x-clearflask-prop: { order: 0, name: 'Tracking Code', description: 'Visit Google Analytics, create a new Universal Analytics property and paste your tracking code here. Support for Google Analytics V4 with codes in the format G-XXXXXXXXXX is coming soon.', placeholder: 'UA-000000000' }
+          x-clearflask-prop: { order: 0, name: 'Tracking Code (Deprecated Universal Analytics)', description: 'Visit Google Analytics, create a new Universal Analytics property and paste your tracking code here. Support for Google Analytics V4 with codes in the format G-XXXXXXXXXX is coming soon.', placeholder: 'UA-000000000' }
+          x-clearflask-hide: true
           type: string
           pattern: '^UA-.*$'
+        trackingCodeV4:
+          x-clearflask-prop: { order: 0, name: 'Tracking Code', description: 'Visit Google Analytics, create a new property and paste your tracking code here.', placeholder: 'G-XXXXXXXXXX' }
+          type: string
+          pattern: '^G-.+$'
     hotjar:
       x-clearflask-page: { order: 2, name: 'Hotjar', description: 'Add HotJar monitoring' }
       title: Hotjar

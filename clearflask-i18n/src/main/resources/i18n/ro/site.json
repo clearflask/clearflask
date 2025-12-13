@@ -220,5 +220,7 @@
   "blog": "Blog",
   "cookie-consent": "Consimțământ cookie",
   "free-forever": "Gratuit pentru totdeauna",
-  "you-have-unsaved-changes": "Aveți modificări nesalvate"
+  "you-have-unsaved-changes": "Aveți modificări nesalvate",
+  "empty": "Golire",
+  "notifications": "Notificări"
 }

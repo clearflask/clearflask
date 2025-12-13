@@ -1,6 +1,15 @@
 // SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
-import { Button, Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, FormControlLabel } from '@material-ui/core';
+import {
+    Button,
+    Checkbox,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    FormControlLabel,
+} from '@material-ui/core';
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles';
 import classNames from 'classnames';
 import React, { useImperativeHandle, useRef, useState } from 'react';
@@ -49,11 +58,11 @@ const FirstTimeNotice = React.forwardRef((props: {
           ServerAdmin.get().dispatchAdmin().then(dispatcher => dispatcher.accountAttrsUpdateAdmin({
             accountAttrsUpdateAdmin: {
               attrs: { [dialogId]: newNoticeStatus },
-            }
+            },
           }));
       }
       return dialogResult.confirmed;
-    }
+    },
   }), [isHidden, noticeStatus]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isHiddenOnFirstRender.current) return null;
@@ -73,12 +82,12 @@ const FirstTimeNotice = React.forwardRef((props: {
       </DialogContent>
       <DialogActions>
         <FormControlLabel
-          label='Do not show this message again'
+          label="Do not show this message again"
           className={classes.dontShowAgainCheckbox}
           control={(
             <Checkbox
-              size='small'
-              color='default'
+              size="small"
+              color="default"
               checked={dontShowAgain}
               onChange={e => setDontShowAgain(!dontShowAgain)}
             />
@@ -86,8 +95,8 @@ const FirstTimeNotice = React.forwardRef((props: {
         />
         <Button onClick={() => dialogConfirm(false)}>Back</Button>
         <Button onClick={() => dialogConfirm(true)}
-          color={props.confirmButtonRed ? undefined : 'primary'}
-          className={classNames(props.confirmButtonRed && classes.dontShowAgainCheckboxRed)}
+                color={props.confirmButtonRed ? undefined : 'primary'}
+                className={classNames(props.confirmButtonRed && classes.dontShowAgainCheckboxRed)}
         >{props.confirmButtonTitle || 'Continue'}</Button>
       </DialogActions>
     </Dialog>

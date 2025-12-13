@@ -6,6 +6,7 @@ import { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { ReduxState, Status } from '../api/server';
+import { detectEnv, Environment } from '../common/util/detectEnv';
 import TemplateLiquid from './comps/TemplateLiquid';
 import PoweredBy from './PoweredBy';
 
@@ -35,22 +36,28 @@ const styles = (theme: Theme) => createStyles({
     justifyContent: 'center',
   },
 });
+
 interface Props {
   customPageSlug?: string;
+  hideFooterContent?: boolean;
   isFrontPage?: boolean;
   pageSlug?: string;
 }
+
 interface ConnectProps {
   configver?: string;
   config?: Client.Config;
   page?: Client.Page;
+  isMod: boolean;
 }
+
 class Footer extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
   render() {
-    var footerTemplate = (this.props.config?.style.templates?.pageFooters || []).find(p => p.pageId === this.props.page?.pageId)?.template
+    const isSelfHost = detectEnv() === Environment.PRODUCTION_SELF_HOST;
+    var footerTemplate = (this.props.config?.style.templates?.pageFooters || []).find(p => !!p && p.pageId === this.props.page?.pageId)?.template
       || this.props.config?.style.templates?.footer;
     var footer;
-    if (footerTemplate) {
+    if (!this.props.hideFooterContent && footerTemplate) {
       footer = (
         <TemplateLiquid
           template={footerTemplate}
@@ -59,8 +66,8 @@ class Footer extends Component<Props & ConnectProps & WithStyles<typeof styles, 
       );
     }
 
-    const hidePoweredBy = this.props.config?.style.whitelabel.poweredBy === Client.WhitelabelPoweredByEnum.Hidden
-      || (this.props.config?.style.whitelabel.poweredBy === Client.WhitelabelPoweredByEnum.Minimal && !this.props.isFrontPage);
+    const hidePoweredBy = this.props.isMod || (this.props.config?.style.whitelabel.poweredBy === Client.WhitelabelPoweredByEnum.Hidden
+      || (this.props.config?.style.whitelabel.poweredBy === Client.WhitelabelPoweredByEnum.Minimal && !this.props.isFrontPage)) && !isSelfHost;
 
     return (
       <>
@@ -82,6 +89,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     configver: state.conf.ver, // force rerender on config change
     config: state.conf.conf,
     page: undefined,
+    isMod: !!state.users.loggedIn.user?.isMod,
   };
 
   if (!!ownProps.pageSlug && state.conf.status === Status.FULFILLED && !!state.conf.conf) {

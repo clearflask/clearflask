@@ -22,7 +22,9 @@ public class StripeClientSetup extends ManagedService {
         @NoDefaultValue
         String stripeApiKey();
 
-        /** For testing only */
+        /**
+         * For testing only
+         */
         @NoDefaultValue
         String overrideBaseUrl();
     }

@@ -3,29 +3,11 @@
 package com.smotana.clearflask.store.impl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.document.DynamoDB;
-import com.amazonaws.services.dynamodbv2.document.ItemUtils;
-import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
-import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
-import com.amazonaws.services.dynamodbv2.document.TableKeysAndAttributes;
-import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
-import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
-import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
-import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
-import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
-import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
+import com.amazonaws.services.dynamodbv2.document.*;
+import com.amazonaws.services.dynamodbv2.document.spec.*;
 import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
-import com.amazonaws.services.dynamodbv2.model.Delete;
-import com.amazonaws.services.dynamodbv2.model.Put;
-import com.amazonaws.services.dynamodbv2.model.ReturnValue;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanResult;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.amazonaws.services.dynamodbv2.model.Update;
+import com.amazonaws.services.dynamodbv2.model.*;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.cache.Cache;
@@ -38,11 +20,8 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.gson.Gson;
-import com.google.inject.AbstractModule;
-import com.google.inject.Inject;
+import com.google.inject.*;
 import com.google.inject.Module;
-import com.google.inject.Provider;
-import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
@@ -69,12 +48,7 @@ import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
-import io.dataspray.singletable.Expression;
-import io.dataspray.singletable.ExpressionBuilder;
-import io.dataspray.singletable.IndexSchema;
-import io.dataspray.singletable.ShardPageResult;
-import io.dataspray.singletable.SingleTable;
-import io.dataspray.singletable.TableSchema;
+import io.dataspray.singletable.*;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -95,20 +69,16 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.jooq.DSLContext;
 import org.jooq.Query;
-import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -445,11 +415,6 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     }
 
     @Override
-    public SearchAccountsResponse listAccounts(boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt) {
-        return searchAccounts(Optional.empty(), useAccurateCursor, cursorOpt, pageSizeOpt);
-    }
-
-    @Override
     public void listAllAccounts(Consumer<Account> consumer) {
         Optional<String> cursorOpt = Optional.empty();
         do {
@@ -482,13 +447,24 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
 
     @Override
     public SearchAccountsResponse searchAccounts(AccountSearchSuperAdmin accountSearchSuperAdmin, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt) {
-        return searchAccounts(Optional.ofNullable(Strings.emptyToNull(accountSearchSuperAdmin.getSearchText())), useAccurateCursor, cursorOpt, pageSizeOpt);
-    }
 
-    private SearchAccountsResponse searchAccounts(Optional<String> searchTextOpt, boolean useAccurateCursor, Optional<String> cursorOpt, Optional<Integer> pageSizeOpt) {
+        final Optional<String> searchTextOpt = Optional.ofNullable(Strings.emptyToNull(accountSearchSuperAdmin.getSearchText()));
+
         final Stream<String> accountIdsStream;
         final Optional<String> cursorOptNext;
         if (configApp.defaultSearchEngine().isReadElastic()) {
+            if (accountSearchSuperAdmin.getFilterPlanid() != null && !accountSearchSuperAdmin.getFilterPlanid().isEmpty()) {
+                log.error("searchAccounts filtering by planid is not supported in elastic search");
+            }
+            if (accountSearchSuperAdmin.getFilterStatus() != null && !accountSearchSuperAdmin.getFilterStatus().isEmpty()) {
+                log.error("searchAccounts filtering by status is not supported in elastic search");
+            }
+            if (accountSearchSuperAdmin.getFilterCreatedStart() != null) {
+                log.error("searchAccounts filtering by created start is not supported in elastic search");
+            }
+            if (accountSearchSuperAdmin.getFilterCreatedEnd() != null) {
+                log.error("searchAccounts filtering by created end is not supported in elastic search");
+            }
             QueryBuilder queryBuilder;
             if (searchTextOpt.isPresent()) {
                 queryBuilder = QueryBuilders.multiMatchQuery(searchTextOpt.get(),
@@ -518,11 +494,25 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
             int pageSize = mysqlUtil.pageSizeMax(configSearch, pageSizeOpt);
             List<String> accountIds = mysql.get().select(JooqAccount.ACCOUNT.ACCOUNTID)
                     .from(JooqAccount.ACCOUNT)
-                    .where(searchTextOpt.map(searchText ->
+                    .where(mysqlUtil.and(
+                            searchTextOpt.map(searchText ->
                                     JooqAccount.ACCOUNT.EMAIL.likeIgnoreCase("%" + searchTextOpt.get() + "%")
                                             .or(JooqAccount.ACCOUNT.NAME.likeIgnoreCase("%" + searchTextOpt.get() + "%"))
-                                            .or(JooqAccount.ACCOUNT.PLANID.likeIgnoreCase("%" + searchTextOpt.get() + "%")))
-                            .orElseGet(DSL::noCondition))
+                                            .or(JooqAccount.ACCOUNT.PLANID.likeIgnoreCase("%" + searchTextOpt.get() + "%"))),
+                            Optional.ofNullable(accountSearchSuperAdmin.getFilterCreatedStart())
+                                    .map(JooqAccount.ACCOUNT.CREATED::greaterOrEqual),
+                            Optional.ofNullable(accountSearchSuperAdmin.getFilterCreatedEnd())
+                                    .map(JooqAccount.ACCOUNT.CREATED::lessOrEqual),
+                            Optional.ofNullable(accountSearchSuperAdmin.getFilterPlanid())
+                                    .filter(Predicate.not(List::isEmpty))
+                                    .map(Boolean.TRUE.equals(accountSearchSuperAdmin.getInvertPlanid())
+                                            ? JooqAccount.ACCOUNT.PLANID::notIn
+                                            : JooqAccount.ACCOUNT.PLANID::in),
+                            Optional.ofNullable(accountSearchSuperAdmin.getFilterStatus())
+                                    .filter(Predicate.not(List::isEmpty))
+                                    .map(Boolean.TRUE.equals(accountSearchSuperAdmin.getInvertStatus())
+                                            ? JooqAccount.ACCOUNT.STATUS::notIn
+                                            : JooqAccount.ACCOUNT.STATUS::in)))
                     .offset(offset)
                     .limit(pageSize)
                     .fetch(JooqAccount.ACCOUNT.ACCOUNTID);
@@ -580,6 +570,10 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     }
 
     @Extern
+    public String setPlan(String accountId, String planid) {
+        return setPlan(accountId, planid, Optional.empty()).getAccount().toString();
+    }
+
     @Override
     public AccountAndIndexingFuture setPlan(String accountId, String planid, Optional<ImmutableMap<String, String>> addonsOpt) {
         ExpressionBuilder expressionBuilder = accountSchema.expressionBuilder();
@@ -1050,6 +1044,63 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
             accountCache.put(accountId, Optional.of(account));
             return account;
         }
+    }
+
+    @Override
+    public Account setWeeklyDigestOptOut(String accountId, ImmutableSet<String> digestOptOutForProjectIds) {
+        ExpressionBuilder expressionBuilder = accountSchema.expressionBuilder().conditionExists();
+        if (digestOptOutForProjectIds.isEmpty()) {
+            expressionBuilder.remove("digestOptOutForProjectIds");
+        } else {
+            expressionBuilder.set("digestOptOutForProjectIds", digestOptOutForProjectIds);
+        }
+        Expression expression = expressionBuilder.build();
+        Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+                        .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
+                        .withConditionExpression(expression.conditionExpression().orElse(null))
+                        .withUpdateExpression(expression.updateExpression().orElse(null))
+                        .withNameMap(expression.nameMap().orElse(null))
+                        .withValueMap(expression.valMap().orElse(null))
+                        .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem());
+        accountCache.put(accountId, Optional.of(account));
+        return account;
+    }
+
+    @Override
+    public Account setTrialReminderSent(String accountId) {
+        Expression expression = accountSchema.expressionBuilder()
+                .conditionExists()
+                .set("trialEndingReminderSent", true)
+                .build();
+        Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+                        .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
+                        .withConditionExpression(expression.conditionExpression().orElse(null))
+                        .withUpdateExpression(expression.updateExpression().orElse(null))
+                        .withNameMap(expression.nameMap().orElse(null))
+                        .withValueMap(expression.valMap().orElse(null))
+                        .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem());
+        accountCache.put(accountId, Optional.of(account));
+        return account;
+    }
+
+    @Override
+    public Account setProjectDeletionReminderSent(String accountId) {
+        Expression expression = accountSchema.expressionBuilder()
+                .conditionExists()
+                .set("projectDeletionReminderSent", Instant.now())
+                .build();
+        Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+                        .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
+                        .withConditionExpression(expression.conditionExpression().orElse(null))
+                        .withUpdateExpression(expression.updateExpression().orElse(null))
+                        .withNameMap(expression.nameMap().orElse(null))
+                        .withValueMap(expression.valMap().orElse(null))
+                        .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem());
+        accountCache.put(accountId, Optional.of(account));
+        return account;
     }
 
     @Extern

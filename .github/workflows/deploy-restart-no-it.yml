@@ -1,0 +1,54 @@
+name: Deploy & Restart (Skip ITs)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'corretto'
+          architecture: x64
+      - name: Cache local Maven repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      - name: Setup FFmpeg
+        uses: FedericoCarboni/setup-ffmpeg@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup SSH key for running instances
+        shell: bash
+        run: |
+          mkdir -p ~/.ssh/
+          cat <<EOF >~/.ssh/id_gh_action.pem
+          ${{ secrets.SSH_PRIVATE_KEY_EC2 }}
+          EOF
+          sudo chmod 600 ~/.ssh/id_gh_action.pem
+          cat <<EOF >>~/.ssh/config
+          Host ec2-*.compute*.amazonaws.com
+            IdentityFile ~/.ssh/id_gh_action.pem
+            User ec2-user
+            StrictHostKeyChecking no
+          EOF
+          sudo chmod 600 ~/.ssh/config
+      - name: Maven build
+        timeout-minutes: 60
+        run: mvn clean install -DskipITs
+      - name: Add profile credentials to ~/.aws/credentials
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }} --profile clearflask
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }} --profile clearflask
+          aws configure set region ${{ secrets.AWS_DEFAULT_REGION }} --profile clearflask
+      - name: Maven deploy
+        timeout-minutes: 60
+        run: |
+          AWS_PROFILE=clearflask make deploy-singlehost

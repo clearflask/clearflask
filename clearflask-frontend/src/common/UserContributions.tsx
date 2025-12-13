@@ -16,6 +16,8 @@ interface Props {
   sectionClassName?: string;
   userId: string;
   server: Server;
+  onClickPost?: (postId: string) => void;
+  onUserClick?: (userId: string) => void;
 }
 class UserContributions extends React.Component<Props & WithTranslation<'app'> & RouteComponentProps & WithStyles<typeof styles, true>> {
   render() {
@@ -43,6 +45,14 @@ class UserContributions extends React.Component<Props & WithTranslation<'app'> &
           className={this.props.sectionClassName}
           server={this.props.server}
           panel={postsPanel}
+          PanelPostProps={{
+            ...(!this.props.onClickPost ? {} : {
+              onClickPost: postId => this.props.onClickPost?.(postId),
+            }),
+            ...(!this.props.onUserClick ? {} : {
+              onUserClick: userId => this.props.onUserClick?.(userId),
+            }),
+          }}
         />
         <PanelComment
           className={this.props.sectionClassName}
@@ -53,6 +63,16 @@ class UserContributions extends React.Component<Props & WithTranslation<'app'> &
           direction={Direction.Horizontal}
           hideAuthor
           hideIfEmpty
+          CommentProps={{
+            ...(!this.props.onClickPost ? {} : {
+              onClickPost: postId => this.props.onClickPost?.(postId),
+              linkToPost: false,
+              onCommentClick: comment=> this.props.onClickPost?.(comment.ideaId),
+            }),
+            ...(!this.props.onUserClick ? {} : {
+              onAuthorClick: userId => this.props.onUserClick?.(userId),
+            }),
+          }}
         />
       </>
     );

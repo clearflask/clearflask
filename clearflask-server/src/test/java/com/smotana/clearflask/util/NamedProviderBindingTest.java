@@ -3,14 +3,7 @@
 package com.smotana.clearflask.util;
 
 import com.google.common.base.Suppliers;
-import com.google.inject.AbstractModule;
-import com.google.inject.CreationException;
-import com.google.inject.Guice;
-import com.google.inject.Inject;
-import com.google.inject.Injector;
-import com.google.inject.Key;
-import com.google.inject.Singleton;
-import com.google.inject.TypeLiteral;
+import com.google.inject.*;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import lombok.extern.slf4j.Slf4j;
