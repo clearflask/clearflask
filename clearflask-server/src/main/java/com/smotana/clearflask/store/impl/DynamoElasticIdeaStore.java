@@ -264,6 +264,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 .column("trendScore", SQLDataType.DOUBLE)
                 .column("mergedToPostId", SQLDataType.VARCHAR(ID_MAX_LENGTH))
                 .column("order", SQLDataType.DOUBLE)
+                .column("visibility", SQLDataType.VARCHAR(20))
                 .primaryKey("projectId", "postId")
                 .execute();
         mysqlUtil.createIndexIfNotExists(mysql.get().createIndex().on(JooqIdea.IDEA, JooqIdea.IDEA.PROJECTID));
@@ -360,6 +361,8 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                                         "type", "keyword"))
                                 .put("order", ImmutableMap.of(
                                         "type", "double"))
+                                .put("visibility", ImmutableMap.of(
+                                        "type", "keyword"))
                                 .build())), XContentType.JSON),
                 RequestOptions.DEFAULT,
                 ActionListeners.fromFuture(indexingFuture, elasticUtil::isIndexAlreadyExistsException));
@@ -477,6 +480,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         ideaRecord.setTrendscore(idea.getTrendScore());
         ideaRecord.setMergedtopostid(idea.getMergedToPostId());
         ideaRecord.setOrder(idea.getOrder());
+        ideaRecord.setVisibility(idea.getVisibility() == null ? null : idea.getVisibility().getValue());
 
         Stream<JooqIdeaTagsRecord> tagRecords = idea.getTagIds().stream().map(tagId -> JooqIdeaTags.IDEA_TAGS.newRecord().values(
                 idea.getProjectId(),
@@ -528,6 +532,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                         // not easy to fallback to a value of created unless
                         // script sorting is used.
                         .put("order", idea.getOrderOrDefault())
+                        .put("visibility", orNull(idea.getVisibility() == null ? null : idea.getVisibility().getValue()))
                         .build()), XContentType.JSON);
         if (setRefreshPolicy) {
             req.setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL);
@@ -918,7 +923,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                     Optional.ofNullable(ideaHistogramSearchAdmin.getFilterCreatedStart()),
                     Optional.ofNullable(ideaHistogramSearchAdmin.getFilterCreatedEnd()),
                     Optional.ofNullable(ideaHistogramSearchAdmin.getInterval()),
-                    Optional.of(searchIdeasQuery(ideaSearchAdmin, Optional.empty())));
+                    Optional.of(searchIdeasQuery(ideaSearchAdmin, Optional.empty(), false))); // histogram is admin-only, show all
         } else {
             return mysqlUtil.histogram(
                     JooqIdea.IDEA,
@@ -927,7 +932,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                     Optional.ofNullable(ideaHistogramSearchAdmin.getFilterCreatedStart()),
                     Optional.ofNullable(ideaHistogramSearchAdmin.getFilterCreatedEnd()),
                     Optional.ofNullable(ideaHistogramSearchAdmin.getInterval()),
-                    Optional.of(searchIdeasCondition(projectId, ideaSearchAdmin, Optional.empty())));
+                    Optional.of(searchIdeasCondition(projectId, ideaSearchAdmin, Optional.empty(), false))); // histogram is admin-only, show all
         }
     }
 
@@ -955,12 +960,13 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                         null),
                 requestorUserIdOpt,
                 false,
+                true, // excludePrivate: true for regular users
                 cursorOpt);
     }
 
     @Override
     public SearchResponse searchIdeas(String projectId, IdeaSearchAdmin ideaSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt) {
-        return searchIdeas(projectId, ideaSearchAdmin, Optional.empty(), useAccurateCursor, cursorOpt);
+        return searchIdeas(projectId, ideaSearchAdmin, Optional.empty(), useAccurateCursor, false, cursorOpt); // excludePrivate: false for admins
     }
 
     @Value
@@ -973,7 +979,8 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     private SearchIdeasConditions searchIdeasCondition(
             String projectId,
             IdeaSearchAdmin ideaSearchAdmin,
-            Optional<String> requestorUserIdOpt) {
+            Optional<String> requestorUserIdOpt,
+            boolean excludePrivate) {
         List<Condition> conditions = Lists.newArrayList();
         List<Condition> conditionsRange = Lists.newArrayList();
         List<Join> joins = Lists.newArrayList();
@@ -1067,6 +1074,12 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         // Do not look up posts merged into other posts
         conditions.add(JooqIdea.IDEA.MERGEDTOPOSTID.isNull());
 
+        // Filter out private posts for non-admin users
+        if (excludePrivate) {
+            conditions.add(JooqIdea.IDEA.VISIBILITY.isNull()
+                    .or(JooqIdea.IDEA.VISIBILITY.ne(IdeaVisibility.PRIVATE.getValue())));
+        }
+
         return new SearchIdeasConditions(
                 mysqlUtil.and(conditions),
                 mysqlUtil.and(conditionsRange),
@@ -1075,7 +1088,8 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
 
     private QueryBuilder searchIdeasQuery(
             IdeaSearchAdmin ideaSearchAdmin,
-            Optional<String> requestorUserIdOpt) {
+            Optional<String> requestorUserIdOpt,
+            boolean excludePrivate) {
         BoolQueryBuilder query = QueryBuilders.boolQuery();
 
         if (ideaSearchAdmin.getFundedByMeAndActive() == Boolean.TRUE) {
@@ -1165,6 +1179,11 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         // Do not look up posts merged into other posts
         query.mustNot(QueryBuilders.existsQuery("mergedToPostId"));
 
+        // Filter out private posts for non-admin users
+        if (excludePrivate) {
+            query.mustNot(QueryBuilders.termQuery("visibility", IdeaVisibility.PRIVATE.getValue()));
+        }
+
         return query;
     }
 
@@ -1180,6 +1199,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
             IdeaSearchAdmin ideaSearchAdmin,
             Optional<String> requestorUserIdOpt,
             boolean useAccurateCursor,
+            boolean excludePrivate,
             Optional<String> cursorOpt) {
         if (!Strings.isNullOrEmpty(ideaSearchAdmin.getSimilarToIdeaId())
                 && !config.enableSimilarToIdea()) {
@@ -1205,7 +1225,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
 
         final SearchResponse searchResponse;
         if (projectStore.getSearchEngineForProject(projectId).isReadElastic()) {
-            QueryBuilder query = searchIdeasQuery(ideaSearchAdmin, requestorUserIdOpt);
+            QueryBuilder query = searchIdeasQuery(ideaSearchAdmin, requestorUserIdOpt, excludePrivate);
 
             Optional<SortOrder> sortOrderOpt;
             ImmutableList<String> sortFields;
@@ -1274,7 +1294,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                         searchResponseWithCursor.getSearchResponse().getHits().getTotalHits().relation == TotalHits.Relation.GREATER_THAN_OR_EQUAL_TO);
             }
         } else {
-            SearchIdeasConditions searchConditions = searchIdeasCondition(projectId, ideaSearchAdmin, requestorUserIdOpt);
+            SearchIdeasConditions searchConditions = searchIdeasCondition(projectId, ideaSearchAdmin, requestorUserIdOpt, excludePrivate);
 
             final ImmutableList<SortField<?>> sortFields;
             if (ideaSearchAdmin.getSortBy() != null
@@ -1579,6 +1599,16 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
             }
             if (searchEngine.isWriteMysql()) {
                 indexUpdatesMysql.setOrder(ideaUpdateAdmin.getOrder());
+            }
+        }
+        if (ideaUpdateAdmin.getVisibility() != null) {
+            updateItemSpec.addAttributeUpdate(new AttributeUpdate("visibility")
+                    .put(ideaSchema.toDynamoValue("visibility", ideaUpdateAdmin.getVisibility())));
+            if (searchEngine.isWriteElastic()) {
+                indexUpdatesElastic.put("visibility", ideaUpdateAdmin.getVisibility().getValue());
+            }
+            if (searchEngine.isWriteMysql()) {
+                indexUpdatesMysql.setVisibility(ideaUpdateAdmin.getVisibility().getValue());
             }
         }
 

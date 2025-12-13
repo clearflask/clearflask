@@ -160,6 +160,7 @@ interface State {
   draftFieldNotifyBody?: string;
   draftFieldLinkedFromPostIds?: string[];
   draftFieldCoverImage?: string;
+  draftFieldVisibility?: Admin.IdeaVisibility;
   tagSelectHasError?: boolean;
   isSubmitting?: boolean;
   adminControlsExpanded?: boolean;
@@ -238,6 +239,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithTranslation<'a
     if (this.props.mandatoryTagIds?.length) draft.tagIds = [...(draft.tagIds || []), ...this.props.mandatoryTagIds];
     if (this.state.draftFieldChosenStatusId !== undefined) draft.statusId = this.state.draftFieldChosenStatusId;
     if (draft.statusId && !selectedCategory.workflow.statuses.some(s => s.statusId === draft.statusId)) draft.statusId = undefined;
+    if (this.state.draftFieldVisibility !== undefined) draft.visibility = this.state.draftFieldVisibility;
     if (this.state.draftFieldNotifySubscribers !== undefined) draft.notifySubscribers = !this.state.draftFieldNotifySubscribers ? undefined : {
       title: this.props.t('new-category',{category: selectedCategory.name}),
       body: this.props.t('check-out-my-new-post',{post: draft.title || selectedCategory.name}),
@@ -279,6 +281,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithTranslation<'a
   renderRegularAndLarge(draft: Partial<Admin.IdeaDraftAdmin>, categoryOptions: Client.Category[], selectedCategory?: Client.Category, enableSubmit?: boolean) {
     const editCategory = this.renderEditCategory(draft, categoryOptions, selectedCategory, { className: this.props.classes.createFormField });
     const editStatus = this.renderEditStatus(draft, selectedCategory);
+    const editVisibility = this.renderEditVisibility(draft);
     const editUser = this.renderEditUser(draft, { className: this.props.classes.createFormField });
     const editTags = this.renderEditTags(draft, selectedCategory, { className: this.props.classes.createFormField });
     const editLinks = this.renderEditLinks(draft, { className: this.props.classes.createFormField });
@@ -330,6 +333,11 @@ class PostCreateForm extends Component<Props & ConnectProps & WithTranslation<'a
         {!!editUser && (
           <Grid item xs={this.props.type === 'large' ? 6 : 12} className={this.props.classes.createGridItem} justify='flex-end'>
             {editUser}
+          </Grid>
+        )}
+        {!!editVisibility && (
+          <Grid item xs={12} className={this.props.classes.createGridItem}>
+            {editVisibility}
           </Grid>
         )}
         {!!editNotify && (
@@ -445,6 +453,7 @@ class PostCreateForm extends Component<Props & ConnectProps & WithTranslation<'a
         },
       },
     });
+    const editVisibility = this.renderEditVisibility(draft);
     const editNotify = this.renderEditNotify(draft, selectedCategory);
     const editNotifyTitle = this.renderEditNotifyTitle(draft, selectedCategory, ({
       autoFocus: false,
@@ -477,6 +486,9 @@ class PostCreateForm extends Component<Props & ConnectProps & WithTranslation<'a
         )}
         {viewLinks}
         <div className={this.props.classes.postNotify}>
+          {!!editVisibility && (
+            <div>{editVisibility}</div>
+          )}
           {(!!editNotify || !!buttonLink) && (
             <div className={this.props.classes.postNotifyAndLink}>
               {editNotify}
@@ -596,6 +608,34 @@ class PostCreateForm extends Component<Props & ConnectProps & WithTranslation<'a
           this.setState({ draftFieldChosenStatusId: statusId }, () => this.stateAwait.decrementStateChange());
         }}
         {...StatusSelectProps}
+      />
+    );
+  }
+  renderEditVisibility(
+    draft: Partial<Admin.IdeaDraftAdmin>,
+    FormControlLabelProps?: Partial<React.ComponentProps<typeof FormControlLabel>>,
+    SwitchProps?: Partial<React.ComponentProps<typeof Switch>>,
+  ): React.ReactNode | null {
+    if (!this.showModOptions()) return null;
+    const isPrivate = draft.visibility === Admin.IdeaVisibility.Private;
+    return (
+      <FormControlLabel
+        disabled={this.state.isSubmitting}
+        control={(
+          <Switch
+            checked={isPrivate}
+            onChange={(e, checked) => {
+              this.stateAwait.incrementStateChange();
+              this.setState({
+                draftFieldVisibility: checked ? Admin.IdeaVisibility.Private : Admin.IdeaVisibility.Public,
+              }, () => this.stateAwait.decrementStateChange());
+            }}
+            color='primary'
+            {...SwitchProps}
+          />
+        )}
+        label={this.props.t('private-visible-to-admins-only')}
+        {...FormControlLabelProps}
       />
     );
   }

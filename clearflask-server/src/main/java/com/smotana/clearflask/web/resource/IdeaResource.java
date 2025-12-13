@@ -198,7 +198,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 ImmutableSet.of(),
                 ideaCreateAdmin.getOrder(),
                 null,
-                ideaCreateAdmin.getCoverImg());
+                ideaCreateAdmin.getCoverImg(),
+                ideaCreateAdmin.getVisibility());
         boolean votingAllowed = project.isVotingAllowed(VoteValue.Upvote, ideaModel.getCategoryId(), Optional.ofNullable(ideaModel.getStatusId()));
         try {
             if (votingAllowed) {
@@ -248,6 +249,15 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
         return ideaStore.getIdea(projectId, ideaId)
+                .filter(ideaModel -> {
+                    // Filter out private posts for non-admin users
+                    if (IdeaVisibility.PRIVATE.equals(ideaModel.getVisibility())) {
+                        return getExtendedPrincipal()
+                                .map(p -> p.isAdminLoggedIn() || p.isModLoggedIn())
+                                .orElse(false);
+                    }
+                    return true;
+                })
                 .map(ideaModel -> userOpt.map(user -> toIdeaWithVote(user, ideaModel))
                         .orElseGet(() -> ideaModel.toIdeaWithVote(
                                 IdeaVote.builder().build(),
@@ -263,9 +273,15 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
+        boolean isModOrAdmin = getExtendedPrincipal()
+                .map(p -> p.isAdminLoggedIn() || p.isModLoggedIn())
+                .orElse(false);
         ImmutableCollection<IdeaModel> ideaModels = ideaStore.getIdeas(projectId, ideaGetAll.getPostIds().stream()
                 .filter(Objects::nonNull)
-                .collect(ImmutableList.toImmutableList())).values();
+                .collect(ImmutableList.toImmutableList())).values().stream()
+                // Filter out private posts for non-admin users
+                .filter(ideaModel -> isModOrAdmin || !IdeaVisibility.PRIVATE.equals(ideaModel.getVisibility()))
+                .collect(ImmutableList.toImmutableList());
         return new IdeaGetAllResponse(userOpt.map(user -> toIdeasWithVotes(user, ideaModels))
                 .orElseGet(() -> ideaModels.stream()
                         .map(ideaModel -> ideaModel.toIdeaWithVote(
