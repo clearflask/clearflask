@@ -40,6 +40,7 @@ import com.smotana.clearflask.api.model.AccountSignupAdmin;
 import com.smotana.clearflask.api.model.AccountUpdateAdmin;
 import com.smotana.clearflask.api.model.AccountUpdateSuperAdmin;
 import com.smotana.clearflask.api.model.AllPlansGetResponse;
+import com.smotana.clearflask.api.model.AvailableJiraProjects;
 import com.smotana.clearflask.api.model.AvailableRepos;
 import com.smotana.clearflask.api.model.CouponGenerateSuperAdmin;
 import com.smotana.clearflask.api.model.InvitationResult;
@@ -71,6 +72,7 @@ import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.AccountStore.SearchAccountsResponse;
 import com.smotana.clearflask.store.GitHubStore;
+import com.smotana.clearflask.store.JiraStore;
 import com.smotana.clearflask.store.LegalStore;
 import com.smotana.clearflask.store.LocalLicenseStore;
 import com.smotana.clearflask.store.ProjectStore;
@@ -181,6 +183,8 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
     private ProjectStore projectStore;
     @Inject
     private GitHubStore gitHubStore;
+    @Inject
+    private JiraStore jiraStore;
     @Inject
     private CouponStore couponStore;
     @Inject
@@ -729,6 +733,17 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
                 .get();
 
         return gitHubStore.getReposForUser(accountId, code);
+    }
+
+    @RolesAllowed({Role.ADMINISTRATOR_ACTIVE})
+    @Limit(requiredPermits = 10, challengeAfter = 15)
+    @Override
+    public AvailableJiraProjects jiraGetProjectsAdmin(String code) {
+        String accountId = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .get();
+
+        return jiraStore.getProjectsForUser(accountId, code);
     }
 
     @RolesAllowed({Role.SUPER_ADMIN})

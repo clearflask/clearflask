@@ -77,6 +77,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     private WebhookService webhookService;
     @Inject
     private GitHubStore gitHubStore;
+    @Inject
+    private JiraStore jiraStore;
 
     @RolesAllowed({Role.PROJECT_USER})
     @Limit(requiredPermits = 30, challengeAfter = 20)
@@ -138,6 +140,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
 
         webhookService.eventPostNew(ideaModel, user);
         billing.recordUsage(UsageType.POST, project.getAccountId(), project.getProjectId(), user);
+        jiraStore.cfPostCreatedAsync(project, ideaModel, user);
         return ideaModel.toIdeaWithVote(
                 IdeaVote.builder().vote(votingAllowed ? VoteOption.UPVOTE : null).build(),
                 sanitizer);
@@ -458,6 +461,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         }
         if (statusChanged || responseChanged) {
             gitHubStore.cfStatusAndOrResponseChangedAsync(project, idea, statusChanged, responseChanged);
+            jiraStore.cfStatusAndOrResponseChangedAsync(project, idea, statusChanged, responseChanged);
         }
         if (ideaUpdateAdmin.getTagIds() != null) {
             webhookService.eventPostTagsChanged(idea);

@@ -71,6 +71,8 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     private WebhookService webhookService;
     @Inject
     private GitHubStore gitHubStore;
+    @Inject
+    private JiraStore jiraStore;
 
     @RolesAllowed({Role.PROJECT_USER})
     @Limit(requiredPermits = 10, challengeAfter = 50)
@@ -118,6 +120,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 user);
         billing.recordUsage(Billing.UsageType.COMMENT, project.getAccountId(), projectId, user);
         gitHubStore.cfCommentCreatedAsync(project, idea, commentModel, user);
+        jiraStore.cfCommentCreatedAsync(project, idea, commentModel, user);
         webhookService.eventCommentNew(idea, commentModel, user);
         return commentModel.toCommentWithVote(VoteOption.UPVOTE, sanitizer);
     }
