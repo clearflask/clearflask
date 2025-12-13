@@ -18,11 +18,14 @@ import AddIcon from '@material-ui/icons/Add';
 import UnmergeIcon from '@material-ui/icons/CallSplit';
 /* alternatives: comment, chat bubble (outline), forum, mode comment, add comment */
 import SpeechIcon from '@material-ui/icons/ChatBubbleOutlineRounded';
+import CheckCircleIcon from '@material-ui/icons/CheckCircleOutline';
 import DeleteIcon from '@material-ui/icons/DeleteOutline';
 import CopyIcon from '@material-ui/icons/FileCopyOutlined';
 import RespondIcon from '@material-ui/icons/FeedbackOutlined';
+import FlashOnIcon from '@material-ui/icons/FlashOn';
 import ImgIcon from '@material-ui/icons/Image';
 import AddEmojiIcon from '@material-ui/icons/InsertEmoticon';
+import NewReleasesIcon from '@material-ui/icons/NewReleasesOutlined';
 import classNames from 'classnames';
 import {BaseEmoji} from 'emoji-mart/dist-es/index.js';
 import {useSnackbar, withSnackbar, WithSnackbarProps} from 'notistack';
@@ -416,6 +419,33 @@ const styles = (theme: Theme) => createStyles({
     extLink: {
         marginLeft: 'auto',
     },
+    quickActionMenu: {
+        display: 'flex',
+        flexDirection: 'column',
+        padding: theme.spacing(1),
+        minWidth: 180,
+    },
+    quickActionMenuItem: {
+        display: 'flex',
+        alignItems: 'center',
+        padding: theme.spacing(1, 2),
+        cursor: 'pointer',
+        borderRadius: 4,
+        '&:hover': {
+            backgroundColor: fade(theme.palette.primary.main, 0.08),
+        },
+    },
+    quickActionMenuItemIcon: {
+        marginRight: theme.spacing(1),
+        fontSize: '1.25em',
+    },
+    quickActionMenuItemDisabled: {
+        opacity: 0.5,
+        cursor: 'not-allowed',
+        '&:hover': {
+            backgroundColor: 'transparent',
+        },
+    },
 });
 const useStyles = makeStyles(styles);
 type Props = {
@@ -459,6 +489,9 @@ interface ConnectProps {
     linkedToPosts?: Array<Client.Idea>;
     linkedFromPosts?: Array<Client.Idea>;
     fetchPostIds?: Array<string>;
+    changelogCategory?: Client.Category;
+    completedStatusId?: string;
+    acceptedStatusId?: string;
 }
 
 interface State {
@@ -479,6 +512,8 @@ interface State {
     commentExpanded?: boolean;
     iWantThisCommentExpanded?: boolean;
     demoFlashPostVotingControlsHovering?: 'vote' | 'fund' | 'express';
+    quickActionMenuOpen?: boolean;
+    isSubmittingQuickAction?: boolean;
 }
 
 class Post extends Component<Props & ConnectProps & WithTranslation<'app'> & WithStyles<typeof styles, true> & WithSnackbarProps, State> {
@@ -626,6 +661,7 @@ class Post extends Component<Props & ConnectProps & WithTranslation<'app'> & Wit
 
             rightSide = [
                 this.renderDisconnect(),
+                this.renderQuickAction(),
                 this.renderRespond(),
                 this.renderCommentAdd(),
                 this.renderConnect(),
@@ -639,6 +675,7 @@ class Post extends Component<Props & ConnectProps & WithTranslation<'app'> & Wit
             ].filter(notEmpty);
 
             rightSide = [
+                this.renderQuickAction(),
                 this.renderStatus(),
                 this.renderTags(),
                 this.renderCategory(),
@@ -888,6 +925,112 @@ class Post extends Component<Props & ConnectProps & WithTranslation<'app'> & Wit
                         onClose={() => this.setState({showEditingConnect: false})}
                     />
                 </Provider>
+            </React.Fragment>
+        );
+    }
+
+    renderQuickAction() {
+        const isMod = this.props.server.isModOrAdminLoggedIn();
+        if (!this.props.idea?.ideaId
+            || !this.props.category
+            || !isMod
+            || this.props.display?.showEdit === false) return null;
+
+        // Find if there's a status we can complete/accept to
+        const currentStatusId = this.props.idea.statusId;
+        const currentStatus = currentStatusId
+            ? this.props.category.workflow.statuses.find(s => s.statusId === currentStatusId)
+            : undefined;
+
+        // Check if we can transition to completed/accepted status
+        const completedStatusId = this.props.completedStatusId || this.props.acceptedStatusId;
+        const completedStatus = completedStatusId
+            ? this.props.category.workflow.statuses.find(s => s.statusId === completedStatusId)
+            : undefined;
+
+        // Check if current status can transition to completed status
+        const canComplete = completedStatus && currentStatusId !== completedStatusId && (
+            !currentStatus?.nextStatusIds?.length ||
+            currentStatus?.nextStatusIds?.includes(completedStatusId)
+        );
+
+        // Check if changelog category exists
+        const hasChangelog = !!this.props.changelogCategory;
+
+        // Only show if there's at least one action available
+        if (!canComplete && !hasChangelog) return null;
+
+        return (
+            <React.Fragment key='quick-action'>
+                <ClosablePopper
+                    anchorType='in-place'
+                    clickAway
+                    open={!!this.state.quickActionMenuOpen}
+                    onClose={() => this.setState({quickActionMenuOpen: false})}
+                >
+                    <div className={this.props.classes.quickActionMenu}>
+                        {canComplete && completedStatus && (
+                            <div
+                                className={classNames(
+                                    this.props.classes.quickActionMenuItem,
+                                    this.state.isSubmittingQuickAction && this.props.classes.quickActionMenuItemDisabled
+                                )}
+                                onClick={async () => {
+                                    if (this.state.isSubmittingQuickAction) return;
+                                    if (!this.props.idea?.ideaId || !completedStatusId) return;
+                                    this.setState({isSubmittingQuickAction: true});
+                                    try {
+                                        await (await this.props.server.dispatchAdmin()).ideaUpdateAdmin({
+                                            projectId: this.props.server.getProjectId(),
+                                            ideaId: this.props.idea.ideaId,
+                                            ideaUpdateAdmin: {statusId: completedStatusId},
+                                        });
+                                        this.props.enqueueSnackbar(this.props.t('status') + ': ' + completedStatus.name, {variant: 'success'});
+                                        this.setState({quickActionMenuOpen: false});
+                                    } finally {
+                                        this.setState({isSubmittingQuickAction: false});
+                                    }
+                                }}
+                            >
+                                <CheckCircleIcon
+                                    className={this.props.classes.quickActionMenuItemIcon}
+                                    style={{color: completedStatus.color}}
+                                />
+                                <Typography variant='body2'>
+                                    {completedStatus.name}
+                                </Typography>
+                            </div>
+                        )}
+                        {hasChangelog && (
+                            <div
+                                className={classNames(
+                                    this.props.classes.quickActionMenuItem,
+                                    this.state.isSubmittingQuickAction && this.props.classes.quickActionMenuItemDisabled
+                                )}
+                                onClick={() => {
+                                    if (this.state.isSubmittingQuickAction) return;
+                                    this.setState({
+                                        quickActionMenuOpen: false,
+                                        showEditingConnect: true,
+                                    });
+                                }}
+                            >
+                                <NewReleasesIcon className={this.props.classes.quickActionMenuItemIcon} />
+                                <Typography variant='body2'>
+                                    {this.props.t('link-to')} {this.props.t('changelog')}
+                                </Typography>
+                            </div>
+                        )}
+                    </div>
+                </ClosablePopper>
+                <MyButton
+                    buttonVariant='post'
+                    Icon={FlashOnIcon}
+                    isSubmitting={this.state.isSubmittingQuickAction}
+                    onClick={e => this.setState({quickActionMenuOpen: !this.state.quickActionMenuOpen})}
+                >
+                    {this.props.variant !== 'list' && this.props.t('action')}
+                </MyButton>
             </React.Fragment>
         );
     }
@@ -2257,6 +2400,34 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
         if (!linkedPost) fetchPostIds.push(linkedPostId);
         return linkedPost?.idea;
     }).filter(notEmpty);
+
+    // Find the current category
+    const category = (ownProps.idea && state.conf.conf)
+        ? state.conf.conf.content.categories.find(c => c.categoryId === ownProps.idea!.categoryId)
+        : undefined;
+
+    // Find changelog category (by prefix 'changelog-' or name matching 'Changelog|Announcements')
+    const changelogCategory = state.conf.conf?.content.categories.find(c =>
+        c.categoryId.startsWith('changelog-') ||
+        c.name.match(/Changelog|Announcements/i)
+    );
+
+    // Find completed/accepted status IDs from current category workflow
+    let completedStatusId: string | undefined;
+    let acceptedStatusId: string | undefined;
+    if (category) {
+        // Look for status with 'completed' in the name or ID
+        completedStatusId = category.workflow.statuses.find(s =>
+            s.statusId.includes('completed') ||
+            s.name.toLowerCase().includes('completed')
+        )?.statusId;
+        // Look for status with 'accepted' prefix in ID or name
+        acceptedStatusId = category.workflow.statuses.find(s =>
+            s.statusId.startsWith('accepted-') ||
+            s.name.toLowerCase() === 'accepted'
+        )?.statusId;
+    }
+
     return {
         configver: state.conf.ver, // force rerender on config change
         config: state.conf.conf,
@@ -2266,9 +2437,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
         vote,
         expression,
         fundAmount,
-        category: (ownProps.idea && state.conf.conf)
-            ? state.conf.conf.content.categories.find(c => c.categoryId === ownProps.idea!.categoryId)
-            : undefined,
+        category,
         credits: state.conf.conf?.users.credits,
         maxFundAmountSeen: state.ideas.maxFundAmountSeen,
         loggedInUser: state.users.loggedIn.user,
@@ -2276,5 +2445,8 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
         linkedToPosts,
         linkedFromPosts,
         fetchPostIds,
+        changelogCategory,
+        completedStatusId,
+        acceptedStatusId,
     };
 })(withStyles(styles, {withTheme: true})(withSnackbar(withTranslation('app', {withRef: true})(Post))));
