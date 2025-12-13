@@ -81,12 +81,13 @@ public class BlackboxIT extends AbstractBlackboxIT {
                 ModelUtil.createEmptyConfig("sermyproject").getConfig());
         String projectId = newProjectResult.getProjectId();
         addUserAndDoThings(projectId, newProjectResult.getConfig().getConfig());
-        accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
+        // Wait for subscription to be created in KillBill before updating payment token
+        TestUtil.retry(() -> accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
                 .paymentToken(AccountUpdateAdminPaymentToken.builder()
                         .type(Billing.Gateway.EXTERNAL.getPluginName())
                         .token("token")
                         .build())
-                .build());
+                .build()));
         refreshStatus(accountId);
         addActiveUser(projectId, newProjectResult.getConfig().getConfig());
         kbClockSleep(30);
