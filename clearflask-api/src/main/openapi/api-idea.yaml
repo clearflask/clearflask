@@ -241,6 +241,8 @@ components:
           format: double
         linkedGitHubUrl:
           type: string
+        linkedGitLabUrl:
+          type: string
         coverImg:
           type: string
     IdeaConnectResponse:

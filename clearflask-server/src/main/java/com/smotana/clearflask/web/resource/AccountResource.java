@@ -71,6 +71,7 @@ import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.AccountStore.SearchAccountsResponse;
 import com.smotana.clearflask.store.GitHubStore;
+import com.smotana.clearflask.store.GitLabStore;
 import com.smotana.clearflask.store.LegalStore;
 import com.smotana.clearflask.store.LocalLicenseStore;
 import com.smotana.clearflask.store.ProjectStore;
@@ -181,6 +182,8 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
     private ProjectStore projectStore;
     @Inject
     private GitHubStore gitHubStore;
+    @Inject
+    private GitLabStore gitLabStore;
     @Inject
     private CouponStore couponStore;
     @Inject
@@ -729,6 +732,17 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
                 .get();
 
         return gitHubStore.getReposForUser(accountId, code);
+    }
+
+    @RolesAllowed({Role.ADMINISTRATOR_ACTIVE})
+    @Limit(requiredPermits = 10, challengeAfter = 15)
+    @Override
+    public GitLabAvailableProjects gitLabGetProjectsAdmin(GitLabGetProjectsBody body) {
+        String accountId = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .get();
+
+        return gitLabStore.getProjectsForUser(accountId, body.getCode(), body.getGitlabInstanceUrl());
     }
 
     @RolesAllowed({Role.SUPER_ADMIN})

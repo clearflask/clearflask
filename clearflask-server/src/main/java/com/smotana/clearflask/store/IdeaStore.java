@@ -40,7 +40,17 @@ public interface IdeaStore {
         return "github-release-" + releaseId + "-" + repositoryId;
     }
 
+    default String genDeterministicIdeaIdForGitlabIssue(long issueIid, long issueId, long projectId) {
+        return "gitlab-" + issueIid + "-" + issueId + "-" + projectId;
+    }
+
+    default String genDeterministicIdeaIdForGitlabRelease(long releaseId, long projectId) {
+        return "gitlab-release-" + releaseId + "-" + projectId;
+    }
+
     Optional<GitHubIssueMetadata> extractGitHubIssueFromIdeaId(String ideaId);
+
+    Optional<GitLabIssueMetadata> extractGitLabIssueFromIdeaId(String ideaId);
 
     ListenableFuture<Void> createIndex(String projectId);
 
@@ -102,6 +112,13 @@ public interface IdeaStore {
         long issueNumber;
         long issueId;
         long repositoryId;
+    }
+
+    @Value
+    class GitLabIssueMetadata {
+        long issueIid;
+        long issueId;
+        long projectId;
     }
 
     @Value

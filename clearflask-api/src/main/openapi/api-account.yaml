@@ -948,6 +948,52 @@ components:
                         format: int64
                       name:
                         type: string
+/admin/account/gitlab/projects:
+  post:
+    operationId: gitLabGetProjectsAdmin
+    tags: [ AccountAdmin ]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            title: GitLabGetProjectsBody
+            type: object
+            required:
+              - code
+            properties:
+              code:
+                type: string
+              gitlabInstanceUrl:
+                type: string
+                description: GitLab instance URL (e.g., https://gitlab.com or https://gitlab.mycompany.com). Defaults to https://gitlab.com if not provided.
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: GitLabAvailableProjects
+              type: object
+              required:
+                - projects
+              properties:
+                projects:
+                  type: array
+                  items:
+                    title: GitLabAvailableProject
+                    type: object
+                    required:
+                      - projectId
+                      - projectPath
+                      - name
+                    properties:
+                      projectId:
+                        type: integer
+                        format: int64
+                      projectPath:
+                        type: string
+                      name:
+                        type: string
 /admin/account/delete:
   delete:
     operationId: accountDeleteAdmin
