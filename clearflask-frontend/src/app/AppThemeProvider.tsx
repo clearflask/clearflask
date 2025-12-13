@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { createMuiTheme, CssBaseline, Theme } from '@material-ui/core';
 import { MuiThemeProvider, StylesProvider } from '@material-ui/core/styles';
+import { generateClassName } from '../common/util/classNameGenerator';
 import { Breakpoint } from '@material-ui/core/styles/createBreakpoints';
 import { ComponentsProps } from '@material-ui/core/styles/props';
 import React, { Component } from 'react';
@@ -162,7 +163,7 @@ class AppThemeProvider extends Component<Props> {
     }
 
     return (
-      <StylesProvider injectFirst>
+      <StylesProvider injectFirst generateClassName={generateClassName}>
         <MuiThemeProvider theme={theme}>
           {!this.props.supressCssBaseline && (<CssBaseline />)}
           <div style={{
