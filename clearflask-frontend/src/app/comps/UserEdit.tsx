@@ -81,6 +81,24 @@ const styles = (theme: Theme) => createStyles({
     fontSize: 11,
     fontWeight: 500,
   },
+  editIconButton: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    backgroundColor: theme.palette.background.paper,
+    width: 20,
+    height: 20,
+    padding: 0,
+    boxShadow: theme.shadows[2],
+    '&:hover': {
+      backgroundColor: theme.palette.background.paper,
+      boxShadow: theme.shadows[4],
+    },
+  },
+  editIcon: {
+    fontSize: 12,
+    color: theme.palette.text.secondary,
+  },
   profilePicPreview: {
     width: 150,
     height: 150,
@@ -289,6 +307,16 @@ class UserEdit extends Component<Props & ConnectProps & WithTranslation<'app'> &
                       {user.pic === 'uploaded' ? 'Change' : 'Upload'}
                     </Typography>
                   </div>
+                  <IconButton
+                    className={this.props.classes.editIconButton}
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      this.setState({ profilePicDialogOpen: true });
+                    }}
+                  >
+                    <EditIcon className={this.props.classes.editIcon} />
+                  </IconButton>
                 </div>
               </Grid>
             </Grid>
