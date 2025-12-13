@@ -110,6 +110,8 @@ public class NotificationServiceTest extends AbstractTest {
         install(OnModInvite.module());
         install(OnEmailChanged.module());
         install(OnDigest.module());
+        install(OnPostCreated.module());
+        install(OnPostCreatedOnBehalfOf.module());
         install(EmailVerify.module());
         install(EmailLogin.module());
         install(Sanitizer.module());
