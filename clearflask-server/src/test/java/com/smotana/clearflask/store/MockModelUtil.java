@@ -67,11 +67,13 @@ public class MockModelUtil {
                 null,
                 IdUtil.randomId(),
                 Instant.now(),
+                null,  // pic
+                null,  // picUrl
                 null,
                 null,
                 null,
                 null,
-                null,
+                null,  // isTracked
                 ImmutableSet.of());
     }
 

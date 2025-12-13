@@ -42,6 +42,8 @@ public class ContentResource extends AbstractResource implements ContentApi, Con
     private ContentStore contentStore;
     @Inject
     private ImageNormalization imageNormalization;
+    @Inject
+    private UserStore userStore;
 
     @Override
     public void contentProxy(
@@ -88,35 +90,33 @@ public class ContentResource extends AbstractResource implements ContentApi, Con
                 .get();
 
         Image imageNormalized = normalizeImage(body);
+        ContentStore.ContentType contentType = checkNotNull(
+                ContentStore.ContentType.MEDIA_TYPE_TO_CONTENT_TYPE.get(imageNormalized.getMediaType()));
 
-        // TODO uplload the image to deterministic location for a project/user combination
+        // Upload with deterministic filename for profile picture
+        String fileName = "profilepic." + contentType.getExtension();
         String signedUrl = contentStore.uploadAndSign(
                 projectId,
-                authorId,
-                checkNotNull(ContentStore.ContentType.MEDIA_TYPE_TO_CONTENT_TYPE.get(imageNormalized.getMediaType())),
+                userId,
+                contentType,
                 new ByteArrayInputStream(imageNormalized.getData()),
                 imageNormalized.getData().length,
-                "profilepic");
+                fileName);
 
-        // TODO update user profile flag indicating that the profile pic is uploaded
+        // Update user profile with pic type and URL
+        userStore.updateUser(projectId, userId, new com.smotana.clearflask.api.model.UserUpdate(
+                null,  // name
+                null,  // email
+                null,  // password
+                null,  // emailNotify
+                null,  // iosPushToken
+                null,  // androidPushToken
+                null,  // browserPushToken
+                "uploaded",  // pic type
+                signedUrl    // picUrl
+        ));
 
-        return new ContentUploadResponse(doUpload(projectId, userId, body));
-    }
-
-    @RolesAllowed({Role.PROJECT_USER})
-    @Limit(requiredPermits = 30, challengeAfter = 20)
-    @Override
-    public ContentUploadResponse profilepicDelete(String projectId) {
-        String userId = getExtendedPrincipal()
-                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
-                .map(UserStore.UserSession::getUserId)
-                .get();
-
-        // TODO delete the image from s3
-
-        // TODO update user profile flag indicating that the profile pic is uploaded
-
-        return new ContentUploadResponse(doUpload(projectId, userId, body));
+        return new ContentUploadResponse(signedUrl);
     }
 
     private String doUpload(String projectId, String authorId, InputStream body) {

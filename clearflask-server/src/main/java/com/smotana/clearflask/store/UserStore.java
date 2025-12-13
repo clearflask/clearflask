@@ -229,6 +229,16 @@ public interface UserStore {
         @NonNull
         Instant created;
 
+        /**
+         * Type of profile picture (e.g., "uploaded", "gravatar")
+         */
+        String pic;
+
+        /**
+         * URL to profile picture
+         */
+        String picUrl;
+
         byte[] expressBloom;
 
         byte[] fundBloom;
@@ -254,7 +264,8 @@ public interface UserStore {
                     getName(),
                     getIsMod(),
                     getCreated(),
-                    null,
+                    getPic(),
+                    getPicUrl(),
                     getSsoGuid() != null ? true : null,
                     getEmail(),
                     getEmailVerified(),
@@ -273,7 +284,8 @@ public interface UserStore {
                     getName(),
                     getIsMod(),
                     getCreated(),
-                    null,
+                    getPic(),
+                    getPicUrl(),
                     getSsoGuid() != null ? true : null,
                     getEmail(),
                     getEmailVerified(),
@@ -293,7 +305,8 @@ public interface UserStore {
                     getName(),
                     getIsMod(),
                     getCreated(),
-                    null,
+                    getPic(),
+                    getPicUrl(),
                     getSsoGuid() != null ? true : null,
                     getEmail(),
                     getEmailVerified(),
@@ -313,7 +326,8 @@ public interface UserStore {
                     getName(),
                     getIsMod(),
                     getCreated(),
-                    null);
+                    getPic(),
+                    getPicUrl());
         }
 
         public Balance toBalance() {
