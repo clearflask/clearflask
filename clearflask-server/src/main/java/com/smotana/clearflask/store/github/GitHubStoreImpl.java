@@ -429,7 +429,8 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                         ImmutableSet.of(),
                         null,
                         ghIssue.getIssue().getHtmlUrl().toExternalForm(),
-                        null)));
+                        null,
+                        null)));  // visibility
             case "reopened":
             case "closed":
                 Optional<String> switchToStatusOpt = Optional.ofNullable(integration.getStatusSync())
@@ -580,7 +581,8 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                             ImmutableSet.of(),
                             null,
                             ghRelease.getRelease().getHtmlUrl().toExternalForm(),
-                            null));
+                            null,
+                            null));  // visibility
                     if (Boolean.TRUE.equals(integration.getReleaseNotifyAll())) {
                         notificationService.onPostCreated(
                                 project,

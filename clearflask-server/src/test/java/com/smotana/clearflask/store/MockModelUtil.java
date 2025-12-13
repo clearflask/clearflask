@@ -111,7 +111,8 @@ public class MockModelUtil {
                 ImmutableSet.of(),
                 null,
                 null,
-                null);
+                null,
+                null);  // visibility
     }
 
     public static CommentModel getRandomComment() {
