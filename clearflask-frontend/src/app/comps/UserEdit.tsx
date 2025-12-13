@@ -951,12 +951,14 @@ class UserEdit extends Component<Props & ConnectProps & WithTranslation<'app'> &
           this.setState({ userAdmin: newUserAdmin });
         } else {
           // Re-bind to refresh the logged-in user in Redux
+          const dispatcher = await this.props.server.dispatch();
           await dispatcher.userBind({
             projectId: this.props.server.getProjectId(),
             userBind: {},
           });
         }
       } catch (error) {
+        console.error('Failed to upload profile picture:', error);
         this.props.enqueueSnackbar('Failed to upload profile picture', { variant: 'error' });
       } finally {
         this.setState({ profilePicUploading: false });
@@ -1099,12 +1101,14 @@ class UserEdit extends Component<Props & ConnectProps & WithTranslation<'app'> &
           this.setState({ userAdmin: newUserAdmin });
         } else {
           // Re-bind to refresh the logged-in user in Redux
+          const dispatcher = await this.props.server.dispatch();
           await dispatcher.userBind({
             projectId: this.props.server.getProjectId(),
             userBind: {},
           });
         }
       } catch (error) {
+        console.error('Failed to upload profile picture:', error);
         this.props.enqueueSnackbar('Failed to upload profile picture', { variant: 'error' });
       } finally {
         this.setState({ profilePicUploading: false });
