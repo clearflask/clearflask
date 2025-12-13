@@ -14,6 +14,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
+import com.smotana.clearflask.api.VoteAdminApi;
 import com.smotana.clearflask.api.VoteApi;
 import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.billing.Billing;
@@ -51,7 +52,7 @@ import java.util.function.Supplier;
 @Slf4j
 @Singleton
 @Path(Application.RESOURCE_VERSION)
-public class VoteResource extends AbstractResource implements VoteApi {
+public class VoteResource extends AbstractResource implements VoteApi, VoteAdminApi {
 
     @Inject
     private ProjectStore projectStore;
@@ -276,6 +277,31 @@ public class VoteResource extends AbstractResource implements VoteApi {
                 idea.toIdea(sanitizer),
                 balanceOpt.orElse(null),
                 transactionOpt.orElse(null));
+    }
+
+    @RolesAllowed({Role.PROJECT_MODERATOR})
+    @Limit(requiredPermits = 10)
+    @Override
+    public IdeaVoteUpdateAdminResponse ideaVoteUpdateAdmin(String projectId, String ideaId, IdeaVoteUpdateAdmin voteUpdateAdmin) {
+        Project project = projectStore.getProject(projectId, true).orElseThrow(BadRequestException::new);
+        IdeaModel idea = ideaStore.getIdea(projectId, ideaId).orElseThrow(BadRequestException::new);
+        UserModel voter = userStore.getUser(projectId, voteUpdateAdmin.getVoterUserId())
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "User not found"));
+
+        if (!Strings.isNullOrEmpty(idea.getMergedToPostId())) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Cannot change a merged post");
+        }
+
+        VoteValue voteValue = VoteValue.fromVoteOption(voteUpdateAdmin.getVote());
+        idea = ideaStore.voteIdea(projectId, ideaId, voter.getUserId(), voteValue)
+                .getIdea();
+
+        billing.recordUsage(Billing.UsageType.VOTE, project.getAccountId(), project.getProjectId(), voter.getUserId());
+        webhookService.eventPostVoteChanged(idea, () -> voter, voteUpdateAdmin.getVote());
+
+        return new IdeaVoteUpdateAdminResponse(
+                idea.toIdea(sanitizer),
+                voter.toUserAdmin(project.getIntercomEmailToIdentityFun()));
     }
 
     public static Module module() {

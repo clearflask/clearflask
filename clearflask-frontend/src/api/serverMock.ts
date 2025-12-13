@@ -1367,6 +1367,23 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       , this.DEFAULT_LIMIT, request.cursor));
   }
 
+  ideaVoteUpdateAdmin(request: Admin.IdeaVoteUpdateAdminRequest): Promise<Admin.IdeaVoteUpdateAdminResponse> {
+    const idea: Admin.Idea = this.getImmutable(
+      this.getProject(request.projectId).ideas,
+      idea => idea.ideaId === request.ideaId);
+    const voter: Admin.UserAdmin = this.getImmutable(
+      this.getProject(request.projectId).users,
+      user => user.userId === request.ideaVoteUpdateAdmin.voterUserId);
+    if (!voter) {
+      throw new Error('User not found');
+    }
+    // Update vote value based on vote type
+    const voteChange = request.ideaVoteUpdateAdmin.vote === Admin.VoteOption.Upvote ? 1
+      : request.ideaVoteUpdateAdmin.vote === Admin.VoteOption.Downvote ? -1 : 0;
+    idea.voteValue = (idea.voteValue || 0) + voteChange;
+    return this.returnLater({ idea, voter });
+  }
+
   ideaMerge(request: Client.IdeaMergeRequest): Promise<Client.IdeaConnectResponse> {
     return this.ideaMergeAdmin(request);
   }
