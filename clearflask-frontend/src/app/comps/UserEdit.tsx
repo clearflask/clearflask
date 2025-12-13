@@ -56,48 +56,32 @@ const styles = (theme: Theme) => createStyles({
   },
   avatarContainer: {
     position: 'relative',
-    display: 'inline-block',
-    cursor: 'pointer',
-    '&:hover $avatarOverlay': {
-      opacity: 1,
-    },
+    display: 'inline-flex',
+    alignItems: 'flex-start',
+    gap: theme.spacing(1),
   },
-  avatarOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: '50%',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    opacity: 0,
-    transition: theme.transitions.create('opacity'),
-  },
-  avatarOverlayText: {
-    color: theme.palette.common.white,
-    fontSize: 11,
-    fontWeight: 500,
-  },
-  editIconButton: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    backgroundColor: theme.palette.background.paper,
-    width: 20,
-    height: 20,
+  uploadIconButton: {
     padding: 0,
-    boxShadow: theme.shadows[2],
     '&:hover': {
-      backgroundColor: theme.palette.background.paper,
-      boxShadow: theme.shadows[4],
+      backgroundColor: 'transparent',
     },
   },
-  editIcon: {
-    fontSize: 12,
+  uploadIcon: {
+    fontSize: 24,
     color: theme.palette.text.secondary,
+  },
+  deleteIconButton: {
+    padding: 0,
+    '&:hover': {
+      backgroundColor: 'transparent',
+    },
+  },
+  deleteIcon: {
+    fontSize: 24,
+    color: theme.palette.error.main,
+  },
+  hiddenInput: {
+    display: 'none',
   },
   profilePicPreview: {
     width: 150,
@@ -105,6 +89,13 @@ const styles = (theme: Theme) => createStyles({
     borderRadius: '50%',
     objectFit: 'cover',
     marginBottom: theme.spacing(2),
+  },
+  avatarPreviewContainer: {
+    marginBottom: theme.spacing(2),
+    // Target the badge wrapper that contains the moderator star
+    '& > span > span:last-child': {
+      borderRadius: '50% !important',
+    },
   },
   uploadArea: {
     border: `2px dashed ${theme.palette.divider}`,
@@ -121,9 +112,6 @@ const styles = (theme: Theme) => createStyles({
   uploadAreaDragActive: {
     borderColor: theme.palette.primary.main,
     backgroundColor: theme.palette.action.selected,
-  },
-  hiddenInput: {
-    display: 'none',
   },
 });
 interface Props {
@@ -289,10 +277,7 @@ class UserEdit extends Component<Props & ConnectProps & WithTranslation<'app'> &
             <Grid container alignItems='center' className={this.props.classes.item}>
               <Grid item xs={12} sm={6}><Typography>{this.props.t('avatar')}</Typography></Grid>
               <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
-                <div
-                  className={this.props.classes.avatarContainer}
-                  onClick={() => this.setState({ profilePicDialogOpen: true })}
-                >
+                <div className={this.props.classes.avatarContainer}>
                   <AvatarDisplay user={{
                     ...user,
                     ...(this.state.displayName !== undefined ? {
@@ -302,25 +287,10 @@ class UserEdit extends Component<Props & ConnectProps & WithTranslation<'app'> &
                       email: this.state.email,
                     } : {}),
                   }} size={40} />
-                  <div className={this.props.classes.avatarOverlay}>
-                    <Typography className={this.props.classes.avatarOverlayText}>
-                      {user.pic === 'uploaded' ? 'Change' : 'Upload'}
-                    </Typography>
-                  </div>
-                  <IconButton
-                    className={this.props.classes.editIconButton}
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      this.setState({ profilePicDialogOpen: true });
-                    }}
-                  >
-                    <EditIcon className={this.props.classes.editIcon} />
-                  </IconButton>
+                  {this.renderProfilePicActions(user, userId!, isModOrAdminLoggedIn)}
                 </div>
               </Grid>
             </Grid>
-            {this.renderProfilePicDialog(user, userId!, isModOrAdminLoggedIn)}
             <Grid container alignItems='center' className={this.props.classes.item}>
               <Grid item xs={12} sm={6}><Typography>{this.props.t('displayname')}</Typography></Grid>
               <Grid item xs={12} sm={6} className={this.props.classes.itemControls}>
@@ -933,6 +903,128 @@ class UserEdit extends Component<Props & ConnectProps & WithTranslation<'app'> &
     );
   }
 
+  renderProfilePicActions(user: Client.UserMe | Admin.UserAdmin, userId: string, isModOrAdminLoggedIn: boolean) {
+    const fileInputRef = React.createRef<HTMLInputElement>();
+
+    const handleFileSelect = async (file: File | undefined) => {
+      if (!file) return;
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        this.props.enqueueSnackbar('Please select an image file', { variant: 'error' });
+        return;
+      }
+
+      // Validate file size (max 20MB)
+      if (file.size > 20 * 1024 * 1024) {
+        this.props.enqueueSnackbar('Image size must be less than 20MB', { variant: 'error' });
+        return;
+      }
+
+      // Upload immediately
+      this.setState({ profilePicUploading: true });
+      try {
+        // Use admin endpoint if admin is uploading for another user
+        if (isModOrAdminLoggedIn && this.props.loggedInUser?.userId !== userId) {
+          const dispatcher = await this.props.server.dispatchAdmin();
+          await dispatcher.profilepicUploadAsAdmin({
+            projectId: this.props.server.getProjectId(),
+            userId,
+            body: file,
+          });
+        } else {
+          const dispatcher = await this.props.server.dispatch();
+          await dispatcher.profilepicUpload({
+            projectId: this.props.server.getProjectId(),
+            body: file,
+          });
+        }
+
+        this.props.enqueueSnackbar('Profile picture updated successfully', { variant: 'success' });
+
+        // Refresh user data in Redux
+        if (isModOrAdminLoggedIn && this.props.loggedInUser?.userId !== userId) {
+          const newUserAdmin = await (await this.props.server.dispatchAdmin()).userGetAdmin({
+            projectId: this.props.server.getProjectId(),
+            userId,
+          });
+          this.setState({ userAdmin: newUserAdmin });
+        } else {
+          // Re-bind to refresh the logged-in user in Redux
+          await dispatcher.userBind({
+            projectId: this.props.server.getProjectId(),
+            userBind: {},
+          });
+        }
+      } catch (error) {
+        this.props.enqueueSnackbar('Failed to upload profile picture', { variant: 'error' });
+      } finally {
+        this.setState({ profilePicUploading: false });
+      }
+    };
+
+    const handleDelete = async () => {
+      this.setState({ profilePicUploading: true });
+      try {
+        if (isModOrAdminLoggedIn && this.props.loggedInUser?.userId !== userId) {
+          const newUserAdmin = await (await this.props.server.dispatchAdmin()).userUpdateAdmin({
+            projectId: this.props.server.getProjectId(),
+            userId,
+            userUpdateAdmin: { pic: '', picUrl: '' },
+          });
+          this.setState({ userAdmin: newUserAdmin });
+        } else {
+          const dispatcher = await this.props.server.dispatch();
+          await dispatcher.userUpdate({
+            projectId: this.props.server.getProjectId(),
+            userId,
+            userUpdate: { pic: '', picUrl: '' },
+          });
+        }
+
+        this.props.enqueueSnackbar('Profile picture removed', { variant: 'success' });
+      } catch (error) {
+        this.props.enqueueSnackbar('Failed to remove profile picture', { variant: 'error' });
+      } finally {
+        this.setState({ profilePicUploading: false });
+      }
+    };
+
+    return (
+      <>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className={this.props.classes.hiddenInput}
+          onChange={(e) => handleFileSelect(e.target.files?.[0])}
+        />
+        <IconButton
+          className={this.props.classes.uploadIconButton}
+          size="small"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={this.state.profilePicUploading}
+        >
+          {this.state.profilePicUploading ? (
+            <CircularProgress size={24} />
+          ) : (
+            <CloudUploadIcon className={this.props.classes.uploadIcon} />
+          )}
+        </IconButton>
+        {user.pic === 'uploaded' && (
+          <IconButton
+            className={this.props.classes.deleteIconButton}
+            size="small"
+            onClick={handleDelete}
+            disabled={this.state.profilePicUploading}
+          >
+            <DeleteIcon className={this.props.classes.deleteIcon} />
+          </IconButton>
+        )}
+      </>
+    );
+  }
+
   renderProfilePicDialog(user: Client.UserMe | Admin.UserAdmin, userId: string, isModOrAdminLoggedIn: boolean) {
     const fileInputRef = React.createRef<HTMLInputElement>();
 
@@ -945,9 +1037,9 @@ class UserEdit extends Component<Props & ConnectProps & WithTranslation<'app'> &
         return;
       }
 
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        this.props.enqueueSnackbar('Image size must be less than 5MB', { variant: 'error' });
+      // Validate file size (max 20MB)
+      if (file.size > 20 * 1024 * 1024) {
+        this.props.enqueueSnackbar('Image size must be less than 20MB', { variant: 'error' });
         return;
       }
 
@@ -975,11 +1067,21 @@ class UserEdit extends Component<Props & ConnectProps & WithTranslation<'app'> &
 
       this.setState({ profilePicUploading: true });
       try {
-        const dispatcher = await this.props.server.dispatch();
-        await dispatcher.profilepicUpload({
-          projectId: this.props.server.getProjectId(),
-          body: this.state.profilePicFile,
-        });
+        // Use admin endpoint if admin is uploading for another user
+        if (isModOrAdminLoggedIn && this.props.loggedInUser?.userId !== userId) {
+          const dispatcher = await this.props.server.dispatchAdmin();
+          await dispatcher.profilepicUploadAsAdmin({
+            projectId: this.props.server.getProjectId(),
+            userId,
+            body: this.state.profilePicFile,
+          });
+        } else {
+          const dispatcher = await this.props.server.dispatch();
+          await dispatcher.profilepicUpload({
+            projectId: this.props.server.getProjectId(),
+            body: this.state.profilePicFile,
+          });
+        }
 
         this.props.enqueueSnackbar('Profile picture updated successfully', { variant: 'success' });
         this.setState({
@@ -988,7 +1090,7 @@ class UserEdit extends Component<Props & ConnectProps & WithTranslation<'app'> &
           profilePicPreview: undefined,
         });
 
-        // Force re-fetch user data
+        // Refresh user data in Redux
         if (isModOrAdminLoggedIn && this.props.loggedInUser?.userId !== userId) {
           const newUserAdmin = await (await this.props.server.dispatchAdmin()).userGetAdmin({
             projectId: this.props.server.getProjectId(),
@@ -996,8 +1098,11 @@ class UserEdit extends Component<Props & ConnectProps & WithTranslation<'app'> &
           });
           this.setState({ userAdmin: newUserAdmin });
         } else {
-          // Reload page to refresh user data from server
-          window.location.reload();
+          // Re-bind to refresh the logged-in user in Redux
+          await dispatcher.userBind({
+            projectId: this.props.server.getProjectId(),
+            userBind: {},
+          });
         }
       } catch (error) {
         this.props.enqueueSnackbar('Failed to upload profile picture', { variant: 'error' });
@@ -1009,7 +1114,7 @@ class UserEdit extends Component<Props & ConnectProps & WithTranslation<'app'> &
     const handleDelete = async () => {
       this.setState({ profilePicUploading: true });
       try {
-        if (isModOrAdminLoggedIn) {
+        if (isModOrAdminLoggedIn && this.props.loggedInUser?.userId !== userId) {
           const newUserAdmin = await (await this.props.server.dispatchAdmin()).userUpdateAdmin({
             projectId: this.props.server.getProjectId(),
             userId,
@@ -1020,14 +1125,13 @@ class UserEdit extends Component<Props & ConnectProps & WithTranslation<'app'> &
             profilePicDialogOpen: false,
           });
         } else {
-          await (await this.props.server.dispatch()).userUpdate({
+          const dispatcher = await this.props.server.dispatch();
+          await dispatcher.userUpdate({
             projectId: this.props.server.getProjectId(),
             userId,
             userUpdate: { pic: '', picUrl: '' },
           });
           this.setState({ profilePicDialogOpen: false });
-          // Reload page to refresh user data from server
-          window.location.reload();
         }
 
         this.props.enqueueSnackbar('Profile picture removed', { variant: 'success' });
@@ -1061,7 +1165,7 @@ class UserEdit extends Component<Props & ConnectProps & WithTranslation<'app'> &
                 className={this.props.classes.profilePicPreview}
               />
             ) : (
-              <div style={{ marginBottom: 16 }}>
+              <div className={this.props.classes.avatarPreviewContainer}>
                 <AvatarDisplay user={user} size={150} />
               </div>
             )}
@@ -1093,7 +1197,7 @@ class UserEdit extends Component<Props & ConnectProps & WithTranslation<'app'> &
                     Drag & drop an image here, or click to select
                   </Typography>
                   <Typography variant="caption" color="textSecondary">
-                    Max size: 5MB
+                    Max size: 20MB
                   </Typography>
                 </div>
               </>
@@ -1101,17 +1205,17 @@ class UserEdit extends Component<Props & ConnectProps & WithTranslation<'app'> &
           </Box>
         </DialogContent>
         <DialogActions>
+          <div style={{ flex: 1 }} />
           {user.pic === 'uploaded' && !this.state.profilePicFile && (
             <Button
               onClick={handleDelete}
               disabled={this.state.profilePicUploading}
               startIcon={<DeleteIcon />}
-              color="secondary"
+              style={{ color: this.props.theme.palette.error.main }}
             >
               Remove Picture
             </Button>
           )}
-          <div style={{ flex: 1 }} />
           <Button
             onClick={() => this.setState({
               profilePicDialogOpen: false,

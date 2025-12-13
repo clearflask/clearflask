@@ -74,6 +74,8 @@ paths:
     $ref: 'api-content.yaml#/~1project~1{projectId}~1admin~1content~1uploadAs'
   /project/{projectId}/profilepic/upload:
     $ref: 'api-content.yaml#/~1project~1{projectId}~1profilepic~1upload'
+  /project/{projectId}/admin/profilepic/uploadAs:
+    $ref: 'api-content.yaml#/~1project~1{projectId}~1admin~1profilepic~1uploadAs'
   # api-llm.yaml
   /project/{projectId}/superadmin/llm/prompt:
     $ref: 'api-llm.yaml#/~1project~1{projectId}~1superadmin~1llm~1prompt'

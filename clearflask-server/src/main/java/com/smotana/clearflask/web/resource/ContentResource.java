@@ -89,7 +89,19 @@ public class ContentResource extends AbstractResource implements ContentApi, Con
                 .map(UserStore.UserSession::getUserId)
                 .get();
 
-        Image imageNormalized = normalizeImage(body);
+        return new ContentUploadResponse(uploadProfilePic(projectId, userId, body));
+    }
+
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
+    @Limit(requiredPermits = 5, challengeAfter = 100)
+    @Override
+    public ContentUploadResponse profilepicUploadAsAdmin(String projectId, String userId, InputStream body) {
+        return new ContentUploadResponse(uploadProfilePic(projectId, userId, body));
+    }
+
+    private String uploadProfilePic(String projectId, String userId, InputStream body) {
+        // Normalize with smaller dimensions for profile pictures (500x500)
+        Image imageNormalized = normalizeImageWithSize(body, 500.0, 500.0);
         ContentStore.ContentType contentType = checkNotNull(
                 ContentStore.ContentType.MEDIA_TYPE_TO_CONTENT_TYPE.get(imageNormalized.getMediaType()));
 
@@ -116,7 +128,7 @@ public class ContentResource extends AbstractResource implements ContentApi, Con
                 signedUrl    // picUrl
         ));
 
-        return new ContentUploadResponse(signedUrl);
+        return signedUrl;
     }
 
     private String doUpload(String projectId, String authorId, InputStream body) {
@@ -138,6 +150,17 @@ public class ContentResource extends AbstractResource implements ContentApi, Con
             throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Corrrupted data", ex);
         }
         Image imageNormalized = imageNormalization.normalize(imgBytes);
+        return imageNormalized;
+    }
+
+    private Image normalizeImageWithSize(InputStream body, double maxWidth, double maxHeight) {
+        byte[] imgBytes;
+        try (body) {
+            imgBytes = IOUtils.toByteArray(body);
+        } catch (IOException ex) {
+            throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Corrrupted data", ex);
+        }
+        Image imageNormalized = imageNormalization.normalize(imgBytes, maxWidth, maxHeight);
         return imageNormalized;
     }
 
