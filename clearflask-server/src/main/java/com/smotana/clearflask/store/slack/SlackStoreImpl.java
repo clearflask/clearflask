@@ -756,8 +756,10 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
 
         SlackChannelLink link = channelLinkOpt.get();
 
-        // Check if syncResponseUpdates is enabled
-        if (link.getSyncResponseUpdates() == Boolean.FALSE) {
+        // TODO: Add syncResponseUpdates field to SlackChannelLink in OpenAPI spec
+        // For now, response syncing is disabled - return empty
+        boolean syncResponseUpdates = false; // TODO: use link.getSyncResponseUpdates() when field is added
+        if (!syncResponseUpdates) {
             return Futures.immediateFuture(Optional.empty());
         }
 
