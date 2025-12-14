@@ -27,6 +27,11 @@ import static com.smotana.clearflask.core.push.NotificationServiceImpl.AUTH_TOKE
 @Singleton
 public class OnPostCreatedOnBehalfOf {
 
+    // Title abbreviation lengths for different notification types
+    private static final int TITLE_LENGTH_EMAIL = 50;
+    private static final int TITLE_LENGTH_BROWSER_PUSH = 50;
+    private static final int TITLE_LENGTH_IN_APP = 20; // Shorter due to UI constraints
+
     public interface Config {
         @DefaultValue("A post has been created for you in __project_name__")
         String subjectTemplate();
@@ -54,11 +59,11 @@ public class OnPostCreatedOnBehalfOf {
     public Email email(ConfigAdmin configAdmin, UserModel author, IdeaModel idea, String link, String authToken) {
         checkArgument(!Strings.isNullOrEmpty(author.getEmail()));
 
-        String subject = replaceTemplateVariables(config.subjectTemplate(), configAdmin, idea, 50);
+        String subject = replaceTemplateVariables(config.subjectTemplate(), configAdmin, idea, TITLE_LENGTH_EMAIL);
 
         // For email content, we need to wrap the title in bold HTML tags
         String projectName = emailTemplates.sanitize(projectUtil.getProjectName(configAdmin));
-        String title = StringUtils.abbreviate(emailTemplates.sanitize(idea.getTitle()), 50);
+        String title = StringUtils.abbreviate(emailTemplates.sanitize(idea.getTitle()), TITLE_LENGTH_EMAIL);
         String content = config.contentTemplate()
                 .replace("__project_name__", projectName)
                 .replace("__title__", "<span style=\"font-weight: bold\">" + title + "</span>");
@@ -93,8 +98,8 @@ public class OnPostCreatedOnBehalfOf {
     public BrowserPush browserPush(ConfigAdmin configAdmin, UserModel author, IdeaModel idea, String link, String authToken) {
         checkArgument(!Strings.isNullOrEmpty(author.getBrowserPushToken()));
 
-        String subject = replaceTemplateVariables(config.subjectTemplate(), configAdmin, idea, 50);
-        String content = replaceTemplateVariables(config.contentTemplate(), configAdmin, idea, 50);
+        String subject = replaceTemplateVariables(config.subjectTemplate(), configAdmin, idea, TITLE_LENGTH_BROWSER_PUSH);
+        String content = replaceTemplateVariables(config.contentTemplate(), configAdmin, idea, TITLE_LENGTH_BROWSER_PUSH);
 
         return new BrowserPush(
                 author.getBrowserPushToken(),
@@ -107,8 +112,7 @@ public class OnPostCreatedOnBehalfOf {
     }
 
     public String inAppDescription(ConfigAdmin configAdmin, IdeaModel idea) {
-        // In-app notifications use a shorter title (20 chars) due to UI constraints
-        return replaceTemplateVariables(config.subjectTemplate(), configAdmin, idea, 20);
+        return replaceTemplateVariables(config.subjectTemplate(), configAdmin, idea, TITLE_LENGTH_IN_APP);
     }
 
     public static Module module() {

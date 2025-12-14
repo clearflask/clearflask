@@ -60,6 +60,7 @@ import static org.bouncycastle.jce.provider.BouncyCastleProvider.PROVIDER_NAME;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @Slf4j
@@ -568,11 +569,8 @@ public class NotificationServiceTest extends AbstractTest {
     public void testOnPostCreatedOnBehalfOf() throws Exception {
         String projectId = "myProject";
         VersionedConfigAdmin versionedConfigAdmin = ModelUtil.createEmptyConfig(projectId);
-        ProjectStore.Project project = new ProjectStore.Project(
-                "accountId",
-                projectId,
-                null,
-                versionedConfigAdmin);
+        ProjectStore.Project project = mock(ProjectStore.Project.class);
+        when(project.getVersionedConfigAdmin()).thenReturn(versionedConfigAdmin);
         IdeaModel idea = MockModelUtil.getRandomIdea().toBuilder()
                 .projectId(projectId)
                 .title("Test Post Title")
@@ -604,6 +602,93 @@ public class NotificationServiceTest extends AbstractTest {
         assertFalse(push.getBody(), push.getBody().contains("__"));
         assertNotNull(inApp);
         assertFalse(inApp.getDescription(), inApp.getDescription().contains("__"));
+    }
+
+    @Test(timeout = 10_000L)
+    public void testOnPostCreatedOnBehalfOfNoEmail() throws Exception {
+        String projectId = "myProject";
+        VersionedConfigAdmin versionedConfigAdmin = ModelUtil.createEmptyConfig(projectId);
+        ProjectStore.Project project = mock(ProjectStore.Project.class);
+        when(project.getVersionedConfigAdmin()).thenReturn(versionedConfigAdmin);
+        IdeaModel idea = MockModelUtil.getRandomIdea().toBuilder()
+                .projectId(projectId)
+                .title("Test Post Title")
+                .categoryId(versionedConfigAdmin.getConfig().getContent().getCategories().get(0).getCategoryId())
+                .build();
+        UserModel author = MockModelUtil.getRandomUser().toBuilder()
+                .projectId(projectId)
+                .userId(IdUtil.randomId())
+                .email(null) // No email
+                .emailNotify(true)
+                .browserPushToken("browserPushToken")
+                .build();
+        when(this.mockUserStore.createToken(any(), any(), any())).thenReturn("myAuthToken");
+
+        service.onPostCreatedOnBehalfOf(project, idea, author);
+
+        // Only browser push and in-app should be sent (no email)
+        BrowserPush push = mockBrowserPushService.sent.take();
+        NotificationModel inApp = mockNotificationStore.sent.take();
+        assertNotNull(push);
+        assertNotNull(inApp);
+    }
+
+    @Test(timeout = 10_000L)
+    public void testOnPostCreatedOnBehalfOfEmailNotifyDisabled() throws Exception {
+        String projectId = "myProject";
+        VersionedConfigAdmin versionedConfigAdmin = ModelUtil.createEmptyConfig(projectId);
+        ProjectStore.Project project = mock(ProjectStore.Project.class);
+        when(project.getVersionedConfigAdmin()).thenReturn(versionedConfigAdmin);
+        IdeaModel idea = MockModelUtil.getRandomIdea().toBuilder()
+                .projectId(projectId)
+                .title("Test Post Title")
+                .categoryId(versionedConfigAdmin.getConfig().getContent().getCategories().get(0).getCategoryId())
+                .build();
+        UserModel author = MockModelUtil.getRandomUser().toBuilder()
+                .projectId(projectId)
+                .userId(IdUtil.randomId())
+                .email("author@email.com")
+                .emailNotify(false) // Email notifications disabled
+                .browserPushToken("browserPushToken")
+                .build();
+        when(this.mockUserStore.createToken(any(), any(), any())).thenReturn("myAuthToken");
+
+        service.onPostCreatedOnBehalfOf(project, idea, author);
+
+        // Only browser push and in-app should be sent (no email due to emailNotify=false)
+        BrowserPush push = mockBrowserPushService.sent.take();
+        NotificationModel inApp = mockNotificationStore.sent.take();
+        assertNotNull(push);
+        assertNotNull(inApp);
+    }
+
+    @Test(timeout = 10_000L)
+    public void testOnPostCreatedOnBehalfOfNoBrowserPushToken() throws Exception {
+        String projectId = "myProject";
+        VersionedConfigAdmin versionedConfigAdmin = ModelUtil.createEmptyConfig(projectId);
+        ProjectStore.Project project = mock(ProjectStore.Project.class);
+        when(project.getVersionedConfigAdmin()).thenReturn(versionedConfigAdmin);
+        IdeaModel idea = MockModelUtil.getRandomIdea().toBuilder()
+                .projectId(projectId)
+                .title("Test Post Title")
+                .categoryId(versionedConfigAdmin.getConfig().getContent().getCategories().get(0).getCategoryId())
+                .build();
+        UserModel author = MockModelUtil.getRandomUser().toBuilder()
+                .projectId(projectId)
+                .userId(IdUtil.randomId())
+                .email("author@email.com")
+                .emailNotify(true)
+                .browserPushToken(null) // No browser push token
+                .build();
+        when(this.mockUserStore.createToken(any(), any(), any())).thenReturn("myAuthToken");
+
+        service.onPostCreatedOnBehalfOf(project, idea, author);
+
+        // Only email and in-app should be sent (no browser push)
+        Email email = mockEmailService.sent.take();
+        NotificationModel inApp = mockNotificationStore.sent.take();
+        assertNotNull(email);
+        assertNotNull(inApp);
     }
 
     private KeyPair generateKeyPair() {
