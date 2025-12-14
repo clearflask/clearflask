@@ -75,16 +75,13 @@ import com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
 import com.smotana.clearflask.store.github.GitHubClientProviderImpl;
 import com.smotana.clearflask.store.github.GitHubStoreImpl;
-<<<<<<< HEAD
 import com.smotana.clearflask.store.jira.AdfQuillConverter;
 import com.smotana.clearflask.store.jira.JiraClientProviderImpl;
 import com.smotana.clearflask.store.jira.JiraStoreImpl;
 import com.smotana.clearflask.store.slack.SlackClientProviderImpl;
 import com.smotana.clearflask.store.slack.SlackStoreImpl;
-=======
 import com.smotana.clearflask.store.gitlab.GitLabClientProviderImpl;
 import com.smotana.clearflask.store.gitlab.GitLabStoreImpl;
->>>>>>> origin/claude/gitlab-integration-planning-0111qz7N2c7oFHmwj4sStx4F
 import com.smotana.clearflask.store.impl.ConfigurableLlmPromptStore;
 import com.smotana.clearflask.store.impl.DynamoCertStore;
 import com.smotana.clearflask.store.impl.DynamoDraftStore;
@@ -128,11 +125,8 @@ import com.smotana.clearflask.web.resource.ConnectResource;
 import com.smotana.clearflask.web.resource.ContentResource;
 import com.smotana.clearflask.web.resource.CreditResource;
 import com.smotana.clearflask.web.resource.GitHubResource;
-<<<<<<< HEAD
 import com.smotana.clearflask.web.resource.SlackResource;
-=======
 import com.smotana.clearflask.web.resource.GitLabResource;
->>>>>>> origin/claude/gitlab-integration-planning-0111qz7N2c7oFHmwj4sStx4F
 import com.smotana.clearflask.web.resource.HealthResource;
 import com.smotana.clearflask.web.resource.JiraResource;
 import com.smotana.clearflask.web.resource.IdeaResource;
@@ -248,16 +242,13 @@ public enum ServiceInjector {
                 }
                 install(GitHubClientProviderImpl.module());
                 install(GitHubStoreImpl.module());
-<<<<<<< HEAD
                 install(JiraClientProviderImpl.module());
                 install(JiraStoreImpl.module());
                 install(AdfQuillConverter.module());
                 install(SlackClientProviderImpl.module());
                 install(SlackStoreImpl.module());
-=======
                 install(GitLabClientProviderImpl.module());
                 install(GitLabStoreImpl.module());
->>>>>>> origin/claude/gitlab-integration-planning-0111qz7N2c7oFHmwj4sStx4F
                 install(ResourceLegalStore.module());
                 install(SingleTableProvider.module());
                 install(MysqlUtil.module());
@@ -342,12 +333,9 @@ public enum ServiceInjector {
                     install(KillBillResource.module());
                 }
                 install(GitHubResource.module());
-<<<<<<< HEAD
                 install(JiraResource.module());
                 install(SlackResource.module());
-=======
                 install(GitLabResource.module());
->>>>>>> origin/claude/gitlab-integration-planning-0111qz7N2c7oFHmwj4sStx4F
                 install(UserResource.module());
                 install(AccountResource.module());
                 install(IdeaResource.module());

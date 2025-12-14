@@ -76,11 +76,8 @@ import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.AccountStore.AccountSession;
 import com.smotana.clearflask.store.AccountStore.SearchAccountsResponse;
 import com.smotana.clearflask.store.GitHubStore;
-<<<<<<< HEAD
 import com.smotana.clearflask.store.JiraStore;
-=======
 import com.smotana.clearflask.store.GitLabStore;
->>>>>>> origin/claude/gitlab-integration-planning-0111qz7N2c7oFHmwj4sStx4F
 import com.smotana.clearflask.store.LegalStore;
 import com.smotana.clearflask.store.LocalLicenseStore;
 import com.smotana.clearflask.store.ProjectStore;
@@ -195,11 +192,9 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
     @Inject
     private GitHubStore gitHubStore;
     @Inject
-<<<<<<< HEAD
     private JiraStore jiraStore;
-=======
+    @Inject
     private GitLabStore gitLabStore;
->>>>>>> origin/claude/gitlab-integration-planning-0111qz7N2c7oFHmwj4sStx4F
     @Inject
     private CouponStore couponStore;
     @Inject
@@ -843,20 +838,23 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
     @RolesAllowed({Role.ADMINISTRATOR_ACTIVE})
     @Limit(requiredPermits = 10, challengeAfter = 15)
     @Override
-<<<<<<< HEAD
     public AvailableJiraProjects jiraGetProjectsAdmin(String code) {
-=======
-    public GitLabAvailableProjects gitLabGetProjectsAdmin(GitLabGetProjectsBody body) {
->>>>>>> origin/claude/gitlab-integration-planning-0111qz7N2c7oFHmwj4sStx4F
         String accountId = getExtendedPrincipal()
                 .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
                 .get();
 
-<<<<<<< HEAD
         return jiraStore.getProjectsForUser(accountId, code);
-=======
+    }
+
+    @RolesAllowed({Role.ADMINISTRATOR_ACTIVE})
+    @Limit(requiredPermits = 10, challengeAfter = 15)
+    @Override
+    public GitLabAvailableProjects gitLabGetProjectsAdmin(GitLabGetProjectsBody body) {
+        String accountId = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .get();
+
         return gitLabStore.getProjectsForUser(accountId, body.getCode(), body.getGitlabInstanceUrl());
->>>>>>> origin/claude/gitlab-integration-planning-0111qz7N2c7oFHmwj4sStx4F
     }
 
     @RolesAllowed({Role.SUPER_ADMIN})
