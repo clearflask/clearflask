@@ -89,7 +89,7 @@ public class JooqIdeaTags extends TableImpl<JooqIdeaTagsRecord> {
         this(DSL.name("idea_tags"), null);
     }
 
-    public <O extends Record> JooqIdeaTags(Table<O> child, ForeignKey<O, JooqIdeaTagsRecord> key) {
+    public <O extends org.jooq.Record> JooqIdeaTags(Table<O> child, ForeignKey<O, JooqIdeaTagsRecord> key) {
         super(child, key, IDEA_TAGS);
     }
 

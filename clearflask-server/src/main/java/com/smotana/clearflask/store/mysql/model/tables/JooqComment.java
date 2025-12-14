@@ -147,7 +147,7 @@ public class JooqComment extends TableImpl<JooqCommentRecord> {
         this(DSL.name("comment"), null);
     }
 
-    public <O extends Record> JooqComment(Table<O> child, ForeignKey<O, JooqCommentRecord> key) {
+    public <O extends org.jooq.Record> JooqComment(Table<O> child, ForeignKey<O, JooqCommentRecord> key) {
         super(child, key, COMMENT);
     }
 

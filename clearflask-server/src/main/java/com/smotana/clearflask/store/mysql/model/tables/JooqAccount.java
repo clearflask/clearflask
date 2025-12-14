@@ -104,7 +104,7 @@ public class JooqAccount extends TableImpl<JooqAccountRecord> {
         this(DSL.name("account"), null);
     }
 
-    public <O extends Record> JooqAccount(Table<O> child, ForeignKey<O, JooqAccountRecord> key) {
+    public <O extends org.jooq.Record> JooqAccount(Table<O> child, ForeignKey<O, JooqAccountRecord> key) {
         super(child, key, ACCOUNT);
     }
 

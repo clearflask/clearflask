@@ -207,7 +207,7 @@ public class JooqIdea extends TableImpl<JooqIdeaRecord> {
         this(DSL.name("idea"), null);
     }
 
-    public <O extends Record> JooqIdea(Table<O> child, ForeignKey<O, JooqIdeaRecord> key) {
+    public <O extends org.jooq.Record> JooqIdea(Table<O> child, ForeignKey<O, JooqIdeaRecord> key) {
         super(child, key, IDEA);
     }
 

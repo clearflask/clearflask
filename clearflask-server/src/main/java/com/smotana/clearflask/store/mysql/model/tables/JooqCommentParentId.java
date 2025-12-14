@@ -95,7 +95,7 @@ public class JooqCommentParentId extends TableImpl<JooqCommentParentIdRecord> {
         this(DSL.name("comment_parent_id"), null);
     }
 
-    public <O extends Record> JooqCommentParentId(Table<O> child, ForeignKey<O, JooqCommentParentIdRecord> key) {
+    public <O extends org.jooq.Record> JooqCommentParentId(Table<O> child, ForeignKey<O, JooqCommentParentIdRecord> key) {
         super(child, key, COMMENT_PARENT_ID);
     }
 
