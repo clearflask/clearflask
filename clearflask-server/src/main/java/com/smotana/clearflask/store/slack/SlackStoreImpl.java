@@ -4,8 +4,10 @@ package com.smotana.clearflask.store.slack;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.RangeKeyCondition;
 import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -51,6 +53,7 @@ import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.MarkdownAndQuillUtil;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
+import io.dataspray.singletable.IndexSchema;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
 import lombok.extern.slf4j.Slf4j;
@@ -59,11 +62,13 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.StreamSupport;
 
 @Slf4j
 @Singleton
@@ -105,17 +110,22 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
     private Billing billing;
 
     private TableSchema<SlackMessageMapping> messageMappingSchema;
+    private IndexSchema<SlackMessageMapping> messageMappingByPostIdSchema;
     private TableSchema<SlackCommentMapping> commentMappingSchema;
+    private IndexSchema<SlackCommentMapping> commentMappingByCommentIdSchema;
     private ListeningExecutorService executor;
 
     @Override
     protected void serviceStart() throws Exception {
         messageMappingSchema = singleTable.parseTableSchema(SlackMessageMapping.class);
+        messageMappingByPostIdSchema = singleTable.parseGlobalSecondaryIndexSchema(1, SlackMessageMapping.class);
         commentMappingSchema = singleTable.parseTableSchema(SlackCommentMapping.class);
+        commentMappingByCommentIdSchema = singleTable.parseGlobalSecondaryIndexSchema(1, SlackCommentMapping.class);
 
         executor = MoreExecutors.listeningDecorator(new ThreadPoolExecutor(
-                2, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<>(),
-                new ThreadFactoryBuilder().setNameFormat("SlackStoreImpl-worker-%d").build()));
+                2, 100, 60L, TimeUnit.SECONDS, new SynchronousQueue<>(),
+                new ThreadFactoryBuilder().setNameFormat("SlackStoreImpl-worker-%d").build(),
+                new ThreadPoolExecutor.CallerRunsPolicy()));
     }
 
     @Override
@@ -809,11 +819,11 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
     }
 
     private String genDeterministicPostIdForSlackMessage(String channelId, String messageTs) {
-        return "slack-" + channelId + "-" + messageTs.replace(".", "-");
+        return POST_SOURCE_SLACK + "-" + channelId + "-" + messageTs.replace(".", "-");
     }
 
     private String genDeterministicCommentIdForSlackReply(String channelId, String threadTs, String messageTs) {
-        return "slack-" + messageTs.replace(".", "-");
+        return POST_SOURCE_SLACK + "-" + messageTs.replace(".", "-");
     }
 
     private UserModel getCfUserFromSlackUser(String projectId, String slackUserId) {
@@ -852,19 +862,28 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
         return userStore.createUser(new UserModel(
                 projectId,
                 cfUserId,
-                null, // No SSO guid
+                null, // ssoGuid
+                false, // isMod
                 userName,
                 email,
-                null, // No password
-                false, // Not email verified
-                null, // No browser push token
-                Instant.now(),
-                null, // No email notification
-                null, // No browser push consent
-                null, // No digest opt-out
-                false, // Not a mod
-                null, // No io push token
-                null  // No category subscription
+                null, // emailVerified
+                null, // emailLastUpdated
+                null, // password
+                null, // authTokenValidityStart
+                false, // emailNotify
+                0L, // balance
+                null, // iosPushToken
+                null, // androidPushToken
+                null, // browserPushToken
+                Instant.now(), // created
+                null, // pic
+                null, // picUrl
+                null, // expressBloom
+                null, // fundBloom
+                null, // voteBloom
+                null, // commentVoteBloom
+                null, // isTracked
+                ImmutableSet.of() // subscribedCategoryIds
         )).getUser();
     }
 
@@ -1073,13 +1092,16 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
     }
 
     private Optional<SlackMessageMapping> getMessageMappingByPostId(String projectId, String postId) {
-        return messageMappingSchema.index().query(messageMappingSchema.attrMapToConditions(
-                messageMappingSchema.indexName(1), ImmutableMap.of(
-                        "projectId", projectId,
-                        "postId", postId)))
-                .pages().stream()
-                .flatMap(page -> page.stream())
-                .map(messageMappingSchema::fromItem)
+        return StreamSupport.stream(messageMappingByPostIdSchema.index().query(new QuerySpec()
+                                .withHashKey(messageMappingByPostIdSchema.partitionKey(Map.of(
+                                        "projectId", projectId)))
+                                .withRangeKeyCondition(new RangeKeyCondition(messageMappingByPostIdSchema.rangeKeyName())
+                                        .eq(messageMappingByPostIdSchema.rangeValuePartial(Map.of(
+                                                "postId", postId)))))
+                        .pages()
+                        .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(messageMappingByPostIdSchema::fromItem)
                 .findFirst();
     }
 
@@ -1094,13 +1116,16 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
     }
 
     private Optional<SlackCommentMapping> getCommentMappingByCommentId(String projectId, String commentId) {
-        return commentMappingSchema.index().query(commentMappingSchema.attrMapToConditions(
-                commentMappingSchema.indexName(1), ImmutableMap.of(
-                        "projectId", projectId,
-                        "commentId", commentId)))
-                .pages().stream()
-                .flatMap(page -> page.stream())
-                .map(commentMappingSchema::fromItem)
+        return StreamSupport.stream(commentMappingByCommentIdSchema.index().query(new QuerySpec()
+                                .withHashKey(commentMappingByCommentIdSchema.partitionKey(Map.of(
+                                        "projectId", projectId)))
+                                .withRangeKeyCondition(new RangeKeyCondition(commentMappingByCommentIdSchema.rangeKeyName())
+                                        .eq(commentMappingByCommentIdSchema.rangeValuePartial(Map.of(
+                                                "commentId", commentId)))))
+                        .pages()
+                        .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(commentMappingByCommentIdSchema::fromItem)
                 .findFirst();
     }
 

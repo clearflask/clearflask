@@ -90,11 +90,14 @@ public class SlackResource {
         String signature = request.getHeader(SLACK_SIGNATURE_HEADER);
         String timestamp = request.getHeader(SLACK_TIMESTAMP_HEADER);
 
-        if (!Strings.isNullOrEmpty(config.signingSecret())) {
-            SlackSignatureVerifier.verifySignature(payload, timestamp, signature, config.signingSecret());
-        } else {
-            log.warn("Slack signing secret not configured, skipping signature verification");
+        if (Strings.isNullOrEmpty(config.signingSecret())) {
+            log.error("Slack signing secret not configured, rejecting webhook request");
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                    .entity("Slack integration not properly configured")
+                    .build();
         }
+
+        SlackSignatureVerifier.verifySignature(payload, timestamp, signature, config.signingSecret());
 
         // Parse the event
         JsonObject json = gson.fromJson(payload, JsonObject.class);
@@ -151,6 +154,12 @@ public class SlackResource {
         String threadTs = event.has("thread_ts") ? event.get("thread_ts").getAsString() : null;
         String text = event.has("text") ? event.get("text").getAsString() : null;
         String teamId = event.has("team") ? event.get("team").getAsString() : null;
+
+        // Validate required fields
+        if (Strings.isNullOrEmpty(channelId) || Strings.isNullOrEmpty(messageTs)) {
+            log.warn("Missing required fields in Slack message event: channelId={}, messageTs={}", channelId, messageTs);
+            return;
+        }
 
         // For bot messages, user might be in bot_id
         if (userId == null && event.has("bot_id")) {
