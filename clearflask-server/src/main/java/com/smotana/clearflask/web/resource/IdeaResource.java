@@ -158,6 +158,18 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         sanitizer.postTitle(ideaCreateAdmin.getTitle());
         sanitizer.content(ideaCreateAdmin.getDescription());
 
+        // Validate that only admins/mods can set visibility to Private
+        // (method is already @RolesAllowed, but extra check for clarity)
+        if (IdeaVisibility.PRIVATE.equals(ideaCreateAdmin.getVisibility())) {
+            if (!securityContext.isUserInRole(Role.PROJECT_ADMIN_ACTIVE)
+                    && !securityContext.isUserInRole(Role.PROJECT_ADMIN)
+                    && !securityContext.isUserInRole(Role.PROJECT_MODERATOR_ACTIVE)
+                    && !securityContext.isUserInRole(Role.PROJECT_MODERATOR)) {
+                throw new ApiException(Response.Status.FORBIDDEN,
+                        "Only admins and moderators can create private posts");
+            }
+        }
+
         Project project = projectStore.getProject(projectId, true).get();
         UserModel author = userStore.getUser(projectId, ideaCreateAdmin.getAuthorUserId())
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "User not found"));
@@ -253,9 +265,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .filter(ideaModel -> {
                     // Filter out private posts for non-admin users
                     if (IdeaVisibility.PRIVATE.equals(ideaModel.getVisibility())) {
-                        return getExtendedPrincipal()
-                                .map(p -> p.isAdminLoggedIn() || p.isModLoggedIn())
-                                .orElse(false);
+                        return securityContext.isUserInRole(Role.PROJECT_ADMIN)
+                                || securityContext.isUserInRole(Role.PROJECT_MODERATOR);
                     }
                     return true;
                 })
@@ -274,9 +285,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
-        boolean isModOrAdmin = getExtendedPrincipal()
-                .map(p -> p.isAdminLoggedIn() || p.isModLoggedIn())
-                .orElse(false);
+        boolean isModOrAdmin = securityContext.isUserInRole(Role.PROJECT_ADMIN)
+                || securityContext.isUserInRole(Role.PROJECT_MODERATOR);
         ImmutableCollection<IdeaModel> ideaModels = ideaStore.getIdeas(projectId, ideaGetAll.getPostIds().stream()
                 .filter(Objects::nonNull)
                 .collect(ImmutableList.toImmutableList())).values().stream()
@@ -441,6 +451,16 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         sanitizer.postTitle(ideaUpdate.getTitle());
         sanitizer.content(ideaUpdate.getDescription());
 
+        // Filter out private posts for non-admin users before allowing update
+        IdeaModel existingIdea = ideaStore.getIdea(projectId, ideaId)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Idea not found"));
+        if (IdeaVisibility.PRIVATE.equals(existingIdea.getVisibility())) {
+            if (!securityContext.isUserInRole(Role.PROJECT_ADMIN)
+                    && !securityContext.isUserInRole(Role.PROJECT_MODERATOR)) {
+                throw new ApiException(Response.Status.NOT_FOUND, "Idea not found");
+            }
+        }
+
         return ideaStore.updateIdea(projectId, ideaId, ideaUpdate)
                 .getIdea()
                 .toIdea(sanitizer);
@@ -452,6 +472,18 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     public Idea ideaUpdateAdmin(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin) {
         sanitizer.postTitle(ideaUpdateAdmin.getTitle());
         sanitizer.content(ideaUpdateAdmin.getDescription());
+
+        // Validate that only admins/mods can set visibility to Private
+        // (method is already @RolesAllowed, but extra check for clarity)
+        if (IdeaVisibility.PRIVATE.equals(ideaUpdateAdmin.getVisibility())) {
+            if (!securityContext.isUserInRole(Role.PROJECT_ADMIN_ACTIVE)
+                    && !securityContext.isUserInRole(Role.PROJECT_ADMIN)
+                    && !securityContext.isUserInRole(Role.PROJECT_MODERATOR_ACTIVE)
+                    && !securityContext.isUserInRole(Role.PROJECT_MODERATOR)) {
+                throw new ApiException(Response.Status.FORBIDDEN,
+                        "Only admins and moderators can set private visibility");
+            }
+        }
 
         Project project = projectStore.getProject(projectId, true).get();
         ConfigAdmin configAdmin = project.getVersionedConfigAdmin().getConfig();

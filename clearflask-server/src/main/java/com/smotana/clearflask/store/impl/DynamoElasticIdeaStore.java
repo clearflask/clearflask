@@ -480,7 +480,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         ideaRecord.setTrendscore(idea.getTrendScore());
         ideaRecord.setMergedtopostid(idea.getMergedToPostId());
         ideaRecord.setOrder(idea.getOrder());
-        ideaRecord.setVisibility(idea.getVisibility() == null ? null : idea.getVisibility().getValue());
+        ideaRecord.setVisibility(idea.getVisibility() == null ? null : idea.getVisibility().name());
 
         Stream<JooqIdeaTagsRecord> tagRecords = idea.getTagIds().stream().map(tagId -> JooqIdeaTags.IDEA_TAGS.newRecord().values(
                 idea.getProjectId(),
@@ -532,7 +532,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                         // not easy to fallback to a value of created unless
                         // script sorting is used.
                         .put("order", idea.getOrderOrDefault())
-                        .put("visibility", orNull(idea.getVisibility() == null ? null : idea.getVisibility().getValue()))
+                        .put("visibility", orNull(idea.getVisibility() == null ? null : idea.getVisibility().name()))
                         .build()), XContentType.JSON);
         if (setRefreshPolicy) {
             req.setRefreshPolicy(config.elasticForceRefresh() ? WriteRequest.RefreshPolicy.IMMEDIATE : WriteRequest.RefreshPolicy.WAIT_UNTIL);
@@ -1077,7 +1077,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         // Filter out private posts for non-admin users
         if (excludePrivate) {
             conditions.add(JooqIdea.IDEA.VISIBILITY.isNull()
-                    .or(JooqIdea.IDEA.VISIBILITY.ne(IdeaVisibility.PRIVATE.getValue())));
+                    .or(JooqIdea.IDEA.VISIBILITY.ne(IdeaVisibility.PRIVATE.name())));
         }
 
         return new SearchIdeasConditions(
@@ -1181,7 +1181,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
 
         // Filter out private posts for non-admin users
         if (excludePrivate) {
-            query.mustNot(QueryBuilders.termQuery("visibility", IdeaVisibility.PRIVATE.getValue()));
+            query.mustNot(QueryBuilders.termQuery("visibility", IdeaVisibility.PRIVATE.name()));
         }
 
         return query;
@@ -1450,6 +1450,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                         null,
                         null,
                         null,
+                        null,
                         null),
                 Optional.empty());
     }
@@ -1605,10 +1606,10 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
             updateItemSpec.addAttributeUpdate(new AttributeUpdate("visibility")
                     .put(ideaSchema.toDynamoValue("visibility", ideaUpdateAdmin.getVisibility())));
             if (searchEngine.isWriteElastic()) {
-                indexUpdatesElastic.put("visibility", ideaUpdateAdmin.getVisibility().getValue());
+                indexUpdatesElastic.put("visibility", ideaUpdateAdmin.getVisibility().name());
             }
             if (searchEngine.isWriteMysql()) {
-                indexUpdatesMysql.setVisibility(ideaUpdateAdmin.getVisibility().getValue());
+                indexUpdatesMysql.setVisibility(ideaUpdateAdmin.getVisibility().name());
             }
         }
 
