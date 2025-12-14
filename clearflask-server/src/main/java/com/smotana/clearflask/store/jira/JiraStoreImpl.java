@@ -459,8 +459,8 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
                 user.getName(),
                 user.getIsMod(),
                 Instant.now(),
-                sanitizer.richHtml(event.getSummary(), "title", Optional.of(project), Optional.empty()),
-                descriptionQuill,
+                event.getSummary(),  // title
+                descriptionQuill,    // description
                 null, // response
                 null, // responseAuthorUserId
                 null, // responseAuthorName
@@ -470,19 +470,24 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
                 tagIds,
                 0L, // commentCount
                 0L, // childCommentCount
-                0L, // voteValue
-                0L, // votersCount
-                0L, // expressionsValue
+                null, // funded
+                null, // fundGoal
+                null, // fundersCount
+                null, // voteValue
+                null, // votersCount
+                null, // expressionsValue
                 ImmutableMap.of(), // expressions
-                0D, // trendScore
-                0D, // order
-                null, // mergedToPostId
-                Instant.now(), // mergedTime
-                ImmutableSet.of(), // linkedFromPostIds
+                null, // trendScore
                 ImmutableSet.of(), // linkedToPostIds
-                null, // coverImage
-                event.getIssueUrl(), // externalUrl - Jira issue URL
-                null); // linkedGitHubUrl
+                ImmutableSet.of(), // linkedFromPostIds
+                null, // mergedToPostId
+                null, // mergedToPostTime
+                ImmutableSet.of(), // mergedPostIds
+                null, // order
+                null, // linkedGitHubUrl
+                null, // coverImg
+                null, // visibility
+                null); // adminNotes
 
         return Optional.of(ideaStore.createIdea(idea));
     }
@@ -504,7 +509,7 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
 
         // Update title if changed
         if (!Strings.isNullOrEmpty(event.getSummary()) && !event.getSummary().equals(idea.getTitle())) {
-            builder.title(sanitizer.richHtml(event.getSummary(), "title", Optional.of(project), Optional.empty()));
+            builder.title(event.getSummary());
             changed = true;
         }
 
@@ -512,7 +517,7 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
         if (!Strings.isNullOrEmpty(event.getDescription())) {
             try {
                 String newDesc = adfQuillConverter.adfToQuill(event.getDescription());
-                if (!newDesc.equals(idea.getDescription())) {
+                if (!newDesc.equals(idea.getDescriptionAsUnsafeHtml())) {
                     builder.description(newDesc);
                     changed = true;
                 }
@@ -536,11 +541,11 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
             return Optional.empty();
         }
 
+        IdeaModel updated = builder.build();
         return Optional.of(ideaStore.updateIdea(project.getProjectId(), ideaId,
-                IdeaStore.IdeaUpdate.builder()
-                        .title(builder.build().getTitle())
-                        .description(builder.build().getDescription())
-                        .statusId(builder.build().getStatusId())
+                IdeaUpdate.builder()
+                        .title(updated.getTitle())
+                        .description(updated.getDescriptionAsUnsafeHtml())
                         .build()));
     }
 
@@ -550,7 +555,7 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
             return Optional.empty();
         }
 
-        ideaStore.deleteIdea(project.getProjectId(), ideaId);
+        ideaStore.deleteIdea(project.getProjectId(), ideaId, false);
         log.info("Deleted idea {} for deleted Jira issue", ideaId);
         return Optional.empty();
     }
