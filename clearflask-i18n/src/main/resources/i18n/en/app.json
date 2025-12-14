@@ -150,5 +150,6 @@
   "add-vote": "Add vote",
   "remove-vote": "Remove vote",
   "failed-to-add-vote": "Failed to add vote",
-  "failed-to-remove-vote": "Failed to remove vote"
+  "failed-to-remove-vote": "Failed to remove vote",
+  "action": "Action"
 }
