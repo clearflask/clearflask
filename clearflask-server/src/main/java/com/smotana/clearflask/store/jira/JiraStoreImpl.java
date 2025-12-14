@@ -169,20 +169,23 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
                 try {
                     ImmutableList<JiraProject> projects = client.getApiClient().getProjects();
                     for (JiraProject project : projects) {
-                        availableProjectsBuilder.add(new AvailableJiraProject()
+                        availableProjectsBuilder.add(AvailableJiraProject.builder()
                                 .cloudId(instance.getId())
                                 .cloudName(instance.getName())
                                 .cloudUrl(instance.getUrl())
                                 .projectId(project.getId())
                                 .projectKey(project.getKey())
-                                .projectName(project.getName()));
+                                .projectName(project.getName())
+                                .build());
                     }
                 } catch (IOException e) {
                     log.warn("Failed to fetch projects for Jira cloud instance {}", instance.getId(), e);
                 }
             }
 
-            return new AvailableJiraProjects().projects(availableProjectsBuilder.build());
+            return AvailableJiraProjects.builder()
+                    .projects(availableProjectsBuilder.build())
+                    .build();
         } catch (IOException e) {
             log.warn("Failed to get Jira projects for user", e);
             throw new ApiException(Response.Status.BAD_REQUEST, "Failed to authenticate with Jira", e);
