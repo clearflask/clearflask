@@ -52,6 +52,17 @@ components:
       properties:
         vote:
           $ref: 'api-vote.yaml#/components/schemas/VoteOption'
+    IdeaVoteUpdateAdmin:
+      type: object
+      required:
+      - vote
+      - voterUserId
+      properties:
+        vote:
+          $ref: 'api-vote.yaml#/components/schemas/VoteOption'
+        voterUserId:
+          type: string
+          description: User ID on whose behalf to vote
 
 
 /project/{projectId}/vote/ideas:
@@ -260,5 +271,43 @@ components:
           application/json:
             schema:
               $ref: 'api-user.yaml#/components/schemas/UserMe'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
+/project/{projectId}/admin/vote/idea/{ideaId}:
+  patch:
+    operationId: ideaVoteUpdateAdmin
+    tags: [VoteAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: ideaId
+      in: path
+      required: true
+      schema:
+        type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-vote.yaml#/components/schemas/IdeaVoteUpdateAdmin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: IdeaVoteUpdateAdminResponse
+              type: object
+              required:
+              - idea
+              - voter
+              properties:
+                idea:
+                  $ref: 'api-idea.yaml#/components/schemas/Idea'
+                voter:
+                  $ref: 'api-user.yaml#/components/schemas/UserAdmin'
       '404':
         $ref: 'api-client.yaml#/components/responses/NotFound'

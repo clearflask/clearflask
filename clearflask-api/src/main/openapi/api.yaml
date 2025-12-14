@@ -53,6 +53,8 @@ paths:
     $ref: 'api-vote.yaml#/~1project~1{projectId}~1idea~1{ideaId}~1vote~1comment~1{commentId}'
   /project/{projectId}/subscribe/category/{categoryId}:
     $ref: 'api-vote.yaml#/~1project~1{projectId}~1subscribe~1category~1{categoryId}'
+  /project/{projectId}/admin/vote/idea/{ideaId}:
+    $ref: 'api-vote.yaml#/~1project~1{projectId}~1admin~1vote~1idea~1{ideaId}'
   /slug/{slug}/bind/configAndUser:
     $ref: 'api-project.yaml#/~1slug~1{slug}~1bind~1configAndUser'
   /slug/{slug}/bind/config:

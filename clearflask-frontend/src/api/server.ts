@@ -632,6 +632,18 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
           action.payload.parentIdea.funded || 0,
           state.maxFundAmountSeen),
       };
+    case Admin.ideaVoteUpdateAdminActionStatus.Fulfilled:
+      return {
+        ...state,
+        byId: {
+          ...state.byId,
+          [action.payload.idea.ideaId]: {
+            idea: action.payload.idea,
+            status: Status.FULFILLED,
+          },
+        },
+        maxFundAmountSeen: Math.max(action.payload.idea.funded || 0, state.maxFundAmountSeen),
+      };
     case Client.commentCreateActionStatus.Fulfilled:
       // For comment creation, update idea comment counts
       const postIdWithNewComment = action.meta.request.commentCreate.mergedPostId || action.meta.request.ideaId;

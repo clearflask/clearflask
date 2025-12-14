@@ -144,5 +144,11 @@
   "reply": "Reply",
   "edit": "Edit",
   "edited": "Edited",
-  "comment-deleted": "Comment deleted"
+  "comment-deleted": "Comment deleted",
+  "vote-on-behalf": "Vote on behalf",
+  "search-user": "Search user",
+  "add-vote": "Add vote",
+  "remove-vote": "Remove vote",
+  "failed-to-add-vote": "Failed to add vote",
+  "failed-to-remove-vote": "Failed to remove vote"
 }
