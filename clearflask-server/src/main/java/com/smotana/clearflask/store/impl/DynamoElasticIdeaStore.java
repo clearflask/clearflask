@@ -1454,19 +1454,12 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
 
     @Override
     public IdeaAndIndexingFuture updateIdea(String projectId, String ideaId, IdeaUpdate ideaUpdate) {
-        return updateIdea(projectId, ideaId, new IdeaUpdateAdmin(
-                        ideaUpdate.getTitle(),
-                        ideaUpdate.getDescription(),
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null,
-                        null),
+        return updateIdea(projectId, ideaId,
+                IdeaUpdateAdmin.builder()
+                        .title(ideaUpdate.getTitle())
+                        .description(ideaUpdate.getDescription())
+                        .externalUrl(ideaUpdate.getExternalUrl())
+                        .build(),
                 Optional.empty());
     }
 

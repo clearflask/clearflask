@@ -749,6 +749,13 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
 
                 JiraIssue jiraIssue = client.getApiClient().createIssue(request);
 
+                // Store Jira URL in idea
+                String jiraUrl = "https://" + jiraConfig.getCloudName() + ".atlassian.net/browse/" + jiraIssue.getKey();
+                ideaStore.updateIdea(project.getProjectId(), idea.getIdeaId(),
+                        IdeaUpdate.builder()
+                                .externalUrl(jiraUrl)
+                                .build());
+
                 log.info("Created Jira issue {} for ClearFlask post {}", jiraIssue.getKey(), idea.getIdeaId());
                 return Optional.of(jiraIssue);
 

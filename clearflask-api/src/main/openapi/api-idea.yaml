@@ -359,6 +359,8 @@ components:
           type: string
         description:
           type: string
+        externalUrl:
+          type: string
     IdeaUpdateAdmin:
       allOf:
         - $ref: 'api-idea.yaml#/components/schemas/IdeaUpdate'
