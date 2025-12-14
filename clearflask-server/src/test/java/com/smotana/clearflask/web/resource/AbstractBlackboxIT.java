@@ -53,6 +53,8 @@ import com.smotana.clearflask.core.push.message.OnAccountSignup;
 import com.smotana.clearflask.core.push.message.OnCommentReply;
 import com.smotana.clearflask.core.push.message.OnCreditChange;
 import com.smotana.clearflask.core.push.message.OnDigest;
+import com.smotana.clearflask.core.push.message.OnPostCreated;
+import com.smotana.clearflask.core.push.message.OnPostCreatedOnBehalfOf;
 import com.smotana.clearflask.core.push.message.OnEmailChanged;
 import com.smotana.clearflask.core.push.message.OnAdminForgotPassword;
 import com.smotana.clearflask.core.push.message.OnForgotPassword;
@@ -264,6 +266,8 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 OnModInvite.module(),
                 OnEmailChanged.module(),
                 OnDigest.module(),
+                OnPostCreated.module(),
+                OnPostCreatedOnBehalfOf.module(),
                 EmailVerify.module(),
                 EmailLogin.module(),
                 MockBrowserPushService.module(),

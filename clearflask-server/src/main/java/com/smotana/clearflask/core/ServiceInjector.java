@@ -51,6 +51,7 @@ import com.smotana.clearflask.core.push.message.OnInvoicePaymentSuccess;
 import com.smotana.clearflask.core.push.message.OnModInvite;
 import com.smotana.clearflask.core.push.message.OnPaymentFailed;
 import com.smotana.clearflask.core.push.message.OnPostCreated;
+import com.smotana.clearflask.core.push.message.OnPostCreatedOnBehalfOf;
 import com.smotana.clearflask.core.push.message.OnProjectDeletionImminent;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
 import com.smotana.clearflask.core.push.message.OnTeammateInvite;
@@ -271,6 +272,7 @@ public enum ServiceInjector {
                 install(OnPaymentFailed.module());
                 install(OnInvoicePaymentSuccess.module());
                 install(OnPostCreated.module());
+                install(OnPostCreatedOnBehalfOf.module());
                 install(EmailVerify.module());
                 install(EmailLogin.module());
 

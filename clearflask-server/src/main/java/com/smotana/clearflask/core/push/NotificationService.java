@@ -54,6 +54,8 @@ public interface NotificationService {
 
     void onPostCreated(Project project, IdeaModel idea, NotifySubscribers notifySubscribers, UserModel author);
 
+    void onPostCreatedOnBehalfOf(Project project, IdeaModel idea, UserModel author);
+
     void onDigest(Account account, Digest projects);
 
     void onProjectDeletionImminent(Account account);
