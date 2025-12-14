@@ -1042,6 +1042,48 @@ components:
                         type: string
                       name:
                         type: string
+/admin/account/jira/projects:
+  post:
+    operationId: jiraGetProjectsAdmin
+    tags: [ AccountAdmin ]
+    parameters:
+      - name: code
+        in: query
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: AvailableJiraProjects
+              type: object
+              required:
+                - projects
+              properties:
+                projects:
+                  type: array
+                  items:
+                    title: AvailableJiraProject
+                    type: object
+                    required:
+                      - cloudId
+                      - projectKey
+                      - projectName
+                    properties:
+                      cloudId:
+                        type: string
+                      cloudName:
+                        type: string
+                      cloudUrl:
+                        type: string
+                      projectId:
+                        type: string
+                      projectKey:
+                        type: string
+                      projectName:
+                        type: string
 /admin/account/delete:
   delete:
     operationId: accountDeleteAdmin
