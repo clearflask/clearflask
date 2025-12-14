@@ -47,7 +47,12 @@ public class GitLabResource {
     private static final String GITLAB_INSTANCE_HEADER = "X-Gitlab-Instance";
 
     public interface Config {
-        @DefaultValue("secret_shh")
+        /**
+         * Secret token for GitLab webhook validation.
+         * MUST be configured in production - empty default will cause webhooks to fail.
+         * Generate a strong random secret and configure both in ClearFlask and GitLab webhook settings.
+         */
+        @DefaultValue("")
         String webhookSecret();
     }
 
@@ -79,7 +84,7 @@ public class GitLabResource {
 
         Optional<Project> projectOpt = Optional.empty();
         for (boolean useCache : ImmutableList.of(Boolean.TRUE, Boolean.FALSE)) {
-            projectOpt = projectStore.getProject(projectId, true);
+            projectOpt = projectStore.getProject(projectId, useCache);
             if (projectOpt.isEmpty()) {
                 break; // Project doesn't exist
             }
@@ -128,8 +133,14 @@ public class GitLabResource {
     }
 
     private void checkToken() {
+        String configuredSecret = config.webhookSecret();
+        if (Strings.isNullOrEmpty(configuredSecret)) {
+            log.error("GitLab webhook secret is not configured. Please set a secure random secret in the configuration.");
+            throw new InternalServerErrorException("GitLab webhook secret not configured");
+        }
+
         String token = Strings.nullToEmpty(request.getHeader(GITLAB_TOKEN_HEADER));
-        if (!config.webhookSecret().equals(token)) {
+        if (!configuredSecret.equals(token)) {
             if (LogUtil.rateLimitAllowLog("gitlab-resource-token-mismatch")) {
                 log.warn("GitLab webhook token mismatch");
             }

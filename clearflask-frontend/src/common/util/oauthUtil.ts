@@ -16,8 +16,11 @@ const GitHubAppProvider = {
 
 // GitLab OAuth provider for gitlab.com
 // For self-hosted GitLab, the authorizeUrl needs to be constructed dynamically
+// NOTE: This client ID must match the backend GitLab OAuth configuration
 const GitLabProvider: OAuthProvider = {
-  clientId: isProd() ? '' : 'gitlab-client-id', // TODO: Add production GitLab OAuth App client ID
+  clientId: isProd()
+    ? process.env.REACT_APP_GITLAB_CLIENT_ID || (() => { throw new Error('REACT_APP_GITLAB_CLIENT_ID environment variable must be set for GitLab OAuth'); })()
+    : 'gitlab-client-id',
   authorizeUrl: 'https://gitlab.com/oauth/authorize',
   scope: 'api read_user',
 };

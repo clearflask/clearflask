@@ -42,6 +42,8 @@ import com.smotana.clearflask.api.model.AccountUpdateSuperAdmin;
 import com.smotana.clearflask.api.model.AllPlansGetResponse;
 import com.smotana.clearflask.api.model.AvailableRepos;
 import com.smotana.clearflask.api.model.CouponGenerateSuperAdmin;
+import com.smotana.clearflask.api.model.GitLabAvailableProjects;
+import com.smotana.clearflask.api.model.GitLabGetProjectsBody;
 import com.smotana.clearflask.api.model.InvitationResult;
 import com.smotana.clearflask.api.model.InvoiceHtmlResponse;
 import com.smotana.clearflask.api.model.Invoices;

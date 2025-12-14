@@ -169,6 +169,9 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
             throw new ApiException(Response.Status.SERVICE_UNAVAILABLE, "GitLab integration is disabled");
         }
 
+        // Validate instance URL to prevent SSRF attacks
+        validateGitLabInstanceUrl(gitlabInstanceUrl);
+
         String instanceUrl = Strings.isNullOrEmpty(gitlabInstanceUrl) ? DEFAULT_GITLAB_URL : gitlabInstanceUrl;
 
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
@@ -250,6 +253,80 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
                             .map(gitLabAuthorizationSchema::toItem)
                             .collect(ImmutableList.toImmutableList()))));
         });
+    }
+
+    /**
+     * Refreshes an expired GitLab access token using the refresh token.
+     * Updates the stored authorization with the new tokens.
+     *
+     * @param auth The current authorization with refresh token
+     * @return A new GitLabAuthorization with refreshed access token
+     * @throws ApiException if token refresh fails
+     */
+    private GitLabAuthorization refreshAccessToken(GitLabAuthorization auth) {
+        if (Strings.isNullOrEmpty(auth.getRefreshToken())) {
+            log.warn("Cannot refresh GitLab token: no refresh token available for account {} instance {}",
+                    auth.getAccountId(), auth.getInstanceUrl());
+            throw new ApiException(Response.Status.UNAUTHORIZED,
+                    "GitLab authorization expired and cannot be refreshed. Please re-authorize.");
+        }
+
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            HttpPost reqRefresh = new HttpPost(auth.getInstanceUrl() + "/oauth/token");
+            reqRefresh.setHeader("Accept", "application/json");
+            reqRefresh.setEntity(new UrlEncodedFormEntity(ImmutableList.of(
+                    new BasicNameValuePair("grant_type", "refresh_token"),
+                    new BasicNameValuePair("client_id", config.clientId()),
+                    new BasicNameValuePair("client_secret", config.clientSecret()),
+                    new BasicNameValuePair("refresh_token", auth.getRefreshToken())),
+                    Charsets.UTF_8));
+
+            DynamoElasticUserStore.OAuthAuthorizationResponse oAuthResponse;
+            try (CloseableHttpResponse res = client.execute(reqRefresh)) {
+                if (res.getStatusLine().getStatusCode() < 200
+                        || res.getStatusLine().getStatusCode() > 299) {
+                    log.info("GitLab token refresh failed, url {} response status {}",
+                            reqRefresh.getURI(), res.getStatusLine().getStatusCode());
+                    throw new ApiException(Response.Status.UNAUTHORIZED,
+                            "Failed to refresh GitLab token. Please re-authorize.");
+                }
+                try {
+                    oAuthResponse = gson.fromJson(
+                            new InputStreamReader(res.getEntity().getContent(), StandardCharsets.UTF_8),
+                            DynamoElasticUserStore.OAuthAuthorizationResponse.class);
+                } catch (JsonSyntaxException | JsonIOException ex) {
+                    log.warn("GitLab token refresh response cannot parse, url {} response status {}",
+                            reqRefresh.getURI(), res.getStatusLine().getStatusCode(), ex);
+                    throw new ApiException(Response.Status.SERVICE_UNAVAILABLE, "Failed to parse GitLab response", ex);
+                }
+            }
+
+            // Calculate new expiration time
+            long newExpiresAt = oAuthResponse.getExpiresIn() != null
+                    ? Instant.now().plusSeconds(oAuthResponse.getExpiresIn()).getEpochSecond()
+                    : Instant.now().plus(Duration.ofHours(2)).getEpochSecond();
+
+            // Create new authorization with refreshed tokens
+            GitLabAuthorization refreshedAuth = new GitLabAuthorization(
+                    auth.getAccountId(),
+                    auth.getInstanceUrl(),
+                    auth.getProjectId(),
+                    oAuthResponse.getAccessToken(),
+                    oAuthResponse.getRefreshToken() != null ? oAuthResponse.getRefreshToken() : auth.getRefreshToken(),
+                    newExpiresAt,
+                    auth.getAuthExpiry());
+
+            // Update in DynamoDB
+            gitLabAuthorizationSchema.table().putItem(gitLabAuthorizationSchema.toItem(refreshedAuth));
+
+            log.info("Successfully refreshed GitLab access token for account {} instance {}",
+                    auth.getAccountId(), auth.getInstanceUrl());
+
+            return refreshedAuth;
+        } catch (IOException ex) {
+            log.warn("Failed to refresh GitLab token due to network error", ex);
+            throw new ApiException(Response.Status.SERVICE_UNAVAILABLE, "Failed to refresh GitLab token", ex);
+        }
     }
 
     @Override
@@ -390,7 +467,23 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
                         return false;
                     }
                     return true;
-                });
+                })
+                .map(auth -> {
+                    // Check if access token is expired and refresh if needed
+                    if (auth.getExpiresAt() < Instant.now().getEpochSecond()) {
+                        log.info("GitLab access token expired, attempting refresh for account {} instance {}",
+                                accountId, instanceUrl);
+                        try {
+                            return refreshAccessToken(auth);
+                        } catch (ApiException ex) {
+                            log.warn("Failed to refresh expired GitLab token", ex);
+                            // Return null to filter out this expired auth
+                            return null;
+                        }
+                    }
+                    return auth;
+                })
+                .filter(auth -> auth != null);
     }
 
     private Optional<GitLabAuthorization> getAccountAuthorizationForProjectByProjectId(String cfProjectId, String instanceUrl, long gitlabProjectId) {
@@ -638,9 +731,16 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
         }
 
         return submit(() -> {
-            Optional<CommentModel> parentCommentOpt = comment.getParentCommentIds().isEmpty() ? Optional.empty()
-                    : commentStore.getComment(project.getProjectId(), idea.getIdeaId(),
-                    comment.getParentCommentIds().get(comment.getParentCommentIds().size() - 1));
+            Optional<CommentModel> parentCommentOpt = Optional.empty();
+            if (!comment.getParentCommentIds().isEmpty()) {
+                try {
+                    parentCommentOpt = commentStore.getComment(project.getProjectId(), idea.getIdeaId(),
+                            comment.getParentCommentIds().get(comment.getParentCommentIds().size() - 1));
+                } catch (Exception ex) {
+                    // Parent comment might not be indexed yet due to eventual consistency
+                    log.debug("Could not fetch parent comment (might not be indexed yet): {}", ex.getMessage());
+                }
+            }
 
             String instanceUrl = Strings.isNullOrEmpty(integration.get().getGitlabInstanceUrl())
                     ? DEFAULT_GITLAB_URL : integration.get().getGitlabInstanceUrl();
@@ -675,7 +775,10 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
                 return Optional.of(note);
             } catch (GitLabApiException ex) {
                 if (ex.getHttpStatus() == 403) {
-                    removeIntegrationConfig(project.getProjectId());
+                    log.error("GitLab API returned 403 Forbidden for project {}. This may indicate " +
+                            "insufficient permissions or expired authorization. Please check the GitLab integration settings.",
+                            project.getProjectId());
+                    // Don't immediately remove config - could be a temporary permission issue
                 }
                 throw new RuntimeException(ex);
             }
@@ -778,6 +881,9 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
                             .collect(Collectors.toList());
                     newLabels.add(labelToAdd.getName());
 
+                    // Validate labels before sending to GitLab
+                    validateLabels(newLabels);
+
                     // Update issue with new labels
                     client.getApi().getIssuesApi().updateIssue(
                             integration.get().getProjectId(),
@@ -814,7 +920,10 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
                 return Optional.of(new StatusAndOrResponse(glIssue, responseNoteOpt));
             } catch (GitLabApiException ex) {
                 if (ex.getHttpStatus() == 403) {
-                    removeIntegrationConfig(project.getProjectId());
+                    log.error("GitLab API returned 403 Forbidden for project {}. This may indicate " +
+                            "insufficient permissions or expired authorization. Please check the GitLab integration settings.",
+                            project.getProjectId());
+                    // Don't immediately remove config - could be a temporary permission issue
                 }
                 throw new RuntimeException(ex);
             }
@@ -840,6 +949,94 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
                 () -> Optional.ofNullable(Strings.emptyToNull(glUser.getEmail())),
                 () -> Optional.ofNullable(Strings.emptyToNull(glUser.getName())),
                 false);
+    }
+
+    /**
+     * Validates label content to prevent injection issues.
+     * Labels should not contain commas or special characters that could cause parsing issues.
+     *
+     * @param labels List of labels to validate
+     */
+    private void validateLabels(List<String> labels) {
+        if (labels == null) {
+            return;
+        }
+
+        for (String label : labels) {
+            if (Strings.isNullOrEmpty(label)) {
+                continue;
+            }
+
+            // Check for characters that could cause issues in comma-separated lists
+            if (label.contains(",")) {
+                log.warn("Label contains comma, which may cause issues: {}", label);
+                // gitlab4j-api should handle this, but warn about it
+            }
+
+            // Check for other potentially problematic characters
+            if (label.contains("\n") || label.contains("\r") || label.contains("\t")) {
+                throw new RuntimeException("Label contains invalid characters (newlines/tabs): " + label);
+            }
+        }
+    }
+
+    /**
+     * Validates a GitLab instance URL to prevent SSRF attacks and other security issues.
+     *
+     * @param gitlabInstanceUrl The URL to validate
+     * @throws ApiException if the URL is invalid or potentially malicious
+     */
+    private void validateGitLabInstanceUrl(String gitlabInstanceUrl) {
+        if (Strings.isNullOrEmpty(gitlabInstanceUrl)) {
+            return; // Empty is OK, will use default
+        }
+
+        try {
+            java.net.URL url = new java.net.URL(gitlabInstanceUrl);
+
+            // Only allow HTTPS protocol for security
+            if (!"https".equals(url.getProtocol())) {
+                throw new ApiException(Response.Status.BAD_REQUEST, "GitLab instance URL must use HTTPS");
+            }
+
+            String host = url.getHost();
+            if (Strings.isNullOrEmpty(host)) {
+                throw new ApiException(Response.Status.BAD_REQUEST, "Invalid GitLab instance URL: no host");
+            }
+
+            // Prevent localhost and private IP ranges to avoid SSRF
+            if (host.equals("localhost")
+                    || host.equals("127.0.0.1")
+                    || host.startsWith("127.")
+                    || host.equals("0.0.0.0")
+                    || host.startsWith("10.")
+                    || host.startsWith("192.168.")
+                    || host.startsWith("169.254.") // AWS metadata service
+                    || host.startsWith("172.16.")
+                    || host.startsWith("172.17.")
+                    || host.startsWith("172.18.")
+                    || host.startsWith("172.19.")
+                    || host.startsWith("172.20.")
+                    || host.startsWith("172.21.")
+                    || host.startsWith("172.22.")
+                    || host.startsWith("172.23.")
+                    || host.startsWith("172.24.")
+                    || host.startsWith("172.25.")
+                    || host.startsWith("172.26.")
+                    || host.startsWith("172.27.")
+                    || host.startsWith("172.28.")
+                    || host.startsWith("172.29.")
+                    || host.startsWith("172.30.")
+                    || host.startsWith("172.31.")
+                    || host.equals("::1")
+                    || host.equals("[::1]")) {
+                throw new ApiException(Response.Status.BAD_REQUEST,
+                    "Invalid GitLab instance URL: private/local addresses not allowed");
+            }
+
+        } catch (java.net.MalformedURLException ex) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Invalid GitLab instance URL", ex);
+        }
     }
 
     private <T> ListenableFuture<T> submit(Callable<T> task) {
