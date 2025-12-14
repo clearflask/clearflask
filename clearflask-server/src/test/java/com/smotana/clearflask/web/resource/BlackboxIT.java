@@ -5,6 +5,7 @@ package com.smotana.clearflask.web.resource;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.smotana.clearflask.TestUtil;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.api.model.AccountAdmin;
 import com.smotana.clearflask.api.model.AccountSignupAdmin;
 import com.smotana.clearflask.api.model.AccountUpdateAdmin;
@@ -44,6 +45,7 @@ import java.util.stream.Stream;
 
 import static com.smotana.clearflask.testutil.HtmlUtil.textToSimpleHtml;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 @Slf4j
 @RunWith(Parameterized.class)
@@ -212,6 +214,105 @@ public class BlackboxIT extends AbstractBlackboxIT {
                                 ideaYoursCommentYours.getCommentId(), VoteOption.UPVOTE))
                         .build(),
                 commentVoteGetOwnResponse);
+    }
+
+    @Test(timeout = 300_000L)
+    public void testAdminProxyVoting() throws Exception {
+        AccountAndProject account = getTrialAccount();
+        String projectId = account.getProject().getProjectId();
+
+        // Create a regular user
+        UserMeWithBalance regularUser = userResource.userCreate(projectId, UserCreate.builder()
+                .name("regularUser").build()).getUser();
+
+        // Create an idea
+        IdeaWithVote idea = ideaResource.ideaCreate(projectId, IdeaCreate.builder()
+                .authorUserId(regularUser.getUserId())
+                .title("Test idea for proxy voting")
+                .categoryId(account.getProject().getConfig().getConfig().getContent().getCategories().get(0).getCategoryId())
+                .tagIds(ImmutableList.of())
+                .build());
+
+        // Verify initial vote value
+        assertEquals(Long.valueOf(0L), idea.getVoteValue());
+
+        // Admin votes on behalf of regular user (upvote)
+        Admin.IdeaVoteUpdateAdminResponse upvoteResponse = voteResource.ideaVoteUpdateAdmin(
+                projectId,
+                idea.getIdeaId(),
+                Admin.IdeaVoteUpdateAdmin.builder()
+                        .voterUserId(regularUser.getUserId())
+                        .vote(VoteOption.UPVOTE)
+                        .build());
+
+        // Verify vote value increased
+        assertEquals(Long.valueOf(1L), upvoteResponse.getIdea().getVoteValue());
+        assertEquals(regularUser.getUserId(), upvoteResponse.getVoter().getUserId());
+
+        // Admin removes vote on behalf of regular user
+        Admin.IdeaVoteUpdateAdminResponse removeVoteResponse = voteResource.ideaVoteUpdateAdmin(
+                projectId,
+                idea.getIdeaId(),
+                Admin.IdeaVoteUpdateAdmin.builder()
+                        .voterUserId(regularUser.getUserId())
+                        .vote(VoteOption.NONE)
+                        .build());
+
+        // Verify vote value decreased
+        assertEquals(Long.valueOf(0L), removeVoteResponse.getIdea().getVoteValue());
+
+        // Test error case: voting on merged post should fail
+        IdeaWithVote parentIdea = ideaResource.ideaCreate(projectId, IdeaCreate.builder()
+                .authorUserId(regularUser.getUserId())
+                .title("Parent idea")
+                .categoryId(account.getProject().getConfig().getConfig().getContent().getCategories().get(0).getCategoryId())
+                .tagIds(ImmutableList.of())
+                .build());
+
+        // Merge the idea
+        ideaResource.ideaMerge(projectId, idea.getIdeaId(), parentIdea.getIdeaId());
+
+        // Attempt to vote on merged post should fail
+        try {
+            voteResource.ideaVoteUpdateAdmin(
+                    projectId,
+                    idea.getIdeaId(),
+                    Admin.IdeaVoteUpdateAdmin.builder()
+                            .voterUserId(regularUser.getUserId())
+                            .vote(VoteOption.UPVOTE)
+                            .build());
+            fail("Expected exception for voting on merged post");
+        } catch (Exception e) {
+            // Expected
+        }
+
+        // Test error case: non-existent user should fail
+        try {
+            voteResource.ideaVoteUpdateAdmin(
+                    projectId,
+                    parentIdea.getIdeaId(),
+                    Admin.IdeaVoteUpdateAdmin.builder()
+                            .voterUserId("non-existent-user-id")
+                            .vote(VoteOption.UPVOTE)
+                            .build());
+            fail("Expected exception for non-existent user");
+        } catch (Exception e) {
+            // Expected
+        }
+
+        // Test error case: empty voterUserId should fail
+        try {
+            voteResource.ideaVoteUpdateAdmin(
+                    projectId,
+                    parentIdea.getIdeaId(),
+                    Admin.IdeaVoteUpdateAdmin.builder()
+                            .voterUserId("")
+                            .vote(VoteOption.UPVOTE)
+                            .build());
+            fail("Expected exception for empty voterUserId");
+        } catch (Exception e) {
+            // Expected
+        }
     }
 
     private UserMeWithBalance addUserAndDoThings(String projectId, ConfigAdmin configAdmin) {

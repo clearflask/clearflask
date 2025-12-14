@@ -1377,10 +1377,15 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     if (!voter) {
       throw new Error('User not found');
     }
-    // Update vote value based on vote type
-    const voteChange = request.ideaVoteUpdateAdmin.vote === Admin.VoteOption.Upvote ? 1
+    // Calculate vote change properly handling transitions
+    const currentVote = idea.vote || Admin.VoteOption.None;
+    const currentValue = currentVote === Admin.VoteOption.Upvote ? 1
+      : currentVote === Admin.VoteOption.Downvote ? -1 : 0;
+    const newValue = request.ideaVoteUpdateAdmin.vote === Admin.VoteOption.Upvote ? 1
       : request.ideaVoteUpdateAdmin.vote === Admin.VoteOption.Downvote ? -1 : 0;
+    const voteChange = newValue - currentValue;
     idea.voteValue = (idea.voteValue || 0) + voteChange;
+    idea.vote = request.ideaVoteUpdateAdmin.vote;
     return this.returnLater({ idea, voter });
   }
 

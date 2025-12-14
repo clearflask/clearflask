@@ -279,12 +279,18 @@ public class VoteResource extends AbstractResource implements VoteApi, VoteAdmin
                 transactionOpt.orElse(null));
     }
 
-    @RolesAllowed({Role.PROJECT_MODERATOR})
+    @RolesAllowed({Role.PROJECT_MODERATOR_ACTIVE})
     @Limit(requiredPermits = 10)
     @Override
     public IdeaVoteUpdateAdminResponse ideaVoteUpdateAdmin(String projectId, String ideaId, IdeaVoteUpdateAdmin voteUpdateAdmin) {
         Project project = projectStore.getProject(projectId, true).orElseThrow(BadRequestException::new);
         IdeaModel idea = ideaStore.getIdea(projectId, ideaId).orElseThrow(BadRequestException::new);
+
+        // Validate voterUserId is not empty
+        if (Strings.isNullOrEmpty(voteUpdateAdmin.getVoterUserId())) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Voter user ID is required");
+        }
+
         UserModel voter = userStore.getUser(projectId, voteUpdateAdmin.getVoterUserId())
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "User not found"));
 
@@ -293,6 +299,12 @@ public class VoteResource extends AbstractResource implements VoteApi, VoteAdmin
         }
 
         VoteValue voteValue = VoteValue.fromVoteOption(voteUpdateAdmin.getVote());
+
+        // Validate voting is allowed for this category and status
+        if (!project.isVotingAllowed(voteValue, idea.getCategoryId(), Optional.ofNullable(idea.getStatusId()))) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Voting not allowed");
+        }
+
         idea = ideaStore.voteIdea(projectId, ideaId, voter.getUserId(), voteValue)
                 .getIdea();
 

@@ -5,6 +5,7 @@ import { createStyles, Theme, withStyles, WithStyles } from '@material-ui/core/s
 import AddIcon from '@material-ui/icons/Add';
 import RemoveIcon from '@material-ui/icons/Remove';
 import classNames from 'classnames';
+import { WithSnackbarProps, withSnackbar } from 'notistack';
 import { Component } from 'react';
 import { withTranslation, WithTranslation } from 'react-i18next';
 import { connect } from 'react-redux';
@@ -78,7 +79,7 @@ interface State {
   removingUserId?: string;
 }
 
-class VotersList extends Component<Props & ConnectProps & WithTranslation<'app'> & WithStyles<typeof styles, true> & RouteComponentProps, State> {
+class VotersList extends Component<Props & ConnectProps & WithTranslation<'app'> & WithStyles<typeof styles, true> & WithSnackbarProps & RouteComponentProps, State> {
   state: State = {};
 
   constructor(props) {
@@ -112,6 +113,14 @@ class VotersList extends Component<Props & ConnectProps & WithTranslation<'app'>
       if (vote === Admin.VoteOption.Upvote) {
         this.setState({ selectedUserLabel: undefined });
       }
+    } catch (error) {
+      console.error('Failed to update vote:', error);
+      this.props.enqueueSnackbar(
+        vote === Admin.VoteOption.Upvote
+          ? this.props.t('failed-to-add-vote')
+          : this.props.t('failed-to-remove-vote'),
+        { variant: 'error' }
+      );
     } finally {
       this.setState({ isSubmitting: false, removingUserId: undefined });
     }
@@ -238,4 +247,4 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state, ownProps) =>
     getNextVoters,
   };
   return connectProps;
-}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(withTranslation('app', { withRef: true })(VotersList))));
+}, null, null, { forwardRef: true })(withStyles(styles, { withTheme: true })(withRouter(withTranslation('app', { withRef: true })(withSnackbar(VotersList)))));
