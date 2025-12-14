@@ -564,6 +564,48 @@ public class NotificationServiceTest extends AbstractTest {
         assertFalse(email.getContentText(), email.getContentText().contains("__"));
     }
 
+    @Test(timeout = 10_000L)
+    public void testOnPostCreatedOnBehalfOf() throws Exception {
+        String projectId = "myProject";
+        VersionedConfigAdmin versionedConfigAdmin = ModelUtil.createEmptyConfig(projectId);
+        ProjectStore.Project project = new ProjectStore.Project(
+                "accountId",
+                projectId,
+                null,
+                versionedConfigAdmin);
+        IdeaModel idea = MockModelUtil.getRandomIdea().toBuilder()
+                .projectId(projectId)
+                .title("Test Post Title")
+                .categoryId(versionedConfigAdmin.getConfig().getContent().getCategories().get(0).getCategoryId())
+                .build();
+        UserModel author = MockModelUtil.getRandomUser().toBuilder()
+                .projectId(projectId)
+                .userId(IdUtil.randomId())
+                .email("author@email.com")
+                .emailNotify(true)
+                .browserPushToken("browserPushToken")
+                .build();
+        when(this.mockUserStore.createToken(any(), any(), any())).thenReturn("myAuthToken");
+
+        service.onPostCreatedOnBehalfOf(project, idea, author);
+
+        Email email = mockEmailService.sent.take();
+        BrowserPush push = mockBrowserPushService.sent.take();
+        NotificationModel inApp = mockNotificationStore.sent.take();
+        log.info("email {}", email);
+        log.info("push {}", push);
+        log.info("inApp {}", inApp);
+        assertNotNull(email);
+        assertFalse(email.getSubject(), email.getSubject().contains("__"));
+        assertFalse(email.getContentHtml(), email.getContentHtml().contains("__"));
+        assertFalse(email.getContentText(), email.getContentText().contains("__"));
+        assertNotNull(push);
+        assertFalse(push.getTitle(), push.getTitle().contains("__"));
+        assertFalse(push.getBody(), push.getBody().contains("__"));
+        assertNotNull(inApp);
+        assertFalse(inApp.getDescription(), inApp.getDescription().contains("__"));
+    }
+
     private KeyPair generateKeyPair() {
         try {
             Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());

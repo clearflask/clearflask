@@ -232,11 +232,11 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         if (ideaCreateAdmin.getNotifySubscribers() != null) {
             notificationService.onPostCreated(project, ideaModel, ideaCreateAdmin.getNotifySubscribers(), author);
         }
-        // Notify the author if the post was created on their behalf by a different user
+        // Notify the author if the post was created on their behalf by a different user or via API
         Optional<String> loggedInUserId = getExtendedPrincipal()
                 .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId);
-        if (loggedInUserId.isEmpty() || !loggedInUserId.get().equals(author.getUserId())) {
+        if (!loggedInUserId.isPresent() || !loggedInUserId.get().equals(author.getUserId())) {
             notificationService.onPostCreatedOnBehalfOf(project, ideaModel, author);
         }
         webhookService.eventPostNew(ideaModel, author);

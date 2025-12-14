@@ -17,7 +17,6 @@ import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.util.ProjectUtil;
 import com.smotana.clearflask.web.Application;
-import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 
@@ -44,23 +43,25 @@ public class OnPostCreatedOnBehalfOf {
     private EmailTemplates emailTemplates;
     @Inject
     private ProjectUtil projectUtil;
-    @Inject
-    private Sanitizer sanitizer;
+
+    private String replaceTemplateVariables(String template, ConfigAdmin configAdmin, IdeaModel idea, int titleLength) {
+        String projectName = emailTemplates.sanitize(projectUtil.getProjectName(configAdmin));
+        String title = StringUtils.abbreviate(emailTemplates.sanitize(idea.getTitle()), titleLength);
+        return template.replace("__project_name__", projectName)
+                .replace("__title__", title);
+    }
 
     public Email email(ConfigAdmin configAdmin, UserModel author, IdeaModel idea, String link, String authToken) {
         checkArgument(!Strings.isNullOrEmpty(author.getEmail()));
 
-        String subject = config.subjectTemplate();
-        String content = config.contentTemplate();
+        String subject = replaceTemplateVariables(config.subjectTemplate(), configAdmin, idea, 50);
 
+        // For email content, we need to wrap the title in bold HTML tags
         String projectName = emailTemplates.sanitize(projectUtil.getProjectName(configAdmin));
-        subject = subject.replace("__project_name__", projectName);
-        content = content.replace("__project_name__", projectName);
-
         String title = StringUtils.abbreviate(emailTemplates.sanitize(idea.getTitle()), 50);
-        subject = subject.replace("__title__", title);
-        content = content.replace("__title__",
-                "<span style=\"font-weight: bold\">" + title + "</span>");
+        String content = config.contentTemplate()
+                .replace("__project_name__", projectName)
+                .replace("__title__", "<span style=\"font-weight: bold\">" + title + "</span>");
 
         String templateHtml = emailTemplates.getNotificationTemplateHtml();
         String templateText = emailTemplates.getNotificationTemplateText();
@@ -92,17 +93,8 @@ public class OnPostCreatedOnBehalfOf {
     public BrowserPush browserPush(ConfigAdmin configAdmin, UserModel author, IdeaModel idea, String link, String authToken) {
         checkArgument(!Strings.isNullOrEmpty(author.getBrowserPushToken()));
 
-        String subject = config.subjectTemplate();
-
-        String projectName = emailTemplates.sanitize(projectUtil.getProjectName(configAdmin));
-        subject = subject.replace("__project_name__", projectName);
-
-        String title = StringUtils.abbreviate(emailTemplates.sanitize(idea.getTitle()), 50);
-        subject = subject.replace("__title__", title);
-
-        String content = config.contentTemplate();
-        content = content.replace("__project_name__", projectName);
-        content = content.replace("__title__", title);
+        String subject = replaceTemplateVariables(config.subjectTemplate(), configAdmin, idea, 50);
+        String content = replaceTemplateVariables(config.contentTemplate(), configAdmin, idea, 50);
 
         return new BrowserPush(
                 author.getBrowserPushToken(),
@@ -115,15 +107,8 @@ public class OnPostCreatedOnBehalfOf {
     }
 
     public String inAppDescription(ConfigAdmin configAdmin, IdeaModel idea) {
-        String subject = config.subjectTemplate();
-
-        String projectName = emailTemplates.sanitize(projectUtil.getProjectName(configAdmin));
-        subject = subject.replace("__project_name__", projectName);
-
-        String title = StringUtils.abbreviate(emailTemplates.sanitize(idea.getTitle()), 20);
-        subject = subject.replace("__title__", title);
-
-        return subject;
+        // In-app notifications use a shorter title (20 chars) due to UI constraints
+        return replaceTemplateVariables(config.subjectTemplate(), configAdmin, idea, 20);
     }
 
     public static Module module() {
