@@ -247,7 +247,23 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
-        ImmutableSet<String> hiddenStatusIds = projectStore.getProject(projectId, true).get().getHiddenStatusIds();
+
+        // Check if user has moderator or admin role
+        boolean isModerator = securityContext.isUserInRole(Role.PROJECT_MODERATOR)
+                || securityContext.isUserInRole(Role.PROJECT_MODERATOR_ACTIVE)
+                || securityContext.isUserInRole(Role.PROJECT_ADMIN)
+                || securityContext.isUserInRole(Role.PROJECT_ADMIN_ACTIVE);
+
+        // Only fetch hidden status IDs for non-moderators
+        ImmutableSet<String> hiddenStatusIds;
+        if (isModerator) {
+            hiddenStatusIds = ImmutableSet.of();
+        } else {
+            Project project = projectStore.getProject(projectId, true)
+                    .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project not found"));
+            hiddenStatusIds = project.getHiddenStatusIds();
+        }
+
         return ideaStore.getIdea(projectId, ideaId)
                 .filter(ideaModel -> ideaModel.getStatusId() == null || !hiddenStatusIds.contains(ideaModel.getStatusId()))
                 .map(ideaModel -> userOpt.map(user -> toIdeaWithVote(user, ideaModel))
@@ -265,7 +281,23 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
-        ImmutableSet<String> hiddenStatusIds = projectStore.getProject(projectId, true).get().getHiddenStatusIds();
+
+        // Check if user has moderator or admin role
+        boolean isModerator = securityContext.isUserInRole(Role.PROJECT_MODERATOR)
+                || securityContext.isUserInRole(Role.PROJECT_MODERATOR_ACTIVE)
+                || securityContext.isUserInRole(Role.PROJECT_ADMIN)
+                || securityContext.isUserInRole(Role.PROJECT_ADMIN_ACTIVE);
+
+        // Only fetch hidden status IDs for non-moderators
+        ImmutableSet<String> hiddenStatusIds;
+        if (isModerator) {
+            hiddenStatusIds = ImmutableSet.of();
+        } else {
+            Project project = projectStore.getProject(projectId, true)
+                    .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project not found"));
+            hiddenStatusIds = project.getHiddenStatusIds();
+        }
+
         ImmutableCollection<IdeaModel> ideaModels = ideaStore.getIdeas(projectId, ideaGetAll.getPostIds().stream()
                 .filter(Objects::nonNull)
                 .collect(ImmutableList.toImmutableList())).values().stream()
@@ -364,12 +396,25 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
+
+        // Check if user has moderator or admin role
+        boolean isModerator = securityContext.isUserInRole(Role.PROJECT_MODERATOR)
+                || securityContext.isUserInRole(Role.PROJECT_MODERATOR_ACTIVE)
+                || securityContext.isUserInRole(Role.PROJECT_ADMIN)
+                || securityContext.isUserInRole(Role.PROJECT_ADMIN_ACTIVE);
+
         Project project = projectStore.getProject(projectId, true).get();
+
+        // Only filter hidden statuses for non-moderators
+        ImmutableSet<String> hiddenStatusIds = isModerator
+                ? ImmutableSet.of()
+                : project.getHiddenStatusIds();
+
         SearchResponse searchResponse = ideaStore.searchIdeas(
                 projectId,
                 ideaSearch,
                 userOpt.map(UserModel::getUserId),
-                project.getHiddenStatusIds(),
+                hiddenStatusIds,
                 Optional.ofNullable(Strings.emptyToNull(cursor)));
         if (searchResponse.getIdeaIds().isEmpty()) {
             return new IdeaWithVoteSearchResponse(
