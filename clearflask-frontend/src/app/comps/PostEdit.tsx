@@ -87,6 +87,7 @@ interface State {
   tagIdsHasError?: boolean;
   fundGoal?: string;
   suppressNotifications?: boolean;
+  visibility?: Client.IdeaVisibility;
 }
 class PostEdit extends Component<Props & WithMediaQuery & WithTranslation<'app'> & WithStyles<typeof styles, true>, State> {
   state: State = {};
@@ -102,7 +103,8 @@ class PostEdit extends Component<Props & WithMediaQuery & WithTranslation<'app'>
         || this.state.response !== undefined
         || this.state.statusId !== undefined
         || this.state.tagIds !== undefined
-        || this.state.fundGoal !== undefined)
+        || this.state.fundGoal !== undefined
+        || this.state.visibility !== undefined)
     );
     const notifyReasons = [
       this.state.statusId !== undefined ? 'status' : undefined,
@@ -213,6 +215,21 @@ class PostEdit extends Component<Props & WithMediaQuery & WithTranslation<'app'>
                       />
                     </Grid>
                   )}
+                  <Grid item xs={12} className={this.props.classes.row}>
+                    <FormControlLabel
+                      disabled={this.state.isSubmitting}
+                      control={(
+                        <Switch
+                          checked={(this.state.visibility === undefined ? this.props.idea.visibility : this.state.visibility) === Client.IdeaVisibility.Private}
+                          onChange={(e, checked) => this.setState({
+                            visibility: checked ? Client.IdeaVisibility.Private : Client.IdeaVisibility.Public,
+                          })}
+                          color='primary'
+                        />
+                      )}
+                      label={this.props.t('private-visible-to-admins-only')}
+                    />
+                  </Grid>
                   <Grid item xs={12}>
                     <Collapse in={!!notifyReasons}>
                       <FormControlLabel
@@ -254,6 +271,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithTranslation<'app'>
                     tagIds: this.state.tagIds,
                     fundGoal: !this.state.fundGoal ? undefined : +this.state.fundGoal,
                     suppressNotifications: this.state.suppressNotifications,
+                    visibility: this.state.visibility,
                   },
                 }))
                 : this.props.server.dispatch().then(d => d.ideaUpdate({
@@ -274,6 +292,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithTranslation<'app'>
                     tagIds: undefined,
                     fundGoal: undefined,
                     suppressNotifications: undefined,
+                    visibility: undefined,
                   });
                   this.props.onClose();
                 })

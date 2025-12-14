@@ -2,6 +2,11 @@
 ## SPDX-License-Identifier: Apache-2.0
 components:
   schemas:
+    IdeaVisibility:
+      type: string
+      enum:
+        - Public
+        - Private
     IdeaSearch:
       x-clearflask-prop: { order: 100, name: 'Filter', description: 'Custom filter to limit the ideas shown to the user' }
       type: object
@@ -243,6 +248,8 @@ components:
           type: string
         coverImg:
           type: string
+        visibility:
+          $ref: 'api-idea.yaml#/components/schemas/IdeaVisibility'
     IdeaConnectResponse:
       type: object
       required:
@@ -322,6 +329,8 @@ components:
               format: double
             coverImg:
               type: string
+            visibility:
+              $ref: 'api-idea.yaml#/components/schemas/IdeaVisibility'
     IdeaDraftAdmin:
       allOf:
         - $ref: 'api-idea.yaml#/components/schemas/IdeaCreateAdmin'
@@ -368,6 +377,8 @@ components:
               format: double
             coverImg:
               type: string
+            visibility:
+              $ref: 'api-idea.yaml#/components/schemas/IdeaVisibility'
     Hits:
       type: object
       required:

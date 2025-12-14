@@ -6,6 +6,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.*;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.IdeaVisibility;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore.TransactionModel;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
@@ -264,6 +265,12 @@ public interface IdeaStore {
 
         String coverImg;
 
+        /**
+         * Visibility of the idea. Private ideas are only visible to admins/mods.
+         * If null, defaults to Public.
+         */
+        IdeaVisibility visibility;
+
         public String getDescriptionSanitized(Sanitizer sanitizer) {
             return sanitizer.richHtml(getDescription(), "idea", getIdeaId(), getProjectId(), false);
         }
@@ -324,7 +331,8 @@ public interface IdeaStore {
                     getMergedPostIds().asList(),
                     getOrder(),
                     getLinkedGitHubUrl(),
-                    sanitizer.signCoverImg(projectId, getCoverImg()).orElse(null));
+                    sanitizer.signCoverImg(projectId, getCoverImg()).orElse(null),
+                    getVisibility());
         }
 
         public IdeaWithVote toIdeaWithVote(IdeaVote vote, Sanitizer sanitizer) {
@@ -360,6 +368,7 @@ public interface IdeaStore {
                     getOrder(),
                     getLinkedGitHubUrl(),
                     sanitizer.signCoverImg(projectId, getCoverImg()).orElse(null),
+                    getVisibility(),
                     vote);
         }
 
