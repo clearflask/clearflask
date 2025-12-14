@@ -92,7 +92,8 @@ public class DynamoDraftStore implements DraftStore {
                 ideaCreateAdmin.getLinkedFromPostIds() == null ? ImmutableSet.of()
                         : ideaCreateAdmin.getLinkedFromPostIds().stream().filter(id -> !Strings.isNullOrEmpty(id)).collect(ImmutableSet.toImmutableSet()),
                 ideaCreateAdmin.getOrder(),
-                ideaCreateAdmin.getCoverImg());
+                ideaCreateAdmin.getCoverImg(),
+                ideaCreateAdmin.getAdminNotes());
         setDraft(draftModel, Optional.empty());
         return draftModel;
     }

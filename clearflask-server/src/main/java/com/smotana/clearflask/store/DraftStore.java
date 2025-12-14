@@ -112,6 +112,11 @@ public interface DraftStore {
 
         String coverImg;
 
+        /**
+         * WARNING: Unsanitized text.
+         */
+        String adminNotes;
+
         public String getDescriptionSanitized(Sanitizer sanitizer) {
             return sanitizer.richHtml(getDescription(), "draft", getDraftId(), getProjectId(), false);
         }
@@ -146,6 +151,7 @@ public interface DraftStore {
                     getLinkedFromPostIds().asList(),
                     getOrder(),
                     sanitizer.signCoverImg(projectId, getCoverImg()).orElse(null),
+                    getAdminNotes(),
                     getDraftId(),
                     getLastSaved());
         }
