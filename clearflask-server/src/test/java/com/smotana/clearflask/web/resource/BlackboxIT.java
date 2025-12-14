@@ -367,4 +367,63 @@ public class BlackboxIT extends AbstractBlackboxIT {
         assertEquals(Long.valueOf(-1L), comment1vote1.getComment().getVoteValue());
         return user;
     }
+
+    @Test(timeout = 30_000L)
+    public void testAdminNotes() throws Exception {
+        AccountAndProject account = getTrialAccount();
+        String projectId = account.getProject().getProjectId();
+        String categoryId = account.getProject().getConfig().getConfig().getContent().getCategories().get(0).getCategoryId();
+
+        // Create a regular user
+        UserMeWithBalance regularUser = userResource.userCreate(projectId, UserCreate.builder()
+                .name("regular-user")
+                .build()).getUser();
+
+        // Regular user creates a post without admin notes
+        IdeaWithVote ideaByRegularUser = ideaResource.ideaCreate(projectId, IdeaCreate.builder()
+                .authorUserId(regularUser.getUserId())
+                .title("Regular user post")
+                .categoryId(categoryId)
+                .tagIds(ImmutableList.of())
+                .build());
+
+        // Admin creates a post with admin notes
+        com.smotana.clearflask.api.model.Idea ideaByAdmin = ideaResourceAdmin.ideaCreateAdmin(
+                projectId,
+                com.smotana.clearflask.api.model.IdeaCreateAdmin.builder()
+                        .authorUserId(regularUser.getUserId())
+                        .title("Admin created post")
+                        .categoryId(categoryId)
+                        .tagIds(ImmutableList.of())
+                        .adminNotes("Private admin note - should not be visible to regular users")
+                        .build(),
+                null);
+
+        // Admin updates post with admin notes
+        com.smotana.clearflask.api.model.Idea ideaUpdatedByAdmin = ideaResourceAdmin.ideaUpdateAdmin(
+                projectId,
+                ideaByRegularUser.getIdeaId(),
+                IdeaUpdateAdmin.builder()
+                        .adminNotes("Admin added this private note")
+                        .build());
+
+        // Verify admin can see admin notes via ideaGetAdmin
+        com.smotana.clearflask.api.model.Idea ideaAdminView = ideaResourceAdmin.ideaGetAdmin(projectId, ideaByAdmin.getIdeaId());
+        assertEquals("Private admin note - should not be visible to regular users", ideaAdminView.getAdminNotes());
+
+        // Verify regular ideaGet does NOT expose admin notes
+        IdeaWithVote ideaRegularView = ideaResource.ideaGet(projectId, ideaByAdmin.getIdeaId());
+        assertEquals(null, ideaRegularView.getAdminNotes());
+
+        // Verify admin can clear admin notes
+        ideaResourceAdmin.ideaUpdateAdmin(
+                projectId,
+                ideaByAdmin.getIdeaId(),
+                IdeaUpdateAdmin.builder()
+                        .adminNotes("")
+                        .build());
+
+        ideaAdminView = ideaResourceAdmin.ideaGetAdmin(projectId, ideaByAdmin.getIdeaId());
+        assertEquals(null, ideaAdminView.getAdminNotes());
+    }
 }

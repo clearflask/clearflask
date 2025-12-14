@@ -88,6 +88,7 @@ interface State {
   fundGoal?: string;
   suppressNotifications?: boolean;
   visibility?: Client.IdeaVisibility;
+  adminNotes?: string;
 }
 class PostEdit extends Component<Props & WithMediaQuery & WithTranslation<'app'> & WithStyles<typeof styles, true>, State> {
   state: State = {};
@@ -104,7 +105,8 @@ class PostEdit extends Component<Props & WithMediaQuery & WithTranslation<'app'>
         || this.state.statusId !== undefined
         || this.state.tagIds !== undefined
         || this.state.fundGoal !== undefined
-        || this.state.visibility !== undefined)
+        || this.state.visibility !== undefined
+        || this.state.adminNotes !== undefined)
     );
     const notifyReasons = [
       this.state.statusId !== undefined ? 'status' : undefined,
@@ -230,6 +232,23 @@ class PostEdit extends Component<Props & WithMediaQuery & WithTranslation<'app'>
                       label={this.props.t('private-visible-to-admins-only')}
                     />
                   </Grid>
+                  {isModOrAdminLoggedIn && (
+                    <Grid item xs={12} className={this.props.classes.row}>
+                      <TextField
+                        variant='outlined'
+                        size='small'
+                        disabled={this.state.isSubmitting}
+                        label='Admin Notes'
+                        helperText='Private notes visible only to admins and moderators'
+                        fullWidth
+                        multiline
+                        rows={2}
+                        rowsMax={6}
+                        value={(this.state.adminNotes === undefined ? this.props.idea.adminNotes : this.state.adminNotes) || ''}
+                        onChange={e => this.setState({ adminNotes: e.target.value })}
+                      />
+                    </Grid>
+                  )}
                   <Grid item xs={12}>
                     <Collapse in={!!notifyReasons}>
                       <FormControlLabel
@@ -272,6 +291,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithTranslation<'app'>
                     fundGoal: !this.state.fundGoal ? undefined : +this.state.fundGoal,
                     suppressNotifications: this.state.suppressNotifications,
                     visibility: this.state.visibility,
+                    adminNotes: this.state.adminNotes,
                   },
                 }))
                 : this.props.server.dispatch().then(d => d.ideaUpdate({
@@ -293,6 +313,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithTranslation<'app'>
                     fundGoal: undefined,
                     suppressNotifications: undefined,
                     visibility: undefined,
+                    adminNotes: undefined,
                   });
                   this.props.onClose();
                 })

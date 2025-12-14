@@ -796,7 +796,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                         null,
                         null,
                         null,
-                        null);  // visibility
+                        null,  // visibility
+                        null); // adminNotes
             }).collect(Collectors.toList())).get();
         } catch (ApiException ex) {
             throw ex;

@@ -129,7 +129,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 null,
                 null,
                 null,
-                null);  // visibility - always public for user-created ideas
+                null,  // visibility - always public for user-created ideas
+                null); // adminNotes
         boolean votingAllowed = project.isVotingAllowed(VoteValue.Upvote, ideaModel.getCategoryId(), Optional.ofNullable(ideaModel.getStatusId()));
         if (votingAllowed) {
             ideaModel = ideaStore.createIdeaAndUpvote(ideaModel).getIdea();
@@ -157,6 +158,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     public IdeaWithVote ideaCreateAdmin(String projectId, IdeaCreateAdmin ideaCreateAdmin, @Nullable String deleteDraftId) {
         sanitizer.postTitle(ideaCreateAdmin.getTitle());
         sanitizer.content(ideaCreateAdmin.getDescription());
+        sanitizer.content(ideaCreateAdmin.getAdminNotes());
 
         // Validate that only admins/mods can set visibility to Private
         // (method is already @RolesAllowed, but extra check for clarity)
@@ -212,7 +214,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 ideaCreateAdmin.getOrder(),
                 null,
                 ideaCreateAdmin.getCoverImg(),
-                ideaCreateAdmin.getVisibility());
+                ideaCreateAdmin.getVisibility(),
+                Strings.emptyToNull(ideaCreateAdmin.getAdminNotes()));
         boolean votingAllowed = project.isVotingAllowed(VoteValue.Upvote, ideaModel.getCategoryId(), Optional.ofNullable(ideaModel.getStatusId()));
         try {
             if (votingAllowed) {
@@ -313,7 +316,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public Idea ideaGetAdmin(String projectId, String ideaId) {
         return ideaStore.getIdea(projectId, ideaId)
-                .map(idea -> idea.toIdea(sanitizer))
+                .map(idea -> idea.toIdeaAdmin(sanitizer))
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Idea not found"));
     }
 
@@ -330,7 +333,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     public IdeaConnectResponse ideaLinkAdmin(String projectId, String ideaId, String parentIdeaId) {
         Project project = projectStore.getProject(projectId, true).get();
         IdeaStore.LinkResponse linkResponse = ideaStore.linkIdeas(projectId, ideaId, parentIdeaId, false, project::getCategoryExpressionWeight);
-        return new IdeaConnectResponse(linkResponse.getIdea().toIdea(sanitizer), linkResponse.getParentIdea().toIdea(sanitizer));
+        return new IdeaConnectResponse(linkResponse.getIdea().toIdeaAdmin(sanitizer), linkResponse.getParentIdea().toIdeaAdmin(sanitizer));
     }
 
     @RolesAllowed({Role.PROJECT_MODERATOR_ACTIVE})
@@ -339,7 +342,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     public IdeaConnectResponse ideaUnLinkAdmin(String projectId, String ideaId, String parentIdeaId) {
         Project project = projectStore.getProject(projectId, true).get();
         IdeaStore.LinkResponse linkResponse = ideaStore.linkIdeas(projectId, ideaId, parentIdeaId, true, project::getCategoryExpressionWeight);
-        return new IdeaConnectResponse(linkResponse.getIdea().toIdea(sanitizer), linkResponse.getParentIdea().toIdea(sanitizer));
+        return new IdeaConnectResponse(linkResponse.getIdea().toIdeaAdmin(sanitizer), linkResponse.getParentIdea().toIdeaAdmin(sanitizer));
     }
 
     @RolesAllowed({Role.IDEA_OWNER})
@@ -371,7 +374,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     public IdeaConnectResponse ideaMergeAdmin(String projectId, String ideaId, String parentIdeaId) {
         Project project = projectStore.getProject(projectId, true).get();
         IdeaStore.MergeResponse mergeResponse = ideaStore.mergeIdeas(projectId, ideaId, parentIdeaId, false, project::getCategoryExpressionWeight);
-        return new IdeaConnectResponse(mergeResponse.getIdea().toIdea(sanitizer), mergeResponse.getParentIdea().toIdea(sanitizer));
+        return new IdeaConnectResponse(mergeResponse.getIdea().toIdeaAdmin(sanitizer), mergeResponse.getParentIdea().toIdeaAdmin(sanitizer));
     }
 
     @RolesAllowed({Role.PROJECT_MODERATOR_ACTIVE})
@@ -380,7 +383,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     public IdeaConnectResponse ideaUnMergeAdmin(String projectId, String ideaId, String parentIdeaId) {
         Project project = projectStore.getProject(projectId, true).get();
         IdeaStore.MergeResponse mergeResponse = ideaStore.mergeIdeas(projectId, ideaId, parentIdeaId, true, project::getCategoryExpressionWeight);
-        return new IdeaConnectResponse(mergeResponse.getIdea().toIdea(sanitizer), mergeResponse.getParentIdea().toIdea(sanitizer));
+        return new IdeaConnectResponse(mergeResponse.getIdea().toIdeaAdmin(sanitizer), mergeResponse.getParentIdea().toIdeaAdmin(sanitizer));
     }
 
     @RolesAllowed({Role.PROJECT_ANON})
@@ -444,7 +447,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 searchResponse.getIdeaIds().stream()
                         .map(ideasById::get)
                         .filter(Objects::nonNull)
-                        .map(idea -> idea.toIdea(sanitizer))
+                        .map(idea -> idea.toIdeaAdmin(sanitizer))
                         .collect(ImmutableList.toImmutableList()),
                 new Hits(
                         searchResponse.getTotalHits(),
@@ -479,6 +482,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     public Idea ideaUpdateAdmin(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin) {
         sanitizer.postTitle(ideaUpdateAdmin.getTitle());
         sanitizer.content(ideaUpdateAdmin.getDescription());
+        sanitizer.content(ideaUpdateAdmin.getAdminNotes());
 
         // Validate that only admins/mods can set visibility to Private
         // (method is already @RolesAllowed, but extra check for clarity)
@@ -524,7 +528,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         if (responseChanged) {
             webhookService.eventPostResponseChanged(idea);
         }
-        return idea.toIdea(sanitizer);
+        return idea.toIdeaAdmin(sanitizer);
     }
 
     @RolesAllowed({Role.PROJECT_MODERATOR})

@@ -585,6 +585,7 @@ class Post extends Component<Props & ConnectProps & WithTranslation<'app'> & Wit
                             {this.renderBottomBar()}
                             {this.renderIWantThisCommentAdd()}
                             {this.renderResponseAndStatus()}
+                            {this.renderAdminNotes()}
                             {this.renderMerged()}
                             {this.renderLinkedToGitHub()}
                             {this.renderLinks()}
@@ -1819,6 +1820,30 @@ class Post extends Component<Props & ConnectProps & WithTranslation<'app'> & Wit
         }
 
         return content;
+    }
+
+    renderAdminNotes() {
+        if (this.props.variant === 'list'
+            || !this.props.idea
+            || !this.props.idea.adminNotes
+            || !this.props.server.isModOrAdminLoggedIn()) return null;
+
+        return (
+            <div className={this.props.classes.responseContainer} style={{
+                marginTop: this.props.theme.spacing(2),
+                padding: this.props.theme.spacing(2),
+                backgroundColor: this.props.theme.palette.warning.light + '20',
+                borderRadius: this.props.theme.shape.borderRadius,
+                border: `1px dashed ${this.props.theme.palette.warning.main}`,
+            }}>
+                <Typography variant='subtitle2' style={{ marginBottom: this.props.theme.spacing(1), color: this.props.theme.palette.warning.dark }}>
+                    Admin Notes (private)
+                </Typography>
+                <Typography variant='body2' style={{ whiteSpace: 'pre-wrap' }}>
+                    {this.props.idea.adminNotes}
+                </Typography>
+            </div>
+        );
     }
 
     renderResponse(isEditing?: boolean) {

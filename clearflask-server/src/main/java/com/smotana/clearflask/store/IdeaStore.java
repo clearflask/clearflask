@@ -271,6 +271,11 @@ public interface IdeaStore {
          */
         IdeaVisibility visibility;
 
+        /**
+         * Private notes visible only to admins and moderators.
+         */
+        String adminNotes;
+
         public String getDescriptionSanitized(Sanitizer sanitizer) {
             return sanitizer.richHtml(getDescription(), "idea", getIdeaId(), getProjectId(), false);
         }
@@ -332,7 +337,45 @@ public interface IdeaStore {
                     getOrder(),
                     getLinkedGitHubUrl(),
                     sanitizer.signCoverImg(projectId, getCoverImg()).orElse(null),
-                    getVisibility());
+                    getVisibility(),
+                    null); // adminNotes - not returned for non-admin endpoints
+        }
+
+        public Idea toIdeaAdmin(Sanitizer sanitizer) {
+            return new Idea(
+                    getIdeaId(),
+                    getAuthorUserId(),
+                    getAuthorName(),
+                    getAuthorIsMod(),
+                    getCreated(),
+                    getTitle(),
+                    getDescriptionSanitized(sanitizer),
+                    getResponseSanitized(sanitizer),
+                    getResponseAuthorUserId(),
+                    getResponseAuthorName(),
+                    getResponseEdited(),
+                    getCategoryId(),
+                    getStatusId(),
+                    getTagIds().asList(),
+                    getCommentCount(),
+                    getChildCommentCount(),
+                    getFunded(),
+                    getFundGoal(),
+                    getFundersCount(),
+                    getVoteValue(),
+                    getExpressionsValue(),
+                    (getExpressions() == null || getExpressions().isEmpty()) ? null : Maps.filterEntries(getExpressions(),
+                            e -> e.getValue() != null && e.getValue() != 0L),
+                    getLinkedToPostIds().asList(),
+                    getLinkedFromPostIds().asList(),
+                    getMergedToPostId(),
+                    getMergedToPostTime(),
+                    getMergedPostIds().asList(),
+                    getOrder(),
+                    getLinkedGitHubUrl(),
+                    sanitizer.signCoverImg(projectId, getCoverImg()).orElse(null),
+                    getVisibility(),
+                    getAdminNotes());
         }
 
         public IdeaWithVote toIdeaWithVote(IdeaVote vote, Sanitizer sanitizer) {
@@ -369,6 +412,7 @@ public interface IdeaStore {
                     getLinkedGitHubUrl(),
                     sanitizer.signCoverImg(projectId, getCoverImg()).orElse(null),
                     getVisibility(),
+                    null, // adminNotes - not returned for non-admin endpoints
                     vote);
         }
 
