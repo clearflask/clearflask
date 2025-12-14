@@ -175,6 +175,10 @@ class Post extends Component<Props & WithTranslation<'app'> & WithStyles<typeof 
                 }).then(comment => {
                   this.setState({ newCommentInput: undefined, selectedAuthorId: undefined })
                   this.props.onSubmitted && this.props.onSubmitted();
+                }).catch(err => {
+                  // Error will be displayed by the server's error handling
+                  // Keep the form state so user can retry or fix the issue
+                  console.error('Failed to create comment:', err);
                 });
               }}
             >
