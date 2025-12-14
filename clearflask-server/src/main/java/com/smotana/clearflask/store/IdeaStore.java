@@ -353,6 +353,7 @@ public interface IdeaStore {
                     getMergedPostIds().asList(),
                     getOrder(),
                     getLinkedGitHubUrl(),
+                    null, // linkedGitLabUrl - not used yet
                     sanitizer.signCoverImg(projectId, getCoverImg()).orElse(null),
                     getVisibility(),
                     null); // adminNotes - not returned for non-admin endpoints
@@ -390,6 +391,7 @@ public interface IdeaStore {
                     getMergedPostIds().asList(),
                     getOrder(),
                     getLinkedGitHubUrl(),
+                    null, // linkedGitLabUrl - not used yet
                     sanitizer.signCoverImg(projectId, getCoverImg()).orElse(null),
                     getVisibility(),
                     getAdminNotes());
@@ -427,6 +429,7 @@ public interface IdeaStore {
                     getMergedPostIds().asList(),
                     getOrder(),
                     getLinkedGitHubUrl(),
+                    null, // linkedGitLabUrl - not used yet
                     sanitizer.signCoverImg(projectId, getCoverImg()).orElse(null),
                     getVisibility(),
                     null, // adminNotes - not returned for non-admin endpoints
