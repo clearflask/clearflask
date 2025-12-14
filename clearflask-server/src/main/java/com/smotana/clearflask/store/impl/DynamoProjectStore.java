@@ -843,6 +843,15 @@ public class DynamoProjectStore implements ProjectStore {
         }
 
         @Override
+        public ImmutableSet<String> getHiddenStatusIds() {
+            return this.versionedConfig.getConfig().getContent().getCategories().stream()
+                    .flatMap(category -> category.getWorkflow().getStatuses().stream())
+                    .filter(status -> status.getDisablePublicDisplay() == Boolean.TRUE)
+                    .map(IdeaStatus::getStatusId)
+                    .collect(ImmutableSet.toImmutableSet());
+        }
+
+        @Override
         public boolean isVotingAllowed(VoteValue voteValue, String categoryId, Optional<String> statusIdOpt) {
             Optional<Voting> votingOpt = Optional.ofNullable(getCategory(categoryId)
                     .orElseThrow(() -> new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Cannot find category"))

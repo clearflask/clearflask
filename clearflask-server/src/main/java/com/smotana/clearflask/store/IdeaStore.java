@@ -63,7 +63,7 @@ public interface IdeaStore {
 
     HistogramResponse histogram(String projectId, IdeaHistogramSearchAdmin ideaSearchAdmin);
 
-    SearchResponse searchIdeas(String projectId, IdeaSearch ideaSearch, Optional<String> requestorUserIdOpt, Optional<String> cursorOpt);
+    SearchResponse searchIdeas(String projectId, IdeaSearch ideaSearch, Optional<String> requestorUserIdOpt, ImmutableSet<String> hiddenStatusIds, Optional<String> cursorOpt);
 
     SearchResponse searchIdeas(String projectId, IdeaSearchAdmin ideaSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt);
 

@@ -2488,6 +2488,7 @@ export const ProjectSettingsFeedback = (props: {
                             disableExpressions: false,
                             disableIdeaEdits: false,
                             disableComments: false,
+                            disablePublicDisplay: false,
                           }));
                       }}
                     />
@@ -2530,6 +2531,7 @@ export const ProjectSettingsFeedbackStatus = (props: {
   const initialStatusIdProp = (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'workflow', 'entryStatus']) as ConfigEditor.StringProperty);
   const nameProp = (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'workflow', 'statuses', props.statusIndex, 'name']) as ConfigEditor.StringProperty);
   const colorProp = (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'workflow', 'statuses', props.statusIndex, 'color']) as ConfigEditor.StringProperty);
+  const disablePublicDisplayProp = (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'workflow', 'statuses', props.statusIndex, 'disablePublicDisplay']) as ConfigEditor.BooleanProperty);
   const [statusName, setStatusName] = useDebounceProp<string>(
     nameProp.value || '',
     text => nameProp.set(text));
@@ -2548,6 +2550,7 @@ export const ProjectSettingsFeedbackStatus = (props: {
           show={(
             <span style={{ color: props.status.color }}>
               {props.status.name}
+              {props.status.disablePublicDisplay && ' (hidden)'}
             </span>
           )}
           edit={(
@@ -2579,6 +2582,17 @@ export const ProjectSettingsFeedbackStatus = (props: {
                   onChange={e => initialStatusIdProp.set(props.status.statusId)}
         />
       )} />
+      <FormControlLabel
+        label="Hide from public"
+        control={(
+          <Checkbox
+            size="small"
+            color="primary"
+            checked={!!disablePublicDisplayProp.value}
+            onChange={e => disablePublicDisplayProp.set(e.target.checked)}
+          />
+        )}
+      />
       <PropertyByPath
         server={props.server}
         marginTop={16}
