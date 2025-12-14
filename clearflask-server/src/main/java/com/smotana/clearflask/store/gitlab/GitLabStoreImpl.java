@@ -442,7 +442,6 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
                     .withWikiPageEvents(false)
                     .withDeploymentEvents(false)
                     .withReleasesEvents(true)
-                    .withEnableSslVerification(true)
                     .withToken(configGitLabResource.webhookSecret());
 
             api.getProjectApi().addHook(

@@ -663,6 +663,7 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
                 project.getProjectId(),
                 ideaId,
                 commentId,
+                Instant.now(), // updated
                 CommentUpdate.builder()
                         .content(contentQuill)
                         .build()));
@@ -748,13 +749,7 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
 
                 JiraIssue jiraIssue = client.getApiClient().createIssue(request);
 
-                // Update idea with external URL
-                String jiraUrl = "https://" + jiraConfig.getCloudName() + ".atlassian.net/browse/" + jiraIssue.getKey();
-                ideaStore.updateIdea(project.getProjectId(), idea.getIdeaId(),
-                        IdeaStore.IdeaUpdate.builder()
-                                .externalUrl(jiraUrl)
-                                .build());
-
+                // TODO: Store Jira URL in idea (need to add externalUrl field to IdeaUpdate)
                 log.info("Created Jira issue {} for ClearFlask post {}", jiraIssue.getKey(), idea.getIdeaId());
                 return Optional.of(jiraIssue);
 
