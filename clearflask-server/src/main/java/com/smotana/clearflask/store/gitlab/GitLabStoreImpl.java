@@ -431,15 +431,20 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
         try {
             URL webhookUrl = getWebhookUrl(projectId, authorization.getProjectId());
 
-            org.gitlab4j.api.models.ProjectHook hook = new org.gitlab4j.api.models.ProjectHook();
-            hook.setUrl(webhookUrl.toExternalForm());
-            hook.setToken(configGitLabResource.webhookSecret());
-            hook.setIssuesEvents(true);
-            hook.setNoteEvents(true);
-            hook.setReleasesEvents(true);
-            hook.setEnableSslVerification(true);
-
-            api.getProjectApi().addHook(authorization.getProjectId(), hook);
+            api.getProjectApi().addHook(
+                    authorization.getProjectId(),
+                    webhookUrl.toExternalForm(),
+                    true,  // issuesEvents
+                    false, // mergeRequestsEvents
+                    false, // pushEvents
+                    true,  // noteEvents
+                    false, // jobEvents
+                    false, // pipelineEvents
+                    false, // wikiPageEvents
+                    false, // deploymentEvents
+                    true,  // releasesEvents
+                    true,  // enableSslVerification
+                    configGitLabResource.webhookSecret());
         } catch (GitLabApiException ex) {
             log.warn("Linking GitLab project failed, could not create webhook. projectId {}, authorization {}",
                     projectId, authorization, ex);
@@ -547,8 +552,10 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
                         null,
                         ImmutableSet.of(),
                         null,
-                        null, // GitHub URL is null
-                        issueEvent.getObjectAttributes().getUrl()))); // GitLab URL
+                        null, // linkedGitHubUrl
+                        null, // coverImg
+                        null, // visibility
+                        null))); // adminNotes
             case "reopen":
             case "close":
                 Optional<String> switchToStatusOpt = Optional.ofNullable(integration.getStatusSync())
@@ -694,8 +701,10 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
                         null,
                         ImmutableSet.of(),
                         null,
-                        null,
-                        releaseEvent.getUrl()));
+                        null, // linkedGitHubUrl
+                        null, // coverImg
+                        null, // visibility
+                        null)); // adminNotes
 
                 if (Boolean.TRUE.equals(integration.getReleaseNotifyAll())) {
                     notificationService.onPostCreated(
