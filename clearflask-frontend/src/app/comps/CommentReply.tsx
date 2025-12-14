@@ -6,6 +6,7 @@ import classNames from 'classnames';
 import React, { Component } from 'react';
 import { WithTranslation, withTranslation } from 'react-i18next';
 import { Server } from '../../api/server';
+import BareTextField from '../../common/BareTextField';
 import RichEditor from '../../common/RichEditor';
 import RichEditorImageUpload from '../../common/RichEditorImageUpload';
 import ScrollAnchor from '../../common/util/ScrollAnchor';
@@ -32,6 +33,8 @@ const styles = (theme: Theme) => createStyles({
   },
   userSelection: {
     marginBottom: theme.spacing(1),
+    alignSelf: 'flex-start',
+    width: '100%',
   },
 });
 
@@ -58,6 +61,7 @@ class Post extends Component<Props & WithTranslation<'app'> & WithStyles<typeof 
   state: State = {};
   readonly richEditorImageUploadRef = React.createRef<RichEditorImageUpload>();
   readonly inputRef: React.RefObject<HTMLInputElement> = React.createRef();
+  readonly formRef: React.RefObject<HTMLDivElement> = React.createRef();
 
   componentDidMount() {
     if (this.props.focusOnIn && this.props.collapseIn === true) {
@@ -80,24 +84,33 @@ class Post extends Component<Props & WithTranslation<'app'> & WithStyles<typeof 
 
   render() {
     const isMod = this.props.server.isModOrAdminLoggedIn();
+    const loggedInUserId = this.props.server.getStore().getState().users.loggedIn.user?.userId;
     return (
       <Collapse
         mountOnEnter
         in={this.props.collapseIn !== false}
         className={classNames(this.props.className, this.props.classes.addCommentFormOuter)}
       >
-        <div className={this.props.classes.addCommentForm}>
+        <div className={this.props.classes.addCommentForm} ref={this.formRef}>
           {isMod && (
             <UserSelection
               className={this.props.classes.userSelection}
               variant='outlined'
               size='small'
               server={this.props.server}
-              label={this.props.t('as-user')}
+              initialUserId={loggedInUserId}
               width='100%'
               suppressInitialOnChange
               onChange={selectedUserLabel => this.setState({ selectedAuthorId: selectedUserLabel?.value })}
               allowCreate
+              SelectionPickerProps={{
+                width: 'unset',
+                forceDropdownIcon: true,
+                TextFieldComponent: BareTextField,
+                TextFieldProps: {
+                  fullWidth: false,
+                },
+              }}
             />
           )}
           <RichEditor
@@ -116,7 +129,13 @@ class Post extends Component<Props & WithTranslation<'app'> & WithStyles<typeof 
             InputProps={{
               inputRef: this.inputRef,
               // onBlurAndEmpty after a while, fixes issue where pasting causes blur.
-              onBlur: () => setTimeout(() => !this.state.newCommentInput && this.props.onBlurAndEmpty && this.props.onBlurAndEmpty(), 200),
+              onBlur: (e) => setTimeout(() => {
+                // Check if focus moved to an element within our form
+                const focusMovedWithinForm = this.formRef.current?.contains(document.activeElement);
+                if (!this.state.newCommentInput && !focusMovedWithinForm && this.props.onBlurAndEmpty) {
+                  this.props.onBlurAndEmpty();
+                }
+              }, 200),
             }}
           />
           <RichEditorImageUpload
