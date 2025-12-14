@@ -239,6 +239,17 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 sanitizer);
     }
 
+    /**
+     * Check if the current user has moderator or admin role.
+     * Moderators and admins can see posts with hidden statuses.
+     */
+    private boolean isModeratorOrAdmin() {
+        return securityContext.isUserInRole(Role.PROJECT_MODERATOR)
+                || securityContext.isUserInRole(Role.PROJECT_MODERATOR_ACTIVE)
+                || securityContext.isUserInRole(Role.PROJECT_ADMIN)
+                || securityContext.isUserInRole(Role.PROJECT_ADMIN_ACTIVE);
+    }
+
     @RolesAllowed({Role.PROJECT_ANON})
     @Limit(requiredPermits = 1)
     @Override
@@ -248,15 +259,9 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
 
-        // Check if user has moderator or admin role
-        boolean isModerator = securityContext.isUserInRole(Role.PROJECT_MODERATOR)
-                || securityContext.isUserInRole(Role.PROJECT_MODERATOR_ACTIVE)
-                || securityContext.isUserInRole(Role.PROJECT_ADMIN)
-                || securityContext.isUserInRole(Role.PROJECT_ADMIN_ACTIVE);
-
         // Only fetch hidden status IDs for non-moderators
         ImmutableSet<String> hiddenStatusIds;
-        if (isModerator) {
+        if (isModeratorOrAdmin()) {
             hiddenStatusIds = ImmutableSet.of();
         } else {
             Project project = projectStore.getProject(projectId, true)
@@ -282,15 +287,9 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
 
-        // Check if user has moderator or admin role
-        boolean isModerator = securityContext.isUserInRole(Role.PROJECT_MODERATOR)
-                || securityContext.isUserInRole(Role.PROJECT_MODERATOR_ACTIVE)
-                || securityContext.isUserInRole(Role.PROJECT_ADMIN)
-                || securityContext.isUserInRole(Role.PROJECT_ADMIN_ACTIVE);
-
         // Only fetch hidden status IDs for non-moderators
         ImmutableSet<String> hiddenStatusIds;
-        if (isModerator) {
+        if (isModeratorOrAdmin()) {
             hiddenStatusIds = ImmutableSet.of();
         } else {
             Project project = projectStore.getProject(projectId, true)
@@ -397,16 +396,10 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
 
-        // Check if user has moderator or admin role
-        boolean isModerator = securityContext.isUserInRole(Role.PROJECT_MODERATOR)
-                || securityContext.isUserInRole(Role.PROJECT_MODERATOR_ACTIVE)
-                || securityContext.isUserInRole(Role.PROJECT_ADMIN)
-                || securityContext.isUserInRole(Role.PROJECT_ADMIN_ACTIVE);
-
         Project project = projectStore.getProject(projectId, true).get();
 
         // Only filter hidden statuses for non-moderators
-        ImmutableSet<String> hiddenStatusIds = isModerator
+        ImmutableSet<String> hiddenStatusIds = isModeratorOrAdmin()
                 ? ImmutableSet.of()
                 : project.getHiddenStatusIds();
 

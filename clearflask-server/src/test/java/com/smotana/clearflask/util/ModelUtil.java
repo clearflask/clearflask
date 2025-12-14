@@ -34,7 +34,7 @@ public class ModelUtil {
                         null,
                         null,
                         new Workflow(null, ImmutableList.of(
-                                new IdeaStatus(IdUtil.randomId(), "COMPLETE", null, "#bbddaa", false, false, false, false, false)
+                                new IdeaStatus(IdUtil.randomId(), "COMPLETE", null, "#bbddaa", false, false, false, false, false, false)
                         )),
                         new Support(true, new Voting(true, null), new Expressing(true, null), true),
                         new Tagging(ImmutableList.of(), ImmutableList.of())))),
