@@ -215,21 +215,23 @@ class PostEdit extends Component<Props & WithMediaQuery & WithTranslation<'app'>
                       />
                     </Grid>
                   )}
-                  <Grid item xs={12} className={this.props.classes.row}>
-                    <TextField
-                      variant='outlined'
-                      size='small'
-                      disabled={this.state.isSubmitting}
-                      label='Admin Notes'
-                      helperText='Private notes visible only to admins and moderators'
-                      fullWidth
-                      multiline
-                      rows={2}
-                      rowsMax={6}
-                      value={(this.state.adminNotes === undefined ? this.props.idea.adminNotes : this.state.adminNotes) || ''}
-                      onChange={e => this.setState({ adminNotes: e.target.value })}
-                    />
-                  </Grid>
+                  {isModOrAdminLoggedIn && (
+                    <Grid item xs={12} className={this.props.classes.row}>
+                      <TextField
+                        variant='outlined'
+                        size='small'
+                        disabled={this.state.isSubmitting}
+                        label='Admin Notes'
+                        helperText='Private notes visible only to admins and moderators'
+                        fullWidth
+                        multiline
+                        rows={2}
+                        rowsMax={6}
+                        value={(this.state.adminNotes === undefined ? this.props.idea.adminNotes : this.state.adminNotes) || ''}
+                        onChange={e => this.setState({ adminNotes: e.target.value })}
+                      />
+                    </Grid>
+                  )}
                   <Grid item xs={12}>
                     <Collapse in={!!notifyReasons}>
                       <FormControlLabel

@@ -643,4 +643,49 @@ public class IdeaStoreIT extends AbstractIT {
 
         store.expressIdeaSet(projectId, idea.getIdeaId(), userId, e -> e.equals("👀") ? 2d : 1d, Optional.of("👀")).getIndexingFuture().get();
     }
+
+    @Test(timeout = 30_000L)
+    public void testAdminNotes() throws Exception {
+        String projectId = IdUtil.randomId();
+        store.createIndex(projectId).get();
+
+        // Create idea with admin notes
+        String adminNotesInitial = "This is a private admin note";
+        IdeaModel ideaWithNotes = MockModelUtil.getRandomIdea().toBuilder()
+                .projectId(projectId)
+                .adminNotes(adminNotesInitial)
+                .build();
+        store.createIdea(ideaWithNotes).get();
+
+        // Verify admin notes are stored
+        IdeaModel retrieved = store.getIdea(projectId, ideaWithNotes.getIdeaId()).get();
+        assertEquals(adminNotesInitial, retrieved.getAdminNotes());
+
+        // Update admin notes
+        String adminNotesUpdated = "Updated admin notes";
+        store.updateIdea(projectId, ideaWithNotes.getIdeaId(), IdeaUpdateAdmin.builder()
+                .adminNotes(adminNotesUpdated)
+                .build()).getIndexingFuture().get();
+
+        retrieved = store.getIdea(projectId, ideaWithNotes.getIdeaId()).get();
+        assertEquals(adminNotesUpdated, retrieved.getAdminNotes());
+
+        // Clear admin notes (empty string)
+        store.updateIdea(projectId, ideaWithNotes.getIdeaId(), IdeaUpdateAdmin.builder()
+                .adminNotes("")
+                .build()).getIndexingFuture().get();
+
+        retrieved = store.getIdea(projectId, ideaWithNotes.getIdeaId()).get();
+        assertEquals(null, retrieved.getAdminNotes());
+
+        // Create idea without admin notes
+        IdeaModel ideaWithoutNotes = MockModelUtil.getRandomIdea().toBuilder()
+                .projectId(projectId)
+                .adminNotes(null)
+                .build();
+        store.createIdea(ideaWithoutNotes).get();
+
+        retrieved = store.getIdea(projectId, ideaWithoutNotes.getIdeaId()).get();
+        assertEquals(null, retrieved.getAdminNotes());
+    }
 }

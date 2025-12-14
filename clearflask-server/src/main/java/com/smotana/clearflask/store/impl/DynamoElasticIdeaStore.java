@@ -1582,13 +1582,14 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
             }
         }
         if (ideaUpdateAdmin.getAdminNotes() != null) {
-            if (ideaUpdateAdmin.getAdminNotes().isEmpty()) {
+            if (Strings.isNullOrEmpty(ideaUpdateAdmin.getAdminNotes())) {
                 updateItemSpec.addAttributeUpdate(new AttributeUpdate("adminNotes").delete());
             } else {
                 updateItemSpec.addAttributeUpdate(new AttributeUpdate("adminNotes")
                         .put(ideaSchema.toDynamoValue("adminNotes", ideaUpdateAdmin.getAdminNotes())));
             }
-            // adminNotes is not indexed for search as it's private admin-only content
+            // adminNotes is intentionally not indexed in ElasticSearch/MySQL to prevent
+            // accidental exposure through search results
         }
 
         IdeaModel idea = ideaSchema.fromItem(ideaSchema.table().updateItem(updateItemSpec).getItem());

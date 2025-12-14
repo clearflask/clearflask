@@ -157,6 +157,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     public IdeaWithVote ideaCreateAdmin(String projectId, IdeaCreateAdmin ideaCreateAdmin, @Nullable String deleteDraftId) {
         sanitizer.postTitle(ideaCreateAdmin.getTitle());
         sanitizer.content(ideaCreateAdmin.getDescription());
+        sanitizer.content(ideaCreateAdmin.getAdminNotes());
 
         Project project = projectStore.getProject(projectId, true).get();
         UserModel author = userStore.getUser(projectId, ideaCreateAdmin.getAuthorUserId())
@@ -437,6 +438,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     public Idea ideaUpdateAdmin(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin) {
         sanitizer.postTitle(ideaUpdateAdmin.getTitle());
         sanitizer.content(ideaUpdateAdmin.getDescription());
+        sanitizer.content(ideaUpdateAdmin.getAdminNotes());
 
         Project project = projectStore.getProject(projectId, true).get();
         ConfigAdmin configAdmin = project.getVersionedConfigAdmin().getConfig();
