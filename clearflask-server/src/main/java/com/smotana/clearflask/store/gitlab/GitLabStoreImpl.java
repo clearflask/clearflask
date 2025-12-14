@@ -57,6 +57,7 @@ import org.gitlab4j.api.GitLabApiException;
 import org.gitlab4j.api.models.Issue;
 import org.gitlab4j.api.models.Label;
 import org.gitlab4j.api.models.Note;
+import org.gitlab4j.api.models.ProjectHook;
 import org.gitlab4j.api.models.User;
 import org.gitlab4j.api.webhook.IssueEvent;
 import org.gitlab4j.api.webhook.NoteEvent;
@@ -266,13 +267,13 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
     private GitLabAuthorization refreshAccessToken(GitLabAuthorization auth) {
         if (Strings.isNullOrEmpty(auth.getRefreshToken())) {
             log.warn("Cannot refresh GitLab token: no refresh token available for account {} instance {}",
-                    auth.getAccountId(), auth.getInstanceUrl());
+                    auth.getAccountId(), auth.getGitlabInstanceUrl());
             throw new ApiException(Response.Status.UNAUTHORIZED,
                     "GitLab authorization expired and cannot be refreshed. Please re-authorize.");
         }
 
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            HttpPost reqRefresh = new HttpPost(auth.getInstanceUrl() + "/oauth/token");
+            HttpPost reqRefresh = new HttpPost(auth.getGitlabInstanceUrl() + "/oauth/token");
             reqRefresh.setHeader("Accept", "application/json");
             reqRefresh.setEntity(new UrlEncodedFormEntity(ImmutableList.of(
                     new BasicNameValuePair("grant_type", "refresh_token"),
@@ -309,18 +310,18 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
             // Create new authorization with refreshed tokens
             GitLabAuthorization refreshedAuth = new GitLabAuthorization(
                     auth.getAccountId(),
-                    auth.getInstanceUrl(),
+                    auth.getGitlabInstanceUrl(),
                     auth.getProjectId(),
                     oAuthResponse.getAccessToken(),
                     oAuthResponse.getRefreshToken() != null ? oAuthResponse.getRefreshToken() : auth.getRefreshToken(),
                     newExpiresAt,
-                    auth.getAuthExpiry());
+                    auth.getTtlInEpochSec());
 
             // Update in DynamoDB
             gitLabAuthorizationSchema.table().putItem(gitLabAuthorizationSchema.toItem(refreshedAuth));
 
             log.info("Successfully refreshed GitLab access token for account {} instance {}",
-                    auth.getAccountId(), auth.getInstanceUrl());
+                    auth.getAccountId(), auth.getGitlabInstanceUrl());
 
             return refreshedAuth;
         } catch (IOException ex) {
@@ -431,18 +432,23 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
         try {
             URL webhookUrl = getWebhookUrl(projectId, authorization.getProjectId());
 
+            ProjectHook hook = new ProjectHook()
+                    .withIssuesEvents(true)
+                    .withMergeRequestsEvents(false)
+                    .withPushEvents(false)
+                    .withNoteEvents(true)
+                    .withJobEvents(false)
+                    .withPipelineEvents(false)
+                    .withWikiPageEvents(false)
+                    .withDeploymentEvents(false)
+                    .withReleasesEvents(true)
+                    .withEnableSslVerification(true)
+                    .withToken(configGitLabResource.webhookSecret());
+
             api.getProjectApi().addHook(
                     authorization.getProjectId(),
                     webhookUrl.toExternalForm(),
-                    true,  // issuesEvents
-                    false, // mergeRequestsEvents
-                    false, // pushEvents
-                    true,  // noteEvents
-                    false, // jobEvents
-                    false, // pipelineEvents
-                    false, // wikiPageEvents
-                    false, // deploymentEvents
-                    true,  // releasesEvents
+                    hook,
                     true,  // enableSslVerification
                     configGitLabResource.webhookSecret());
         } catch (GitLabApiException ex) {
