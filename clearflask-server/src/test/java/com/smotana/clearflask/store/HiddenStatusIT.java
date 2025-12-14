@@ -194,7 +194,7 @@ public class HiddenStatusIT extends AbstractIT {
                 projectId,
                 IdeaSearch.builder()
                         .filterCategoryIds(ImmutableList.of(categoryId))
-                        .limit(100)
+                        .limit(100L)
                         .build(),
                 Optional.empty(), // No user ID (anonymous)
                 hiddenStatusIds, // Filter hidden statuses
@@ -212,7 +212,7 @@ public class HiddenStatusIT extends AbstractIT {
                 projectId,
                 IdeaSearch.builder()
                         .filterCategoryIds(ImmutableList.of(categoryId))
-                        .limit(100)
+                        .limit(100L)
                         .build(),
                 Optional.empty(), // No user ID
                 ImmutableSet.of(), // No filtering (moderator view)
@@ -423,7 +423,7 @@ public class HiddenStatusIT extends AbstractIT {
                 projectId,
                 IdeaSearch.builder()
                         .filterCategoryIds(ImmutableList.of(categoryId))
-                        .limit(100)
+                        .limit(100L)
                         .build(),
                 Optional.of(authorId), // Search as the author
                 hiddenStatusIds, // Filter hidden statuses (non-moderator)
@@ -439,7 +439,7 @@ public class HiddenStatusIT extends AbstractIT {
                 projectId,
                 IdeaSearch.builder()
                         .filterCategoryIds(ImmutableList.of(categoryId))
-                        .limit(100)
+                        .limit(100L)
                         .build(),
                 Optional.of(authorId),
                 ImmutableSet.of(), // No filtering (moderator view)
@@ -509,7 +509,7 @@ public class HiddenStatusIT extends AbstractIT {
                 projectId,
                 IdeaSearch.builder()
                         .filterCategoryIds(ImmutableList.of(categoryId))
-                        .limit(100)
+                        .limit(100L)
                         .build(),
                 Optional.empty(),
                 hiddenStatusIds,
@@ -518,17 +518,16 @@ public class HiddenStatusIT extends AbstractIT {
         assertEquals("Post with visible status should be found", 1, searchResponse1.getIdeaIds().size());
 
         // Change status to hidden
-        IdeaModel updatedPost = post.toBuilder()
-                .statusId(hiddenStatusId)
-                .build();
-        ideaStore.updateIdea(projectId, updatedPost.getIdeaId(), ideaUpdate -> updatedPost);
+        ideaStore.updateIdea(projectId, post.getIdeaId(),
+                IdeaUpdateAdmin.builder().statusId(hiddenStatusId).build(),
+                Optional.empty());
 
         // Verify post is now hidden
         SearchResponse searchResponse2 = ideaStore.searchIdeas(
                 projectId,
                 IdeaSearch.builder()
                         .filterCategoryIds(ImmutableList.of(categoryId))
-                        .limit(100)
+                        .limit(100L)
                         .build(),
                 Optional.empty(),
                 hiddenStatusIds,
@@ -537,17 +536,16 @@ public class HiddenStatusIT extends AbstractIT {
         assertEquals("Post with hidden status should not be found", 0, searchResponse2.getIdeaIds().size());
 
         // Change status back to visible
-        IdeaModel reapprovedPost = updatedPost.toBuilder()
-                .statusId(visibleStatusId)
-                .build();
-        ideaStore.updateIdea(projectId, reapprovedPost.getIdeaId(), ideaUpdate -> reapprovedPost);
+        ideaStore.updateIdea(projectId, post.getIdeaId(),
+                IdeaUpdateAdmin.builder().statusId(visibleStatusId).build(),
+                Optional.empty());
 
         // Verify post is visible again
         SearchResponse searchResponse3 = ideaStore.searchIdeas(
                 projectId,
                 IdeaSearch.builder()
                         .filterCategoryIds(ImmutableList.of(categoryId))
-                        .limit(100)
+                        .limit(100L)
                         .build(),
                 Optional.empty(),
                 hiddenStatusIds,
@@ -612,7 +610,7 @@ public class HiddenStatusIT extends AbstractIT {
         SearchResponse searchResponse = ideaStore.searchIdeas(
                 projectId,
                 IdeaSearch.builder()
-                        .limit(100)
+                        .limit(100L)
                         .build(),
                 Optional.empty(),
                 hiddenStatusIds,
@@ -625,7 +623,7 @@ public class HiddenStatusIT extends AbstractIT {
         SearchResponse searchResponseModerator = ideaStore.searchIdeas(
                 projectId,
                 IdeaSearch.builder()
-                        .limit(100)
+                        .limit(100L)
                         .build(),
                 Optional.empty(),
                 ImmutableSet.of(), // No filtering
@@ -704,7 +702,7 @@ public class HiddenStatusIT extends AbstractIT {
                 projectId,
                 IdeaSearch.builder()
                         .filterCategoryIds(ImmutableList.of(categoryId))
-                        .limit(100)
+                        .limit(100L)
                         .build(),
                 Optional.empty(),
                 hiddenStatusIds,
@@ -715,7 +713,7 @@ public class HiddenStatusIT extends AbstractIT {
                 projectId,
                 IdeaSearch.builder()
                         .filterCategoryIds(ImmutableList.of(categoryId))
-                        .limit(100)
+                        .limit(100L)
                         .build(),
                 Optional.empty(),
                 ImmutableSet.of(), // No filtering
