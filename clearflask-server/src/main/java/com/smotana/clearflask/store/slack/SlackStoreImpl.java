@@ -297,7 +297,9 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
                 ImmutableSet.of(),
                 null,
                 null,  // linkedGitHubUrl
-                null   // linkedUrl
+                null,  // coverImg
+                null,  // visibility
+                null   // adminNotes
         ));
 
         // Store the mapping

@@ -112,7 +112,8 @@ public class MockModelUtil {
                 null,
                 null,
                 null,
-                null);  // visibility
+                null,  // visibility
+                null); // adminNotes
     }
 
     public static CommentModel getRandomComment() {

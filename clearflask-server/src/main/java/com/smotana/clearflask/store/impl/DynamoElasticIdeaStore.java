@@ -937,7 +937,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     }
 
     @Override
-    public SearchResponse searchIdeas(String projectId, IdeaSearch ideaSearch, Optional<String> requestorUserIdOpt, Optional<String> cursorOpt) {
+    public SearchResponse searchIdeas(String projectId, IdeaSearch ideaSearch, Optional<String> requestorUserIdOpt, ImmutableSet<String> hiddenStatusIds, Optional<String> cursorOpt) {
         return searchIdeas(
                 projectId,
                 new IdeaSearchAdmin(
@@ -1443,6 +1443,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         return updateIdea(projectId, ideaId, new IdeaUpdateAdmin(
                         ideaUpdate.getTitle(),
                         ideaUpdate.getDescription(),
+                        null,
                         null,
                         null,
                         null,
