@@ -32,6 +32,8 @@ public interface NotificationService {
 
     void onAccountSignup(Account account);
 
+    void onAdminForgotPassword(Account account, String resetToken);
+
     void onTrialEnding(Account account, Instant trialEnd);
 
     void onTrialEnded(Account account, boolean hasPaymentMethod);

@@ -105,6 +105,7 @@ public class NotificationServiceTest extends AbstractTest {
         install(OnInvoicePaymentSuccess.module());
         install(OnCreditChange.module());
         install(OnForgotPassword.module());
+        install(OnAdminForgotPassword.module());
         install(OnAccountSignup.module());
         install(OnTeammateInvite.module());
         install(OnModInvite.module());

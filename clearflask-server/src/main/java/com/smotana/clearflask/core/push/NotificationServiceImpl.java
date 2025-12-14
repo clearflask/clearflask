@@ -121,6 +121,8 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     @Inject
     private OnForgotPassword onForgotPassword;
     @Inject
+    private OnAdminForgotPassword onAdminForgotPassword;
+    @Inject
     private OnModInvite onModInvite;
     @Inject
     private OnTeammateInvite onTeammateInvite;
@@ -645,6 +647,24 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
                 emailService.send(accountSignup.email(account, link));
             } catch (Exception ex) {
                 log.warn("Failed to send email signup", ex);
+            }
+        });
+    }
+
+    @Override
+    public void onAdminForgotPassword(Account account, String resetToken) {
+        if (!config.enabled()) {
+            log.debug("Not enabled, skipping");
+            return;
+        }
+        submit(() -> {
+            String link = "https://" + configApp.domain() + "/reset-password";
+            checkState(!Strings.isNullOrEmpty(account.getEmail()));
+
+            try {
+                emailService.send(onAdminForgotPassword.email(account, link, resetToken));
+            } catch (Exception ex) {
+                log.warn("Failed to send admin forgot password email", ex);
             }
         });
     }

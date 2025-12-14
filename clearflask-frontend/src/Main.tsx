@@ -241,7 +241,7 @@ class Main extends Component<Props> {
                               </Provider>
                             )} />
                           ), (
-                            <Route key="enter" exact path="/:type(login|signup|invitation|coupon)/:id([a-z0-9]*)?"
+                            <Route key="enter" exact path="/:type(login|signup|invitation|coupon|forgot-password|reset-password)/:id?"
                                    render={props => (
                                      <Provider store={ServerAdmin.get().getStore()}>
                                        <SetMaxAge val={0} />
@@ -251,7 +251,11 @@ class Main extends Component<Props> {
                                            ? 'Sign up'
                                            : (props.match.params['type'] === 'invitation'
                                              ? 'Invitation'
-                                             : 'Coupon'))} />
+                                             : (props.match.params['type'] === 'forgot-password'
+                                               ? 'Forgot Password'
+                                               : (props.match.params['type'] === 'reset-password'
+                                                 ? 'Reset Password'
+                                                 : 'Coupon'))))} />
                                        <AccountEnterPage
                                          type={props.match.params['type']}
                                          invitationId={props.match.params['type'] === 'invitation' ? props.match.params['id'] : undefined}
