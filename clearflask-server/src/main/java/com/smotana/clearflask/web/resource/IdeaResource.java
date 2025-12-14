@@ -77,6 +77,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     private WebhookService webhookService;
     @Inject
     private GitHubStore gitHubStore;
+    @Inject
+    private SlackStore slackStore;
 
     @RolesAllowed({Role.PROJECT_USER})
     @Limit(requiredPermits = 30, challengeAfter = 20)
@@ -139,6 +141,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         }
 
         webhookService.eventPostNew(ideaModel, user);
+        slackStore.cfPostCreatedAsync(project, ideaModel, user);
         billing.recordUsage(UsageType.POST, project.getAccountId(), project.getProjectId(), user);
         return ideaModel.toIdeaWithVote(
                 IdeaVote.builder().vote(votingAllowed ? VoteOption.UPVOTE : null).build(),
@@ -257,6 +260,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
             notificationService.onPostCreatedOnBehalfOf(project, ideaModel, author);
         }
         webhookService.eventPostNew(ideaModel, author);
+        slackStore.cfPostCreatedAsync(project, ideaModel, author);
         billing.recordUsage(UsageType.POST, project.getAccountId(), projectId, author);
         return ideaModel.toIdeaWithVote(
                 IdeaVote.builder().vote(votingAllowed ? VoteOption.UPVOTE : null).build(),
@@ -518,6 +522,12 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         }
         if (statusChanged || responseChanged) {
             gitHubStore.cfStatusAndOrResponseChangedAsync(project, idea, statusChanged, responseChanged);
+        }
+        if (statusChanged) {
+            slackStore.cfPostStatusChangedAsync(project, idea);
+        }
+        if (responseChanged) {
+            slackStore.cfResponseChangedAsync(project, idea);
         }
         if (ideaUpdateAdmin.getTagIds() != null) {
             webhookService.eventPostTagsChanged(idea);
