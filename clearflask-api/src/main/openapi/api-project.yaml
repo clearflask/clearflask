@@ -687,6 +687,7 @@ components:
               - disableExpressions
               - disableIdeaEdits
               - disableComments
+              - disablePublicDisplay
             properties:
               statusId:
                 x-clearflask-prop: { order: 0, name: 'Status ID', description: 'For use in API calls', subType: 'id' }
@@ -717,6 +718,9 @@ components:
                 type: boolean
               disableComments:
                 x-clearflask-prop: { order: 7, name: 'Freeze new comments', description: 'Overrides parent settings to disable commenting during this status', trueLabel: 'Frozen', falseLabel: 'Default' }
+                type: boolean
+              disablePublicDisplay:
+                x-clearflask-prop: { order: 8, name: 'Hide from public', description: 'Hide ideas with this status from public view', trueLabel: 'Hidden', falseLabel: 'Visible' }
                 type: boolean
     tagging:
       x-clearflask-page: { order: 80, name: 'Tagging', description: 'Tags allow you to group content into categories. These categories can be used to for searching and filtering throughout the project.' }
@@ -1443,6 +1447,9 @@ components:
           type: boolean
         syncStatusUpdates:
           x-clearflask-prop: { order: 80, name: 'Status Updates', defaultValue: true, description: 'Update Slack message when post status changes.' }
+          type: boolean
+        syncResponseUpdates:
+          x-clearflask-prop: { order: 90, name: 'Response Updates', defaultValue: true, description: 'Post idea responses to Slack thread.' }
           type: boolean
 
 /slug/{slug}/bind/configAndUser:

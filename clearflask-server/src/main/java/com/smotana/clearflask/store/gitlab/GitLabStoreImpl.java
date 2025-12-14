@@ -441,8 +441,7 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
                     .withPipelineEvents(false)
                     .withWikiPageEvents(false)
                     .withDeploymentEvents(false)
-                    .withReleasesEvents(true)
-                    .withToken(configGitLabResource.webhookSecret());
+                    .withReleasesEvents(true);
 
             api.getProjectApi().addHook(
                     authorization.getProjectId(),

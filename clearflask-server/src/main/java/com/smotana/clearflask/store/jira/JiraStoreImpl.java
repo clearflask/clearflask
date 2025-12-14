@@ -749,7 +749,6 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
 
                 JiraIssue jiraIssue = client.getApiClient().createIssue(request);
 
-                // TODO: Store Jira URL in idea (need to add externalUrl field to IdeaUpdate)
                 log.info("Created Jira issue {} for ClearFlask post {}", jiraIssue.getKey(), idea.getIdeaId());
                 return Optional.of(jiraIssue);
 

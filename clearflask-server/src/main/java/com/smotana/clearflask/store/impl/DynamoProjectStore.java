@@ -844,8 +844,11 @@ public class DynamoProjectStore implements ProjectStore {
 
         @Override
         public ImmutableSet<String> getHiddenStatusIds() {
-            // TODO: Add disablePublicDisplay field to IdeaStatus in OpenAPI spec
-            return ImmutableSet.of();
+            return this.versionedConfig.getConfig().getContent().getCategories().stream()
+                    .flatMap(category -> category.getWorkflow().getStatuses().stream())
+                    .filter(status -> status.getDisablePublicDisplay() == Boolean.TRUE)
+                    .map(IdeaStatus::getStatusId)
+                    .collect(ImmutableSet.toImmutableSet());
         }
 
         @Override
