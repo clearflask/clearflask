@@ -24,8 +24,10 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.AvailableJiraProject;
 import com.smotana.clearflask.api.model.AvailableJiraProjects;
+import com.smotana.clearflask.api.model.CommentUpdate;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.IdeaStatus;
+import com.smotana.clearflask.api.model.IdeaUpdate;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.core.push.NotificationService;
@@ -489,7 +491,7 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
                 null, // visibility
                 null); // adminNotes
 
-        return Optional.of(ideaStore.createIdea(idea));
+        return Optional.of(ideaStore.createIdeaAndUpvote(idea));
     }
 
     private Optional<IdeaAndIndexingFuture> handleIssueUpdated(Project project,
@@ -624,18 +626,19 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
                 project.getProjectId(),
                 ideaId,
                 commentId,
-                null, // parentCommentId - Jira doesn't have threaded comments by default
-                0, // childCommentCount
+                ImmutableList.of(), // parentCommentIds - Jira doesn't have threaded comments by default
+                0, // level
+                0L, // childCommentCount
                 user.getUserId(),
                 user.getName(),
                 user.getIsMod(),
                 Instant.now(),
                 null, // edited
                 contentQuill,
-                0L, // upvotes
-                0L); // downvotes
+                0, // upvotes
+                0); // downvotes
 
-        return Optional.of(commentStore.createComment(comment));
+        return Optional.of(commentStore.createCommentAndUpvote(comment));
     }
 
     private Optional<CommentAndIndexingFuture<?>> handleCommentUpdated(Project project,
@@ -660,7 +663,7 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
                 project.getProjectId(),
                 ideaId,
                 commentId,
-                CommentStore.CommentUpdate.builder()
+                CommentUpdate.builder()
                         .content(contentQuill)
                         .build()));
     }
@@ -713,8 +716,8 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
 
                 // Convert Quill to ADF
                 String descriptionAdf = null;
-                if (!Strings.isNullOrEmpty(idea.getDescription())) {
-                    descriptionAdf = adfQuillConverter.quillToAdf(idea.getDescription());
+                if (!Strings.isNullOrEmpty(idea.getDescriptionAsUnsafeHtml())) {
+                    descriptionAdf = adfQuillConverter.quillToAdf(idea.getDescriptionAsUnsafeHtml());
                 }
 
                 // Determine issue type ID - fetch available types if not configured
@@ -782,10 +785,8 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
         // Only sync comments on Jira-linked ideas
         Optional<JiraIssueRef> jiraRefOpt = extractJiraIssueFromIdeaId(idea.getIdeaId());
         if (jiraRefOpt.isEmpty()) {
-            // Check if idea has externalUrl pointing to Jira
-            if (idea.getExternalUrl() == null || !idea.getExternalUrl().contains("atlassian.net/browse/")) {
-                return Futures.immediateFuture(Optional.empty());
-            }
+            // Only sync ideas created from Jira
+            return Futures.immediateFuture(Optional.empty());
         }
 
         return executor.submit(() -> {
@@ -805,16 +806,15 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
                     return Optional.empty();
                 }
 
-                // Extract issue key
-                String issueKey = jiraRefOpt.map(JiraIssueRef::getIssueKey)
-                        .orElseGet(() -> extractIssueKeyFromUrl(idea.getExternalUrl()));
+                // Extract issue key from Jira reference
+                String issueKey = jiraRefOpt.get().getIssueKey();
                 if (issueKey == null) {
                     return Optional.empty();
                 }
 
                 // Format comment with author attribution
                 String authorName = user.getName() != null ? user.getName() : "ClearFlask User";
-                String commentText = authorName + " wrote:\n\n" + adfQuillConverter.quillToPlainText(comment.getContent());
+                String commentText = authorName + " wrote:\n\n" + adfQuillConverter.quillToPlainText(comment.getContentAsUnsafeHtml());
                 String commentAdf = adfQuillConverter.plainTextToAdf(commentText);
 
                 JiraComment jiraComment = client.getApiClient().addComment(issueKey, commentAdf);
@@ -845,9 +845,8 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
         // Only sync for Jira-linked ideas
         Optional<JiraIssueRef> jiraRefOpt = extractJiraIssueFromIdeaId(idea.getIdeaId());
         if (jiraRefOpt.isEmpty()) {
-            if (idea.getExternalUrl() == null || !idea.getExternalUrl().contains("atlassian.net/browse/")) {
-                return Futures.immediateFuture(Optional.empty());
-            }
+            // Only sync ideas created from Jira
+            return Futures.immediateFuture(Optional.empty());
         }
 
         boolean shouldSyncStatus = statusChanged
@@ -874,8 +873,7 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
                     return Optional.empty();
                 }
 
-                String issueKey = jiraRefOpt.map(JiraIssueRef::getIssueKey)
-                        .orElseGet(() -> extractIssueKeyFromUrl(idea.getExternalUrl()));
+                String issueKey = jiraRefOpt.get().getIssueKey();
                 if (issueKey == null) {
                     return Optional.empty();
                 }
@@ -902,11 +900,11 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
                 }
 
                 // Sync response as comment
-                if (shouldSyncResponse && !Strings.isNullOrEmpty(idea.getResponse())) {
+                if (shouldSyncResponse && !Strings.isNullOrEmpty(idea.getResponseAsUnsafeHtml())) {
                     String authorName = idea.getResponseAuthorName() != null
                             ? idea.getResponseAuthorName() : "ClearFlask Team";
                     String responseText = "Response from " + authorName + ":\n\n"
-                            + adfQuillConverter.quillToPlainText(idea.getResponse());
+                            + adfQuillConverter.quillToPlainText(idea.getResponseAsUnsafeHtml());
                     String responseAdf = adfQuillConverter.plainTextToAdf(responseText);
 
                     responseComment = client.getApiClient().addComment(issueKey, responseAdf);
@@ -937,20 +935,28 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
         UserModel user = new UserModel(
                 projectId,
                 cfUserId,
-                displayName,
-                email,
-                null, // password
+                null, // ssoGuid
                 false, // isMod
-                null, // emailNotify
+                displayName, // name
+                email,
+                null, // emailVerified
+                null, // emailLastUpdated
+                null, // password
+                null, // authTokenValidityStart
+                false, // emailNotify
+                0L, // balance
                 null, // iosPushToken
                 null, // androidPushToken
                 null, // browserPushToken
                 Instant.now(), // created
-                null, // authTokenValidityStart
-                null, // ssoGuid
-                null, // balance
-                null, // emailVerified
-                null); // registrationBrowserPush
+                null, // pic
+                null, // picUrl
+                null, // expressBloom
+                null, // fundBloom
+                null, // voteBloom
+                null, // commentVoteBloom
+                null, // isTracked
+                ImmutableSet.of()); // subscribedCategoryIds
 
         return userStore.createUser(user).getUser();
     }
