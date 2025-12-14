@@ -645,8 +645,11 @@ function reducerIdeas(state: StateIdeas = stateIdeasDefault, action: AllActions)
         maxFundAmountSeen: Math.max(action.payload.idea.funded || 0, state.maxFundAmountSeen),
       };
     case Client.commentCreateActionStatus.Fulfilled:
+    case Admin.commentCreateAdminActionStatus.Fulfilled:
       // For comment creation, update idea comment counts
-      const postIdWithNewComment = action.meta.request.commentCreate.mergedPostId || action.meta.request.ideaId;
+      const postIdWithNewComment = action.type === Admin.commentCreateAdminActionStatus.Fulfilled
+        ? (action.meta.request.commentCreateAdmin.mergedPostId || action.meta.request.ideaId)
+        : (action.meta.request.commentCreate.mergedPostId || action.meta.request.ideaId);
       return !state.byId[postIdWithNewComment] ? state : {
         ...state,
         byId: {
@@ -1197,7 +1200,10 @@ function reducerComments(state: StateComments = stateCommentsDefault, action: Al
         },
       };
     case Client.commentCreateActionStatus.Fulfilled:
-      const parentCommentOrMergedPostId = action.payload.parentCommentId || action.meta.request.commentCreate.mergedPostId;
+    case Admin.commentCreateAdminActionStatus.Fulfilled:
+      const parentCommentOrMergedPostId = action.type === Admin.commentCreateAdminActionStatus.Fulfilled
+        ? (action.payload.parentCommentId || action.meta.request.commentCreateAdmin.mergedPostId)
+        : (action.payload.parentCommentId || action.meta.request.commentCreate.mergedPostId);
       return {
         ...state,
         byIdeaIdOrParentCommentId: {
@@ -1941,10 +1947,11 @@ function reducerCommentVotes(state: StateCommentVotes = stateCommentVotesDefault
         } : {}),
       };
     case Client.commentCreateActionStatus.Fulfilled:
+    case Admin.commentCreateAdminActionStatus.Fulfilled:
     case Client.commentVoteUpdateActionStatus.Fulfilled:
-      const vote = action.type === Client.commentCreateActionStatus.Fulfilled
+      const vote = (action.type === Client.commentCreateActionStatus.Fulfilled || action.type === Admin.commentCreateAdminActionStatus.Fulfilled)
         ? action.payload.vote : action.payload.comment.vote;
-      const commentId = action.type === Client.commentCreateActionStatus.Fulfilled
+      const commentId = (action.type === Client.commentCreateActionStatus.Fulfilled || action.type === Admin.commentCreateAdminActionStatus.Fulfilled)
         ? action.payload.commentId : action.payload.comment.commentId;
       return {
         ...state,

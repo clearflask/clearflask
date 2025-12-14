@@ -110,6 +110,8 @@ paths:
     $ref: 'api-comment.yaml#/~1project~1{projectId}~1admin~1commentsearch'
   /project/{projectId}/admin/comment/histogram:
     $ref: 'api-comment.yaml#/~1project~1{projectId}~1admin~1comment~1histogram'
+  /project/{projectId}/admin/idea/{ideaId}/comment:
+    $ref: 'api-comment.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1comment'
   /project/{projectId}/admin/idea/{ideaId}/comment/{commentId}:
     $ref: 'api-comment.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1comment~1{commentId}'
   /project/{projectId}/admin/transaction/search:

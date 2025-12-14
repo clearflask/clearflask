@@ -784,7 +784,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       return {
         ...comment,
         author: comment.authorUserId ? this.getProject(request.projectId).users.find(user => user.userId === comment.authorUserId)! : undefined,
-        vote: loggedInUser ? this.getProject(request.projectId).commentVotes.find(vote => vote.voterUserId === comment.commentId && vote.voterUserId === loggedInUser.userId) : undefined,
+        vote: loggedInUser ? this.getProject(request.projectId).commentVotes.find(vote => vote.commentId === comment.commentId && vote.voterUserId === loggedInUser.userId) : undefined,
       };
     }), [(l, r) => l.created.getTime() - r.created.getTime()]);
     return this.returnLater({
@@ -1252,6 +1252,58 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     comment.authorIsMod = undefined;
     comment.edited = new Date();
     return this.returnLater(comment);
+  }
+
+  async commentCreateAdmin(request: Admin.CommentCreateAdminRequest): Promise<Admin.Comment> {
+    var author = this.getProject(request.projectId).users.find(user => user.userId === request.commentCreateAdmin.authorUserId);
+    if (!author) {
+      // Create user if doesn't exist (when using allowCreate in UserSelection)
+      author = await this.userCreateAdmin({
+        projectId: request.projectId,
+        userCreateAdmin: {
+          userId: request.commentCreateAdmin.authorUserId,
+          name: request.commentCreateAdmin.authorUserId, // Fallback name
+          isMod: false,
+        },
+      });
+    }
+    const parentComment = request.commentCreateAdmin.parentCommentId && this.getProject(request.projectId).comments.find(c => c.commentId === request.commentCreateAdmin.parentCommentId)!;
+    const parentIdPath = request.commentCreateAdmin.parentCommentId && parentComment
+      ? [
+        ...parentComment.parentIdPath,
+        request.commentCreateAdmin.parentCommentId,
+      ]
+      : [];
+    const comment: CommentWithAuthorWithParentPath = {
+      ideaId: request.ideaId,
+      commentId: '' + (this.nextCommentId++),
+      authorUserId: author.userId,
+      authorName: author.name,
+      authorIsMod: author.isMod,
+      created: new Date(),
+      parentIdPath: parentIdPath,
+      childCommentCount: 0,
+      voteValue: 1,
+      content: request.commentCreateAdmin.content,
+      parentCommentId: request.commentCreateAdmin.parentCommentId,
+      mergedPostId: request.commentCreateAdmin.mergedPostId,
+    };
+    parentComment && parentComment.childCommentCount++;
+    const idea = this.getProject(request.projectId).ideas.find(idea => idea.ideaId === request.ideaId)!;
+    idea.commentCount++;
+    if (!comment.parentCommentId) {
+      idea.childCommentCount++;
+    }
+    this.getProject(request.projectId).comments.push(comment);
+    this.getProject(request.projectId).commentVotes.push({
+      voterUserId: author.userId,
+      commentId: comment.commentId,
+      vote: Client.VoteOption.Upvote,
+    });
+    return this.returnLater({
+      ...comment,
+      vote: Client.VoteOption.Upvote,
+    });
   }
 
   transactionSearchAdmin(request: Admin.TransactionSearchAdminRequest): Promise<Admin.TransactionSearchAdminResponse> {

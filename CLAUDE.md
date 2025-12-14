@@ -90,6 +90,33 @@ OpenAPI YAML files in `clearflask-api/src/main/openapi/` generate:
 1. TypeScript client → `clearflask-frontend/src/api/`
 2. Java server interfaces → `clearflask-api/target/`
 
+### Adding New API Endpoints
+
+When adding a new API endpoint (especially admin endpoints), you must update multiple files:
+
+1. **Define the endpoint** in the appropriate API file:
+   - `api-comment.yaml`, `api-idea.yaml`, `api-user.yaml`, etc.
+   - Define schemas (e.g., `CommentCreateAdmin`) and paths (e.g., `/project/{projectId}/admin/idea/{ideaId}/comment`)
+
+2. **Add references** in these files (use encoded path format with `~1` for `/`):
+   - `clearflask-api/src/main/openapi/api.yaml` - Main API (all endpoints)
+   - `clearflask-api/src/main/openapi/api-admin.yaml` - Admin API (admin endpoints only)
+   - `clearflask-api/src/main/openapi/api-docs.yaml` - API documentation
+
+3. **Rebuild the API module** to generate Java/TypeScript clients:
+   ```bash
+   cd clearflask-api && mvn clean install -DskipTests
+   ```
+
+4. **Implement the endpoint** in the corresponding resource class:
+   - Backend: `clearflask-server/src/main/java/com/smotana/clearflask/web/resource/`
+
+Example path reference format:
+```yaml
+/project/{projectId}/admin/idea/{ideaId}/comment:
+  $ref: 'api-comment.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1comment'
+```
+
 ## Key Technologies
 
 - **Backend**: Java 11, Maven, Guice, Jersey, Lombok
