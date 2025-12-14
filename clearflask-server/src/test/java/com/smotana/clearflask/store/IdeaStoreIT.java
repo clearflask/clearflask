@@ -11,6 +11,7 @@ import com.google.inject.name.Names;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.IdeaVisibility;
 import com.smotana.clearflask.store.IdeaStore.IdeaModel;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
@@ -642,5 +643,230 @@ public class IdeaStoreIT extends AbstractIT {
         assertNotNull(store.getIdea(projectId, idea.getIdeaId()).get().getExpressions());
 
         store.expressIdeaSet(projectId, idea.getIdeaId(), userId, e -> e.equals("👀") ? 2d : 1d, Optional.of("👀")).getIndexingFuture().get();
+    }
+
+    @Test(timeout = 30_000L)
+    public void testPrivateVisibility() throws Exception {
+        String projectId = IdUtil.randomId();
+        store.createIndex(projectId).get();
+        userStore.createIndex(projectId);
+
+        String userId1 = userStore.createUser(MockModelUtil.getRandomUser().toBuilder().projectId(projectId).build()).getUser().getUserId();
+
+        // Create a public idea
+        IdeaModel publicIdea = MockModelUtil.getRandomIdea().toBuilder()
+                .ideaId("publicIdea")
+                .projectId(projectId)
+                .authorUserId(userId1)
+                .title("Public idea title")
+                .categoryId("cat1")
+                .statusId("status1")
+                .visibility(IdeaVisibility.PUBLIC)
+                .build();
+
+        // Create a private idea
+        IdeaModel privateIdea = MockModelUtil.getRandomIdea().toBuilder()
+                .ideaId("privateIdea")
+                .projectId(projectId)
+                .authorUserId(userId1)
+                .title("Private idea title")
+                .categoryId("cat1")
+                .statusId("status1")
+                .visibility(IdeaVisibility.PRIVATE)
+                .build();
+
+        // Create an idea with null visibility (should default to public)
+        IdeaModel nullVisibilityIdea = MockModelUtil.getRandomIdea().toBuilder()
+                .ideaId("nullVisibilityIdea")
+                .projectId(projectId)
+                .authorUserId(userId1)
+                .title("Null visibility idea title")
+                .categoryId("cat1")
+                .statusId("status1")
+                .visibility(null)
+                .build();
+
+        store.createIdea(publicIdea).get();
+        store.createIdea(privateIdea).get();
+        store.createIdea(nullVisibilityIdea).get();
+
+        // Verify all ideas are stored correctly
+        assertEquals(Optional.of(publicIdea), store.getIdea(projectId, publicIdea.getIdeaId()));
+        assertEquals(Optional.of(privateIdea), store.getIdea(projectId, privateIdea.getIdeaId()));
+        assertEquals(Optional.of(nullVisibilityIdea), store.getIdea(projectId, nullVisibilityIdea.getIdeaId()));
+
+        // Test search excludes private ideas by default (excludePrivate = true)
+        IdeaStore.SearchResponse searchResponse = store.searchIdeas(
+                projectId,
+                IdeaSearchAdmin.builder().filterCategoryIds(ImmutableList.of("cat1")).build(),
+                true, // excludePrivate = true (simulates non-admin user)
+                Optional.empty());
+
+        // Should only return public and null visibility ideas
+        assertTrue("Search should include public idea", searchResponse.getIdeaIds().contains(publicIdea.getIdeaId()));
+        assertTrue("Search should include null visibility idea (treated as public)", searchResponse.getIdeaIds().contains(nullVisibilityIdea.getIdeaId()));
+        assertFalse("Search should NOT include private idea for non-admin", searchResponse.getIdeaIds().contains(privateIdea.getIdeaId()));
+
+        // Test search includes private ideas when excludePrivate = false (simulates admin/mod user)
+        IdeaStore.SearchResponse adminSearchResponse = store.searchIdeas(
+                projectId,
+                IdeaSearchAdmin.builder().filterCategoryIds(ImmutableList.of("cat1")).build(),
+                false, // excludePrivate = false (simulates admin/mod user)
+                Optional.empty());
+
+        // Should return all ideas including private
+        assertTrue("Admin search should include public idea", adminSearchResponse.getIdeaIds().contains(publicIdea.getIdeaId()));
+        assertTrue("Admin search should include private idea", adminSearchResponse.getIdeaIds().contains(privateIdea.getIdeaId()));
+        assertTrue("Admin search should include null visibility idea", adminSearchResponse.getIdeaIds().contains(nullVisibilityIdea.getIdeaId()));
+    }
+
+    @Test(timeout = 30_000L)
+    public void testPrivateVisibilityUpdate() throws Exception {
+        String projectId = IdUtil.randomId();
+        store.createIndex(projectId).get();
+        userStore.createIndex(projectId);
+
+        UserStore.UserModel moderator = MockModelUtil.getRandomUser().toBuilder()
+                .projectId(projectId)
+                .isMod(true)
+                .build();
+        userStore.createUser(moderator);
+
+        // Create a public idea
+        IdeaModel publicIdea = MockModelUtil.getRandomIdea().toBuilder()
+                .projectId(projectId)
+                .authorUserId(moderator.getUserId())
+                .title("Initially public")
+                .visibility(IdeaVisibility.PUBLIC)
+                .build();
+
+        store.createIdea(publicIdea).get();
+
+        // Verify it's public
+        assertEquals(IdeaVisibility.PUBLIC, store.getIdea(projectId, publicIdea.getIdeaId()).get().getVisibility());
+
+        // Update to private
+        store.updateIdea(projectId, publicIdea.getIdeaId(),
+                IdeaUpdateAdmin.builder()
+                        .visibility(IdeaVisibility.PRIVATE)
+                        .build(),
+                Optional.of(moderator))
+                .getIndexingFuture().get();
+
+        // Verify it's now private
+        assertEquals(IdeaVisibility.PRIVATE, store.getIdea(projectId, publicIdea.getIdeaId()).get().getVisibility());
+
+        // Update back to public
+        store.updateIdea(projectId, publicIdea.getIdeaId(),
+                IdeaUpdateAdmin.builder()
+                        .visibility(IdeaVisibility.PUBLIC)
+                        .build(),
+                Optional.of(moderator))
+                .getIndexingFuture().get();
+
+        // Verify it's public again
+        assertEquals(IdeaVisibility.PUBLIC, store.getIdea(projectId, publicIdea.getIdeaId()).get().getVisibility());
+    }
+
+    @Test(timeout = 30_000L)
+    public void testPrivateVisibilityInMultipleSearches() throws Exception {
+        String projectId = IdUtil.randomId();
+        store.createIndex(projectId).get();
+        userStore.createIndex(projectId);
+
+        String userId1 = userStore.createUser(MockModelUtil.getRandomUser().toBuilder().projectId(projectId).build()).getUser().getUserId();
+
+        // Create mix of public and private ideas with different attributes
+        IdeaModel publicIdea1 = MockModelUtil.getRandomIdea().toBuilder()
+                .ideaId("public1")
+                .projectId(projectId)
+                .authorUserId(userId1)
+                .title("Public first idea")
+                .categoryId("cat1")
+                .statusId("status1")
+                .visibility(IdeaVisibility.PUBLIC)
+                .created(Instant.now().minus(3, ChronoUnit.DAYS))
+                .voteValue(10L)
+                .build();
+
+        IdeaModel privateIdea1 = MockModelUtil.getRandomIdea().toBuilder()
+                .ideaId("private1")
+                .projectId(projectId)
+                .authorUserId(userId1)
+                .title("Private first idea")
+                .categoryId("cat1")
+                .statusId("status1")
+                .visibility(IdeaVisibility.PRIVATE)
+                .created(Instant.now().minus(2, ChronoUnit.DAYS))
+                .voteValue(20L)
+                .build();
+
+        IdeaModel publicIdea2 = MockModelUtil.getRandomIdea().toBuilder()
+                .ideaId("public2")
+                .projectId(projectId)
+                .authorUserId(userId1)
+                .title("Public second idea")
+                .categoryId("cat2")
+                .statusId("status2")
+                .visibility(IdeaVisibility.PUBLIC)
+                .created(Instant.now().minus(1, ChronoUnit.DAYS))
+                .voteValue(30L)
+                .build();
+
+        IdeaModel privateIdea2 = MockModelUtil.getRandomIdea().toBuilder()
+                .ideaId("private2")
+                .projectId(projectId)
+                .authorUserId(userId1)
+                .title("Private second idea")
+                .categoryId("cat2")
+                .statusId("status2")
+                .visibility(IdeaVisibility.PRIVATE)
+                .created(Instant.now())
+                .voteValue(40L)
+                .build();
+
+        store.createIdea(publicIdea1).get();
+        store.createIdea(privateIdea1).get();
+        store.createIdea(publicIdea2).get();
+        store.createIdea(privateIdea2).get();
+
+        // Test that private ideas are filtered across different search criteria
+
+        // By category cat1 - non-admin should only see public
+        IdeaStore.SearchResponse cat1Search = store.searchIdeas(
+                projectId,
+                IdeaSearchAdmin.builder().filterCategoryIds(ImmutableList.of("cat1")).build(),
+                true, // excludePrivate
+                Optional.empty());
+        assertTrue("Should include public idea in cat1", cat1Search.getIdeaIds().contains("public1"));
+        assertFalse("Should NOT include private idea in cat1", cat1Search.getIdeaIds().contains("private1"));
+
+        // By status - non-admin should only see public
+        IdeaStore.SearchResponse status1Search = store.searchIdeas(
+                projectId,
+                IdeaSearchAdmin.builder().filterStatusIds(ImmutableList.of("status1")).build(),
+                true, // excludePrivate
+                Optional.empty());
+        assertTrue("Should include public idea with status1", status1Search.getIdeaIds().contains("public1"));
+        assertFalse("Should NOT include private idea with status1", status1Search.getIdeaIds().contains("private1"));
+
+        // Sort by top - non-admin should only see public ideas in sorted order
+        IdeaStore.SearchResponse topSearch = store.searchIdeas(
+                projectId,
+                IdeaSearchAdmin.builder().sortBy(IdeaSearchAdmin.SortByEnum.TOP).build(),
+                true, // excludePrivate
+                Optional.empty());
+        assertTrue("Should include public ideas", topSearch.getIdeaIds().contains("public1"));
+        assertTrue("Should include public ideas", topSearch.getIdeaIds().contains("public2"));
+        assertFalse("Should NOT include private ideas", topSearch.getIdeaIds().contains("private1"));
+        assertFalse("Should NOT include private ideas", topSearch.getIdeaIds().contains("private2"));
+
+        // Admin search - should see all ideas
+        IdeaStore.SearchResponse adminSearch = store.searchIdeas(
+                projectId,
+                IdeaSearchAdmin.builder().build(),
+                false, // excludePrivate = false
+                Optional.empty());
+        assertEquals("Admin should see all 4 ideas", 4, adminSearch.getIdeaIds().size());
     }
 }
