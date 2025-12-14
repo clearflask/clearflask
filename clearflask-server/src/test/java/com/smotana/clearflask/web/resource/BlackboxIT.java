@@ -10,10 +10,13 @@ import com.smotana.clearflask.api.model.AccountSignupAdmin;
 import com.smotana.clearflask.api.model.AccountUpdateAdmin;
 import com.smotana.clearflask.api.model.AccountUpdateAdminPaymentToken;
 import com.smotana.clearflask.api.model.CommentCreate;
+import com.smotana.clearflask.api.model.CommentCreateAdmin;
 import com.smotana.clearflask.api.model.CommentVoteGetOwnResponse;
 import com.smotana.clearflask.api.model.CommentVoteUpdate;
 import com.smotana.clearflask.api.model.CommentVoteUpdateResponse;
 import com.smotana.clearflask.api.model.CommentWithVote;
+import com.smotana.clearflask.api.model.IdeaCommentSearch;
+import com.smotana.clearflask.api.model.IdeaCommentSearchResponse;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.IdeaCreate;
 import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
@@ -212,6 +215,62 @@ public class BlackboxIT extends AbstractBlackboxIT {
                                 ideaYoursCommentYours.getCommentId(), VoteOption.UPVOTE))
                         .build(),
                 commentVoteGetOwnResponse);
+    }
+
+    @Test(timeout = 300_000L)
+    public void testCommentCreateAdmin() throws Exception {
+        AccountAndProject account = getTrialAccount();
+        String projectId = account.getProject().getProjectId();
+
+        // Create two users
+        UserMeWithBalance adminUser = userResource.userCreate(projectId, UserCreate.builder()
+                .name("admin").build()).getUser();
+        UserMeWithBalance targetUser = userResource.userCreate(projectId, UserCreate.builder()
+                .name("target").build()).getUser();
+
+        // Create an idea as admin user
+        IdeaWithVote idea = ideaResource.ideaCreate(projectId, IdeaCreate.builder()
+                .authorUserId(adminUser.getUserId())
+                .title("Test Idea")
+                .categoryId(account.getProject().getConfig().getConfig().getContent().getCategories().get(0).getCategoryId())
+                .tagIds(ImmutableList.of())
+                .build());
+
+        // Admin creates a comment on behalf of targetUser
+        CommentWithVote commentOnBehalf = commentResource.commentCreateAdmin(
+                projectId,
+                idea.getIdeaId(),
+                CommentCreateAdmin.builder()
+                        .authorUserId(targetUser.getUserId())
+                        .content(textToSimpleHtml("Comment on behalf of target user"))
+                        .build());
+
+        // Verify the comment is attributed to the correct author
+        assertEquals(targetUser.getUserId(), commentOnBehalf.getAuthorUserId());
+        assertEquals(targetUser.getName(), commentOnBehalf.getAuthorName());
+        assertEquals(VoteOption.UPVOTE, commentOnBehalf.getVote());
+
+        // Verify we can retrieve the comment
+        IdeaCommentSearchResponse searchResponse = commentResource.ideaCommentSearch(
+                projectId,
+                idea.getIdeaId(),
+                IdeaCommentSearch.builder().build());
+        assertEquals(1, searchResponse.getResults().size());
+        assertEquals(targetUser.getUserId(), searchResponse.getResults().get(0).getAuthorUserId());
+
+        // Test error case: non-existent user
+        try {
+            commentResource.commentCreateAdmin(
+                    projectId,
+                    idea.getIdeaId(),
+                    CommentCreateAdmin.builder()
+                            .authorUserId("non-existent-user-id")
+                            .content(textToSimpleHtml("This should fail"))
+                            .build());
+            throw new AssertionError("Expected exception for non-existent user");
+        } catch (Exception e) {
+            // Expected - user not found
+        }
     }
 
     private UserMeWithBalance addUserAndDoThings(String projectId, ConfigAdmin configAdmin) {

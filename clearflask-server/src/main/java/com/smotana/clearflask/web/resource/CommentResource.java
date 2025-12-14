@@ -128,6 +128,11 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     public CommentWithVote commentCreateAdmin(String projectId, String ideaId, CommentCreateAdmin create) {
         sanitizer.content(create.getContent());
 
+        // Validate authorUserId
+        if (Strings.isNullOrEmpty(create.getAuthorUserId())) {
+            throw new BadRequestException("Author user ID is required");
+        }
+
         String ideaIdOrMergedIdeaId = Strings.isNullOrEmpty(create.getMergedPostId()) ? ideaId : create.getMergedPostId();
 
         UserModel user = userStore.getUser(projectId, create.getAuthorUserId())
