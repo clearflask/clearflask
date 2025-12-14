@@ -21,6 +21,8 @@ import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
 import com.smotana.clearflask.api.model.IdeaVote;
 import com.smotana.clearflask.api.model.IdeaVoteGetOwnResponse;
 import com.smotana.clearflask.api.model.IdeaVoteUpdate;
+import com.smotana.clearflask.api.model.IdeaVoteUpdateAdmin;
+import com.smotana.clearflask.api.model.IdeaVoteUpdateAdminResponse;
 import com.smotana.clearflask.api.model.IdeaVoteUpdateExpressions;
 import com.smotana.clearflask.api.model.IdeaVoteUpdateResponse;
 import com.smotana.clearflask.api.model.IdeaWithVote;
@@ -237,10 +239,10 @@ public class BlackboxIT extends AbstractBlackboxIT {
         assertEquals(Long.valueOf(0L), idea.getVoteValue());
 
         // Admin votes on behalf of regular user (upvote)
-        Admin.IdeaVoteUpdateAdminResponse upvoteResponse = voteResource.ideaVoteUpdateAdmin(
+        IdeaVoteUpdateAdminResponse upvoteResponse = voteResource.ideaVoteUpdateAdmin(
                 projectId,
                 idea.getIdeaId(),
-                Admin.IdeaVoteUpdateAdmin.builder()
+                IdeaVoteUpdateAdmin.builder()
                         .voterUserId(regularUser.getUserId())
                         .vote(VoteOption.UPVOTE)
                         .build());
@@ -250,10 +252,10 @@ public class BlackboxIT extends AbstractBlackboxIT {
         assertEquals(regularUser.getUserId(), upvoteResponse.getVoter().getUserId());
 
         // Admin removes vote on behalf of regular user
-        Admin.IdeaVoteUpdateAdminResponse removeVoteResponse = voteResource.ideaVoteUpdateAdmin(
+        IdeaVoteUpdateAdminResponse removeVoteResponse = voteResource.ideaVoteUpdateAdmin(
                 projectId,
                 idea.getIdeaId(),
-                Admin.IdeaVoteUpdateAdmin.builder()
+                IdeaVoteUpdateAdmin.builder()
                         .voterUserId(regularUser.getUserId())
                         .vote(VoteOption.NONE)
                         .build());
@@ -277,7 +279,7 @@ public class BlackboxIT extends AbstractBlackboxIT {
             voteResource.ideaVoteUpdateAdmin(
                     projectId,
                     idea.getIdeaId(),
-                    Admin.IdeaVoteUpdateAdmin.builder()
+                    IdeaVoteUpdateAdmin.builder()
                             .voterUserId(regularUser.getUserId())
                             .vote(VoteOption.UPVOTE)
                             .build());
@@ -291,7 +293,7 @@ public class BlackboxIT extends AbstractBlackboxIT {
             voteResource.ideaVoteUpdateAdmin(
                     projectId,
                     parentIdea.getIdeaId(),
-                    Admin.IdeaVoteUpdateAdmin.builder()
+                    IdeaVoteUpdateAdmin.builder()
                             .voterUserId("non-existent-user-id")
                             .vote(VoteOption.UPVOTE)
                             .build());
@@ -305,7 +307,7 @@ public class BlackboxIT extends AbstractBlackboxIT {
             voteResource.ideaVoteUpdateAdmin(
                     projectId,
                     parentIdea.getIdeaId(),
-                    Admin.IdeaVoteUpdateAdmin.builder()
+                    IdeaVoteUpdateAdmin.builder()
                             .voterUserId("")
                             .vote(VoteOption.UPVOTE)
                             .build());
