@@ -16,8 +16,13 @@ const GitHubAppProvider = {
 
 // Jira Cloud OAuth 2.0 (3LO)
 // Requires configuring Jira OAuth app at https://developer.atlassian.com/console/myapps/
+// IMPORTANT: To enable Jira integration in production:
+// 1. Create a Jira OAuth 2.0 app at https://developer.atlassian.com/console/myapps/
+// 2. Configure callback URL: https://your-domain.com/dashboard-login
+// 3. Enable the following scopes: read:jira-user, read:jira-work, manage:jira-configuration, write:jira-work, manage:jira-webhook, offline_access
+// 4. Replace 'JIRA_CLIENT_ID_PLACEHOLDER' below with your actual Client ID
 const JiraAppProvider: OAuthProvider = {
-  clientId: isProd() ? '' : 'jira-client-id', // TODO: Replace with actual Jira OAuth client ID
+  clientId: isProd() ? 'JIRA_CLIENT_ID_PLACEHOLDER' : 'jira-client-id-dev',
   authorizeUrl: 'https://auth.atlassian.com/authorize',
   scope: 'read:jira-user read:jira-work manage:jira-configuration write:jira-work manage:jira-webhook offline_access',
 };

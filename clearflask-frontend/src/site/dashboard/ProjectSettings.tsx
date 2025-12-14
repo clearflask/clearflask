@@ -3537,15 +3537,24 @@ export const ProjectSettingsJira = (props: {
 
   const getProjects = (code: string) => ServerAdmin.get().dispatchAdmin()
     .then(d => d.jiraGetProjectsAdmin({ code }))
-    .then(result => setProjects(result.projects));
-  const oauthFlow = new OAuthFlow({
-    accountType: 'jira-integration',
-    redirectPath: '/dashboard/settings/project/jira',
-  });
-  const oauthResult = oauthFlow.checkResult();
-  if (oauthResult) {
-    getProjects(oauthResult.code);
-  }
+    .then(result => setProjects(result.projects))
+    .catch(error => {
+      console.error('Failed to fetch Jira projects:', error);
+      // TODO: Show error to user
+    });
+
+  // Check for OAuth result once on mount
+  useEffect(() => {
+    const oauthFlow = new OAuthFlow({
+      accountType: 'jira-integration',
+      redirectPath: '/dashboard/settings/project/jira',
+    });
+    const oauthResult = oauthFlow.checkResult();
+    if (oauthResult) {
+      getProjects(oauthResult.code);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run once on mount
 
   return (
     <ProjectSettingsBase title="Jira Integration"

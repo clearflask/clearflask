@@ -86,9 +86,16 @@ public class JiraClientProviderImpl implements JiraClientProvider {
     private RateLimiter rateLimiter;
 
     private LoadingCache<String, JiraClient> clientCache;
+    private CloseableHttpClient sharedHttpClient;
 
     @Inject
     private void setup() {
+        // Initialize shared HTTP client with connection pooling
+        sharedHttpClient = HttpClientBuilder.create()
+                .setMaxConnTotal(100)
+                .setMaxConnPerRoute(20)
+                .build();
+
         clientCache = CacheBuilder.newBuilder()
                 .expireAfterWrite(Duration.ofMinutes(55L))
                 .maximumSize(100L)
@@ -114,18 +121,17 @@ public class JiraClientProviderImpl implements JiraClientProvider {
 
     @Override
     public OAuthTokens exchangeAuthorizationCode(String code, String redirectUri) throws IOException {
-        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            HttpPost request = new HttpPost(JIRA_AUTH_URL);
-            request.setHeader("Content-Type", "application/x-www-form-urlencoded");
-            request.setEntity(new UrlEncodedFormEntity(ImmutableList.of(
-                    new BasicNameValuePair("grant_type", "authorization_code"),
-                    new BasicNameValuePair("client_id", config.clientId()),
-                    new BasicNameValuePair("client_secret", config.clientSecret()),
-                    new BasicNameValuePair("code", code),
-                    new BasicNameValuePair("redirect_uri", redirectUri)),
-                    Charsets.UTF_8));
+        HttpPost request = new HttpPost(JIRA_AUTH_URL);
+        request.setHeader("Content-Type", "application/x-www-form-urlencoded");
+        request.setEntity(new UrlEncodedFormEntity(ImmutableList.of(
+                new BasicNameValuePair("grant_type", "authorization_code"),
+                new BasicNameValuePair("client_id", config.clientId()),
+                new BasicNameValuePair("client_secret", config.clientSecret()),
+                new BasicNameValuePair("code", code),
+                new BasicNameValuePair("redirect_uri", redirectUri)),
+                Charsets.UTF_8));
 
-            try (CloseableHttpResponse response = client.execute(request)) {
+        try (CloseableHttpResponse response = sharedHttpClient.execute(request)) {
                 int statusCode = response.getStatusLine().getStatusCode();
                 String responseBody = EntityUtils.toString(response.getEntity(), Charsets.UTF_8);
 
@@ -141,23 +147,21 @@ public class JiraClientProviderImpl implements JiraClientProvider {
                         .expiresIn(json.has("expires_in") ? json.get("expires_in").getAsLong() : 3600)
                         .scope(json.has("scope") ? json.get("scope").getAsString() : null)
                         .build();
-            }
         }
     }
 
     @Override
     public OAuthTokens refreshAccessToken(String refreshToken) throws IOException {
-        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            HttpPost request = new HttpPost(JIRA_AUTH_URL);
-            request.setHeader("Content-Type", "application/x-www-form-urlencoded");
-            request.setEntity(new UrlEncodedFormEntity(ImmutableList.of(
-                    new BasicNameValuePair("grant_type", "refresh_token"),
-                    new BasicNameValuePair("client_id", config.clientId()),
-                    new BasicNameValuePair("client_secret", config.clientSecret()),
-                    new BasicNameValuePair("refresh_token", refreshToken)),
-                    Charsets.UTF_8));
+        HttpPost request = new HttpPost(JIRA_AUTH_URL);
+        request.setHeader("Content-Type", "application/x-www-form-urlencoded");
+        request.setEntity(new UrlEncodedFormEntity(ImmutableList.of(
+                new BasicNameValuePair("grant_type", "refresh_token"),
+                new BasicNameValuePair("client_id", config.clientId()),
+                new BasicNameValuePair("client_secret", config.clientSecret()),
+                new BasicNameValuePair("refresh_token", refreshToken)),
+                Charsets.UTF_8));
 
-            try (CloseableHttpResponse response = client.execute(request)) {
+        try (CloseableHttpResponse response = sharedHttpClient.execute(request)) {
                 int statusCode = response.getStatusLine().getStatusCode();
                 String responseBody = EntityUtils.toString(response.getEntity(), Charsets.UTF_8);
 
@@ -173,18 +177,16 @@ public class JiraClientProviderImpl implements JiraClientProvider {
                         .expiresIn(json.has("expires_in") ? json.get("expires_in").getAsLong() : 3600)
                         .scope(json.has("scope") ? json.get("scope").getAsString() : null)
                         .build();
-            }
         }
     }
 
     @Override
     public ImmutableList<JiraCloudInstance> getAccessibleResources(String accessToken) throws IOException {
-        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            HttpGet request = new HttpGet(JIRA_ACCESSIBLE_RESOURCES_URL);
-            request.setHeader("Authorization", "Bearer " + accessToken);
-            request.setHeader("Accept", "application/json");
+        HttpGet request = new HttpGet(JIRA_ACCESSIBLE_RESOURCES_URL);
+        request.setHeader("Authorization", "Bearer " + accessToken);
+        request.setHeader("Accept", "application/json");
 
-            try (CloseableHttpResponse response = client.execute(request)) {
+        try (CloseableHttpResponse response = sharedHttpClient.execute(request)) {
                 int statusCode = response.getStatusLine().getStatusCode();
                 String responseBody = EntityUtils.toString(response.getEntity(), Charsets.UTF_8);
 
@@ -214,7 +216,6 @@ public class JiraClientProviderImpl implements JiraClientProvider {
                 }
 
                 return instances.build();
-            }
         }
     }
 
@@ -269,8 +270,7 @@ public class JiraClientProviderImpl implements JiraClientProvider {
             request.setHeader("Authorization", "Bearer " + accessToken);
             request.setHeader("Accept", "application/json");
 
-            try (CloseableHttpClient client = HttpClientBuilder.create().build();
-                 CloseableHttpResponse response = client.execute(request)) {
+            try (CloseableHttpResponse response = sharedHttpClient.execute(request)) {
                 int statusCode = response.getStatusLine().getStatusCode();
                 String responseBody = response.getEntity() != null
                         ? EntityUtils.toString(response.getEntity(), Charsets.UTF_8)
@@ -294,8 +294,7 @@ public class JiraClientProviderImpl implements JiraClientProvider {
             request.setHeader("Authorization", "Bearer " + accessToken);
             request.setHeader("Accept", "application/json");
 
-            try (CloseableHttpClient client = HttpClientBuilder.create().build();
-                 CloseableHttpResponse response = client.execute(request)) {
+            try (CloseableHttpResponse response = sharedHttpClient.execute(request)) {
                 int statusCode = response.getStatusLine().getStatusCode();
                 String responseBody = response.getEntity() != null
                         ? EntityUtils.toString(response.getEntity(), Charsets.UTF_8)
@@ -585,9 +584,9 @@ public class JiraClientProviderImpl implements JiraClientProvider {
             deleteRequest.setHeader("Content-Type", "application/json");
             deleteRequest.setEntity(new StringEntity(gson.toJson(body), Charsets.UTF_8));
 
-            // Actually Jira 3 uses DELETE /rest/webhooks/1.0/webhook/{webhookId}
-            HttpDelete actualDelete = new HttpDelete(baseUrl.replace("/ex/jira/" + cloudId, "") +
-                    "/ex/jira/" + cloudId + "/rest/webhooks/1.0/webhook/" + webhookId);
+            // Actually Jira uses DELETE /rest/webhooks/1.0/webhook/{webhookId}
+            String webhookDeleteUrl = baseUrl + "/rest/webhooks/1.0/webhook/" + webhookId;
+            HttpDelete actualDelete = new HttpDelete(webhookDeleteUrl);
             executeRequest(actualDelete, Void.class);
         }
 

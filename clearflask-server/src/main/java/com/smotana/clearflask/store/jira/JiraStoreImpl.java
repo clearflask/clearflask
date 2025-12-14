@@ -44,6 +44,7 @@ import com.smotana.clearflask.store.jira.JiraClientProvider.JiraApiClient;
 import com.smotana.clearflask.store.jira.JiraClientProvider.JiraClient;
 import com.smotana.clearflask.store.jira.JiraClientProvider.JiraComment;
 import com.smotana.clearflask.store.jira.JiraClientProvider.JiraIssue;
+import com.smotana.clearflask.store.jira.JiraClientProvider.JiraIssueType;
 import com.smotana.clearflask.store.jira.JiraClientProvider.JiraProject;
 import com.smotana.clearflask.store.jira.JiraClientProvider.JiraCloudInstance;
 import com.smotana.clearflask.store.jira.JiraClientProvider.JiraTransition;
@@ -207,6 +208,48 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
                                 "accountId", accountId,
                                 "cloudId", cloudId)))))
                 .map(jiraAuthorizationSchema::fromItem);
+    }
+
+    /**
+     * Get authorization with automatic token refresh if needed.
+     * Refreshes the token if it will expire within the next 5 minutes.
+     */
+    private Optional<JiraAuthorization> getAuthorizationWithRefresh(String accountId, String cloudId) {
+        Optional<JiraAuthorization> authOpt = getAuthorization(accountId, cloudId);
+        if (authOpt.isEmpty()) {
+            return authOpt;
+        }
+
+        JiraAuthorization auth = authOpt.get();
+        long now = System.currentTimeMillis() / 1000;
+        long expiresIn = auth.getTtlInEpochSec() - now;
+
+        // Refresh if token will expire within 5 minutes (300 seconds)
+        if (expiresIn < 300) {
+            try {
+                log.info("Refreshing Jira access token for account {} cloudId {} (expires in {} seconds)",
+                        accountId, cloudId, expiresIn);
+                OAuthTokens refreshedTokens = jiraClientProvider.refreshAccessToken(auth.getRefreshToken());
+
+                // Update authorization with new tokens
+                JiraAuthorization updatedAuth = JiraAuthorization.builder()
+                        .accountId(accountId)
+                        .cloudId(cloudId)
+                        .accessToken(refreshedTokens.getAccessToken())
+                        .refreshToken(refreshedTokens.getRefreshToken())
+                        .ttlInEpochSec(now + refreshedTokens.getExpiresIn())
+                        .build();
+
+                jiraAuthorizationSchema.table().putItem(jiraAuthorizationSchema.toItem(updatedAuth));
+                return Optional.of(updatedAuth);
+            } catch (IOException e) {
+                log.error("Failed to refresh Jira access token for account {} cloudId {}", accountId, cloudId, e);
+                // Return expired auth anyway - API call might still work or will fail gracefully
+                return authOpt;
+            }
+        }
+
+        return authOpt;
     }
 
     @Extern
@@ -645,7 +688,7 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
 
         return executor.submit(() -> {
             try {
-                Optional<JiraAuthorization> authOpt = getAuthorization(
+                Optional<JiraAuthorization> authOpt = getAuthorizationWithRefresh(
                         project.getAccountId(), jiraConfig.getCloudId());
                 if (authOpt.isEmpty()) {
                     log.warn("No Jira authorization found for project {}", project.getProjectId());
@@ -666,10 +709,28 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
                     descriptionAdf = adfQuillConverter.quillToAdf(idea.getDescription());
                 }
 
+                // Determine issue type ID - fetch available types if not configured
+                String issueTypeId = jiraConfig.getIssueTypeId();
+                if (Strings.isNullOrEmpty(issueTypeId)) {
+                    try {
+                        ImmutableList<JiraIssueType> issueTypes = client.getApiClient().getIssueTypes(jiraConfig.getProjectKey());
+                        if (!issueTypes.isEmpty()) {
+                            issueTypeId = issueTypes.get(0).getId();
+                            log.info("Using first available issue type '{}' for project '{}'",
+                                    issueTypes.get(0).getName(), jiraConfig.getProjectKey());
+                        } else {
+                            log.warn("No issue types found for project '{}'", jiraConfig.getProjectKey());
+                            issueTypeId = "10001"; // Fallback to common default
+                        }
+                    } catch (IOException e) {
+                        log.warn("Failed to fetch issue types for project '{}', using default", jiraConfig.getProjectKey(), e);
+                        issueTypeId = "10001"; // Fallback
+                    }
+                }
+
                 CreateIssueRequest request = CreateIssueRequest.builder()
                         .projectKey(jiraConfig.getProjectKey())
-                        .issueTypeId(jiraConfig.getIssueTypeId() != null
-                                ? jiraConfig.getIssueTypeId() : "10001") // Default to "Story"
+                        .issueTypeId(issueTypeId)
                         .summary(idea.getTitle())
                         .description(descriptionAdf)
                         .build();
@@ -721,7 +782,7 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
 
         return executor.submit(() -> {
             try {
-                Optional<JiraAuthorization> authOpt = getAuthorization(
+                Optional<JiraAuthorization> authOpt = getAuthorizationWithRefresh(
                         project.getAccountId(), jiraConfig.getCloudId());
                 if (authOpt.isEmpty()) {
                     log.warn("No Jira authorization found for project {}", project.getProjectId());
@@ -792,7 +853,7 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
 
         return executor.submit(() -> {
             try {
-                Optional<JiraAuthorization> authOpt = getAuthorization(
+                Optional<JiraAuthorization> authOpt = getAuthorizationWithRefresh(
                         project.getAccountId(), jiraConfig.getCloudId());
                 if (authOpt.isEmpty()) {
                     return Optional.empty();
