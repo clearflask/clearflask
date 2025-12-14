@@ -140,6 +140,8 @@ paths:
     $ref: 'api-account.yaml#/~1superadmin~1account~1billing~1credit'
   /admin/account/github/repos:
     $ref: 'api-account.yaml#/~1admin~1account~1github~1repos'
+  /admin/account/jira/projects:
+    $ref: 'api-account.yaml#/~1admin~1account~1jira~1projects'
   /admin/account/delete:
     $ref: 'api-account.yaml#/~1admin~1account~1delete'
   /superadmin/account/delete:

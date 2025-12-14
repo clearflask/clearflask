@@ -72,6 +72,8 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     @Inject
     private GitHubStore gitHubStore;
     @Inject
+    private JiraStore jiraStore;
+    @Inject
     private SlackStore slackStore;
 
     @RolesAllowed({Role.PROJECT_USER})
@@ -120,6 +122,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 user);
         billing.recordUsage(Billing.UsageType.COMMENT, project.getAccountId(), projectId, user);
         gitHubStore.cfCommentCreatedAsync(project, idea, commentModel, user);
+        jiraStore.cfCommentCreatedAsync(project, idea, commentModel, user);
         slackStore.cfCommentCreatedAsync(project, idea, commentModel, user);
         webhookService.eventCommentNew(idea, commentModel, user);
         return commentModel.toCommentWithVote(VoteOption.UPVOTE, sanitizer);
@@ -176,6 +179,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 user);
         billing.recordUsage(Billing.UsageType.COMMENT, project.getAccountId(), projectId, user);
         gitHubStore.cfCommentCreatedAsync(project, idea, commentModel, user);
+        jiraStore.cfCommentCreatedAsync(project, idea, commentModel, user);
         webhookService.eventCommentNew(idea, commentModel, user);
         return commentModel.toCommentWithVote(VoteOption.UPVOTE, sanitizer);
     }

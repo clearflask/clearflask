@@ -78,6 +78,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Inject
     private GitHubStore gitHubStore;
     @Inject
+    private JiraStore jiraStore;
+    @Inject
     private SlackStore slackStore;
 
     @RolesAllowed({Role.PROJECT_USER})
@@ -143,6 +145,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         webhookService.eventPostNew(ideaModel, user);
         slackStore.cfPostCreatedAsync(project, ideaModel, user);
         billing.recordUsage(UsageType.POST, project.getAccountId(), project.getProjectId(), user);
+        jiraStore.cfPostCreatedAsync(project, ideaModel, user);
         return ideaModel.toIdeaWithVote(
                 IdeaVote.builder().vote(votingAllowed ? VoteOption.UPVOTE : null).build(),
                 sanitizer);
@@ -523,6 +526,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         }
         if (statusChanged || responseChanged) {
             gitHubStore.cfStatusAndOrResponseChangedAsync(project, idea, statusChanged, responseChanged);
+            jiraStore.cfStatusAndOrResponseChangedAsync(project, idea, statusChanged, responseChanged);
         }
         if (statusChanged) {
             slackStore.cfPostStatusChangedAsync(project, idea);

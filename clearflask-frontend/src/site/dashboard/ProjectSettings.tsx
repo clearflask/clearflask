@@ -3520,6 +3520,202 @@ export const ProjectSettingsGitHub = (props: {
   );
 };
 
+export const ProjectSettingsJira = (props: {
+  project: AdminProject;
+  server: Server;
+  editor: ConfigEditor.Editor;
+}) => {
+  const classes = useStyles();
+  const theme = useTheme();
+  const [projects, setProjects] = useState<Array<Admin.AvailableJiraProject> | undefined>();
+
+  const accountBasePlanId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
+  const accountAddons = useSelector<ReduxStateAdmin, {
+    [addonId: string]: string
+  }>(state => state.account.account.account?.addons || {}, shallowEqual);
+  const accountSubscriptionStatus = useSelector<ReduxStateAdmin, Admin.SubscriptionStatus | undefined>(state => state.account.account.account?.subscriptionStatus, shallowEqual);
+
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(props.project.hasUnsavedChanges());
+  useEffect(() => {
+    return props.project.subscribeToUnsavedChanges(() => {
+      setHasUnsavedChanges(props.project.hasUnsavedChanges());
+    });
+  }, [props.project]);
+
+  const [jira, setJira] = useState<Admin.Jira | undefined>(props.editor.getConfig().jira);
+  useEffect(() => {
+    return props.editor.subscribe(() => {
+      setJira(props.editor.getConfig().jira);
+    });
+  }, [props.editor]);
+
+  const getProjects = (code: string) => ServerAdmin.get().dispatchAdmin()
+    .then(d => d.jiraGetProjectsAdmin({ code }))
+    .then(result => setProjects(result.projects))
+    .catch(error => {
+      console.error('Failed to fetch Jira projects:', error);
+      // TODO: Show error to user
+    });
+
+  // Check for OAuth result once on mount
+  useEffect(() => {
+    const oauthFlow = new OAuthFlow({
+      accountType: 'jira-integration',
+      redirectPath: '/dashboard/settings/project/jira',
+    });
+    const oauthResult = oauthFlow.checkResult();
+    if (oauthResult) {
+      getProjects(oauthResult.code);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run once on mount
+
+  return (
+    <ProjectSettingsBase title="Jira Integration"
+                         description="Synchronize Jira issues with ClearFlask. Create issues in either system and keep them in sync.">
+      <UpgradeWrapper
+        accountBasePlanId={accountBasePlanId}
+        accountAddons={accountAddons}
+        subscriptionStatus={accountSubscriptionStatus}
+        propertyPath={['jira']}
+      >
+        <Collapse in={!!jira}>
+          <Section
+            title="Configure synchronization"
+            description={(
+              <>
+                Your linked Jira project <b>{jira?.projectName || jira?.projectKey}</b> synchronization can be configured
+                here.
+              </>
+            )}
+            content={!!jira && (
+              <>
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['jira', 'createWithCategoryId']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['jira', 'initialStatusId']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['jira', 'createWithTags']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['jira', 'issueTypeId']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['jira', 'autoCreateIssue']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['jira', 'statusSync']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['jira', 'responseSync']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['jira', 'commentSync']} />
+                <p>
+                  <Button
+                    style={{ color: theme.palette.error.dark }}
+                    color="inherit"
+                    onClick={() => props.editor.getPage(['jira']).set(undefined)}
+                  >Delete</Button>
+                </p>
+              </>
+            )}
+          />
+        </Collapse>
+        <Section
+          title="Select Jira project"
+          description="Link your Jira project by connecting your Atlassian account"
+          content={(
+            <>
+              <Collapse in={!projects && hasUnsavedChanges}>
+                <p>
+                  <Message
+                    message="You must publish unsaved changes before we can redirect you to Jira"
+                    severity="warning" />
+                </p>
+              </Collapse>
+              <Collapse in={!projects && !hasUnsavedChanges}>
+                <p>
+                  <Button
+                    variant="contained"
+                    disableElevation
+                    color="primary"
+                    disabled={hasUnsavedChanges}
+                    onClick={() => isProd() ? oauthFlow.openForJiraApp() : getProjects('my-code')}
+                  >Connect Jira</Button>
+                </p>
+              </Collapse>
+              {!!projects && (projects.length ? (
+                <TemplateWrapper<FeedbackInstance | undefined>
+                  key="feedback"
+                  editor={props.editor}
+                  mapper={templater => templater.feedbackGet()}
+                  renderResolved={(templater, feedback) => (
+                    <Collapse in={!!projects} appear>
+                      <Table className={classes.githubReposTable}>
+                        <TableBody>
+                          {projects.map(project => {
+                            const selected = jira?.cloudId === project.cloudId
+                              && jira?.projectKey === project.projectKey;
+                            return (
+                              <TableRow key={`${project.cloudId}-${project.projectKey}`}>
+                                <TableCell key="project">
+                                  <Typography>{project.projectName} ({project.projectKey})</Typography>
+                                  <Typography variant="caption" color="textSecondary">{project.cloudName}</Typography>
+                                </TableCell>
+                                <TableCell key="action">
+                                  <Typography>
+                                    <Button
+                                      variant="contained"
+                                      disableElevation
+                                      color="primary"
+                                      disabled={selected}
+                                      onClick={() => {
+                                        if (selected) return;
+                                        const jiraPage = props.editor.getPage(['jira']);
+                                        if (!jiraPage.value) {
+                                          jiraPage.set(true);
+
+                                          var category: Admin.Category | undefined;
+                                          if (feedback) {
+                                            category = feedback.categoryAndIndex.category;
+                                          } else if (!!props.editor.getConfig().content.categories.length) {
+                                            category = props.editor.getConfig().content.categories[0];
+                                          }
+
+                                          category && (props.editor.getProperty(['jira', 'createWithCategoryId']) as ConfigEditor.StringProperty)
+                                            .set(category.categoryId);
+                                        }
+                                        (props.editor.getProperty(['jira', 'cloudId']) as ConfigEditor.StringProperty)
+                                          .set(project.cloudId);
+                                        (props.editor.getProperty(['jira', 'cloudName']) as ConfigEditor.StringProperty)
+                                          .set(project.cloudName || '');
+                                        (props.editor.getProperty(['jira', 'projectKey']) as ConfigEditor.StringProperty)
+                                          .set(project.projectKey);
+                                        (props.editor.getProperty(['jira', 'projectName']) as ConfigEditor.StringProperty)
+                                          .set(project.projectName);
+                                      }}
+                                    >
+                                      {selected ? 'Linked' : 'Link'}
+                                    </Button>
+                                  </Typography>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </Collapse>
+                  )} />
+              ) : (
+                <Message message="No Jira projects found" severity="warning" />
+              ))}
+            </>
+          )
+          }
+        />
+      </UpgradeWrapper>
+      <br /><br />
+      <NeedHelpInviteTeammate server={props.server} />
+    </ProjectSettingsBase>
+  );
+};
+
 export const ProjectSettingsIntercom = (props: {
   server: Server;
   editor: ConfigEditor.Editor;

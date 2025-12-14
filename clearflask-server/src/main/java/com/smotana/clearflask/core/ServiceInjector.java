@@ -75,6 +75,9 @@ import com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
 import com.smotana.clearflask.store.github.GitHubClientProviderImpl;
 import com.smotana.clearflask.store.github.GitHubStoreImpl;
+import com.smotana.clearflask.store.jira.AdfQuillConverter;
+import com.smotana.clearflask.store.jira.JiraClientProviderImpl;
+import com.smotana.clearflask.store.jira.JiraStoreImpl;
 import com.smotana.clearflask.store.slack.SlackClientProviderImpl;
 import com.smotana.clearflask.store.slack.SlackStoreImpl;
 import com.smotana.clearflask.store.impl.ConfigurableLlmPromptStore;
@@ -122,6 +125,7 @@ import com.smotana.clearflask.web.resource.CreditResource;
 import com.smotana.clearflask.web.resource.GitHubResource;
 import com.smotana.clearflask.web.resource.SlackResource;
 import com.smotana.clearflask.web.resource.HealthResource;
+import com.smotana.clearflask.web.resource.JiraResource;
 import com.smotana.clearflask.web.resource.IdeaResource;
 import com.smotana.clearflask.web.resource.KillBillResource;
 import com.smotana.clearflask.web.resource.LlmResource;
@@ -235,6 +239,9 @@ public enum ServiceInjector {
                 }
                 install(GitHubClientProviderImpl.module());
                 install(GitHubStoreImpl.module());
+                install(JiraClientProviderImpl.module());
+                install(JiraStoreImpl.module());
+                install(AdfQuillConverter.module());
                 install(SlackClientProviderImpl.module());
                 install(SlackStoreImpl.module());
                 install(ResourceLegalStore.module());
@@ -321,6 +328,7 @@ public enum ServiceInjector {
                     install(KillBillResource.module());
                 }
                 install(GitHubResource.module());
+                install(JiraResource.module());
                 install(SlackResource.module());
                 install(UserResource.module());
                 install(AccountResource.module());
