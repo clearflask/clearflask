@@ -987,6 +987,9 @@ class Post extends Component<Props & ConnectProps & WithTranslation<'app'> & Wit
                                         });
                                         this.props.enqueueSnackbar(this.props.t('status') + ': ' + completedStatus.name, {variant: 'success'});
                                         this.setState({quickActionMenuOpen: false});
+                                    } catch (error) {
+                                        // Error is already handled by server, but ensure UI state is reset
+                                        this.setState({quickActionMenuOpen: false});
                                     } finally {
                                         this.setState({isSubmittingQuickAction: false});
                                     }
@@ -2409,7 +2412,8 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
     // Find changelog category (by prefix 'changelog-' or name matching 'Changelog|Announcements')
     const changelogCategory = state.conf.conf?.content.categories.find(c =>
         c.categoryId.startsWith('changelog-') ||
-        c.name.match(/Changelog|Announcements/i)
+        c.name.match(/^(Changelog|Announcements)$/i) ||
+        c.name.match(/\bChangelog\b/i)
     );
 
     // Find completed/accepted status IDs from current category workflow
