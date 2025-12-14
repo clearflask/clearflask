@@ -13,6 +13,9 @@ import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
 @Slf4j
 @Singleton
 public class OnAdminForgotPassword {
@@ -23,14 +26,14 @@ public class OnAdminForgotPassword {
 
         @DefaultValue("<p>Hi __NAME__,</p>"
                 + "<p>We received a request to reset your ClearFlask password.</p>"
-                + "<p>Click the button below to reset your password. This link will expire in 24 hours.</p>"
+                + "<p>Click the button below to reset your password. This link will expire in 15 minutes.</p>"
                 + "<p>If you didn't request this, you can safely ignore this email.</p>"
                 + "<p>ClearFlask Team</p>")
         String contentHtml();
 
         @DefaultValue("Hi __NAME__,"
                 + "\n\nWe received a request to reset your ClearFlask password."
-                + "\n\nClick the link below to reset your password. This link will expire in 24 hours."
+                + "\n\nClick the link below to reset your password. This link will expire in 15 minutes."
                 + "\n\nIf you didn't request this, you can safely ignore this email."
                 + "\n\nClearFlask Team")
         String contentText();
@@ -63,7 +66,7 @@ public class OnAdminForgotPassword {
         templateHtml = templateHtml.replace("__BUTTON_TEXT__", buttonText);
         templateText = templateText.replace("__BUTTON_TEXT__", buttonText);
 
-        String fullLink = link + "?token=" + resetToken;
+        String fullLink = link + "?token=" + URLEncoder.encode(resetToken, StandardCharsets.UTF_8);
         templateHtml = templateHtml.replace("__BUTTON_URL__", fullLink);
         templateText = templateText.replace("__BUTTON_URL__", fullLink);
 

@@ -116,6 +116,7 @@ components:
       properties:
         email:
           type: string
+          format: email
     AccountPasswordReset:
       type: object
       required:
@@ -126,6 +127,8 @@ components:
           type: string
         password:
           type: string
+          minLength: 1
+          maxLength: 1000
     AccountLoginAs:
       type: object
       required:

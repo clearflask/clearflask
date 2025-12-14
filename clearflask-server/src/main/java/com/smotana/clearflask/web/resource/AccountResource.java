@@ -424,6 +424,19 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
     @Limit(requiredPermits = 10, challengeAfter = 5)
     @Override
     public AccountAdmin accountPasswordReset(AccountPasswordReset accountPasswordReset) {
+        // Validate password
+        if (Strings.isNullOrEmpty(accountPasswordReset.getPassword())) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Password cannot be empty");
+        }
+        if (accountPasswordReset.getPassword().length() > 1000) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Password is too long");
+        }
+
+        // Validate token format
+        if (Strings.isNullOrEmpty(accountPasswordReset.getToken())) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Invalid or expired reset link");
+        }
+
         // Token format is: accountId:actualToken
         String[] tokenParts = accountPasswordReset.getToken().split(":", 2);
         if (tokenParts.length != 2) {
@@ -433,6 +446,12 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
 
         String accountId = tokenParts[0];
         String tokenStr = tokenParts[1];
+
+        // Validate accountId format (basic sanity check)
+        if (Strings.isNullOrEmpty(accountId) || Strings.isNullOrEmpty(tokenStr)) {
+            log.info("Password reset with empty accountId or token");
+            throw new ApiException(Response.Status.BAD_REQUEST, "Invalid or expired reset link");
+        }
 
         boolean tokenValid = tokenVerifyStore.useToken(tokenStr, "adminPasswordReset", accountId);
         if (!tokenValid) {

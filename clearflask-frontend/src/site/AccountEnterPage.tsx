@@ -846,7 +846,7 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
                     </>
                 )}
                 submitTitle={this.state.forgotPasswordSuccess ? undefined : this.props.t('send-reset-link')}
-                submitDisabled={!this.state.email}
+                submitDisabled={!this.state.email || !this.isValidEmail(this.state.email)}
                 isSubmitting={this.state.isSubmitting}
                 onSubmit={this.onForgotPassword.bind(this)}
                 footer={{
@@ -859,6 +859,12 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
         );
     }
 
+    isValidEmail(email: string): boolean {
+        // Basic email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+
     async onForgotPassword() {
         this.setState({isSubmitting: true});
         try {
@@ -867,14 +873,13 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
                     email: this.state.email || '',
                 }
             });
+        } catch (e) {
+            // Don't throw - we show success even if email doesn't exist for security
+        } finally {
             this.setState({
                 isSubmitting: false,
                 forgotPasswordSuccess: true,
             });
-        } catch (e) {
-            this.setState({isSubmitting: false});
-            // Don't throw - we show success even if email doesn't exist for security
-            this.setState({forgotPasswordSuccess: true});
         }
     }
 
@@ -969,7 +974,7 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
         } catch (e: any) {
             this.setState({
                 isSubmitting: false,
-                resetPasswordError: e?.message || this.props.t('reset-link-invalid-or-expired'),
+                resetPasswordError: this.props.t('reset-link-invalid-or-expired'),
             });
         }
     }
