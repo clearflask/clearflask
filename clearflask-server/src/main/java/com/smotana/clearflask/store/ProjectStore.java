@@ -151,6 +151,8 @@ public interface ProjectStore {
 
         Optional<GitHub> getGitHubIntegration();
 
+        Optional<GitLab> getGitLabIntegration();
+
         Optional<SearchEngine> getSearchEngineOverride();
     }
 

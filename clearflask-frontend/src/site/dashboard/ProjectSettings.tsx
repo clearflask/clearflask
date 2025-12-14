@@ -2488,7 +2488,6 @@ export const ProjectSettingsFeedback = (props: {
                             disableExpressions: false,
                             disableIdeaEdits: false,
                             disableComments: false,
-                            disablePublicDisplay: false,
                           }));
                       }}
                     />
@@ -2531,7 +2530,6 @@ export const ProjectSettingsFeedbackStatus = (props: {
   const initialStatusIdProp = (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'workflow', 'entryStatus']) as ConfigEditor.StringProperty);
   const nameProp = (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'workflow', 'statuses', props.statusIndex, 'name']) as ConfigEditor.StringProperty);
   const colorProp = (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'workflow', 'statuses', props.statusIndex, 'color']) as ConfigEditor.StringProperty);
-  const disablePublicDisplayProp = (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'workflow', 'statuses', props.statusIndex, 'disablePublicDisplay']) as ConfigEditor.BooleanProperty);
   const [statusName, setStatusName] = useDebounceProp<string>(
     nameProp.value || '',
     text => nameProp.set(text));
@@ -2550,7 +2548,6 @@ export const ProjectSettingsFeedbackStatus = (props: {
           show={(
             <span style={{ color: props.status.color }}>
               {props.status.name}
-              {props.status.disablePublicDisplay && ' (hidden)'}
             </span>
           )}
           edit={(
@@ -2582,17 +2579,6 @@ export const ProjectSettingsFeedbackStatus = (props: {
                   onChange={e => initialStatusIdProp.set(props.status.statusId)}
         />
       )} />
-      <FormControlLabel
-        label="Hide from public"
-        control={(
-          <Checkbox
-            size="small"
-            color="primary"
-            checked={!!disablePublicDisplayProp.value}
-            onChange={e => disablePublicDisplayProp.set(e.target.checked)}
-          />
-        )}
-      />
       <PropertyByPath
         server={props.server}
         marginTop={16}
@@ -3520,14 +3506,17 @@ export const ProjectSettingsGitHub = (props: {
   );
 };
 
-export const ProjectSettingsJira = (props: {
+export const ProjectSettingsGitLab = (props: {
   project: AdminProject;
   server: Server;
   editor: ConfigEditor.Editor;
 }) => {
   const classes = useStyles();
   const theme = useTheme();
-  const [projects, setProjects] = useState<Array<Admin.AvailableJiraProject> | undefined>();
+  const [projects, setProjects] = useState<Array<{ projectId: number; projectPath: string; name: string }> | undefined>();
+  const [selfHostedUrl, setSelfHostedUrl] = useState<string>('');
+  const [selfHostedClientId, setSelfHostedClientId] = useState<string>('');
+  const [showSelfHosted, setShowSelfHosted] = useState<boolean>(false);
 
   const accountBasePlanId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
   const accountAddons = useSelector<ReduxStateAdmin, {
@@ -3542,75 +3531,68 @@ export const ProjectSettingsJira = (props: {
     });
   }, [props.project]);
 
-  const [jira, setJira] = useState<Admin.Jira | undefined>(props.editor.getConfig().jira);
+  const [gitLab, setGitLab] = useState<Admin.GitLab | undefined>(props.editor.getConfig().gitlab);
   useEffect(() => {
     return props.editor.subscribe(() => {
-      setJira(props.editor.getConfig().jira);
+      setGitLab(props.editor.getConfig().gitlab);
     });
   }, [props.editor]);
 
-  const getProjects = (code: string) => ServerAdmin.get().dispatchAdmin()
-    .then(d => d.jiraGetProjectsAdmin({ code }))
-    .then(result => setProjects(result.projects))
-    .catch(error => {
-      console.error('Failed to fetch Jira projects:', error);
-      // TODO: Show error to user
-    });
+  const getProjects = (code: string, gitlabInstanceUrl?: string) => ServerAdmin.get().dispatchAdmin()
+    .then(d => d.gitLabGetProjectsAdmin({ gitLabGetProjectsBody: { code, gitlabInstanceUrl } }))
+    .then(result => setProjects(result.projects));
 
-  // Check for OAuth result once on mount
-  useEffect(() => {
-    const oauthFlow = new OAuthFlow({
-      accountType: 'jira-integration',
-      redirectPath: '/dashboard/settings/project/jira',
-    });
-    const oauthResult = oauthFlow.checkResult();
-    if (oauthResult) {
-      getProjects(oauthResult.code);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run once on mount
+  const oauthFlow = new OAuthFlow({
+    accountType: 'gitlab-integration',
+    redirectPath: '/dashboard/settings/project/gitlab',
+  });
+  const oauthResult = oauthFlow.checkResult();
+  if (oauthResult) {
+    // extraData contains the GitLab instance URL for self-hosted instances
+    getProjects(oauthResult.code, oauthResult.extraData);
+  }
 
   return (
-    <ProjectSettingsBase title="Jira Integration"
-                         description="Synchronize Jira issues with ClearFlask. Create issues in either system and keep them in sync.">
+    <ProjectSettingsBase title="GitLab Integration"
+                         description="Mirror GitLab Issues and Releases into ClearFlask. Resolve issues from ClearFlask and mirror into GitLab.">
       <UpgradeWrapper
         accountBasePlanId={accountBasePlanId}
         accountAddons={accountAddons}
         subscriptionStatus={accountSubscriptionStatus}
-        propertyPath={['jira']}
+        propertyPath={['gitlab']}
       >
-        <Collapse in={!!jira}>
+        <Collapse in={!!gitLab}>
           <Section
             title="Configure synchronization"
             description={(
               <>
-                Your linked Jira project <b>{jira?.projectName || jira?.projectKey}</b> synchronization can be configured
+                Your linked GitLab project <b>{gitLab?.name}</b> synchronization can be configured
                 here.
               </>
             )}
-            content={!!jira && (
+            content={!!gitLab && (
               <>
                 <PropertyByPath server={props.server} editor={props.editor}
-                                path={['jira', 'createWithCategoryId']} />
+                                path={['gitlab', 'createWithCategoryId']} />
                 <PropertyByPath server={props.server} editor={props.editor}
-                                path={['jira', 'initialStatusId']} />
+                                path={['gitlab', 'initialStatusId']} />
                 <PropertyByPath server={props.server} editor={props.editor}
-                                path={['jira', 'createWithTags']} />
+                                path={['gitlab', 'createWithTags']} />
                 <PropertyByPath server={props.server} editor={props.editor}
-                                path={['jira', 'issueTypeId']} />
+                                path={['gitlab', 'statusSync']} />
                 <PropertyByPath server={props.server} editor={props.editor}
-                                path={['jira', 'autoCreateIssue']} />
+                                path={['gitlab', 'responseSync']} />
                 <PropertyByPath server={props.server} editor={props.editor}
-                                path={['jira', 'statusSync']} />
+                                path={['gitlab', 'commentSync']} />
                 <PropertyByPath server={props.server} editor={props.editor}
-                                path={['jira', 'responseSync']} />
+                                path={['gitlab', 'createReleaseWithCategoryId']} />
                 <PropertyByPath server={props.server} editor={props.editor}
-                                path={['jira', 'commentSync']} />
+                                path={['gitlab', 'releaseNotifyAll']} />
                 <p>
                   <Button
                     style={{ color: theme.palette.error.dark }}
                     color="inherit"
-                    onClick={() => props.editor.getPage(['jira']).set(undefined)}
+                    onClick={() => props.editor.getPage(['gitlab']).set(undefined)}
                   >Delete</Button>
                 </p>
               </>
@@ -3618,14 +3600,14 @@ export const ProjectSettingsJira = (props: {
           />
         </Collapse>
         <Section
-          title="Select Jira project"
-          description="Link your Jira project by connecting your Atlassian account"
+          title="Select new project"
+          description="Link your GitLab project by authorizing ClearFlask"
           content={(
             <>
               <Collapse in={!projects && hasUnsavedChanges}>
                 <p>
                   <Message
-                    message="You must publish unsaved changes before we can redirect you to Jira"
+                    message="You must publish unsaved changes before we can redirect you to GitLab"
                     severity="warning" />
                 </p>
               </Collapse>
@@ -3636,27 +3618,73 @@ export const ProjectSettingsJira = (props: {
                     disableElevation
                     color="primary"
                     disabled={hasUnsavedChanges}
-                    onClick={() => isProd() ? oauthFlow.openForJiraApp() : getProjects('my-code')}
-                  >Connect Jira</Button>
+                    onClick={() => isProd() ? oauthFlow.openForGitLab() : getProjects('my-code')}
+                  >Connect GitLab.com</Button>
                 </p>
+                <p>
+                  <MuiLink
+                    href="#"
+                    onClick={(e) => { e.preventDefault(); setShowSelfHosted(!showSelfHosted); }}
+                  >
+                    <Typography component="span" variant="caption" color="primary">
+                      {showSelfHosted ? 'Hide self-hosted options' : 'Using self-hosted GitLab?'}
+                    </Typography>
+                  </MuiLink>
+                </p>
+                <Collapse in={showSelfHosted}>
+                  <div style={{ marginTop: 16 }}>
+                    <TextField
+                      label="GitLab Instance URL"
+                      placeholder="https://gitlab.mycompany.com"
+                      value={selfHostedUrl}
+                      onChange={e => setSelfHostedUrl(e.target.value)}
+                      fullWidth
+                      margin="dense"
+                      helperText="Your self-hosted GitLab URL"
+                    />
+                    <TextField
+                      label="OAuth Application ID"
+                      placeholder="Application ID from GitLab"
+                      value={selfHostedClientId}
+                      onChange={e => setSelfHostedClientId(e.target.value)}
+                      fullWidth
+                      margin="dense"
+                      helperText={(
+                        <>
+                          Create an OAuth application in your GitLab instance under{' '}
+                          <MuiLink href="https://docs.gitlab.com/ee/integration/oauth_provider.html" target="_blank" rel="noopener noreferrer">
+                            Admin Area &gt; Applications
+                          </MuiLink>
+                          {' '}with redirect URI: <code>{windowIso.location.protocol}//{windowIso.location.host}/dashboard/settings/project/gitlab</code>
+                        </>
+                      )}
+                    />
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      disabled={!selfHostedUrl || !selfHostedClientId || hasUnsavedChanges}
+                      onClick={() => oauthFlow.openForSelfHostedGitLab(selfHostedUrl, selfHostedClientId)}
+                      style={{ marginTop: 8 }}
+                    >Connect Self-Hosted GitLab</Button>
+                  </div>
+                </Collapse>
               </Collapse>
               {!!projects && (projects.length ? (
-                <TemplateWrapper<FeedbackInstance | undefined>
-                  key="feedback"
+                <TemplateWrapper<[FeedbackInstance | undefined, ChangelogInstance | undefined]>
+                  key="feedback-changelog"
                   editor={props.editor}
-                  mapper={templater => templater.feedbackGet()}
-                  renderResolved={(templater, feedback) => (
+                  mapper={templater => Promise.all([templater.feedbackGet(), templater.changelogGet()])}
+                  renderResolved={(templater, [feedback, changelog]) => (
                     <Collapse in={!!projects} appear>
                       <Table className={classes.githubReposTable}>
                         <TableBody>
                           {projects.map(project => {
-                            const selected = jira?.cloudId === project.cloudId
-                              && jira?.projectKey === project.projectKey;
+                            const selected = gitLab?.projectId === project.projectId;
                             return (
-                              <TableRow key={`${project.cloudId}-${project.projectKey}`}>
+                              <TableRow key={project.projectPath}>
                                 <TableCell key="project">
-                                  <Typography>{project.projectName} ({project.projectKey})</Typography>
-                                  <Typography variant="caption" color="textSecondary">{project.cloudName}</Typography>
+                                  <Typography>{project.name}</Typography>
+                                  <Typography variant="caption" color="textSecondary">{project.projectPath}</Typography>
                                 </TableCell>
                                 <TableCell key="action">
                                   <Typography>
@@ -3667,28 +3695,60 @@ export const ProjectSettingsJira = (props: {
                                       disabled={selected}
                                       onClick={() => {
                                         if (selected) return;
-                                        const jiraPage = props.editor.getPage(['jira']);
-                                        if (!jiraPage.value) {
-                                          jiraPage.set(true);
+                                        const gitLabPage = props.editor.getPage(['gitlab']);
+                                        if (!gitLabPage.value) {
+                                          gitLabPage.set(true);
+                                          (props.editor.getProperty(['gitlab', 'statusSync']) as ConfigEditor.ObjectProperty)
+                                            .set(true);
 
                                           var category: Admin.Category | undefined;
+                                          var closedStatuses: Array<string> | undefined;
+                                          var closedStatus: string | undefined;
+                                          var openStatus: string | undefined;
                                           if (feedback) {
                                             category = feedback.categoryAndIndex.category;
                                           } else if (!!props.editor.getConfig().content.categories.length) {
                                             category = props.editor.getConfig().content.categories[0];
                                           }
+                                          closedStatuses = [
+                                            ...(feedback?.statusIdAccepted ? [feedback.statusIdAccepted] : []),
+                                            ...(category ? category.workflow.statuses
+                                              .filter(status => ['accepted', 'closed', 'completed', 'complete', 'cancelled'].includes(status.name?.toLowerCase()))
+                                              .map(status => status.statusId) : []),
+                                          ];
+                                          closedStatus = feedback?.statusIdAccepted || closedStatuses?.[0];
+                                          openStatus = category?.workflow.entryStatus || category?.workflow.statuses.find(s => !closedStatuses?.includes(s.statusId))?.statusId;
 
-                                          category && (props.editor.getProperty(['jira', 'createWithCategoryId']) as ConfigEditor.StringProperty)
+                                          category && (props.editor.getProperty(['gitlab', 'createWithCategoryId']) as ConfigEditor.StringProperty)
                                             .set(category.categoryId);
+                                          closedStatuses?.length && (props.editor.getProperty(['gitlab', 'statusSync', 'closedStatuses']) as ConfigEditor.LinkMultiProperty)
+                                            .set(new Set(closedStatuses));
+                                          closedStatus && (props.editor.getProperty(['gitlab', 'statusSync', 'closedStatus']) as ConfigEditor.StringProperty)
+                                            .set(closedStatus);
+                                          openStatus && (props.editor.getProperty(['gitlab', 'statusSync', 'openStatus']) as ConfigEditor.StringProperty)
+                                            .set(openStatus);
+
+                                          // Release sync
+                                          var releaseCategory: Admin.Category | undefined;
+                                          if (changelog) {
+                                            releaseCategory = changelog.categoryAndIndex.category;
+                                          } else if (!!props.editor.getConfig().content.categories.length) {
+                                            releaseCategory = props.editor.getConfig().content.categories[props.editor.getConfig().content.categories.length - 1];
+                                          }
+                                          releaseCategory && (props.editor.getProperty(['gitlab', 'createReleaseWithCategoryId']) as ConfigEditor.StringProperty)
+                                            .set(releaseCategory.categoryId);
                                         }
-                                        (props.editor.getProperty(['jira', 'cloudId']) as ConfigEditor.StringProperty)
-                                          .set(project.cloudId);
-                                        (props.editor.getProperty(['jira', 'cloudName']) as ConfigEditor.StringProperty)
-                                          .set(project.cloudName || '');
-                                        (props.editor.getProperty(['jira', 'projectKey']) as ConfigEditor.StringProperty)
-                                          .set(project.projectKey);
-                                        (props.editor.getProperty(['jira', 'projectName']) as ConfigEditor.StringProperty)
-                                          .set(project.projectName);
+                                        (props.editor.getProperty(['gitlab', 'name']) as ConfigEditor.StringProperty)
+                                          .set(project.name);
+                                        (props.editor.getProperty(['gitlab', 'projectId']) as ConfigEditor.NumberProperty)
+                                          .set(project.projectId);
+                                        (props.editor.getProperty(['gitlab', 'projectPath']) as ConfigEditor.StringProperty)
+                                          .set(project.projectPath);
+                                        // Store the GitLab instance URL if using self-hosted
+                                        if (selfHostedUrl) {
+                                          (props.editor.getProperty(['gitlab', 'gitlabInstanceUrl']) as ConfigEditor.StringProperty)
+                                            .set(selfHostedUrl);
+                                        }
                                       }}
                                     >
                                       {selected ? 'Linked' : 'Link'}
@@ -3703,7 +3763,7 @@ export const ProjectSettingsJira = (props: {
                     </Collapse>
                   )} />
               ) : (
-                <Message message="No Jira projects found" severity="warning" />
+                <Message message="No projects found" severity="warning" />
               ))}
             </>
           )

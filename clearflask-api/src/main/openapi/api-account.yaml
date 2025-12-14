@@ -109,26 +109,6 @@ components:
           type: string
         password:
           type: string
-    AccountForgotPassword:
-      type: object
-      required:
-        - email
-      properties:
-        email:
-          type: string
-          format: email
-    AccountPasswordReset:
-      type: object
-      required:
-        - token
-        - password
-      properties:
-        token:
-          type: string
-        password:
-          type: string
-          minLength: 1
-          maxLength: 1000
     AccountLoginAs:
       type: object
       required:
@@ -629,35 +609,6 @@ components:
           application/json:
             schema:
               $ref: 'api-account.yaml#/components/schemas/AccountAdmin'
-/admin/account/forgot:
-  post:
-    operationId: accountForgotPassword
-    tags: [ AccountAdmin ]
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: 'api-account.yaml#/components/schemas/AccountForgotPassword'
-    responses:
-      '200':
-        $ref: 'api-client.yaml#/components/responses/Ok'
-/admin/account/password-reset:
-  post:
-    operationId: accountPasswordReset
-    tags: [ AccountAdmin ]
-    requestBody:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: 'api-account.yaml#/components/schemas/AccountPasswordReset'
-    responses:
-      '200':
-        content:
-          application/json:
-            schema:
-              $ref: 'api-account.yaml#/components/schemas/AccountAdmin'
 /admin/account/noop:
   get:
     description: Used for checking whether you are signed in
@@ -997,22 +948,31 @@ components:
                         format: int64
                       name:
                         type: string
-/admin/account/jira/projects:
+/admin/account/gitlab/projects:
   post:
-    operationId: jiraGetProjectsAdmin
+    operationId: gitLabGetProjectsAdmin
     tags: [ AccountAdmin ]
-    parameters:
-      - name: code
-        in: query
-        required: true
-        schema:
-          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            title: GitLabGetProjectsBody
+            type: object
+            required:
+              - code
+            properties:
+              code:
+                type: string
+              gitlabInstanceUrl:
+                type: string
+                description: GitLab instance URL (e.g., https://gitlab.com or https://gitlab.mycompany.com). Defaults to https://gitlab.com if not provided.
     responses:
       '200':
         content:
           application/json:
             schema:
-              title: AvailableJiraProjects
+              title: GitLabAvailableProjects
               type: object
               required:
                 - projects
@@ -1020,24 +980,19 @@ components:
                 projects:
                   type: array
                   items:
-                    title: AvailableJiraProject
+                    title: GitLabAvailableProject
                     type: object
                     required:
-                      - cloudId
-                      - projectKey
-                      - projectName
+                      - projectId
+                      - projectPath
+                      - name
                     properties:
-                      cloudId:
-                        type: string
-                      cloudName:
-                        type: string
-                      cloudUrl:
-                        type: string
                       projectId:
+                        type: integer
+                        format: int64
+                      projectPath:
                         type: string
-                      projectKey:
-                        type: string
-                      projectName:
+                      name:
                         type: string
 /admin/account/delete:
   delete:

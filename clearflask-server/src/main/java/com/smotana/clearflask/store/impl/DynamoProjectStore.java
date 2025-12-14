@@ -983,6 +983,11 @@ public class DynamoProjectStore implements ProjectStore {
         }
 
         @Override
+        public Optional<GitLab> getGitLabIntegration() {
+            return Optional.ofNullable(versionedConfigAdmin.getConfig().getGitlab());
+        }
+
+        @Override
         public Optional<SearchEngine> getSearchEngineOverride() {
             return Optional.ofNullable(getVersionedConfigAdmin().getConfig().getForceSearchEngine())
                     .flatMap(forceSearchEngine -> {

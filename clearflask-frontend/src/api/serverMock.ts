@@ -470,10 +470,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     });
   }
 
-  jiraGetProjectsAdmin(request: Admin.JiraGetProjectsAdminRequest): Promise<Admin.AvailableJiraProjects> {
+  gitLabGetProjectsAdmin(request: Admin.GitLabGetProjectsAdminRequest): Promise<Admin.GitLabAvailableProjects> {
     return this.returnLater({
       projects: [
-        { cloudId: 'mock-cloud-123', cloudName: 'Mock Cloud', cloudUrl: 'https://mock.atlassian.net', projectId: 'proj-1', projectKey: 'MOCK', projectName: 'Mock Project' },
+        { projectId: 123, projectPath: 'clearflask/clearflask', name: 'ClearFlask' },
+        { projectId: 456, projectPath: 'clearflask/docs', name: 'ClearFlask Docs' },
       ],
     });
   }
@@ -792,7 +793,7 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
       return {
         ...comment,
         author: comment.authorUserId ? this.getProject(request.projectId).users.find(user => user.userId === comment.authorUserId)! : undefined,
-        vote: loggedInUser ? this.getProject(request.projectId).commentVotes.find(vote => vote.commentId === comment.commentId && vote.voterUserId === loggedInUser.userId) : undefined,
+        vote: loggedInUser ? this.getProject(request.projectId).commentVotes.find(vote => vote.voterUserId === comment.commentId && vote.voterUserId === loggedInUser.userId) : undefined,
       };
     }), [(l, r) => l.created.getTime() - r.created.getTime()]);
     return this.returnLater({
@@ -1262,58 +1263,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater(comment);
   }
 
-  async commentCreateAdmin(request: Admin.CommentCreateAdminRequest): Promise<Admin.Comment> {
-    var author = this.getProject(request.projectId).users.find(user => user.userId === request.commentCreateAdmin.authorUserId);
-    if (!author) {
-      // Create user if doesn't exist (when using allowCreate in UserSelection)
-      author = await this.userCreateAdmin({
-        projectId: request.projectId,
-        userCreateAdmin: {
-          userId: request.commentCreateAdmin.authorUserId,
-          name: request.commentCreateAdmin.authorUserId, // Fallback name
-          isMod: false,
-        },
-      });
-    }
-    const parentComment = request.commentCreateAdmin.parentCommentId && this.getProject(request.projectId).comments.find(c => c.commentId === request.commentCreateAdmin.parentCommentId)!;
-    const parentIdPath = request.commentCreateAdmin.parentCommentId && parentComment
-      ? [
-        ...parentComment.parentIdPath,
-        request.commentCreateAdmin.parentCommentId,
-      ]
-      : [];
-    const comment: CommentWithAuthorWithParentPath = {
-      ideaId: request.ideaId,
-      commentId: '' + (this.nextCommentId++),
-      authorUserId: author.userId,
-      authorName: author.name,
-      authorIsMod: author.isMod,
-      created: new Date(),
-      parentIdPath: parentIdPath,
-      childCommentCount: 0,
-      voteValue: 1,
-      content: request.commentCreateAdmin.content,
-      parentCommentId: request.commentCreateAdmin.parentCommentId,
-      mergedPostId: request.commentCreateAdmin.mergedPostId,
-    };
-    parentComment && parentComment.childCommentCount++;
-    const idea = this.getProject(request.projectId).ideas.find(idea => idea.ideaId === request.ideaId)!;
-    idea.commentCount++;
-    if (!comment.parentCommentId) {
-      idea.childCommentCount++;
-    }
-    this.getProject(request.projectId).comments.push(comment);
-    this.getProject(request.projectId).commentVotes.push({
-      voterUserId: author.userId,
-      commentId: comment.commentId,
-      vote: Client.VoteOption.Upvote,
-    });
-    return this.returnLater({
-      ...comment,
-      vote: Client.VoteOption.Upvote,
-    });
-  }
-
   transactionSearchAdmin(request: Admin.TransactionSearchAdminRequest): Promise<Admin.TransactionSearchAdminResponse> {
     throw new Error('Method not implemented.');
   }
@@ -1425,28 +1374,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   ideaVotersGetAdmin(request: Admin.IdeaVotersGetAdminRequest): Promise<Admin.IdeaVotersAdminResponse> {
     return this.returnLater(this.filterCursor(this.getProject(request.projectId).users
       , this.DEFAULT_LIMIT, request.cursor));
-  }
-
-  ideaVoteUpdateAdmin(request: Admin.IdeaVoteUpdateAdminRequest): Promise<Admin.IdeaVoteUpdateAdminResponse> {
-    const idea: Admin.Idea = this.getImmutable(
-      this.getProject(request.projectId).ideas,
-      idea => idea.ideaId === request.ideaId);
-    const voter: Admin.UserAdmin = this.getImmutable(
-      this.getProject(request.projectId).users,
-      user => user.userId === request.ideaVoteUpdateAdmin.voterUserId);
-    if (!voter) {
-      throw new Error('User not found');
-    }
-    // Calculate vote change properly handling transitions
-    const currentVote = idea.vote || Admin.VoteOption.None;
-    const currentValue = currentVote === Admin.VoteOption.Upvote ? 1
-      : currentVote === Admin.VoteOption.Downvote ? -1 : 0;
-    const newValue = request.ideaVoteUpdateAdmin.vote === Admin.VoteOption.Upvote ? 1
-      : request.ideaVoteUpdateAdmin.vote === Admin.VoteOption.Downvote ? -1 : 0;
-    const voteChange = newValue - currentValue;
-    idea.voteValue = (idea.voteValue || 0) + voteChange;
-    idea.vote = request.ideaVoteUpdateAdmin.vote;
-    return this.returnLater({ idea, voter });
   }
 
   ideaMerge(request: Client.IdeaMergeRequest): Promise<Client.IdeaConnectResponse> {

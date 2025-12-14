@@ -341,12 +341,8 @@
             <artifactId>github-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.slack.api</groupId>
-            <artifactId>slack-api-client</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.slack.api</groupId>
-            <artifactId>slack-api-model</artifactId>
+            <groupId>org.gitlab4j</groupId>
+            <artifactId>gitlab4j-api</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

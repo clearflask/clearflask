@@ -33,6 +33,10 @@ public interface CommentStore {
         return "github-" + commentId;
     }
 
+    default String genDeterministicCommentIdForGitlabNote(long noteId) {
+        return "gitlab-" + noteId;
+    }
+
     /**
      * Returns optional empty if index already exists
      */

@@ -122,6 +122,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Inject
     private GitHubStore gitHubStore;
     @Inject
+    private GitLabStore gitLabStore;
+    @Inject
     private AccountStore accountStore;
     @Inject
     private UserStore userStore;
@@ -319,6 +321,10 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 accountId,
                 Optional.of(project.getVersionedConfigAdmin().getConfig()),
                 configAdmin);
+        gitLabStore.setupConfigGitLabIntegration(
+                accountId,
+                Optional.of(project.getVersionedConfigAdmin().getConfig()),
+                configAdmin);
 
         VersionedConfigAdmin versionedConfigAdmin = new VersionedConfigAdmin(configAdmin, projectStore.genConfigVersion());
         projectStore.updateConfig(
@@ -434,6 +440,10 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         planVerifyStore.verifyConfigChangeMeetsRestrictions(isSuperAdmin, Optional.empty(), configAdmin);
 
         gitHubStore.setupConfigGitHubIntegration(
+                account.getAccountId(),
+                Optional.empty(),
+                configAdmin);
+        gitLabStore.setupConfigGitLabIntegration(
                 account.getAccountId(),
                 Optional.empty(),
                 configAdmin);

@@ -14,17 +14,15 @@ const GitHubAppProvider = {
   authorizeUrl: 'https://github.com/login/oauth/authorize',
 };
 
-// Jira Cloud OAuth 2.0 (3LO)
-// Requires configuring Jira OAuth app at https://developer.atlassian.com/console/myapps/
-// IMPORTANT: To enable Jira integration in production:
-// 1. Create a Jira OAuth 2.0 app at https://developer.atlassian.com/console/myapps/
-// 2. Configure callback URL: https://your-domain.com/dashboard-login
-// 3. Enable the following scopes: read:jira-user, read:jira-work, manage:jira-configuration, write:jira-work, manage:jira-webhook, offline_access
-// 4. Replace 'JIRA_CLIENT_ID_PLACEHOLDER' below with your actual Client ID
-const JiraAppProvider: OAuthProvider = {
-  clientId: isProd() ? 'JIRA_CLIENT_ID_PLACEHOLDER' : 'jira-client-id-dev',
-  authorizeUrl: 'https://auth.atlassian.com/authorize',
-  scope: 'read:jira-user read:jira-work manage:jira-configuration write:jira-work manage:jira-webhook offline_access',
+// GitLab OAuth provider for gitlab.com
+// For self-hosted GitLab, the authorizeUrl needs to be constructed dynamically
+// NOTE: This client ID must match the backend GitLab OAuth configuration
+const GitLabProvider: OAuthProvider = {
+  clientId: isProd()
+    ? process.env.REACT_APP_GITLAB_CLIENT_ID || (() => { throw new Error('REACT_APP_GITLAB_CLIENT_ID environment variable must be set for GitLab OAuth'); })()
+    : 'gitlab-client-id',
+  authorizeUrl: 'https://gitlab.com/oauth/authorize',
+  scope: 'api read_user',
 };
 
 export type Unsubscribe = () => void;
@@ -100,20 +98,25 @@ export class OAuthFlow {
       + `${OAUTH_STATE_PARAM_NAME}=${oauthStateStr}`;
   }
 
-  openForJiraApp() {
-    if (windowIso.isSsr) return;
+  /**
+   * Open GitLab OAuth authorization for gitlab.com
+   */
+  openForGitLab() {
+    this.open(GitLabProvider, 'self');
+  }
 
-    const oauthStateStr = this.setState(JiraAppProvider);
-
-    // Jira OAuth 2.0 (3LO) requires audience parameter
-    windowIso.location.href = `${JiraAppProvider.authorizeUrl}?`
-      + `audience=api.atlassian.com`
-      + `&client_id=${JiraAppProvider.clientId}`
-      + `&scope=${encodeURIComponent(JiraAppProvider.scope || '')}`
-      + `&redirect_uri=${encodeURIComponent(`${windowIso.location.protocol}//${windowIso.location.host}${this.props.redirectPath}`)}`
-      + `&${OAUTH_STATE_PARAM_NAME}=${oauthStateStr}`
-      + `&response_type=code`
-      + `&prompt=consent`;
+  /**
+   * Open GitLab OAuth authorization for a self-hosted GitLab instance
+   * @param gitlabInstanceUrl The base URL of the GitLab instance (e.g., https://gitlab.mycompany.com)
+   * @param clientId The OAuth application client ID configured on the GitLab instance
+   */
+  openForSelfHostedGitLab(gitlabInstanceUrl: string, clientId: string) {
+    const provider: OAuthProvider = {
+      clientId,
+      authorizeUrl: `${gitlabInstanceUrl.replace(/\/$/, '')}/oauth/authorize`,
+      scope: 'api read_user',
+    };
+    this.open(provider, 'self', gitlabInstanceUrl);
   }
 
   open(provider: OAuthProvider, openTarget: 'window' | 'self', extraData?: string) {

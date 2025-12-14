@@ -141,6 +141,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     public static final String IDEA_FUNDERS_INDEX = "idea_funders";
     private static final long EXP_DECAY_PERIOD_MILLIS = Duration.ofDays(7).toMillis();
     private static final Pattern EXTRACT_GITHUB_ISSUE_FROM_IDEA_ID_MATCHER = Pattern.compile("github-(?<issueNumber>[0-9]+)-(?<issueId>[0-9]+)-(?<repositoryId>[0-9]+)");
+    private static final Pattern EXTRACT_GITLAB_ISSUE_FROM_IDEA_ID_MATCHER = Pattern.compile("gitlab-(?<issueIid>[0-9]+)-(?<issueId>[0-9]+)-(?<projectId>[0-9]+)");
 
     @Inject
     private Config config;
@@ -223,6 +224,19 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 Long.parseLong(matcher.group("issueNumber")),
                 Long.parseLong(matcher.group("issueId")),
                 Long.parseLong(matcher.group("repositoryId"))));
+    }
+
+    @Extern
+    @Override
+    public Optional<GitLabIssueMetadata> extractGitLabIssueFromIdeaId(String ideaId) {
+        Matcher matcher = EXTRACT_GITLAB_ISSUE_FROM_IDEA_ID_MATCHER.matcher(ideaId);
+        if (!matcher.matches()) {
+            return Optional.empty();
+        }
+        return Optional.of(new GitLabIssueMetadata(
+                Long.parseLong(matcher.group("issueIid")),
+                Long.parseLong(matcher.group("issueId")),
+                Long.parseLong(matcher.group("projectId"))));
     }
 
     @Extern
