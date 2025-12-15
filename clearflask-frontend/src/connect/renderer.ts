@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { ChunkExtractor } from '@loadable/server';
 import { ServerStyleSheets } from '@material-ui/core';
+import { generateClassName } from '../common/util/classNameGenerator';
 import htmlparser from 'cheerio';
 import { Handler } from 'express';
 import fs from 'fs';
@@ -113,7 +114,7 @@ export default function render(): Handler {
                 publicPath: (connectConfig.parentDomain !== 'clearflask.com')
                   ? '/' : undefined,
               }),
-              muiSheets: new ServerStyleSheets(),
+              muiSheets: new ServerStyleSheets({ generateClassName }),
               renderedScreen: '',
             };
             try {
