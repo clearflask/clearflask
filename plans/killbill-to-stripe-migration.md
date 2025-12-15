@@ -18,10 +18,11 @@ This document outlines the migration from KillBill (billing orchestration layer)
 8. [Rollback Strategy](#8-rollback-strategy)
 9. [Timeline Summary](#9-timeline-summary)
 10. [Benefits Summary](#10-benefits-summary)
-11. [Plan-Based Feature Gating Strategy](#11-plan-based-feature-gating-strategy) ⭐ NEW
-12. [Customer & Payment Method Migration](#12-customer--payment-method-migration) ⭐ NEW
-13. [Open Questions](#13-open-questions)
-14. [Appendix: Plan Mapping](#14-appendix-plan-mapping)
+11. [Plan-Based Feature Gating Strategy](#11-plan-based-feature-gating-strategy)
+12. [Customer & Payment Method Migration](#12-customer--payment-method-migration)
+13. [Stripe Pricing & Cost Analysis](#13-stripe-pricing--cost-analysis) ⭐ NEW
+14. [Open Questions](#14-open-questions)
+15. [Appendix: Plan Mapping](#15-appendix-plan-mapping)
 
 ---
 
@@ -1178,7 +1179,163 @@ Before cutover, validate for each migrated account:
 
 ---
 
-## 13. Open Questions
+## 13. Stripe Pricing & Cost Analysis
+
+### 13.1 Current KillBill Costs
+
+| Component | Cost | Notes |
+|-----------|------|-------|
+| KillBill Infrastructure | Self-hosted | Docker container, MySQL, maintenance |
+| Stripe Payment Processing | 2.9% + $0.30 | Per successful charge |
+| KillBill Stripe Plugin | Free | Open-source plugin |
+| Developer Maintenance | Time cost | 20+ XML catalogs, sync code |
+
+**Hidden Costs of KillBill:**
+- Infrastructure hosting (KillBill engine + MySQL)
+- Developer time maintaining 1,500+ lines of billing code
+- Debugging complexity across two systems
+- Upgrade/security patching
+
+### 13.2 Stripe Direct Pricing (2025)
+
+#### Base Payment Processing (Required)
+| Fee Type | Rate | When Applied |
+|----------|------|--------------|
+| Domestic cards | 2.9% + $0.30 | Per transaction |
+| International cards | 3.4% + $0.30 | Cross-border |
+| ACH Direct Debit | 0.8% (max $5) | Bank transfers |
+
+**Note**: These payment processing fees apply regardless of using KillBill or direct Stripe.
+
+#### Stripe Billing (Subscriptions) - **NEW COST**
+| Plan | Rate | What's Included |
+|------|------|-----------------|
+| **Billing** | **0.7%** of billing volume | Subscriptions, recurring payments, usage-based billing, dunning, smart retries |
+
+**This is the main new cost** - previously absorbed by KillBill's free orchestration.
+
+**Example cost at different revenue levels:**
+
+| Monthly Recurring Revenue | Stripe Billing Fee (0.7%) |
+|---------------------------|---------------------------|
+| $1,000 | $7/month |
+| $10,000 | $70/month |
+| $50,000 | $350/month |
+| $100,000 | $700/month |
+
+#### Stripe Invoicing
+| Plan | Rate | Notes |
+|------|------|-------|
+| Invoicing Starter | 0.4% per paid invoice | 25 free invoices/month |
+| Invoicing Plus | ~$10/month | Unlimited invoices |
+
+**For ClearFlask**: If you send <25 invoices/month, this is essentially free.
+
+### 13.3 Optional Features with Additional Costs
+
+| Feature | Cost | Recommended? | Notes |
+|---------|------|--------------|-------|
+| **Stripe Tax** | 0.5% per transaction | Optional | Auto sales tax/VAT calculation |
+| **Revenue Recognition** | 0.25% of volume | Optional | Was free until June 2025 |
+| **Customer Portal** | **FREE** | ✅ Yes | Self-service billing management |
+| **Smart Retries** | **FREE** | ✅ Yes | ML-powered payment retry (included in Billing) |
+| **Dunning Emails** | **FREE** | ✅ Yes | Failed payment reminders (included in Billing) |
+| **Card Updater** | **FREE** | ✅ Yes | Auto-update expired cards (included in Billing) |
+| **Entitlements API** | **FREE** | Optional | Feature gating (newer API) |
+| **Metered Billing** | **FREE** | ✅ Yes | Included in Stripe Billing |
+| **Webhooks** | **FREE** | ✅ Yes | Event notifications |
+| **Radar (Fraud)** | 2¢ per transaction | Optional | Basic fraud protection included free |
+
+### 13.4 Features ClearFlask Will Use
+
+| Feature | Cost | Currently Have? | Migration Impact |
+|---------|------|-----------------|------------------|
+| Payment Processing | 2.9% + $0.30 | ✅ Same | No change |
+| **Stripe Billing** | **0.7%** | ❌ New | **New cost** |
+| Subscriptions | Included in Billing | ✅ Via KillBill | Now native |
+| Metered Billing | Included in Billing | ✅ Via KillBill | Now native |
+| Customer Portal | FREE | ❌ New | **New feature, no cost** |
+| Dunning/Retries | Included in Billing | ✅ Via KillBill | Now native |
+| Invoices (basic) | FREE (25/month) | ✅ Via KillBill | Likely sufficient |
+| Stripe Tax | 0.5% | ❌ Not using | **Optional, skip initially** |
+| Revenue Recognition | 0.25% | ❌ Not using | **Optional, skip initially** |
+
+### 13.5 Cost Comparison: KillBill vs Direct Stripe
+
+**Scenario: $10,000 MRR**
+
+| Cost Category | KillBill (Current) | Stripe Direct | Difference |
+|---------------|-------------------|---------------|------------|
+| Payment Processing | $320 (2.9% + $0.30) | $320 | $0 |
+| Billing/Subscription | $0 (self-hosted) | $70 (0.7%) | +$70 |
+| Infrastructure | ~$50-100 (hosting) | $0 | -$50-100 |
+| Developer Time | ~$500+ (maintenance) | ~$100 (less code) | -$400+ |
+| **Total** | ~$870-920 | ~$490 | **-$380-430/month** |
+
+**Scenario: $50,000 MRR**
+
+| Cost Category | KillBill (Current) | Stripe Direct | Difference |
+|---------------|-------------------|---------------|------------|
+| Payment Processing | $1,530 | $1,530 | $0 |
+| Billing/Subscription | $0 | $350 (0.7%) | +$350 |
+| Infrastructure | ~$100-200 | $0 | -$100-200 |
+| Developer Time | ~$500+ | ~$100 | -$400+ |
+| **Total** | ~$2,130-2,230 | ~$1,980 | **-$150-250/month** |
+
+**Break-even point**: Around $100,000 MRR, the 0.7% fee starts to outweigh infrastructure savings.
+
+### 13.6 Cost Optimization Strategies
+
+#### 1. Negotiate Custom Pricing
+At higher volumes, Stripe offers custom pricing. Contact Stripe sales if:
+- MRR > $100,000
+- High transaction volume
+- Unique business model
+
+#### 2. Skip Optional Features Initially
+| Feature | Skip? | Reason |
+|---------|-------|--------|
+| Stripe Tax | ✅ Skip | Can add later if needed |
+| Revenue Recognition | ✅ Skip | Use accounting software |
+| Radar | Use free tier | Basic protection included |
+
+#### 3. Annual Commitment Discounts
+Stripe offers subscription-based pricing with annual commitments:
+- Choose a volume tier upfront
+- Lower per-unit cost
+- Overage fees if you exceed
+
+### 13.7 Hidden Value of Stripe Direct
+
+Features you gain at no extra cost:
+
+| Feature | Value | Notes |
+|---------|-------|-------|
+| Customer Portal | High | Reduces support tickets |
+| Automatic Card Updates | Medium | Reduces failed payments |
+| Smarter Retry Logic | Medium | Higher payment success rate |
+| Better Dashboard | Medium | Single pane of glass |
+| Reduced Code Complexity | High | Less maintenance burden |
+| No KillBill Security Patches | Medium | One less system to update |
+
+### 13.8 Summary: Is It Worth It?
+
+| Revenue Level | Recommendation | Rationale |
+|---------------|----------------|-----------|
+| < $10K MRR | ✅ Migrate | Savings from reduced complexity outweigh fees |
+| $10K - $50K MRR | ✅ Migrate | Break-even with better features |
+| $50K - $100K MRR | ⚠️ Evaluate | 0.7% adds up, but simplicity matters |
+| > $100K MRR | 🤔 Negotiate | Contact Stripe for custom pricing first |
+
+**Bottom Line**: For most SaaS companies under $100K MRR, the 0.7% Stripe Billing fee is **offset by**:
+- Eliminated infrastructure costs
+- Reduced developer maintenance time
+- Better payment success rates (smart retries)
+- New features (Customer Portal)
+
+---
+
+## 14. Open Questions
 
 1. **Historical invoices**: Should old KillBill invoices be migrated or archived?
 2. **Coupon migration**: Are there active coupons that need special handling?
@@ -1188,7 +1345,7 @@ Before cutover, validate for each migrated account:
 
 ---
 
-## 14. Appendix: Plan Mapping
+## 15. Appendix: Plan Mapping
 
 ### Current KillBill Plans → Stripe Products/Prices
 
