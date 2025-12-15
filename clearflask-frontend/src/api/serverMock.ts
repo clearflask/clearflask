@@ -489,6 +489,23 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     });
   }
 
+  slackGetWorkspaceInfoAdmin(request: Admin.SlackGetWorkspaceInfoAdminRequest): Promise<Admin.SlackWorkspaceInfo> {
+    return this.returnLater({
+      teamId: 'T01234567',
+      teamName: 'Mock Workspace',
+      accessToken: 'xoxb-mock-token-' + randomUuid(),
+      botUserId: 'U01234567',
+      channels: [
+        { channelId: 'C01234567', channelName: 'general', isPrivate: false, isMember: true },
+        { channelId: 'C02345678', channelName: 'feedback', isPrivate: false, isMember: true },
+        { channelId: 'C03456789', channelName: 'feature-requests', isPrivate: false, isMember: true },
+        { channelId: 'C04567890', channelName: 'bug-reports', isPrivate: false, isMember: true },
+        { channelId: 'C05678901', channelName: 'private-team', isPrivate: true, isMember: true },
+        { channelId: 'C06789012', channelName: 'announcements', isPrivate: false, isMember: false },
+      ],
+    });
+  }
+
   accountDeleteAdmin(): Promise<void> {
     if (!this.account) return this.throwLater(403, 'Not logged in');
     this.loggedIn = false;
