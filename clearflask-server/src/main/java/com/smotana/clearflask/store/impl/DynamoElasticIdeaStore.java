@@ -937,7 +937,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                     Optional.ofNullable(ideaHistogramSearchAdmin.getFilterCreatedStart()),
                     Optional.ofNullable(ideaHistogramSearchAdmin.getFilterCreatedEnd()),
                     Optional.ofNullable(ideaHistogramSearchAdmin.getInterval()),
-                    Optional.of(searchIdeasQuery(ideaSearchAdmin, Optional.empty(), false))); // histogram is admin-only, show all
+                    Optional.of(searchIdeasQuery(ideaSearchAdmin, Optional.empty(), false, ImmutableSet.of()))); // histogram is admin-only, show all
         } else {
             return mysqlUtil.histogram(
                     JooqIdea.IDEA,
@@ -946,7 +946,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                     Optional.ofNullable(ideaHistogramSearchAdmin.getFilterCreatedStart()),
                     Optional.ofNullable(ideaHistogramSearchAdmin.getFilterCreatedEnd()),
                     Optional.ofNullable(ideaHistogramSearchAdmin.getInterval()),
-                    Optional.of(searchIdeasCondition(projectId, ideaSearchAdmin, Optional.empty(), false))); // histogram is admin-only, show all
+                    Optional.of(searchIdeasCondition(projectId, ideaSearchAdmin, Optional.empty(), false, ImmutableSet.of()))); // histogram is admin-only, show all
         }
     }
 
@@ -975,12 +975,13 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                 requestorUserIdOpt,
                 false,
                 true, // excludePrivate: true for regular users
+                hiddenStatusIds,
                 cursorOpt);
     }
 
     @Override
     public SearchResponse searchIdeas(String projectId, IdeaSearchAdmin ideaSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt) {
-        return searchIdeas(projectId, ideaSearchAdmin, Optional.empty(), useAccurateCursor, false, cursorOpt); // excludePrivate: false for admins
+        return searchIdeas(projectId, ideaSearchAdmin, Optional.empty(), useAccurateCursor, false, ImmutableSet.of(), cursorOpt); // excludePrivate: false for admins, no hidden status filtering
     }
 
     @Value
@@ -994,7 +995,8 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
             String projectId,
             IdeaSearchAdmin ideaSearchAdmin,
             Optional<String> requestorUserIdOpt,
-            boolean excludePrivate) {
+            boolean excludePrivate,
+            ImmutableSet<String> hiddenStatusIds) {
         List<Condition> conditions = Lists.newArrayList();
         List<Condition> conditionsRange = Lists.newArrayList();
         List<Join> joins = Lists.newArrayList();
@@ -1094,6 +1096,12 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                     .or(JooqIdea.IDEA.VISIBILITY.ne(IdeaVisibility.PRIVATE.name())));
         }
 
+        // Filter out posts with hidden statuses for regular users
+        if (hiddenStatusIds != null && !hiddenStatusIds.isEmpty()) {
+            conditions.add(JooqIdea.IDEA.STATUSID.isNull()
+                    .or(JooqIdea.IDEA.STATUSID.notIn(hiddenStatusIds)));
+        }
+
         return new SearchIdeasConditions(
                 mysqlUtil.and(conditions),
                 mysqlUtil.and(conditionsRange),
@@ -1103,7 +1111,8 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
     private QueryBuilder searchIdeasQuery(
             IdeaSearchAdmin ideaSearchAdmin,
             Optional<String> requestorUserIdOpt,
-            boolean excludePrivate) {
+            boolean excludePrivate,
+            ImmutableSet<String> hiddenStatusIds) {
         BoolQueryBuilder query = QueryBuilders.boolQuery();
 
         if (ideaSearchAdmin.getFundedByMeAndActive() == Boolean.TRUE) {
@@ -1198,6 +1207,11 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
             query.mustNot(QueryBuilders.termQuery("visibility", IdeaVisibility.PRIVATE.name()));
         }
 
+        // Filter out posts with hidden statuses for regular users
+        if (hiddenStatusIds != null && !hiddenStatusIds.isEmpty()) {
+            query.mustNot(QueryBuilders.termsQuery("statusId", hiddenStatusIds.toArray()));
+        }
+
         return query;
     }
 
@@ -1214,6 +1228,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
             Optional<String> requestorUserIdOpt,
             boolean useAccurateCursor,
             boolean excludePrivate,
+            ImmutableSet<String> hiddenStatusIds,
             Optional<String> cursorOpt) {
         if (!Strings.isNullOrEmpty(ideaSearchAdmin.getSimilarToIdeaId())
                 && !config.enableSimilarToIdea()) {
@@ -1239,7 +1254,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
 
         final SearchResponse searchResponse;
         if (projectStore.getSearchEngineForProject(projectId).isReadElastic()) {
-            QueryBuilder query = searchIdeasQuery(ideaSearchAdmin, requestorUserIdOpt, excludePrivate);
+            QueryBuilder query = searchIdeasQuery(ideaSearchAdmin, requestorUserIdOpt, excludePrivate, hiddenStatusIds);
 
             Optional<SortOrder> sortOrderOpt;
             ImmutableList<String> sortFields;
@@ -1308,7 +1323,7 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
                         searchResponseWithCursor.getSearchResponse().getHits().getTotalHits().relation == TotalHits.Relation.GREATER_THAN_OR_EQUAL_TO);
             }
         } else {
-            SearchIdeasConditions searchConditions = searchIdeasCondition(projectId, ideaSearchAdmin, requestorUserIdOpt, excludePrivate);
+            SearchIdeasConditions searchConditions = searchIdeasCondition(projectId, ideaSearchAdmin, requestorUserIdOpt, excludePrivate, hiddenStatusIds);
 
             final ImmutableList<SortField<?>> sortFields;
             if (ideaSearchAdmin.getSortBy() != null

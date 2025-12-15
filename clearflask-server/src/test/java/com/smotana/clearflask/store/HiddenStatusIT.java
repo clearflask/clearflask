@@ -61,6 +61,9 @@ public class HiddenStatusIT extends AbstractIT {
         super.configure();
 
         bindMock(ContentStore.class);
+        bindMock(JiraStore.class);
+        bindMock(SlackStore.class);
+        bindMock(GitLabStore.class);
 
         install(Modules.override(
                 InMemoryDynamoDbProvider.module(),
@@ -85,6 +88,10 @@ public class HiddenStatusIT extends AbstractIT {
                 install(ConfigSystem.overrideModule(DynamoElasticIdeaStore.Config.class, om -> {
                     om.override(om.id().elasticForceRefresh()).withValue(true);
                 }));
+                install(ConfigSystem.overrideModule(Sanitizer.Config.class, om -> {
+                }));
+                install(ConfigSystem.overrideModule(WebhookServiceImpl.Config.class, om -> {
+                }));
             }
         }));
     }
@@ -98,53 +105,44 @@ public class HiddenStatusIT extends AbstractIT {
 
         // Create project with hidden and visible statuses
         ConfigAdmin configAdmin = new ConfigAdmin(
-                1L,
-                "test-project",
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                new com.smotana.clearflask.api.model.Config(
-                        ImmutableList.of(new Category(
-                                categoryId,
-                                "Feedback",
-                                null,
-                                null,
-                                new Support(true, new Voting(true, null), new Expressing(true, null), true),
-                                new Workflow(
-                                        hiddenStatusId,
-                                        ImmutableList.of(
-                                                new IdeaStatus(hiddenStatusId, "Pending Approval", null, "#ff0000", false, false, false, false, false, true),
-                                                new IdeaStatus(visibleStatusId, "Approved", null, "#00ff00", false, false, false, false, false, false)
-                                        )
-                                ),
-                                null,
-                                null,
-                                null,
-                                null
-                        )),
-                        null,
-                        null,
-                        null,
-                        null
-                )
+                1L,  // schemaVersion
+                projectId,  // projectId
+                null,  // website
+                "test-project",  // name
+                null,  // logoUrl
+                projectId,  // slug
+                null,  // domain
+                null,  // langDefault
+                null,  // langWhitelist
+                null,  // noIndex
+                new CookieConsent(null, null),  // cookieConsent
+                new Layout(null, ImmutableList.of(), ImmutableList.of()),  // layout
+                new Content(ImmutableList.of(Category.builder()  // content
+                        .categoryId(categoryId)
+                        .name("Feedback")
+                        .userCreatable(true)
+                        .workflow(new Workflow(
+                                hiddenStatusId,
+                                ImmutableList.of(
+                                        new IdeaStatus(hiddenStatusId, "Pending Approval", null, "#ff0000", false, false, false, false, false, true),
+                                        new IdeaStatus(visibleStatusId, "Approved", null, "#00ff00", false, false, false, false, false, false)
+                                )
+                        ))
+                        .support(new Support(true, new Voting(true, null), new Expressing(true, null), true))
+                        .tagging(new Tagging(ImmutableList.of(), ImmutableList.of()))
+                        .build())),
+                new Style(new Flow(true), new Palette(false, null, null, null, null, null, null), new Typography(null, null), null, new Whitelabel(Whitelabel.PoweredByEnum.SHOW)),  // style
+                new Users(null, new Onboarding(Onboarding.VisibilityEnum.PUBLIC, new AccountFields(AccountFields.DisplayNameEnum.NONE), new NotificationMethods(new AnonymousSignup(false), true, new EmailSignup(EmailSignup.ModeEnum.SIGNUPANDLOGIN, EmailSignup.PasswordEnum.NONE, EmailSignup.VerificationEnum.NONE, null), null, ImmutableList.of()), null)),  // users
+                new Integrations(null, null, null),  // integrations
+                null,  // ssoSecretKey
+                null,  // oauthClientSecrets
+                null,  // intercomIdentityVerificationSecret
+                null,  // usedAdvancedSettings
+                null,  // github
+                null,  // gitlab
+                null,  // jira
+                null,  // slack
+                null   // forceSearchEngine
         );
 
         VersionedConfigAdmin versionedConfigAdmin = new VersionedConfigAdmin(configAdmin, IdUtil.randomId());
@@ -233,54 +231,45 @@ public class HiddenStatusIT extends AbstractIT {
 
         // Create project with multiple hidden statuses
         ConfigAdmin configAdmin = new ConfigAdmin(
-                1L,
-                "test-project",
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                new com.smotana.clearflask.api.model.Config(
-                        ImmutableList.of(new Category(
-                                categoryId,
-                                "Feedback",
-                                null,
-                                null,
-                                new Support(true, new Voting(true, null), new Expressing(true, null), true),
-                                new Workflow(
-                                        "status1",
-                                        ImmutableList.of(
-                                                new IdeaStatus("status1", "Hidden 1", null, "#ff0000", false, false, false, false, false, true),
-                                                new IdeaStatus("status2", "Visible", null, "#00ff00", false, false, false, false, false, false),
-                                                new IdeaStatus("status3", "Hidden 2", null, "#0000ff", false, false, false, false, false, true)
-                                        )
-                                ),
-                                null,
-                                null,
-                                null,
-                                null
-                        )),
-                        null,
-                        null,
-                        null,
-                        null
-                )
+                1L,  // schemaVersion
+                projectId,  // projectId
+                null,  // website
+                "test-project",  // name
+                null,  // logoUrl
+                projectId,  // slug
+                null,  // domain
+                null,  // langDefault
+                null,  // langWhitelist
+                null,  // noIndex
+                new CookieConsent(null, null),  // cookieConsent
+                new Layout(null, ImmutableList.of(), ImmutableList.of()),  // layout
+                new Content(ImmutableList.of(Category.builder()  // content
+                        .categoryId(categoryId)
+                        .name("Feedback")
+                        .userCreatable(true)
+                        .workflow(new Workflow(
+                                "status1",
+                                ImmutableList.of(
+                                        new IdeaStatus("status1", "Hidden 1", null, "#ff0000", false, false, false, false, false, true),
+                                        new IdeaStatus("status2", "Visible", null, "#00ff00", false, false, false, false, false, false),
+                                        new IdeaStatus("status3", "Hidden 2", null, "#0000ff", false, false, false, false, false, true)
+                                )
+                        ))
+                        .support(new Support(true, new Voting(true, null), new Expressing(true, null), true))
+                        .tagging(new Tagging(ImmutableList.of(), ImmutableList.of()))
+                        .build())),
+                new Style(new Flow(true), new Palette(false, null, null, null, null, null, null), new Typography(null, null), null, new Whitelabel(Whitelabel.PoweredByEnum.SHOW)),  // style
+                new Users(null, new Onboarding(Onboarding.VisibilityEnum.PUBLIC, new AccountFields(AccountFields.DisplayNameEnum.NONE), new NotificationMethods(new AnonymousSignup(false), true, new EmailSignup(EmailSignup.ModeEnum.SIGNUPANDLOGIN, EmailSignup.PasswordEnum.NONE, EmailSignup.VerificationEnum.NONE, null), null, ImmutableList.of()), null)),  // users
+                new Integrations(null, null, null),  // integrations
+                null,  // ssoSecretKey
+                null,  // oauthClientSecrets
+                null,  // intercomIdentityVerificationSecret
+                null,  // usedAdvancedSettings
+                null,  // github
+                null,  // gitlab
+                null,  // jira
+                null,  // slack
+                null   // forceSearchEngine
         );
 
         VersionedConfigAdmin versionedConfigAdmin = new VersionedConfigAdmin(configAdmin, IdUtil.randomId());
@@ -302,53 +291,44 @@ public class HiddenStatusIT extends AbstractIT {
 
         // Create project with no hidden statuses
         ConfigAdmin configAdmin = new ConfigAdmin(
-                1L,
-                "test-project",
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                new com.smotana.clearflask.api.model.Config(
-                        ImmutableList.of(new Category(
-                                categoryId,
-                                "Feedback",
-                                null,
-                                null,
-                                new Support(true, new Voting(true, null), new Expressing(true, null), true),
-                                new Workflow(
-                                        "status1",
-                                        ImmutableList.of(
-                                                new IdeaStatus("status1", "Visible 1", null, "#ff0000", false, false, false, false, false, false),
-                                                new IdeaStatus("status2", "Visible 2", null, "#00ff00", false, false, false, false, false, false)
-                                        )
-                                ),
-                                null,
-                                null,
-                                null,
-                                null
-                        )),
-                        null,
-                        null,
-                        null,
-                        null
-                )
+                1L,  // schemaVersion
+                projectId,  // projectId
+                null,  // website
+                "test-project",  // name
+                null,  // logoUrl
+                projectId,  // slug
+                null,  // domain
+                null,  // langDefault
+                null,  // langWhitelist
+                null,  // noIndex
+                new CookieConsent(null, null),  // cookieConsent
+                new Layout(null, ImmutableList.of(), ImmutableList.of()),  // layout
+                new Content(ImmutableList.of(Category.builder()  // content
+                        .categoryId(categoryId)
+                        .name("Feedback")
+                        .userCreatable(true)
+                        .workflow(new Workflow(
+                                "status1",
+                                ImmutableList.of(
+                                        new IdeaStatus("status1", "Visible 1", null, "#ff0000", false, false, false, false, false, false),
+                                        new IdeaStatus("status2", "Visible 2", null, "#00ff00", false, false, false, false, false, false)
+                                )
+                        ))
+                        .support(new Support(true, new Voting(true, null), new Expressing(true, null), true))
+                        .tagging(new Tagging(ImmutableList.of(), ImmutableList.of()))
+                        .build())),
+                new Style(new Flow(true), new Palette(false, null, null, null, null, null, null), new Typography(null, null), null, new Whitelabel(Whitelabel.PoweredByEnum.SHOW)),  // style
+                new Users(null, new Onboarding(Onboarding.VisibilityEnum.PUBLIC, new AccountFields(AccountFields.DisplayNameEnum.NONE), new NotificationMethods(new AnonymousSignup(false), true, new EmailSignup(EmailSignup.ModeEnum.SIGNUPANDLOGIN, EmailSignup.PasswordEnum.NONE, EmailSignup.VerificationEnum.NONE, null), null, ImmutableList.of()), null)),  // users
+                new Integrations(null, null, null),  // integrations
+                null,  // ssoSecretKey
+                null,  // oauthClientSecrets
+                null,  // intercomIdentityVerificationSecret
+                null,  // usedAdvancedSettings
+                null,  // github
+                null,  // gitlab
+                null,  // jira
+                null,  // slack
+                null   // forceSearchEngine
         );
 
         VersionedConfigAdmin versionedConfigAdmin = new VersionedConfigAdmin(configAdmin, IdUtil.randomId());
@@ -373,26 +353,43 @@ public class HiddenStatusIT extends AbstractIT {
 
         // Create project with hidden status
         ConfigAdmin configAdmin = new ConfigAdmin(
-                1L,
-                "test-project",
-                null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-                new com.smotana.clearflask.api.model.Config(
-                        ImmutableList.of(new Category(
-                                categoryId,
-                                "Feedback",
-                                null,
-                                null,
-                                new Support(true, new Voting(true, null), new Expressing(true, null), true),
-                                new Workflow(
-                                        hiddenStatusId,
-                                        ImmutableList.of(
-                                                new IdeaStatus(hiddenStatusId, "Pending Approval", null, "#ff0000", false, false, false, false, false, true)
-                                        )
-                                ),
-                                null, null, null, null
-                        )),
-                        null, null, null, null
-                )
+                1L,  // schemaVersion
+                projectId,  // projectId
+                null,  // website
+                "test-project",  // name
+                null,  // logoUrl
+                projectId,  // slug
+                null,  // domain
+                null,  // langDefault
+                null,  // langWhitelist
+                null,  // noIndex
+                new CookieConsent(null, null),  // cookieConsent
+                new Layout(null, ImmutableList.of(), ImmutableList.of()),  // layout
+                new Content(ImmutableList.of(Category.builder()  // content
+                        .categoryId(categoryId)
+                        .name("Feedback")
+                        .userCreatable(true)
+                        .workflow(new Workflow(
+                                hiddenStatusId,
+                                ImmutableList.of(
+                                        new IdeaStatus(hiddenStatusId, "Pending Approval", null, "#ff0000", false, false, false, false, false, true)
+                                )
+                        ))
+                        .support(new Support(true, new Voting(true, null), new Expressing(true, null), true))
+                        .tagging(new Tagging(ImmutableList.of(), ImmutableList.of()))
+                        .build())),
+                new Style(new Flow(true), new Palette(false, null, null, null, null, null, null), new Typography(null, null), null, new Whitelabel(Whitelabel.PoweredByEnum.SHOW)),  // style
+                new Users(null, new Onboarding(Onboarding.VisibilityEnum.PUBLIC, new AccountFields(AccountFields.DisplayNameEnum.NONE), new NotificationMethods(new AnonymousSignup(false), true, new EmailSignup(EmailSignup.ModeEnum.SIGNUPANDLOGIN, EmailSignup.PasswordEnum.NONE, EmailSignup.VerificationEnum.NONE, null), null, ImmutableList.of()), null)),  // users
+                new Integrations(null, null, null),  // integrations
+                null,  // ssoSecretKey
+                null,  // oauthClientSecrets
+                null,  // intercomIdentityVerificationSecret
+                null,  // usedAdvancedSettings
+                null,  // github
+                null,  // gitlab
+                null,  // jira
+                null,  // slack
+                null   // forceSearchEngine
         );
 
         VersionedConfigAdmin versionedConfigAdmin = new VersionedConfigAdmin(configAdmin, IdUtil.randomId());
@@ -463,27 +460,44 @@ public class HiddenStatusIT extends AbstractIT {
 
         // Create project with both hidden and visible statuses
         ConfigAdmin configAdmin = new ConfigAdmin(
-                1L,
-                "test-project",
-                null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-                new com.smotana.clearflask.api.model.Config(
-                        ImmutableList.of(new Category(
-                                categoryId,
-                                "Feedback",
-                                null,
-                                null,
-                                new Support(true, new Voting(true, null), new Expressing(true, null), true),
-                                new Workflow(
-                                        visibleStatusId,
-                                        ImmutableList.of(
-                                                new IdeaStatus(visibleStatusId, "Approved", null, "#00ff00", false, false, false, false, false, false),
-                                                new IdeaStatus(hiddenStatusId, "Pending", null, "#ff0000", false, false, false, false, false, true)
-                                        )
-                                ),
-                                null, null, null, null
-                        )),
-                        null, null, null, null
-                )
+                1L,  // schemaVersion
+                projectId,  // projectId
+                null,  // website
+                "test-project",  // name
+                null,  // logoUrl
+                projectId,  // slug
+                null,  // domain
+                null,  // langDefault
+                null,  // langWhitelist
+                null,  // noIndex
+                new CookieConsent(null, null),  // cookieConsent
+                new Layout(null, ImmutableList.of(), ImmutableList.of()),  // layout
+                new Content(ImmutableList.of(Category.builder()  // content
+                        .categoryId(categoryId)
+                        .name("Feedback")
+                        .userCreatable(true)
+                        .workflow(new Workflow(
+                                visibleStatusId,
+                                ImmutableList.of(
+                                        new IdeaStatus(visibleStatusId, "Approved", null, "#00ff00", false, false, false, false, false, false),
+                                        new IdeaStatus(hiddenStatusId, "Pending", null, "#ff0000", false, false, false, false, false, true)
+                                )
+                        ))
+                        .support(new Support(true, new Voting(true, null), new Expressing(true, null), true))
+                        .tagging(new Tagging(ImmutableList.of(), ImmutableList.of()))
+                        .build())),
+                new Style(new Flow(true), new Palette(false, null, null, null, null, null, null), new Typography(null, null), null, new Whitelabel(Whitelabel.PoweredByEnum.SHOW)),  // style
+                new Users(null, new Onboarding(Onboarding.VisibilityEnum.PUBLIC, new AccountFields(AccountFields.DisplayNameEnum.NONE), new NotificationMethods(new AnonymousSignup(false), true, new EmailSignup(EmailSignup.ModeEnum.SIGNUPANDLOGIN, EmailSignup.PasswordEnum.NONE, EmailSignup.VerificationEnum.NONE, null), null, ImmutableList.of()), null)),  // users
+                new Integrations(null, null, null),  // integrations
+                null,  // ssoSecretKey
+                null,  // oauthClientSecrets
+                null,  // intercomIdentityVerificationSecret
+                null,  // usedAdvancedSettings
+                null,  // github
+                null,  // gitlab
+                null,  // jira
+                null,  // slack
+                null   // forceSearchEngine
         );
 
         VersionedConfigAdmin versionedConfigAdmin = new VersionedConfigAdmin(configAdmin, IdUtil.randomId());
@@ -566,26 +580,43 @@ public class HiddenStatusIT extends AbstractIT {
 
         // Create project
         ConfigAdmin configAdmin = new ConfigAdmin(
-                1L,
-                "test-project",
-                null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-                new com.smotana.clearflask.api.model.Config(
-                        ImmutableList.of(new Category(
-                                categoryId,
-                                "Feedback",
-                                null,
-                                null,
-                                new Support(true, new Voting(true, null), new Expressing(true, null), true),
-                                new Workflow(
-                                        hiddenStatusId,
-                                        ImmutableList.of(
-                                                new IdeaStatus(hiddenStatusId, "Pending", null, "#ff0000", false, false, false, false, false, true)
-                                        )
-                                ),
-                                null, null, null, null
-                        )),
-                        null, null, null, null
-                )
+                1L,  // schemaVersion
+                projectId,  // projectId
+                null,  // website
+                "test-project",  // name
+                null,  // logoUrl
+                projectId,  // slug
+                null,  // domain
+                null,  // langDefault
+                null,  // langWhitelist
+                null,  // noIndex
+                new CookieConsent(null, null),  // cookieConsent
+                new Layout(null, ImmutableList.of(), ImmutableList.of()),  // layout
+                new Content(ImmutableList.of(Category.builder()  // content
+                        .categoryId(categoryId)
+                        .name("Feedback")
+                        .userCreatable(true)
+                        .workflow(new Workflow(
+                                hiddenStatusId,
+                                ImmutableList.of(
+                                        new IdeaStatus(hiddenStatusId, "Pending", null, "#ff0000", false, false, false, false, false, true)
+                                )
+                        ))
+                        .support(new Support(true, new Voting(true, null), new Expressing(true, null), true))
+                        .tagging(new Tagging(ImmutableList.of(), ImmutableList.of()))
+                        .build())),
+                new Style(new Flow(true), new Palette(false, null, null, null, null, null, null), new Typography(null, null), null, new Whitelabel(Whitelabel.PoweredByEnum.SHOW)),  // style
+                new Users(null, new Onboarding(Onboarding.VisibilityEnum.PUBLIC, new AccountFields(AccountFields.DisplayNameEnum.NONE), new NotificationMethods(new AnonymousSignup(false), true, new EmailSignup(EmailSignup.ModeEnum.SIGNUPANDLOGIN, EmailSignup.PasswordEnum.NONE, EmailSignup.VerificationEnum.NONE, null), null, ImmutableList.of()), null)),  // users
+                new Integrations(null, null, null),  // integrations
+                null,  // ssoSecretKey
+                null,  // oauthClientSecrets
+                null,  // intercomIdentityVerificationSecret
+                null,  // usedAdvancedSettings
+                null,  // github
+                null,  // gitlab
+                null,  // jira
+                null,  // slack
+                null   // forceSearchEngine
         );
 
         VersionedConfigAdmin versionedConfigAdmin = new VersionedConfigAdmin(configAdmin, IdUtil.randomId());
@@ -646,27 +677,44 @@ public class HiddenStatusIT extends AbstractIT {
 
         // Create project
         ConfigAdmin configAdmin = new ConfigAdmin(
-                1L,
-                "test-project",
-                null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
-                new com.smotana.clearflask.api.model.Config(
-                        ImmutableList.of(new Category(
-                                categoryId,
-                                "Feedback",
-                                null,
-                                null,
-                                new Support(true, new Voting(true, null), new Expressing(true, null), true),
-                                new Workflow(
-                                        visibleStatusId,
-                                        ImmutableList.of(
-                                                new IdeaStatus(visibleStatusId, "Approved", null, "#00ff00", false, false, false, false, false, false),
-                                                new IdeaStatus(hiddenStatusId, "Pending", null, "#ff0000", false, false, false, false, false, true)
-                                        )
-                                ),
-                                null, null, null, null
-                        )),
-                        null, null, null, null
-                )
+                1L,  // schemaVersion
+                projectId,  // projectId
+                null,  // website
+                "test-project",  // name
+                null,  // logoUrl
+                projectId,  // slug
+                null,  // domain
+                null,  // langDefault
+                null,  // langWhitelist
+                null,  // noIndex
+                new CookieConsent(null, null),  // cookieConsent
+                new Layout(null, ImmutableList.of(), ImmutableList.of()),  // layout
+                new Content(ImmutableList.of(Category.builder()  // content
+                        .categoryId(categoryId)
+                        .name("Feedback")
+                        .userCreatable(true)
+                        .workflow(new Workflow(
+                                visibleStatusId,
+                                ImmutableList.of(
+                                        new IdeaStatus(visibleStatusId, "Approved", null, "#00ff00", false, false, false, false, false, false),
+                                        new IdeaStatus(hiddenStatusId, "Pending", null, "#ff0000", false, false, false, false, false, true)
+                                )
+                        ))
+                        .support(new Support(true, new Voting(true, null), new Expressing(true, null), true))
+                        .tagging(new Tagging(ImmutableList.of(), ImmutableList.of()))
+                        .build())),
+                new Style(new Flow(true), new Palette(false, null, null, null, null, null, null), new Typography(null, null), null, new Whitelabel(Whitelabel.PoweredByEnum.SHOW)),  // style
+                new Users(null, new Onboarding(Onboarding.VisibilityEnum.PUBLIC, new AccountFields(AccountFields.DisplayNameEnum.NONE), new NotificationMethods(new AnonymousSignup(false), true, new EmailSignup(EmailSignup.ModeEnum.SIGNUPANDLOGIN, EmailSignup.PasswordEnum.NONE, EmailSignup.VerificationEnum.NONE, null), null, ImmutableList.of()), null)),  // users
+                new Integrations(null, null, null),  // integrations
+                null,  // ssoSecretKey
+                null,  // oauthClientSecrets
+                null,  // intercomIdentityVerificationSecret
+                null,  // usedAdvancedSettings
+                null,  // github
+                null,  // gitlab
+                null,  // jira
+                null,  // slack
+                null   // forceSearchEngine
         );
 
         VersionedConfigAdmin versionedConfigAdmin = new VersionedConfigAdmin(configAdmin, IdUtil.randomId());
