@@ -25,6 +25,26 @@ const GitLabProvider: OAuthProvider = {
   scope: 'api read_user',
 };
 
+// Jira OAuth provider for Atlassian
+// NOTE: This client ID must match the backend Jira OAuth configuration
+const JiraProvider: OAuthProvider = {
+  clientId: isProd()
+    ? process.env.REACT_APP_JIRA_CLIENT_ID || (() => { throw new Error('REACT_APP_JIRA_CLIENT_ID environment variable must be set for Jira OAuth'); })()
+    : 'jira-client-id',
+  authorizeUrl: 'https://auth.atlassian.com/authorize',
+  scope: 'read:jira-work write:jira-work offline_access',
+};
+
+// Slack OAuth provider
+// NOTE: This client ID must match the backend Slack OAuth configuration
+const SlackProvider: OAuthProvider = {
+  clientId: isProd()
+    ? process.env.REACT_APP_SLACK_CLIENT_ID || (() => { throw new Error('REACT_APP_SLACK_CLIENT_ID environment variable must be set for Slack OAuth'); })()
+    : 'slack-client-id',
+  authorizeUrl: 'https://slack.com/oauth/v2/authorize',
+  scope: 'channels:read channels:write.invites chat:write chat:write.public',
+};
+
 export type Unsubscribe = () => void;
 export interface OAuthToken {
   id: string;
@@ -117,6 +137,20 @@ export class OAuthFlow {
       scope: 'api read_user',
     };
     this.open(provider, 'self', gitlabInstanceUrl);
+  }
+
+  /**
+   * Open Jira OAuth authorization for Atlassian Cloud
+   */
+  openForJira() {
+    this.open(JiraProvider, 'self');
+  }
+
+  /**
+   * Open Slack OAuth authorization
+   */
+  openForSlack() {
+    this.open(SlackProvider, 'self');
   }
 
   open(provider: OAuthProvider, openTarget: 'window' | 'self', extraData?: string) {

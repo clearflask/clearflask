@@ -2530,6 +2530,7 @@ export const ProjectSettingsFeedbackStatus = (props: {
   const initialStatusIdProp = (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'workflow', 'entryStatus']) as ConfigEditor.StringProperty);
   const nameProp = (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'workflow', 'statuses', props.statusIndex, 'name']) as ConfigEditor.StringProperty);
   const colorProp = (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'workflow', 'statuses', props.statusIndex, 'color']) as ConfigEditor.StringProperty);
+  const disablePublicDisplayProp = (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'workflow', 'statuses', props.statusIndex, 'disablePublicDisplay']) as ConfigEditor.BooleanProperty);
   const [statusName, setStatusName] = useDebounceProp<string>(
     nameProp.value || '',
     text => nameProp.set(text));
@@ -2577,6 +2578,12 @@ export const ProjectSettingsFeedbackStatus = (props: {
                   checked={initialStatusIdProp.value === props.status.statusId}
                   disabled={initialStatusIdProp.value === props.status.statusId}
                   onChange={e => initialStatusIdProp.set(props.status.statusId)}
+        />
+      )} />
+      <FormControlLabel label="Hidden from public view" control={(
+        <Checkbox size="small" color="primary"
+                  checked={!!disablePublicDisplayProp.value}
+                  onChange={e => disablePublicDisplayProp.set(e.target.checked)}
         />
       )} />
       <PropertyByPath
@@ -3765,6 +3772,302 @@ export const ProjectSettingsGitLab = (props: {
               ) : (
                 <Message message="No projects found" severity="warning" />
               ))}
+            </>
+          )
+          }
+        />
+      </UpgradeWrapper>
+      <br /><br />
+      <NeedHelpInviteTeammate server={props.server} />
+    </ProjectSettingsBase>
+  );
+};
+
+export const ProjectSettingsJira = (props: {
+  project: AdminProject;
+  server: Server;
+  editor: ConfigEditor.Editor;
+}) => {
+  const classes = useStyles();
+  const theme = useTheme();
+  const [projects, setProjects] = useState<Array<{ cloudId: string; cloudName?: string; projectKey: string; projectName: string }> | undefined>();
+
+  const accountBasePlanId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
+  const accountAddons = useSelector<ReduxStateAdmin, {
+    [addonId: string]: string
+  }>(state => state.account.account.account?.addons || {}, shallowEqual);
+  const accountSubscriptionStatus = useSelector<ReduxStateAdmin, Admin.SubscriptionStatus | undefined>(state => state.account.account.account?.subscriptionStatus, shallowEqual);
+
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(props.project.hasUnsavedChanges());
+  useEffect(() => {
+    return props.project.subscribeToUnsavedChanges(() => {
+      setHasUnsavedChanges(props.project.hasUnsavedChanges());
+    });
+  }, [props.project]);
+
+  const [jira, setJira] = useState<Admin.Jira | undefined>(props.editor.getConfig().jira);
+  useEffect(() => {
+    return props.editor.subscribe(() => {
+      setJira(props.editor.getConfig().jira);
+    });
+  }, [props.editor]);
+
+  const getProjects = (code: string) => ServerAdmin.get().dispatchAdmin()
+    .then(d => d.jiraGetProjectsAdmin(code))
+    .then(result => setProjects(result.projects));
+
+  const oauthFlow = new OAuthFlow({
+    accountType: 'jira-integration',
+    redirectPath: '/dashboard/settings/project/jira',
+  });
+  const oauthResult = oauthFlow.checkResult();
+  if (oauthResult) {
+    getProjects(oauthResult.code);
+  }
+
+  return (
+    <ProjectSettingsBase title="Jira Integration"
+                         description="Synchronize Jira issues with ClearFlask. Create and update issues from ClearFlask and mirror status changes.">
+      <UpgradeWrapper
+        accountBasePlanId={accountBasePlanId}
+        accountAddons={accountAddons}
+        subscriptionStatus={accountSubscriptionStatus}
+        propertyPath={['jira']}
+      >
+        <Collapse in={!!jira}>
+          <Section
+            title="Configure synchronization"
+            description={(
+              <>
+                Your linked Jira project <b>{jira?.projectName}</b> ({jira?.cloudName}) synchronization can be configured here.
+              </>
+            )}
+            content={!!jira && (
+              <>
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['jira', 'createWithCategoryId']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['jira', 'initialStatusId']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['jira', 'createWithTags']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['jira', 'issueTypeId']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['jira', 'autoCreateIssue']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['jira', 'statusSync']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['jira', 'responseSync']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['jira', 'commentSync']} />
+                <p>
+                  <Button
+                    style={{ color: theme.palette.error.dark }}
+                    color="inherit"
+                    onClick={() => props.editor.getPage(['jira']).set(undefined)}
+                  >Delete</Button>
+                </p>
+              </>
+            )}
+          />
+        </Collapse>
+        <Section
+          title="Select new project"
+          description="Link your Jira project by authorizing ClearFlask"
+          content={(
+            <>
+              <Collapse in={!projects && hasUnsavedChanges}>
+                <p>
+                  <Message
+                    message="You must publish unsaved changes before we can redirect you to Jira"
+                    severity="warning" />
+                </p>
+              </Collapse>
+              <Collapse in={!projects && !hasUnsavedChanges}>
+                <p>
+                  <Button
+                    variant="contained"
+                    disableElevation
+                    color="primary"
+                    disabled={hasUnsavedChanges}
+                    onClick={() => isProd() ? oauthFlow.openForJira() : getProjects('my-code')}
+                  >Connect Jira</Button>
+                </p>
+              </Collapse>
+              {!!projects && (projects.length ? (
+                <TemplateWrapper<[FeedbackInstance | undefined]>
+                  key="feedback"
+                  editor={props.editor}
+                  mapper={templater => Promise.all([templater.feedbackGet()])}
+                  renderResolved={(templater, [feedback]) => (
+                    <Collapse in={!!projects} appear>
+                      <Table className={classes.githubReposTable}>
+                        <TableBody>
+                          {projects.map(project => {
+                            const selected = jira?.projectKey === project.projectKey && jira?.cloudId === project.cloudId;
+                            return (
+                              <TableRow key={`${project.cloudId}-${project.projectKey}`}>
+                                <TableCell key="project">
+                                  <Typography>{project.projectName}</Typography>
+                                  <Typography variant="caption" color="textSecondary">
+                                    {project.cloudName || project.cloudId} - {project.projectKey}
+                                  </Typography>
+                                </TableCell>
+                                <TableCell key="action">
+                                  <Typography>
+                                    <Button
+                                      variant="contained"
+                                      disableElevation
+                                      color="primary"
+                                      disabled={selected}
+                                      onClick={() => {
+                                        if (selected) return;
+                                        const jiraPage = props.editor.getPage(['jira']);
+                                        if (!jiraPage.value) {
+                                          jiraPage.set(true);
+
+                                          var category: Admin.Category | undefined;
+                                          if (feedback) {
+                                            category = feedback.categoryAndIndex.category;
+                                          } else if (!!props.editor.getConfig().content.categories.length) {
+                                            category = props.editor.getConfig().content.categories[0];
+                                          }
+
+                                          category && (props.editor.getProperty(['jira', 'createWithCategoryId']) as ConfigEditor.StringProperty)
+                                            .set(category.categoryId);
+                                        }
+                                        (props.editor.getProperty(['jira', 'cloudId']) as ConfigEditor.StringProperty)
+                                          .set(project.cloudId);
+                                        if (project.cloudName) {
+                                          (props.editor.getProperty(['jira', 'cloudName']) as ConfigEditor.StringProperty)
+                                            .set(project.cloudName);
+                                        }
+                                        (props.editor.getProperty(['jira', 'projectKey']) as ConfigEditor.StringProperty)
+                                          .set(project.projectKey);
+                                        (props.editor.getProperty(['jira', 'projectName']) as ConfigEditor.StringProperty)
+                                          .set(project.projectName);
+                                      }}
+                                    >
+                                      {selected ? 'Linked' : 'Link'}
+                                    </Button>
+                                  </Typography>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </Collapse>
+                  )} />
+              ) : (
+                <Message message="No projects found" severity="warning" />
+              ))}
+            </>
+          )
+          }
+        />
+      </UpgradeWrapper>
+      <br /><br />
+      <NeedHelpInviteTeammate server={props.server} />
+    </ProjectSettingsBase>
+  );
+};
+
+export const ProjectSettingsSlack = (props: {
+  project: AdminProject;
+  server: Server;
+  editor: ConfigEditor.Editor;
+}) => {
+  const classes = useStyles();
+  const theme = useTheme();
+
+  const accountBasePlanId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
+  const accountAddons = useSelector<ReduxStateAdmin, {
+    [addonId: string]: string
+  }>(state => state.account.account.account?.addons || {}, shallowEqual);
+  const accountSubscriptionStatus = useSelector<ReduxStateAdmin, Admin.SubscriptionStatus | undefined>(state => state.account.account.account?.subscriptionStatus, shallowEqual);
+
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(props.project.hasUnsavedChanges());
+  useEffect(() => {
+    return props.project.subscribeToUnsavedChanges(() => {
+      setHasUnsavedChanges(props.project.hasUnsavedChanges());
+    });
+  }, [props.project]);
+
+  const [slack, setSlack] = useState<Admin.Slack | undefined>(props.editor.getConfig().slack);
+  useEffect(() => {
+    return props.editor.subscribe(() => {
+      setSlack(props.editor.getConfig().slack);
+    });
+  }, [props.editor]);
+
+  const oauthFlow = new OAuthFlow({
+    accountType: 'slack-integration',
+    redirectPath: '/dashboard/settings/project/slack',
+  });
+  const oauthResult = oauthFlow.checkResult();
+  if (oauthResult) {
+    // Process Slack OAuth callback
+    // The backend will handle the OAuth code exchange and store the tokens
+    // For now, we'll just trigger a config refresh
+    props.editor.refreshConfig();
+  }
+
+  return (
+    <ProjectSettingsBase title="Slack Integration"
+                         description="Connect Slack channels to ClearFlask categories. Receive notifications in Slack when posts are created or updated.">
+      <UpgradeWrapper
+        accountBasePlanId={accountBasePlanId}
+        accountAddons={accountAddons}
+        subscriptionStatus={accountSubscriptionStatus}
+        propertyPath={['slack']}
+      >
+        <Collapse in={!!slack}>
+          <Section
+            title="Configure channels"
+            description={(
+              <>
+                Your Slack workspace <b>{slack?.teamName}</b> is connected. Configure channel links below.
+              </>
+            )}
+            content={!!slack && (
+              <>
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['slack', 'channelLinks']} />
+                <p>
+                  <Button
+                    style={{ color: theme.palette.error.dark }}
+                    color="inherit"
+                    onClick={() => props.editor.getPage(['slack']).set(undefined)}
+                  >Disconnect Slack</Button>
+                </p>
+              </>
+            )}
+          />
+        </Collapse>
+        <Section
+          title="Connect workspace"
+          description="Link your Slack workspace by authorizing ClearFlask"
+          content={(
+            <>
+              <Collapse in={!slack && hasUnsavedChanges}>
+                <p>
+                  <Message
+                    message="You must publish unsaved changes before we can redirect you to Slack"
+                    severity="warning" />
+                </p>
+              </Collapse>
+              <Collapse in={!slack && !hasUnsavedChanges}>
+                <p>
+                  <Button
+                    variant="contained"
+                    disableElevation
+                    color="primary"
+                    disabled={hasUnsavedChanges}
+                    onClick={() => isProd() ? oauthFlow.openForSlack() : props.editor.getPage(['slack']).set(true)}
+                  >Connect Slack</Button>
+                </p>
+              </Collapse>
             </>
           )
           }
