@@ -77,6 +77,12 @@ public interface IdeaStore {
 
     SearchResponse searchIdeas(String projectId, IdeaSearchAdmin ideaSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt);
 
+    /**
+     * Test-only method to search ideas with explicit control over private visibility filtering.
+     * @param excludePrivate if true, private posts are excluded from results (regular user behavior); if false, all posts including private are returned (admin behavior)
+     */
+    SearchResponse searchIdeas(String projectId, IdeaSearchAdmin ideaSearchAdmin, boolean excludePrivate, ImmutableSet<String> hiddenStatusIds, Optional<String> cursorOpt);
+
     long countIdeas(String projectId);
 
     IdeaAggregateResponse countIdeas(String projectId, String categoryId);

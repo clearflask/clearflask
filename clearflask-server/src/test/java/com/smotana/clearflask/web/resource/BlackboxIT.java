@@ -236,8 +236,8 @@ public class BlackboxIT extends AbstractBlackboxIT {
                 .tagIds(ImmutableList.of())
                 .build());
 
-        // Verify initial vote value
-        assertEquals(Long.valueOf(0L), idea.getVoteValue());
+        // Verify initial vote value (auto-upvoted by author on creation)
+        assertEquals(Long.valueOf(1L), idea.getVoteValue());
 
         // Admin votes on behalf of regular user (upvote)
         IdeaVoteUpdateAdminResponse upvoteResponse = voteResource.ideaVoteUpdateAdmin(
@@ -248,7 +248,7 @@ public class BlackboxIT extends AbstractBlackboxIT {
                         .vote(VoteOption.UPVOTE)
                         .build());
 
-        // Verify vote value increased
+        // Verify vote value remains the same (user already has an upvote)
         assertEquals(Long.valueOf(1L), upvoteResponse.getIdea().getVoteValue());
         assertEquals(regularUser.getUserId(), upvoteResponse.getVoter().getUserId());
 

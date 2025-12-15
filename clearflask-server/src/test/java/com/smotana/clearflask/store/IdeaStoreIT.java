@@ -700,6 +700,7 @@ public class IdeaStoreIT extends AbstractIT {
                 projectId,
                 IdeaSearchAdmin.builder().filterCategoryIds(ImmutableList.of("cat1")).build(),
                 true, // excludePrivate = true (simulates non-admin user)
+                ImmutableSet.of(), // no hidden status filtering
                 Optional.empty());
 
         // Should only return public and null visibility ideas
@@ -712,6 +713,7 @@ public class IdeaStoreIT extends AbstractIT {
                 projectId,
                 IdeaSearchAdmin.builder().filterCategoryIds(ImmutableList.of("cat1")).build(),
                 false, // excludePrivate = false (simulates admin/mod user)
+                ImmutableSet.of(), // no hidden status filtering
                 Optional.empty());
 
         // Should return all ideas including private
@@ -837,6 +839,7 @@ public class IdeaStoreIT extends AbstractIT {
                 projectId,
                 IdeaSearchAdmin.builder().filterCategoryIds(ImmutableList.of("cat1")).build(),
                 true, // excludePrivate
+                ImmutableSet.of(), // no hidden status filtering
                 Optional.empty());
         assertTrue("Should include public idea in cat1", cat1Search.getIdeaIds().contains("public1"));
         assertFalse("Should NOT include private idea in cat1", cat1Search.getIdeaIds().contains("private1"));
@@ -846,6 +849,7 @@ public class IdeaStoreIT extends AbstractIT {
                 projectId,
                 IdeaSearchAdmin.builder().filterStatusIds(ImmutableList.of("status1")).build(),
                 true, // excludePrivate
+                ImmutableSet.of(), // no hidden status filtering
                 Optional.empty());
         assertTrue("Should include public idea with status1", status1Search.getIdeaIds().contains("public1"));
         assertFalse("Should NOT include private idea with status1", status1Search.getIdeaIds().contains("private1"));
@@ -855,6 +859,7 @@ public class IdeaStoreIT extends AbstractIT {
                 projectId,
                 IdeaSearchAdmin.builder().sortBy(IdeaSearchAdmin.SortByEnum.TOP).build(),
                 true, // excludePrivate
+                ImmutableSet.of(), // no hidden status filtering
                 Optional.empty());
         assertTrue("Should include public ideas", topSearch.getIdeaIds().contains("public1"));
         assertTrue("Should include public ideas", topSearch.getIdeaIds().contains("public2"));
@@ -866,6 +871,7 @@ public class IdeaStoreIT extends AbstractIT {
                 projectId,
                 IdeaSearchAdmin.builder().build(),
                 false, // excludePrivate = false
+                ImmutableSet.of(), // no hidden status filtering
                 Optional.empty());
         assertEquals("Admin should see all 4 ideas", 4, adminSearch.getIdeaIds().size());
     }

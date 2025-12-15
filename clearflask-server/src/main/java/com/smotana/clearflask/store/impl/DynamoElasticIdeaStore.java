@@ -984,6 +984,11 @@ public class DynamoElasticIdeaStore extends ManagedService implements IdeaStore 
         return searchIdeas(projectId, ideaSearchAdmin, Optional.empty(), useAccurateCursor, false, ImmutableSet.of(), cursorOpt); // excludePrivate: false for admins, no hidden status filtering
     }
 
+    @Override
+    public SearchResponse searchIdeas(String projectId, IdeaSearchAdmin ideaSearchAdmin, boolean excludePrivate, ImmutableSet<String> hiddenStatusIds, Optional<String> cursorOpt) {
+        return searchIdeas(projectId, ideaSearchAdmin, Optional.empty(), false, excludePrivate, hiddenStatusIds, cursorOpt);
+    }
+
     @Value
     public static class SearchIdeasConditions {
         Condition conditions;
