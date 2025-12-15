@@ -54,6 +54,8 @@ public class HiddenStatusIT extends AbstractIT {
     private IdeaStore ideaStore;
     @Inject
     private ProjectStore projectStore;
+    @Inject
+    private UserStore userStore;
 
     @Override
     protected void configure() {
@@ -148,8 +150,12 @@ public class HiddenStatusIT extends AbstractIT {
         VersionedConfigAdmin versionedConfigAdmin = new VersionedConfigAdmin(configAdmin, IdUtil.randomId());
         projectStore.createProject(IdUtil.randomId(), projectId, versionedConfigAdmin);
 
-        // Create index
+        // Create indices
         ideaStore.createIndex(projectId).get();
+        userStore.createIndex(projectId);
+
+        // Create a test user
+        String userId = userStore.createUser(MockModelUtil.getRandomUser().toBuilder().projectId(projectId).build()).getUser().getUserId();
 
         // Verify hidden status IDs are correctly identified
         Project project = projectStore.getProject(projectId, true).get();
@@ -161,6 +167,7 @@ public class HiddenStatusIT extends AbstractIT {
         // Create posts with different statuses
         IdeaModel hiddenPost = MockModelUtil.getRandomIdea().toBuilder()
                 .projectId(projectId)
+                .authorUserId(userId)
                 .categoryId(categoryId)
                 .statusId(hiddenStatusId)
                 .title("Hidden Post")
@@ -169,6 +176,7 @@ public class HiddenStatusIT extends AbstractIT {
 
         IdeaModel visiblePost = MockModelUtil.getRandomIdea().toBuilder()
                 .projectId(projectId)
+                .authorUserId(userId)
                 .categoryId(categoryId)
                 .statusId(visibleStatusId)
                 .title("Visible Post")
@@ -177,6 +185,7 @@ public class HiddenStatusIT extends AbstractIT {
 
         IdeaModel nullStatusPost = MockModelUtil.getRandomIdea().toBuilder()
                 .projectId(projectId)
+                .authorUserId(userId)
                 .categoryId(categoryId)
                 .statusId(null)
                 .title("Null Status Post")
