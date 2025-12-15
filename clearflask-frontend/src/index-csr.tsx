@@ -8,6 +8,16 @@ import { detectEnv, Environment, isProd } from './common/util/detectEnv';
 import { getI18n } from './i18n-csr';
 import Main from './Main';
 
+// Suppress React.createFactory deprecation warnings from third-party libraries
+const originalWarn = console.warn;
+console.warn = (...args: any[]) => {
+  const message = args[0];
+  if (typeof message === 'string' && message.includes('React.createFactory()')) {
+    return;
+  }
+  originalWarn.apply(console, args);
+};
+
 Sentry.init({
   dsn: "https://600460a790e34b3e884ebe25ed26944d@o934836.ingest.sentry.io/5884409",
   integrations: [new Integrations.BrowserTracing()],
