@@ -138,6 +138,25 @@ When running `make local-up`:
 - KillBill Kaui: `http://localhost:8081` (admin/password)
 - LocalStack AWS: `aws --endpoint-url=http://localhost:4566`
 
+## Context Management for Claude Code
+
+**IMPORTANT**: Commands like `make local-up`, `mvn install`, and other build/deploy commands produce verbose output that can overload Claude's context window, causing it to fail mid-task.
+
+To avoid context overload:
+- **Use quiet flags** when possible: `mvn install -q -DskipTests`, `make local-up 2>&1 | tail -20`
+- **Run commands in background**: Use `run_in_background: true` parameter for long-running commands
+- **Avoid running verbose commands** if context is already high
+- **Limit output**: Pipe to `tail` or `head` to capture only relevant output
+- **Monitor context usage**: If you see "Context low" warnings, avoid running more verbose commands
+
+Example:
+```bash
+# Instead of: make local-up
+# Use: make local-up 2>&1 | tail -50
+
+# Or run in background and check logs selectively
+```
+
 ## Plans
 
 Development plans and roadmaps are stored in `./plans/`. See the comprehensive roadmap for feature opportunities, technical debt, and security issues.
