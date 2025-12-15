@@ -223,5 +223,18 @@
   "you-have-unsaved-changes": "crwdns1204:0crwdne1204:0",
   "empty": "crwdns1208:0crwdne1208:0",
   "notifications": "crwdns1298:0crwdne1298:0",
-  "talk": "crwdns1300:0crwdne1300:0"
+  "talk": "crwdns1300:0crwdne1300:0",
+  "forgot-password": "crwdns1318:0crwdne1318:0",
+  "email-sent": "crwdns1320:0crwdne1320:0",
+  "password-reset-email-sent": "crwdns1322:0crwdne1322:0",
+  "enter-email-for-password-reset": "crwdns1324:0crwdne1324:0",
+  "send-reset-link": "crwdns1326:0crwdne1326:0",
+  "remember-password": "crwdns1328:0crwdne1328:0",
+  "invalid-reset-link": "crwdns1330:0crwdne1330:0",
+  "reset-link-invalid-or-expired": "crwdns1332:0crwdne1332:0",
+  "need-new-link": "crwdns1334:0crwdne1334:0",
+  "request-new-link": "crwdns1336:0crwdne1336:0",
+  "reset-your-password": "crwdns1338:0crwdne1338:0",
+  "new-password": "crwdns1340:0crwdne1340:0",
+  "reset-password": "crwdns1342:0crwdne1342:0"
 }
