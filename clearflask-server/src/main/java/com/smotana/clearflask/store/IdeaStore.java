@@ -6,6 +6,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.*;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.IdeaVisibility;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore.TransactionModel;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
@@ -40,7 +41,17 @@ public interface IdeaStore {
         return "github-release-" + releaseId + "-" + repositoryId;
     }
 
+    default String genDeterministicIdeaIdForGitlabIssue(long issueIid, long issueId, long projectId) {
+        return "gitlab-" + issueIid + "-" + issueId + "-" + projectId;
+    }
+
+    default String genDeterministicIdeaIdForGitlabRelease(long releaseId, long projectId) {
+        return "gitlab-release-" + releaseId + "-" + projectId;
+    }
+
     Optional<GitHubIssueMetadata> extractGitHubIssueFromIdeaId(String ideaId);
+
+    Optional<GitLabIssueMetadata> extractGitLabIssueFromIdeaId(String ideaId);
 
     ListenableFuture<Void> createIndex(String projectId);
 
@@ -62,9 +73,15 @@ public interface IdeaStore {
 
     HistogramResponse histogram(String projectId, IdeaHistogramSearchAdmin ideaSearchAdmin);
 
-    SearchResponse searchIdeas(String projectId, IdeaSearch ideaSearch, Optional<String> requestorUserIdOpt, Optional<String> cursorOpt);
+    SearchResponse searchIdeas(String projectId, IdeaSearch ideaSearch, Optional<String> requestorUserIdOpt, ImmutableSet<String> hiddenStatusIds, Optional<String> cursorOpt);
 
     SearchResponse searchIdeas(String projectId, IdeaSearchAdmin ideaSearchAdmin, boolean useAccurateCursor, Optional<String> cursorOpt);
+
+    /**
+     * Test-only method to search ideas with explicit control over private visibility filtering.
+     * @param excludePrivate if true, private posts are excluded from results (regular user behavior); if false, all posts including private are returned (admin behavior)
+     */
+    SearchResponse searchIdeas(String projectId, IdeaSearchAdmin ideaSearchAdmin, boolean excludePrivate, ImmutableSet<String> hiddenStatusIds, Optional<String> cursorOpt);
 
     long countIdeas(String projectId);
 
@@ -102,6 +119,13 @@ public interface IdeaStore {
         long issueNumber;
         long issueId;
         long repositoryId;
+    }
+
+    @Value
+    class GitLabIssueMetadata {
+        long issueIid;
+        long issueId;
+        long projectId;
     }
 
     @Value
@@ -177,6 +201,10 @@ public interface IdeaStore {
 
         Boolean authorIsMod;
 
+        String authorPic;
+
+        String authorPicUrl;
+
         @NonNull
         Instant created;
 
@@ -202,6 +230,10 @@ public interface IdeaStore {
         String responseAuthorUserId;
 
         String responseAuthorName;
+
+        String responseAuthorPic;
+
+        String responseAuthorPicUrl;
 
         Instant responseEdited;
 
@@ -264,6 +296,17 @@ public interface IdeaStore {
 
         String coverImg;
 
+        /**
+         * Visibility of the idea. Private ideas are only visible to admins/mods.
+         * If null, defaults to Public.
+         */
+        IdeaVisibility visibility;
+
+        /**
+         * Private notes visible only to admins and moderators.
+         */
+        String adminNotes;
+
         public String getDescriptionSanitized(Sanitizer sanitizer) {
             return sanitizer.richHtml(getDescription(), "idea", getIdeaId(), getProjectId(), false);
         }
@@ -298,12 +341,16 @@ public interface IdeaStore {
                     getAuthorUserId(),
                     getAuthorName(),
                     getAuthorIsMod(),
+                    getAuthorPic(),
+                    getAuthorPicUrl(),
                     getCreated(),
                     getTitle(),
                     getDescriptionSanitized(sanitizer),
                     getResponseSanitized(sanitizer),
                     getResponseAuthorUserId(),
                     getResponseAuthorName(),
+                    getResponseAuthorPic(),
+                    getResponseAuthorPicUrl(),
                     getResponseEdited(),
                     getCategoryId(),
                     getStatusId(),
@@ -324,7 +371,54 @@ public interface IdeaStore {
                     getMergedPostIds().asList(),
                     getOrder(),
                     getLinkedGitHubUrl(),
-                    sanitizer.signCoverImg(projectId, getCoverImg()).orElse(null));
+                    null, // linkedGitLabUrl - not used yet
+                    null, // externalUrl - not used yet
+                    sanitizer.signCoverImg(projectId, getCoverImg()).orElse(null),
+                    getVisibility(),
+                    null); // adminNotes - not returned for non-admin endpoints
+        }
+
+        public Idea toIdeaAdmin(Sanitizer sanitizer) {
+            return new Idea(
+                    getIdeaId(),
+                    getAuthorUserId(),
+                    getAuthorName(),
+                    getAuthorIsMod(),
+                    getAuthorPic(),
+                    getAuthorPicUrl(),
+                    getCreated(),
+                    getTitle(),
+                    getDescriptionSanitized(sanitizer),
+                    getResponseSanitized(sanitizer),
+                    getResponseAuthorUserId(),
+                    getResponseAuthorName(),
+                    getResponseAuthorPic(),
+                    getResponseAuthorPicUrl(),
+                    getResponseEdited(),
+                    getCategoryId(),
+                    getStatusId(),
+                    getTagIds().asList(),
+                    getCommentCount(),
+                    getChildCommentCount(),
+                    getFunded(),
+                    getFundGoal(),
+                    getFundersCount(),
+                    getVoteValue(),
+                    getExpressionsValue(),
+                    (getExpressions() == null || getExpressions().isEmpty()) ? null : Maps.filterEntries(getExpressions(),
+                            e -> e.getValue() != null && e.getValue() != 0L),
+                    getLinkedToPostIds().asList(),
+                    getLinkedFromPostIds().asList(),
+                    getMergedToPostId(),
+                    getMergedToPostTime(),
+                    getMergedPostIds().asList(),
+                    getOrder(),
+                    getLinkedGitHubUrl(),
+                    null, // linkedGitLabUrl - not used yet
+                    null, // externalUrl - not used yet
+                    sanitizer.signCoverImg(projectId, getCoverImg()).orElse(null),
+                    getVisibility(),
+                    getAdminNotes());
         }
 
         public IdeaWithVote toIdeaWithVote(IdeaVote vote, Sanitizer sanitizer) {
@@ -333,12 +427,16 @@ public interface IdeaStore {
                     getAuthorUserId(),
                     getAuthorName(),
                     getAuthorIsMod(),
+                    getAuthorPic(),
+                    getAuthorPicUrl(),
                     getCreated(),
                     getTitle(),
                     getDescriptionSanitized(sanitizer),
                     getResponseSanitized(sanitizer),
                     getResponseAuthorUserId(),
                     getResponseAuthorName(),
+                    getResponseAuthorPic(),
+                    getResponseAuthorPicUrl(),
                     getResponseEdited(),
                     getCategoryId(),
                     getStatusId(),
@@ -359,7 +457,11 @@ public interface IdeaStore {
                     getMergedPostIds().asList(),
                     getOrder(),
                     getLinkedGitHubUrl(),
+                    null, // linkedGitLabUrl - not used yet
+                    null, // externalUrl - not used yet
                     sanitizer.signCoverImg(projectId, getCoverImg()).orElse(null),
+                    getVisibility(),
+                    null, // adminNotes - not returned for non-admin endpoints
                     vote);
         }
 

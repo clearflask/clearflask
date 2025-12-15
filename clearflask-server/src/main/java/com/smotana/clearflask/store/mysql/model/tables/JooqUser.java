@@ -112,7 +112,7 @@ public class JooqUser extends TableImpl<JooqUserRecord> {
         this(DSL.name("user"), null);
     }
 
-    public <O extends Record> JooqUser(Table<O> child, ForeignKey<O, JooqUserRecord> key) {
+    public <O extends org.jooq.Record> JooqUser(Table<O> child, ForeignKey<O, JooqUserRecord> key) {
         super(child, key, USER);
     }
 

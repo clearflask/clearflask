@@ -459,6 +459,9 @@ interface ConnectProps {
     linkedToPosts?: Array<Client.Idea>;
     linkedFromPosts?: Array<Client.Idea>;
     fetchPostIds?: Array<string>;
+    changelogCategory?: Client.Category;
+    completedStatusId?: string;
+    acceptedStatusId?: string;
 }
 
 interface State {
@@ -585,8 +588,10 @@ class Post extends Component<Props & ConnectProps & WithTranslation<'app'> & Wit
                             {this.renderBottomBar()}
                             {this.renderIWantThisCommentAdd()}
                             {this.renderResponseAndStatus()}
+                            {this.renderAdminNotes()}
                             {this.renderMerged()}
                             {this.renderLinkedToGitHub()}
+                            {this.renderExternalUrl()}
                             {this.renderLinks()}
                         </div>
                         {this.props.contentBeforeComments && (
@@ -891,6 +896,7 @@ class Post extends Component<Props & ConnectProps & WithTranslation<'app'> & Wit
             </React.Fragment>
         );
     }
+
 
     renderDelete() {
         const isMod = this.props.server.isModOrAdminLoggedIn();
@@ -1670,6 +1676,64 @@ class Post extends Component<Props & ConnectProps & WithTranslation<'app'> & Wit
         );
     }
 
+    renderExternalUrl() {
+        if (!this.props.idea
+            || this.props.variant === 'list'
+            || !this.props.idea.externalUrl) return null;
+
+        // Try to extract meaningful text from common issue tracker URLs
+        var content: React.ReactNode = this.props.idea.externalUrl;
+
+        // Jira: https://company.atlassian.net/browse/PROJ-123
+        const jiraMatch = (new RegExp(/(?:https?:\/\/[^/]+\/browse\/)([A-Z]+-[0-9]+)/i))
+            .exec(this.props.idea.externalUrl);
+        if (jiraMatch) {
+            content = jiraMatch[1];
+        }
+
+        // GitHub: https://github.com/user/repo/issues/123
+        const githubMatch = (new RegExp(/https:\/\/github.com\/([^/]+)\/([^/]+)\/issues\/([0-9]+)/))
+            .exec(this.props.idea.externalUrl);
+        if (githubMatch) {
+            const issueNumber = githubMatch[3];
+            content = `#${issueNumber}`;
+        }
+
+        // GitLab: https://gitlab.com/user/repo/-/issues/123
+        const gitlabMatch = (new RegExp(/https:\/\/[^/]+\/([^/]+\/[^/]+)\/-\/issues\/([0-9]+)/))
+            .exec(this.props.idea.externalUrl);
+        if (gitlabMatch) {
+            const issueNumber = gitlabMatch[2];
+            content = `#${issueNumber}`;
+        }
+
+        content = (
+            <MuiLink
+                href={this.props.idea.externalUrl}
+                target='_blank'
+                rel='noopener nofollow'
+                underline='none'
+                color='textPrimary'
+            >
+                {content}
+            </MuiLink>
+        );
+
+        return (
+            <div className={this.props.classes.links}>
+                <ConnectedPostsContainer
+                    type='link'
+                    direction='to'
+                    hasMultiple={false}
+                >
+                    <OutlinePostContent>
+                        External:&nbsp;{content}
+                    </OutlinePostContent>
+                </ConnectedPostsContainer>
+            </div>
+        );
+    }
+
     renderLinks() {
         if (!this.props.idea
             || this.props.variant === 'list'
@@ -1819,6 +1883,30 @@ class Post extends Component<Props & ConnectProps & WithTranslation<'app'> & Wit
         }
 
         return content;
+    }
+
+    renderAdminNotes() {
+        if (this.props.variant === 'list'
+            || !this.props.idea
+            || !this.props.idea.adminNotes
+            || !this.props.server.isModOrAdminLoggedIn()) return null;
+
+        return (
+            <div className={this.props.classes.responseContainer} style={{
+                marginTop: this.props.theme.spacing(2),
+                padding: this.props.theme.spacing(2),
+                backgroundColor: this.props.theme.palette.warning.light + '20',
+                borderRadius: this.props.theme.shape.borderRadius,
+                border: `1px dashed ${this.props.theme.palette.warning.main}`,
+            }}>
+                <Typography variant='subtitle2' style={{ marginBottom: this.props.theme.spacing(1), color: this.props.theme.palette.warning.dark }}>
+                    Admin Notes (private)
+                </Typography>
+                <Typography variant='body2' style={{ whiteSpace: 'pre-wrap' }}>
+                    {this.props.idea.adminNotes}
+                </Typography>
+            </div>
+        );
     }
 
     renderResponse(isEditing?: boolean) {
@@ -2257,6 +2345,35 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
         if (!linkedPost) fetchPostIds.push(linkedPostId);
         return linkedPost?.idea;
     }).filter(notEmpty);
+
+    // Find the current category
+    const category = (ownProps.idea && state.conf.conf)
+        ? state.conf.conf.content.categories.find(c => c.categoryId === ownProps.idea!.categoryId)
+        : undefined;
+
+    // Find changelog category (by prefix 'changelog-' or name matching 'Changelog|Announcements')
+    const changelogCategory = state.conf.conf?.content.categories.find(c =>
+        c.categoryId.startsWith('changelog-') ||
+        c.name.match(/^(Changelog|Announcements)$/i) ||
+        c.name.match(/\bChangelog\b/i)
+    );
+
+    // Find completed/accepted status IDs from current category workflow
+    let completedStatusId: string | undefined;
+    let acceptedStatusId: string | undefined;
+    if (category) {
+        // Look for status with 'completed' in the name or ID
+        completedStatusId = category.workflow.statuses.find(s =>
+            s.statusId.includes('completed') ||
+            s.name.toLowerCase().includes('completed')
+        )?.statusId;
+        // Look for status with 'accepted' prefix in ID or name
+        acceptedStatusId = category.workflow.statuses.find(s =>
+            s.statusId.startsWith('accepted-') ||
+            s.name.toLowerCase() === 'accepted'
+        )?.statusId;
+    }
+
     return {
         configver: state.conf.ver, // force rerender on config change
         config: state.conf.conf,
@@ -2266,9 +2383,7 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
         vote,
         expression,
         fundAmount,
-        category: (ownProps.idea && state.conf.conf)
-            ? state.conf.conf.content.categories.find(c => c.categoryId === ownProps.idea!.categoryId)
-            : undefined,
+        category,
         credits: state.conf.conf?.users.credits,
         maxFundAmountSeen: state.ideas.maxFundAmountSeen,
         loggedInUser: state.users.loggedIn.user,
@@ -2276,5 +2391,8 @@ export default connect<ConnectProps, {}, Props, ReduxState>((state: ReduxState, 
         linkedToPosts,
         linkedFromPosts,
         fetchPostIds,
+        changelogCategory,
+        completedStatusId,
+        acceptedStatusId,
     };
 })(withStyles(styles, {withTheme: true})(withSnackbar(withTranslation('app', {withRef: true})(Post))));

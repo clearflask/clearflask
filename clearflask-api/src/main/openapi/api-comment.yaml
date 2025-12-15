@@ -58,6 +58,10 @@ components:
           type: string
         authorIsMod:
           type: boolean
+        authorPic:
+          type: string
+        authorPicUrl:
+          type: string
         created:
           type: string
           format: date-time
@@ -103,6 +107,15 @@ components:
       properties:
         content:
           type: string
+    CommentCreateAdmin:
+      allOf:
+        - $ref: 'api-comment.yaml#/components/schemas/CommentCreate'
+        - type: object
+          required:
+            - authorUserId
+          properties:
+            authorUserId:
+              type: string
     CommentSearchAdmin:
       allOf:
         - $ref: 'api-comment.yaml#/components/schemas/CommentSearchBase'
@@ -392,6 +405,33 @@ components:
           application/json:
             schema:
               $ref: 'api-idea.yaml#/components/schemas/HistogramResponse'
+/project/{projectId}/admin/idea/{ideaId}/comment:
+  post:
+    operationId: commentCreateAdmin
+    tags: [CommentAdmin]
+    parameters:
+    - name: projectId
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: ideaId
+      in: path
+      required: true
+      schema:
+        type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-comment.yaml#/components/schemas/CommentCreateAdmin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-comment.yaml#/components/schemas/CommentWithVote'
 /project/{projectId}/admin/idea/{ideaId}/comment/{commentId}:
   delete:
     operationId: commentDeleteAdmin

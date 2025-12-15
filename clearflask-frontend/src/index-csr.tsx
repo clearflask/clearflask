@@ -8,6 +8,28 @@ import { detectEnv, Environment, isProd } from './common/util/detectEnv';
 import { getI18n } from './i18n-csr';
 import Main from './Main';
 
+// Suppress third-party library warnings and errors
+const originalWarn = console.warn;
+console.warn = (...args: any[]) => {
+  const message = args[0];
+  if (typeof message === 'string' && message.includes('React.createFactory()')) {
+    return;
+  }
+  originalWarn.apply(console, args);
+};
+
+const originalError = console.error;
+console.error = (...args: any[]) => {
+  const message = args[0];
+  if (message instanceof TypeError && message.message?.includes("can't redefine non-configurable property \"Worker\"")) {
+    return;
+  }
+  if (typeof message === 'string' && message.includes("can't redefine non-configurable property \"Worker\"")) {
+    return;
+  }
+  originalError.apply(console, args);
+};
+
 Sentry.init({
   dsn: "https://600460a790e34b3e884ebe25ed26944d@o934836.ingest.sentry.io/5884409",
   integrations: [new Integrations.BrowserTracing()],

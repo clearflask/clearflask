@@ -238,6 +238,8 @@ public class CommentStoreIT extends AbstractIT {
                 IdUtil.randomId(),
                 IdUtil.randomId(),
                 false,
+                null,  // authorPic
+                null,  // authorPicUrl
                 Instant.now(),
                 null,
                 textToSimpleHtml(IdUtil.randomId()),

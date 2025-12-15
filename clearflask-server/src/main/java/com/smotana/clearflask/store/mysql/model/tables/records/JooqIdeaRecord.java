@@ -377,6 +377,20 @@ public class JooqIdeaRecord extends UpdatableRecordImpl<JooqIdeaRecord> {
         return (Double) get(24);
     }
 
+    /**
+     * Setter for <code>idea.visibility</code>.
+     */
+    public void setVisibility(String value) {
+        set(25, value);
+    }
+
+    /**
+     * Getter for <code>idea.visibility</code>.
+     */
+    public String getVisibility() {
+        return (String) get(25);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------

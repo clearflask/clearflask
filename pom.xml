@@ -864,6 +864,23 @@
                 <artifactId>commons-io</artifactId>
                 <version>2.18.0</version>
             </dependency>
+            <dependency>
+                <groupId>org.gitlab4j</groupId>
+                <artifactId>gitlab4j-api</artifactId>
+                <version>5.6.0</version>
+            </dependency>
+
+            <!-- Slack SDK for Slack integration -->
+            <dependency>
+                <groupId>com.slack.api</groupId>
+                <artifactId>slack-api-client</artifactId>
+                <version>1.44.2</version>
+            </dependency>
+            <dependency>
+                <groupId>com.slack.api</groupId>
+                <artifactId>slack-api-model</artifactId>
+                <version>1.44.2</version>
+            </dependency>
 
             <!-- https://stackoverflow.com/questions/43574426/how-to-resolve-java-lang-noclassdeffounderror-javax-xml-bind-jaxbexception-in-j -->
             <dependency>

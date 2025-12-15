@@ -45,11 +45,13 @@ import com.smotana.clearflask.core.push.message.OnCommentReply;
 import com.smotana.clearflask.core.push.message.OnCreditChange;
 import com.smotana.clearflask.core.push.message.OnDigest;
 import com.smotana.clearflask.core.push.message.OnEmailChanged;
+import com.smotana.clearflask.core.push.message.OnAdminForgotPassword;
 import com.smotana.clearflask.core.push.message.OnForgotPassword;
 import com.smotana.clearflask.core.push.message.OnInvoicePaymentSuccess;
 import com.smotana.clearflask.core.push.message.OnModInvite;
 import com.smotana.clearflask.core.push.message.OnPaymentFailed;
 import com.smotana.clearflask.core.push.message.OnPostCreated;
+import com.smotana.clearflask.core.push.message.OnPostCreatedOnBehalfOf;
 import com.smotana.clearflask.core.push.message.OnProjectDeletionImminent;
 import com.smotana.clearflask.core.push.message.OnStatusOrResponseChange;
 import com.smotana.clearflask.core.push.message.OnTeammateInvite;
@@ -73,6 +75,13 @@ import com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
 import com.smotana.clearflask.store.github.GitHubClientProviderImpl;
 import com.smotana.clearflask.store.github.GitHubStoreImpl;
+import com.smotana.clearflask.store.jira.AdfQuillConverter;
+import com.smotana.clearflask.store.jira.JiraClientProviderImpl;
+import com.smotana.clearflask.store.jira.JiraStoreImpl;
+import com.smotana.clearflask.store.slack.SlackClientProviderImpl;
+import com.smotana.clearflask.store.slack.SlackStoreImpl;
+import com.smotana.clearflask.store.gitlab.GitLabClientProviderImpl;
+import com.smotana.clearflask.store.gitlab.GitLabStoreImpl;
 import com.smotana.clearflask.store.impl.ConfigurableLlmPromptStore;
 import com.smotana.clearflask.store.impl.DynamoCertStore;
 import com.smotana.clearflask.store.impl.DynamoDraftStore;
@@ -116,7 +125,10 @@ import com.smotana.clearflask.web.resource.ConnectResource;
 import com.smotana.clearflask.web.resource.ContentResource;
 import com.smotana.clearflask.web.resource.CreditResource;
 import com.smotana.clearflask.web.resource.GitHubResource;
+import com.smotana.clearflask.web.resource.SlackResource;
+import com.smotana.clearflask.web.resource.GitLabResource;
 import com.smotana.clearflask.web.resource.HealthResource;
+import com.smotana.clearflask.web.resource.JiraResource;
 import com.smotana.clearflask.web.resource.IdeaResource;
 import com.smotana.clearflask.web.resource.KillBillResource;
 import com.smotana.clearflask.web.resource.LlmResource;
@@ -230,6 +242,13 @@ public enum ServiceInjector {
                 }
                 install(GitHubClientProviderImpl.module());
                 install(GitHubStoreImpl.module());
+                install(JiraClientProviderImpl.module());
+                install(JiraStoreImpl.module());
+                install(AdfQuillConverter.module());
+                install(SlackClientProviderImpl.module());
+                install(SlackStoreImpl.module());
+                install(GitLabClientProviderImpl.module());
+                install(GitLabStoreImpl.module());
                 install(ResourceLegalStore.module());
                 install(SingleTableProvider.module());
                 install(MysqlUtil.module());
@@ -258,6 +277,7 @@ public enum ServiceInjector {
                 install(OnCreditChange.module());
                 install(OnStatusOrResponseChange.module());
                 install(OnForgotPassword.module());
+                install(OnAdminForgotPassword.module());
                 install(OnAccountSignup.module());
                 install(OnModInvite.module());
                 install(OnTeammateInvite.module());
@@ -269,6 +289,7 @@ public enum ServiceInjector {
                 install(OnPaymentFailed.module());
                 install(OnInvoicePaymentSuccess.module());
                 install(OnPostCreated.module());
+                install(OnPostCreatedOnBehalfOf.module());
                 install(EmailVerify.module());
                 install(EmailLogin.module());
 
@@ -312,6 +333,9 @@ public enum ServiceInjector {
                     install(KillBillResource.module());
                 }
                 install(GitHubResource.module());
+                install(JiraResource.module());
+                install(SlackResource.module());
+                install(GitLabResource.module());
                 install(UserResource.module());
                 install(AccountResource.module());
                 install(IdeaResource.module());

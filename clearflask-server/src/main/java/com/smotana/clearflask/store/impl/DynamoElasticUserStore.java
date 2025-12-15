@@ -116,6 +116,12 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         @GsonNonNull
         @SerializedName("access_token")
         String accessToken;
+
+        @SerializedName("refresh_token")
+        String refreshToken;
+
+        @SerializedName("expires_in")
+        Long expiresIn;
     }
 
     public interface Config {

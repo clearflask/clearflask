@@ -121,6 +121,8 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     @Inject
     private OnForgotPassword onForgotPassword;
     @Inject
+    private OnAdminForgotPassword onAdminForgotPassword;
+    @Inject
     private OnModInvite onModInvite;
     @Inject
     private OnTeammateInvite onTeammateInvite;
@@ -128,6 +130,8 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     private OnEmailChanged onEmailChanged;
     @Inject
     private OnPostCreated onPostCreated;
+    @Inject
+    private OnPostCreatedOnBehalfOf onPostCreatedOnBehalfOf;
     @Inject
     private EmailVerify emailVerify;
     @Inject
@@ -633,6 +637,57 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
     }
 
     @Override
+    public void onPostCreatedOnBehalfOf(Project project, IdeaModel idea, UserModel author) {
+        if (!config.enabled()) {
+            log.debug("Not enabled, skipping");
+            return;
+        }
+        submit(() -> {
+            ConfigAdmin configAdmin = project.getVersionedConfigAdmin().getConfig();
+            String link = "https://"
+                    + Project.getHostname(configAdmin, configApp)
+                    + "/post/"
+                    + idea.getIdeaId();
+
+            try {
+                notificationStore.notificationCreate(new NotificationModel(
+                        idea.getProjectId(),
+                        author.getUserId(),
+                        notificationStore.genNotificationId(),
+                        idea.getIdeaId(),
+                        null,
+                        idea.getCreated(),
+                        Instant.now().plus(config.notificationExpiry()).getEpochSecond(),
+                        onPostCreatedOnBehalfOf.inAppDescription(configAdmin, idea)));
+            } catch (Exception ex) {
+                log.warn("Failed to send in-app notification", ex);
+            }
+
+            Optional<String> authTokenOpt = Optional.empty();
+            try {
+                if (author.isEmailNotify() && !Strings.isNullOrEmpty(author.getEmail())) {
+                    if (!authTokenOpt.isPresent()) {
+                        authTokenOpt = Optional.of(userStore.createToken(author.getProjectId(), author.getUserId(), config.autoLoginExpiry()));
+                    }
+                    emailService.send(onPostCreatedOnBehalfOf.email(configAdmin, author, idea, link, authTokenOpt.get()));
+                }
+            } catch (Exception ex) {
+                log.warn("Failed to send email notification", ex);
+            }
+            try {
+                if (!Strings.isNullOrEmpty(author.getBrowserPushToken())) {
+                    if (!authTokenOpt.isPresent()) {
+                        authTokenOpt = Optional.of(userStore.createToken(author.getProjectId(), author.getUserId(), config.autoLoginExpiry()));
+                    }
+                    browserPushService.send(onPostCreatedOnBehalfOf.browserPush(configAdmin, author, idea, link, authTokenOpt.get()));
+                }
+            } catch (Exception ex) {
+                log.warn("Failed to send browser push notification", ex);
+            }
+        });
+    }
+
+    @Override
     public void onAccountSignup(Account account) {
         if (!config.enabled()) {
             log.debug("Not enabled, skipping");
@@ -645,6 +700,24 @@ public class NotificationServiceImpl extends ManagedService implements Notificat
                 emailService.send(accountSignup.email(account, link));
             } catch (Exception ex) {
                 log.warn("Failed to send email signup", ex);
+            }
+        });
+    }
+
+    @Override
+    public void onAdminForgotPassword(Account account, String resetToken) {
+        if (!config.enabled()) {
+            log.debug("Not enabled, skipping");
+            return;
+        }
+        submit(() -> {
+            String link = "https://" + configApp.domain() + "/reset-password";
+            checkState(!Strings.isNullOrEmpty(account.getEmail()));
+
+            try {
+                emailService.send(onAdminForgotPassword.email(account, link, resetToken));
+            } catch (Exception ex) {
+                log.warn("Failed to send admin forgot password email", ex);
             }
         });
     }

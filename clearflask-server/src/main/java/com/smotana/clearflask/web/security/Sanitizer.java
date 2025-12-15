@@ -205,7 +205,7 @@ public class Sanitizer {
         } catch (TextParseException ex) {
             throw new ApiException(BAD_REQUEST, "Custom domain name appears to be invalid.", ex);
         }
-        Record[] records = Optional.ofNullable(lookup.run()).orElse(new Record[]{});
+        org.xbill.DNS.Record[] records = Optional.ofNullable(lookup.run()).orElse(new org.xbill.DNS.Record[]{});
         switch (lookup.getResult()) {
             case Lookup.SUCCESSFUL:
                 break;

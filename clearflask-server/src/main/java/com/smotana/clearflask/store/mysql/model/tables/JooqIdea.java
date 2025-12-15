@@ -173,6 +173,11 @@ public class JooqIdea extends TableImpl<JooqIdeaRecord> {
      */
     public final TableField<JooqIdeaRecord, Double> ORDER = createField(DSL.name("order"), SQLDataType.DOUBLE, this, "");
 
+    /**
+     * The column <code>idea.visibility</code>.
+     */
+    public final TableField<JooqIdeaRecord, String> VISIBILITY = createField(DSL.name("visibility"), SQLDataType.VARCHAR(20), this, "");
+
     private JooqIdea(Name alias, Table<JooqIdeaRecord> aliased) {
         this(alias, aliased, null);
     }
@@ -202,7 +207,7 @@ public class JooqIdea extends TableImpl<JooqIdeaRecord> {
         this(DSL.name("idea"), null);
     }
 
-    public <O extends Record> JooqIdea(Table<O> child, ForeignKey<O, JooqIdeaRecord> key) {
+    public <O extends org.jooq.Record> JooqIdea(Table<O> child, ForeignKey<O, JooqIdeaRecord> key) {
         super(child, key, IDEA);
     }
 

@@ -46,12 +46,6 @@ patchedDependencies:
   component-classes@1.2.6:
     hash: zli6gky2ijlistcxzddgmnlh34
     path: patches/component-classes+1.2.6.patch
-  material-ui-color-picker@3.5.0:
-    hash: u6vehrih5h5td45db3ebcca3we
-    path: patches/material-ui-color-picker+3.5.0.patch
-  swagger-ui-react@4.1.3:
-    hash: kyphnzlycwql72o7nnuehujqwe
-    path: patches/swagger-ui-react@4.1.3.patch
 
 specifiers:
   '@babel/core': ^7.16.0
@@ -181,6 +175,7 @@ specifiers:
   oidc-client: ^1.10.1
   popper.js: ^1.16.1
   prismjs: ^1.25.0
+  process: ^0.11.10
   prop-types: ^15.8.1
   push.js: ^1.0.9
   query-string: ^6.13.1
@@ -352,7 +347,7 @@ dependencies:
   lorem-ipsum: 2.0.1
   map-expire: 1.0.2
   marked: 4.2.12
-  material-ui-color-picker: 3.5.0_u6vehrih5h5td45db3ebcca3we_qqww7ufcbcvlxsvsrnbihyawd4
+  material-ui-color-picker: 3.5.0_qqww7ufcbcvlxsvsrnbihyawd4
   memoizee: 0.4.15
   moment: 2.29.4
   moment-timezone: 0.5.35
@@ -361,6 +356,7 @@ dependencies:
   oidc-client: 1.10.1
   popper.js: 1.16.1
   prismjs: 1.29.0
+  process: 0.11.10
   prop-types: 15.8.1
   push.js: 1.0.9
   query-string: 6.13.1
@@ -408,7 +404,7 @@ dependencies:
   serve-static: 1.16.2
   source-map-explorer: 2.5.2
   superagent: 6.1.0
-  swagger-ui-react: 4.1.3_kyphnzlycwql72o7nnuehujqwe_faqfz7ify2wxlz3q2665n42vwi
+  swagger-ui-react: 4.1.3_faqfz7ify2wxlz3q2665n42vwi
   typescript: 4.1.3
   ursa-optional: 0.10.2
   use-query-params: 1.1.6_7qvckyrv3s3kewfx6hsef4ogqe
@@ -11749,7 +11745,7 @@ packages:
     resolution: {integrity: sha512-6qE4B9deFBIa9YSpOc9O0Sgc43zTeVYbgDT5veRKSlB2+ZuHNoVVxA1L/ckMUayV9Ay9y7Z/SZCLcGteW9i7bg==}
     dev: false
 
-  /material-ui-color-picker/3.5.0_u6vehrih5h5td45db3ebcca3we_qqww7ufcbcvlxsvsrnbihyawd4:
+  /material-ui-color-picker/3.5.0_qqww7ufcbcvlxsvsrnbihyawd4:
     resolution: {integrity: sha512-Dqf3onmmoFi95CQRmHE78bZjECnVTH9YUV0ESrN69Z6/WYTjY9kaLcxV3AuonBbkwaEVgfgyUSbahkzxeDebrw==}
     peerDependencies:
       '@material-ui/core': ^4.8.3
@@ -11766,7 +11762,6 @@ packages:
       - encoding
       - react-dom
     dev: false
-    patched: true
 
   /md5-file/3.2.3:
     resolution: {integrity: sha512-3Tkp1piAHaworfcCgH0jKbTvj1jWWFgbvh2cXaNCgHwyTCBxxvD1Y04rmfpvdPm1P4oXMOpm6+2H7sr7v9v8Fw==}
@@ -16735,7 +16730,7 @@ packages:
       - tree_sitter
     dev: false
 
-  /swagger-ui-react/4.1.3_kyphnzlycwql72o7nnuehujqwe_faqfz7ify2wxlz3q2665n42vwi:
+  /swagger-ui-react/4.1.3_faqfz7ify2wxlz3q2665n42vwi:
     resolution: {integrity: sha512-o1AoXUTNH40cxWus0QOeWQ8x9tSIEmrLBrOgAOHDnvWJ1qyjT8PjgHjPbUVjMbja18coyuaAAeUdyLKvLGmlDA==}
     peerDependencies:
       react: '>=17.0.0'
@@ -16781,7 +16776,6 @@ packages:
       - react-native
       - tree_sitter
     dev: false
-    patched: true
 
   /symbol-observable/1.2.0:
     resolution: {integrity: sha512-e900nM8RRtGhlV36KGEU9k65K3mPb1WV70OdjfxlG2EAuM1noi/E/BaW/uMhL7bPEssK8QV57vN3esixjUvcXQ==}

@@ -1,0 +1,1720 @@
+## SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
+## SPDX-License-Identifier: Apache-2.0
+components:
+  schemas:
+    Config:
+      x-clearflask-page: { name: 'General' }
+      description: Config properties visible both to client app and admins.
+      type: object
+      required:
+        - test
+        - projectId
+        - name
+        - slug
+        - cookieConsent
+        - layout
+        - content
+        - style
+        - users
+        - integrations
+      properties:
+        # DEPRACATED no more versioning, upgrade is done automatically by server
+        # Remove this later on when everyone upgrades
+        schemaVersion:
+          x-clearflask-hide: true
+          x-clearflask-prop: { defaultValue: 5 }
+          type: integer
+          format: int64
+        # TODO remove test page
+        # test:
+        #   $ref: 'api-test.yaml#/components/schemas/ConfigTest'
+        projectId:
+          x-clearflask-prop: { order: 0, name: 'Project ID', description: 'For use in API calls', subType: 'id' }
+          type: string
+        website:
+          x-clearflask-prop: { order: 2, name: 'Website', description: 'Your product website.', placeholder: 'https://' }
+          type: string
+        name:
+          x-clearflask-prop: { order: 1, name: 'Name', description: 'Product name' }
+          type: string
+        logoUrl:
+          x-clearflask-prop: { order: 3, name: 'Logo', description: 'Show your logo (ie: "https://example.com/favicon.ico")', placeholder: 'https://' }
+          description: Location of the logo to display.
+          type: string
+        slug:
+          x-clearflask-prop: { order: 4, name: 'Subdomain', description: 'Customize subdomain of your project (ie: "https://<subdomain>.clearflask.com")' }
+          type: string
+          # If changed, also change in Sanitizer.java
+          minLength: 1
+          # If changed, also change in Sanitizer.java
+          maxLength: 30
+          # If changed, also change in Sanitizer.java
+          pattern: '^[a-z0-9](?:[a-z0-9\-]*[a-z0-9])?$'
+        domain:
+          x-clearflask-prop: { order: 5, name: 'Custom Domain', description: 'Use a custom domain to host this project (ie: "feedback.yourwebsite.com"). NOTE: This bypasses our global CDN, contact support if you need both. SETUP: First add a DNS entry for the custom domain to CNAME sni.clearflask.com' }
+          type: string
+        langDefault:
+          x-clearflask-prop: { order: 9, subType: 'language', name: 'Default language', description: 'If selected, this language will initially be selected. If left blank, the language preference will be auto-detected from browser settings.' }
+          type: string
+        langWhitelist:
+          x-clearflask-prop: { order: 10, name: 'Whitelist languages', description: 'Configure which languages to show and select a default language.' }
+          title: LangWhitelist
+          type: object
+          required:
+            - langs
+          properties:
+            langs:
+              x-clearflask-prop: { order: 6, subType: 'language', name: 'Languages', description: 'Only allows users to select these langauges. Keep blank to hide language selection. If no default language is selected and the user locale is outside of this list, that language will also be shown in this list.' }
+              type: array
+              items:
+                type: string
+        noIndex:
+          x-clearflask-prop: { order: 6, name: 'Disable search indexing', description: 'Whether you want to have your page indexed and shown publicly on search results including Google Search. For private projects, no content behind the login page will be indexed. Keep in mind this is simply an indication to crawler bots and we do not have final control over whether they respect it.', falseAsUndefined: true, trueLabel: 'Indexing disabled', falseLabel: 'Indexing enabled' }
+          type: boolean
+        cookieConsent:
+          $ref: 'api-project.yaml#/components/schemas/cookieConsent'
+        layout:
+          $ref: 'api-project.yaml#/components/schemas/layout'
+        content:
+          $ref: 'api-project.yaml#/components/schemas/content'
+        style:
+          $ref: 'api-project.yaml#/components/schemas/style'
+        users:
+          $ref: 'api-project.yaml#/components/schemas/users'
+        integrations:
+          $ref: 'api-project.yaml#/components/schemas/integrations'
+    credits:
+      x-clearflask-page: { order: 2, name: 'Credit System', description: 'Enable funding using virtual credits. We highly recommend starting with one of our templates below.' }
+      title: CreditFormatter
+      type: object
+      required:
+        - formats
+      properties:
+        creditOnSignup:
+          x-clearflask-prop: { order: 0, name: 'Credits on sign-up', description: 'Give a certain amount of credits to users upon sign-up' }
+          type: object
+          required:
+            - amount
+          properties:
+            amount:
+              x-clearflask-prop: { order: 1, name: 'Credit amount', description: 'Specify how many credits will users automatically receive', defaultValue: 1 }
+              type: integer
+              format: int64
+            summary:
+              x-clearflask-prop: { order: 2, name: 'Transaction summary', description: 'Description to show to the user as part of this transaction' }
+              type: string
+        creditPurchase:
+          x-clearflask-prop: { order: 10, name: 'Credits purchase', description: 'Direct your users to your website to purchase or claim more credits.' }
+          type: object
+          required:
+            - redirectUrl
+          properties:
+            redirectUrl:
+              x-clearflask-prop: { order: 1, name: 'Redirect link', placeholder: 'https://example.com/purchase', description: 'Specify a link where your users can get more credits.' }
+              type: string
+            buttonTitle:
+              x-clearflask-prop: { order: 2, name: 'Redirect button title', placeholder: 'Get more', description: 'Optionally set the button title such as "Buy more", "Claim more"' }
+              type: string
+        formats:
+          x-clearflask-prop: { order: 20, name: 'Display rules', description: '
+            Your base currency value will be displayed to your users based on the following rules in order:
+            1/ "Range" matching a value.
+            2/ The credits will be multiplied by the Multiplier.
+            3/ rounded based on significant digits.
+            4/ Finally prefixed and suffixed.' }
+          type: array
+          items:
+            title: CreditFormatterEntry
+            type: object
+            properties:
+              greaterOrEqual:
+                x-clearflask-prop: { order: 3, name: 'Range: Greater than or equal', description: 'Applies this format only if credit value is greater than or equal to this value' }
+                type: integer
+                format: int64
+              lessOrEqual:
+                x-clearflask-prop: { order: 4, name: 'Range: Less than or equal', description: 'Applies this format only if credit value is less than or equal to this value' }
+                type: integer
+                format: int64
+              multiplier:
+                x-clearflask-prop: { order: 5, name: 'Multiplier', description: 'Multiply value before displaying' }
+                type: number
+                format: double
+              minimumFractionDigits:
+                x-clearflask-prop: { order: 6, name: 'Min decimals', description: 'Minimum amount of decimals to display regardless of value' }
+                type: integer
+                format: int64
+              maximumFractionDigits:
+                x-clearflask-prop: { order: 7, name: 'Max decimals', description: 'Maximum amount of decimals to display regardless of value' }
+                type: integer
+                format: int64
+              prefix:
+                x-clearflask-prop: { order: 8, name: 'Prefix', description: 'Text to prepend before the value' }
+                type: string
+              suffix:
+                x-clearflask-prop: { order: 9, name: 'Suffix', description: 'Text to append after the value' }
+                type: string
+    users:
+      x-clearflask-page: { order: 14, name: 'Users', description: 'Configure onboarding, authentication and credit system.' }
+      title: Users
+      type: object
+      required:
+        - displayName
+        - onboarding
+      properties:
+        credits:
+          $ref: 'api-project.yaml#/components/schemas/credits'
+        onboarding:
+          $ref: 'api-project.yaml#/components/schemas/onboarding'
+    onboarding:
+      x-clearflask-page: { order: 1, name: 'Onboarding', description: 'Define the sign up flow for users. It is recommended to use Single Sign-On if possible, otherwise use the sign up methods with least amount of friction.' }
+      title: Onboarding
+      type: object
+      required:
+        - visibility
+        - notificationMethods
+      properties:
+        visibility:
+          x-clearflask-prop: { order: 0, name: 'Visibility', defaultValue: 'Public', description: 'Whether project and content is visible to the public. Private projects require viewers to first sign-in.' }
+          type: string
+          enum: [ Public, Private ]
+        accountFields:
+          x-clearflask-prop: { order: 2, name: 'Account fields', description: 'List of fields to collect during sign-up. It is recommended to keep this at a minimum to minimize friction.' }
+          title: AccountFields
+          type: object
+          required:
+            - displayName
+          properties:
+            displayName:
+              x-clearflask-prop: { order: 1, name: 'Display name', description: 'Whether to ask for a display name during sign-up. Unless necessary, it is recommended to not ask for a display name. Users will be encouraged to fill out their display name after signing up.', defaultValue: 'None' }
+              type: string
+              enum: [ None, Optional, Required ]
+        notificationMethods:
+          x-clearflask-prop: { order: 1, name: 'Collection methods', description: 'Various channels users can use to sign up and be notified of updates. The most valuable feedback comes from users that want to hear back from you so it is essential to ask for a way to notify your users of updates. Anonymous sign up is also possible but not recommended.' }
+          title: NotificationMethods
+          type: object
+          required:
+            - browserPush
+            - oauth
+          properties:
+            anonymous:
+              x-clearflask-prop: { order: 1, name: 'Anonymous', defaultValue: false, description: 'Allow users to sign up with no contact. Not recommended in most cases as it invites feedback from users that do not care about the outcome.' }
+              type: object
+              title: AnonymousSignup
+              required:
+                - onlyShowIfPushNotAvailable
+              properties:
+                onlyShowIfPushNotAvailable:
+                  x-clearflask-prop: { order: 1, name: 'Fallback', defaultValue: false, description: 'If enabled, only allow anonymous signup if no other option is available. Typically combined with Browser Notifications which are not available on all browsers.' }
+                  type: boolean
+            browserPush:
+              x-clearflask-prop: { order: 2, name: 'Browser Notification', description: 'Web Push is a fairly new technology allowing you to receive push messages in your browser. It introduces less friction than asking for an email. It is mainly supported on desktop browsers and Android.', defaultValue: true }
+              type: boolean
+            email:
+              x-clearflask-prop: { order: 3, name: 'Email', defaultValue: true, description: 'Most common way to keep users notified.' }
+              type: object
+              title: EmailSignup
+              required:
+                - mode
+                - verification
+              properties:
+                mode:
+                  x-clearflask-prop: { order: 1, name: 'Allow Signups', enumNames: [ 'Login Only', 'Signups & Login' ], defaultValue: 'SignupAndLogin', description: 'Allows you to only allow login for existing users if you plan on creating user accounts yourself.' }
+                  type: string
+                  enum: [ LoginOnly, SignupAndLogin ]
+                password:
+                  x-clearflask-hide: true
+                  x-clearflask-prop: { order: 1, name: 'Password', defaultValue: 'None', description: 'Allows you to ask for a password during sign up. Asking for a password increases friction. It is recommended to let users set a password after sign up.' }
+                  type: string
+                  enum: [ None, Optional, Required ]
+                verification:
+                  x-clearflask-prop: { order: 1, name: 'Verification', defaultValue: 'None', description: 'Choose whether users must be required to verify their email before letting them inside. If not required, no initial email will be sent.' }
+                  type: string
+                  enum: [ None, Required ]
+                allowedDomains:
+                  x-clearflask-prop: { order: 1, name: 'Allowed Domains', description: 'Specify a list of allowed domains that must match before giving access to content. User will be forced to verify email prior to access.' }
+                  type: array
+                  items:
+                    x-clearflask-prop: { order: 1, name: 'Domain', placeholder: 'example.com' }
+                    type: string
+                  uniqueItems: true
+                  minItems: 1
+                  maxItems: 10
+            sso:
+              x-clearflask-prop: { order: 4, name: 'Single Sign-On', description: 'Authenticate users seamlessly between your service and ClearFlask.' }
+              x-clearflask-additional-children: { children: [ { path: [ 'ssoSecretKey' ] } ] }
+              type: object
+              title: SsoSignup
+              required:
+                - redirectUrl
+              properties:
+                buttonTitle:
+                  x-clearflask-prop: { order: 1, name: 'Short button title', description: 'Optionally set the user-visible button title, typically with the name of your service or auth provider.' }
+                  type: string
+                redirectUrl:
+                  x-clearflask-prop: { order: 2, name: 'Redirect URL', placeholder: 'https://example.com/login?r=<return_uri>', description: 'During login, user will be redirected to this URL to login to your service. Parameter <return_uri> will be replaced by return path you should redirect to. Follow the Single Sign-On instructions to set this up properly.' }
+                  type: string
+                icon:
+                  x-clearflask-prop: { order: 1, subType: 'icon', name: 'Icon', description: 'Icon name to display. Pick an icon name from this list: https://material-ui.com/components/material-icons/', placeholder: 'Launch' }
+                  type: string
+            oauth:
+              x-clearflask-prop: { order: 4, name: 'OAuth', description: 'Authenticate users to an OAuth2 compatible service provider. Your OAuth provider will require a callback URL which you should set as https://<subdomain>.clearflask.com/oauth and/or https://<domain>/oauth depending on what you are planning on using.' }
+              type: array
+              title: OAuthSignup
+              items:
+                x-clearflask-additional-children: { children: [ { path: [ 'oauthClientSecrets', '<&>' ], dynamicIdPropName: 'oauthId' } ] }
+                type: object
+                required:
+                  - oauthId
+                  - buttonTitle
+                  - clientId
+                  - authorizeUrl
+                  - tokenUrl
+                  - scope
+                  - userProfileUrl
+                  - guidJsonPath
+                properties:
+                  oauthId:
+                    x-clearflask-prop: { order: 0, name: 'OAuth ID', description: 'For use in API calls', subType: 'id' }
+                    x-clearflask-hide: true
+                    type: string
+                  buttonTitle:
+                    x-clearflask-prop: { order: 1, name: 'Short button title', description: 'Set the user-visible button title with the name of your provider.', defaultValue: 'My provider' }
+                    type: string
+                  icon:
+                    x-clearflask-prop: { order: 1, subType: 'icon', name: 'Icon', description: 'Icon name to display. Pick an icon name from this list: https://material-ui.com/components/material-icons/', placeholder: 'Facebook' }
+                    type: string
+                  clientId:
+                    x-clearflask-prop: { order: 2, name: 'Client ID', decription: 'Given by your OAuth Provider as Client ID.' }
+                    type: string
+                  authorizeUrl:
+                    x-clearflask-prop: { order: 4, name: 'Authorize URL', description: 'Given by your OAuth Provider as authorization URL where users will be redirected to.', placeholder: 'https://.../authorize' }
+                    type: string
+                  tokenUrl:
+                    x-clearflask-prop: { order: 5, name: 'Token URL', description: 'Given by your OAuth Provider as token URL where our backend will fetch the authorization token.', placeholder: 'https://.../token' }
+                    type: string
+                  scope:
+                    x-clearflask-prop: { order: 6, name: 'Request Scope', description: 'Minimal scope to retrieve ID, name and email.' }
+                    type: string
+                  userProfileUrl:
+                    x-clearflask-prop: { order: 7, name: 'User Profile URL', description: 'This url will be fetched after authorization and the result will be used to extract user profile.', placeholder: 'https://.../user' }
+                    type: string
+                  guidJsonPath:
+                    x-clearflask-prop: { order: 8, name: 'GUID path', description: 'Jayway JsonPath to retrieve user ID (GUID). Test it out at https://jsonpath.herokuapp.com/', placeholder: 'user.id' }
+                    type: string
+                  nameJsonPath:
+                    x-clearflask-prop: { order: 9, name: 'Name path', description: 'Optional JsonPath to retrieve name otherwise shown as Anonymous.', placeholder: 'user.name' }
+                    type: string
+                  emailUrl:
+                    x-clearflask-prop: { order: 10, name: 'Alternate Email URL', description: 'This url will be used for fetching email if different from the Profile URL.', placeholder: 'https://.../email' }
+                    type: string
+                  emailJsonPath:
+                    x-clearflask-prop: { order: 11, name: 'Email path', description: 'Optional JsonPath to retrieve email for notifications.', placeholder: 'user.email' }
+                    type: string
+        terms:
+          x-clearflask-prop: { order: 3, name: 'Custom Terms', description: 'Override default ClearFlask Privacy and Terms of Service policies during user sign-up with custom documents.' }
+          title: CustomTerms
+          type: object
+          required:
+            - documents
+          properties:
+            documents:
+              x-clearflask-prop: { order: 1, name: 'Documents', description: 'List of documents to show during sign-up. Leave blank to show no terms.' }
+              type: array
+              items:
+                type: object
+                properties:
+                  shortName:
+                    x-clearflask-prop: { order: 1, name: 'Name', description: 'Name of document.', placeholder: 'Terms of Service' }
+                    type: string
+                  name:
+                    x-clearflask-prop: { order: 2, name: 'Short name', description: 'Short name.', placeholder: 'Terms' }
+                    type: string
+                  link:
+                    x-clearflask-prop: { order: 3, name: 'Link', description: 'Link to your document', placeholder: 'https://example.com/terms-of-service' }
+                    type: string
+    style:
+      x-clearflask-page: { order: 19, name: 'Style', description: 'Adjust the look and feel to match your branding.' }
+      title: Style
+      type: object
+      required:
+        - palette
+        - typography
+        - animation
+        - whitelabel
+      properties:
+        animation:
+          x-clearflask-prop: { order: 1, name: 'Animation' }
+          title: Flow
+          type: object
+          required:
+            - enableTransitions
+          properties:
+            enableTransitions:
+              x-clearflask-prop: { order: 1, name: 'All transitions', description: 'Control all animations across this project. Turn off for faster and sharper look.', defaultValue: true }
+              type: boolean
+        palette:
+          x-clearflask-prop: { order: 2, name: 'Palette' }
+          title: Palette
+          type: object
+          required:
+            - darkMode
+          properties:
+            darkMode:
+              x-clearflask-prop: { order: 1, name: 'Dark theme', description: 'A dark theme is a low-light UI that displays dark surfaces.' }
+              type: boolean
+            primary:
+              x-clearflask-prop: { order: 2, subType: 'color', name: 'Primary color', description: 'Color of primary components seeking user input or action.' }
+              type: string
+              pattern: '^(#([\da-fA-F]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
+            text:
+              x-clearflask-prop: { order: 4, subType: 'color', name: 'Text color', description: 'Color of all text.' }
+              type: string
+              pattern: '^(#([\da-fA-F]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
+            background:
+              x-clearflask-prop: { order: 5, subType: 'color', name: 'Background color', description: 'Color of main background excluding raised components or dialogs.' }
+              type: string
+              pattern: '^(#([\da-fA-F]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
+            backgroundPaper:
+              x-clearflask-prop: { order: 6, subType: 'color', name: 'Inner background color', description: 'Background color of raised components and dialogs.' }
+              type: string
+              pattern: '^(#([\da-fA-F]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
+            expressionColor:
+              x-clearflask-prop: { order: 8, name: 'Expression color', description: 'Color shading of expression emojis.' }
+              type: string
+              enum: [ Color, Washed, Gray ]
+            funding:
+              x-clearflask-prop: { order: 7, subType: 'color', name: 'Funding color', description: 'Funding progress bar color.' }
+              type: string
+              pattern: '^(#([\da-fA-F]{1,2}){3}|(rgba?|hsla?)\([\d, ]+\))$'
+        typography:
+          x-clearflask-prop: { order: 3, name: 'Typography' }
+          title: Typography
+          type: object
+          properties:
+            fontFamily:
+              x-clearflask-prop: { order: 1, name: 'Font Family', description: 'Font to use for all text, identical to font-family CSS directive. Value can hold several font names seperated by comma. If the browser does not support the first font, it tries the next one.', placeholder: '"Times New Roman", Times, serif' }
+              type: string
+            fontSize:
+              x-clearflask-prop: { order: 2, name: 'Font Size', description: 'Font size to use for all text, identical to font-size CSS directive.', placeholder: '14' }
+              type: number
+              format: double
+        templates:
+          x-clearflask-prop: { order: 3, name: 'Custom page HTML/JS/CSS template', description: 'For advanced customization, replace parts of the site with templates written in Liquid templating language.' }
+          title: Template
+          type: object
+          required:
+            - pages
+            - pageFooters
+          properties:
+            header:
+              x-clearflask-prop: { order: 1, name: 'Header', description: 'Replaces top part of every page including logo, menu and account settings', subType: 'multiline' }
+              type: string
+            menu:
+              x-clearflask-prop: { order: 2, name: 'Menu', description: 'Replaces only the menu portion of the page within the Header', subType: 'multiline' }
+              type: string
+            pages:
+              x-clearflask-prop: { order: 3, name: 'Pages', description: 'Replace specific pages with custom content', disableReordering: true }
+              type: array
+              items:
+                x-clearflask-prop: { name: 'Page' }
+                type: object
+                properties:
+                  pageId:
+                    x-clearflask-prop: { order: 1, name: 'Page', description: 'Select the page to replace' }
+                    x-clearflask-prop-link: { idPropName: 'pageId', linkPath: [ 'layout', 'pages' ], displayPropName: 'name' }
+                    type: string
+                  template:
+                    x-clearflask-prop: { order: 2, name: 'Template', description: 'Specify the template', subType: 'multiline' }
+                    type: string
+            pageFooters:
+              x-clearflask-prop: { order: 3, name: 'Page Footers', description: 'Replace specific page footer with custom content, overriding the global footer. This is an ideal place to put page-specific JS/CSS.', disableReordering: true }
+              type: array
+              items:
+                x-clearflask-prop: { name: 'Page' }
+                type: object
+                properties:
+                  pageId:
+                    x-clearflask-prop: { order: 1, name: 'Page', description: 'Select the page to replace its footer' }
+                    x-clearflask-prop-link: { idPropName: 'pageId', linkPath: [ 'layout', 'pages' ], displayPropName: 'name' }
+                    type: string
+                  template:
+                    x-clearflask-prop: { order: 2, name: 'Template', description: 'Specify the template', subType: 'multiline' }
+                    type: string
+            footer:
+              x-clearflask-prop: { order: 4, name: 'Global footer', description: 'Replaces bottom footer on every page. The Powered-By link floats below the footer and cannot be hidden. This is an ideal place to put global JS/CSS. If page specific footers are set, this global footer is not shown.', subType: 'multiline' }
+              type: string
+        whitelabel:
+          x-clearflask-prop: { order: 1, name: 'Whitelabel' }
+          title: Whitelabel
+          type: object
+          required:
+            - poweredBy
+          properties:
+            poweredBy:
+              x-clearflask-prop: { order: 0, name: 'Powered by ClearFlask', defaultValue: 'Show', description: 'Consider supporting us by keeping the Powered-By link as it is one of our primary ways to reach new customers. Minimal option shows the link on the front page only when not embedded.' }
+              type: string
+              enum: [ Show, Minimal, Hidden ]
+    subscription:
+      x-clearflask-page: { order: 45, name: 'Subscription', description: 'Allow users to subscribe to new content, typically used for a blog or changelog.' }
+      title: Subscription
+      type: object
+      required:
+      properties:
+        hellobar:
+          x-clearflask-prop: { order: 3, name: 'Subscribe message', description: 'Show a subscribe-to-me bar when viewing this content.', defaultValue: true }
+          title: HelloBar
+          type: object
+          required:
+          properties:
+            title:
+              x-clearflask-prop: { order: 1, subType: 'i18n', name: 'Title', description: 'Title to show users to entice them to subscribe', defaultValue: 'Get notified' }
+              type: string
+            message:
+              x-clearflask-prop: { order: 1, subType: 'i18n', name: 'Message', description: 'Reason why they should subscribe', defaultValue: 'If you enjoyed reading this, follow my new content.' }
+              type: string
+            button:
+              x-clearflask-prop: { order: 1, subType: 'i18n', name: 'Button text', description: 'Subscribe button action text', defaultValue: 'Follow' }
+              type: string
+    support:
+      x-clearflask-page: { order: 70, name: 'Feedback', description: 'Choose type of user feedback to allow for this category including funding, voting, expressions and comments.' }
+      title: Support
+      type: object
+      required:
+        - fund
+        - comment
+      properties:
+        fund:
+          x-clearflask-prop: { order: 1, name: 'Fund', description: 'Allow users to spend their credits. May be further disallowed based on workflow state. You must also setup credit system for this project.' }
+          type: boolean
+        vote:
+          x-clearflask-prop: { order: 3, name: 'Vote', description: 'Simple and standard voting mechanism for users to quickly express feedback.' }
+          title: Voting
+          type: object
+          required:
+            - enableDownvotes
+          properties:
+            enableDownvotes:
+              x-clearflask-prop: { order: 1, name: 'Downvote', description: 'Also allow down-voting. Consider carefully whether this type of feedback is valuable to your content.' }
+              type: boolean
+            iWantThis:
+              x-clearflask-prop: { order: 20, name: 'I want this', description: 'Instead of simple voting, show the user an "I want this" style button that encourages leaving a response.' }
+              type: object
+              properties:
+                positiveLabel:
+                  x-clearflask-prop: { order: 20, subType: 'i18n', name: 'Positive button label', description: 'Text to show on the "I want this" button', placeholder: 'I want this' }
+                  type: string
+                negativeLabel:
+                  x-clearflask-prop: { order: 30, subType: 'i18n', name: 'Negative button label', description: 'Text to show on the "I hate this" button', placeholder: 'I hate this' }
+                  type: string
+                encourageLabel:
+                  x-clearflask-prop: { order: 40, subType: 'i18n', name: 'Encourage label', description: 'Text to show once the user wants it, to encourage leaving a comment', placeholder: 'Tell us why' }
+                  type: string
+        express:
+          x-clearflask-prop: { order: 4, name: 'Expression', description: 'When you need a wider range of emotions to express feedback, weighted emojis are here to help.' }
+          title: Expressing
+          type: object
+          required:
+            - limitEmojiPerIdea
+          properties:
+            limitEmojiPerIdea:
+              x-clearflask-prop: { order: 1, name: 'Only one', description: 'If set, a user can only set a single emoji per content.', defaultValue: true }
+              type: boolean
+            limitEmojiSet:
+              x-clearflask-prop: { order: 2, name: 'Whitelist', description: 'Define a list of allowed emojis that can be displayed. Optionally specify the weight of each emoji' }
+              type: array
+              items:
+                x-clearflask-prop: { order: 1, name: 'Emojis' }
+                title: Expression
+                type: object
+                required:
+                  - expressionId
+                  - weight
+                  - display
+                  - text
+                properties:
+                  display:
+                    x-clearflask-prop: { order: 1, subType: 'emoji', name: 'Display', description: 'Select an emoji from our emoji-picker to be displayed to user.' }
+                    description: Must be unique, used as an ID
+                    type: string
+                  text:
+                    x-clearflask-prop: { order: 2, name: 'Label', description: 'Descriptive text representation of emoji. (Ie: Snowman, Happy face) Used for accessibility.' }
+                    type: string
+                  weight:
+                    x-clearflask-prop: { order: 3, name: 'Weight', description: 'Unitless weight associated with Emoji. Used for prioritization, sorting and filtering.' }
+                    type: number
+                    format: double
+        comment:
+          x-clearflask-prop: { order: 5, name: 'Comments', description: 'Allow users to post comments', defaultValue: true }
+          type: boolean
+    layout:
+      x-clearflask-page: { order: 12, name: 'Layout', description: 'Customize pages and top menu.' }
+      title: Layout
+      type: object
+      required:
+        - pages
+        - menu
+      properties:
+        pageTitleSuffix:
+          x-clearflask-prop: { order: 0, name: 'Page Title Suffix', description: 'Change the default title suffix that appears on your browser window or tab.' }
+          type: string
+        menu:
+          x-clearflask-prop: { order: 2, name: 'Top Menu', description: 'Customize the top menu with tabs. Each tab can be a link to single page or a dropdown with multiple pages.' }
+          type: array
+          items:
+            title: Menu
+            type: object
+            required:
+              - menuId
+              - pageIds
+            properties:
+              menuId:
+                x-clearflask-prop: { order: 0, name: 'Menu ID', description: 'For use in API calls', subType: 'id' }
+                x-clearflask-hide: true
+                type: string
+              pageIds:
+                x-clearflask-prop: { order: 2, name: 'Tab links', description: 'Pages this tab will link to. If more than one, a dropdown will be displayed.' }
+                x-clearflask-prop-link: { idPropName: 'pageId', linkPath: [ 'layout', 'pages' ], displayPropName: 'name' }
+                type: array
+                items:
+                  type: string
+              name:
+                x-clearflask-prop: { order: 1, subType: 'i18n', name: 'Tab title', description: 'Title to display. Defaults to page name if only a single page is linked' }
+                type: string
+              icon:
+                x-clearflask-prop: { order: 3, subType: 'icon', name: 'Icon', description: 'Icon name to display. Defaults to page icon if only a sigle page is linked. Pick an icon name from this list: https://material-ui.com/components/material-icons/', placeholder: 'ArrowRight' }
+                type: string
+        pages:
+          x-clearflask-page-group: { order: 1, name: 'Pages', tablePropertyNames: [ 'name', 'slug' ], description: 'List of all pages. After creating a page, you may add the page to the menu below.' }
+          type: array
+          items:
+            x-clearflask-page: { name: 'Page', description: 'Create and customize this page. Each page typically consists of one or more of the four components: description, panels, board and explorer.', nameFromProp: 'name' }
+            title: Page
+            type: object
+            required:
+              - pageId
+              - name
+              - slug
+              - components
+              - panels
+            properties:
+              pageId:
+                x-clearflask-prop: { order: 0, name: 'Page ID', description: 'For use in API calls', subType: 'id' }
+                x-clearflask-hide: true
+                type: string
+              name:
+                x-clearflask-prop: { defaultValue: 'Page <>', order: 1, subType: 'i18n', name: 'Page name', description: 'Page name shown on links and buttons. Keep it short as it is used in tight spaces.', slugAutoComplete: { path: [ '.', 'slug' ], skipFirst: 2 } }
+                type: string
+              pageTitle:
+                x-clearflask-prop: { order: 3, subType: 'i18n', name: 'Page Title', description: 'Page title that appears on your browser window or tab when this page is open.' }
+                type: string
+              slug:
+                x-clearflask-prop: { order: 2, name: 'Slug', description: 'Text to display in the URL part of this page. Leave blank for home page.' }
+                type: string
+              title:
+                x-clearflask-prop: { order: 3, subType: 'i18n', name: 'Heading', description: 'Main heading visible as the first text on this page', placeholder: 'Feature Requests' }
+                type: string
+              description:
+                x-clearflask-prop: { order: 4, subType: 'rich', name: 'Description', description: 'Description of this page visible just below the title', placeholder: 'Submit your...' }
+                type: string
+              icon:
+                x-clearflask-prop: { order: 5, subType: 'icon', name: 'Icon', description: 'Pick an icon name from this list: https://material-ui.com/components/material-icons/', placeholder: 'ArrowRight' }
+                type: string
+              landing:
+                x-clearflask-prop: { order: 5, name: 'Landing', description: 'Intended for a landing page, hide the navigation menu and instead show a set of large links for each page.' }
+                type: object
+                required:
+                  - links
+                properties:
+                  links:
+                    x-clearflask-prop: { order: 1, name: 'Additional links', description: 'Add additional custom links.' }
+                    type: array
+                    items:
+                      title: LandingLink
+                      type: object
+                      required:
+                        - title
+                      properties:
+                        title:
+                          x-clearflask-prop: { order: 0, subType: 'i18n', name: 'Name', description: 'Headline to show for this link', placeholder: 'Name' }
+                          type: string
+                        description:
+                          x-clearflask-prop: { order: 1, subType: 'i18n', name: 'Description', description: 'Description to show for this link', placeholder: 'Description' }
+                          type: string
+                        icon:
+                          x-clearflask-prop: { order: 2, subType: 'icon', name: 'Icon', description: 'Pick an icon name from this list: https://material-ui.com/components/material-icons/', placeholder: 'ArrowRight' }
+                          type: string
+                        linkToPageId:
+                          x-clearflask-prop: { order: 3, name: 'Page Link', description: 'Interal link to another page.' }
+                          x-clearflask-prop-link: { idPropName: 'pageId', linkPath: [ 'layout', 'pages' ], displayPropName: 'name' }
+                          type: string
+                        url:
+                          x-clearflask-prop: { order: 4, name: 'External Link', description: 'External link where to direct your users to an external link such as your website or an email address.', placeholder: 'https://' }
+                          type: string
+              panels:
+                x-clearflask-page-group: { order: 5, name: 'Panels', description: 'Horizontal panels of ideas. Typically used for featuring specific types of ideas such as currently funding ideas', tablePropertyNames: [ 'title' ] }
+                type: array
+                items:
+                  $ref: 'api-project.yaml#/components/schemas/PagePanelWithHideIfEmpty'
+              board:
+                $ref: 'api-project.yaml#/components/schemas/PageBoard'
+              explorer:
+                $ref: 'api-project.yaml#/components/schemas/PageExplorer'
+              feedback:
+                $ref: 'api-project.yaml#/components/schemas/PageFeedback'
+    workflow:
+      x-clearflask-page: { order: 60, name: 'Workflow',description: 'Workflow defines the lifetime of content by defining a set of states and transitions between those states. As an example, a user submitted idea may start as "Under Review" state. A product manager may then transition the idea to "Planned" or "Declined". Each state may impose restrictions on voting, commenting and editing.', nameFromProp: 'name' }
+      title: Workflow
+      type: object
+      required:
+        - statuses
+      properties:
+        entryStatus:
+          x-clearflask-prop: { order: 2, name: 'Entry status', description: 'First status to assign newly created items' }
+          x-clearflask-prop-link: { idPropName: 'statusId', linkPath: [ '.', 'statuses' ], displayPropName: 'name', colorPropName: 'color' }
+          type: string
+        statuses:
+          x-clearflask-page-group: { order: 3, name: 'Statuses', description: 'List of statuses an idea can be in.', tablePropertyNames: [ 'name', 'color', 'nextStatusIds' ] }
+          type: array
+          items:
+            x-clearflask-page: { name: 'Status', nameFromProp: 'name', colorFromProp: 'color' }
+            title: IdeaStatus
+            type: object
+            required:
+              - statusId
+              - name
+              - disableFunding
+              - disableVoting
+              - disableExpressions
+              - disableIdeaEdits
+              - disableComments
+            properties:
+              statusId:
+                x-clearflask-prop: { order: 0, name: 'Status ID', description: 'For use in API calls', subType: 'id' }
+                type: string
+              name:
+                x-clearflask-prop: { order: 1, defaultValue: 'Status <>', name: 'Name', description: 'Display name shown to user', placeholder: 'In Progress' }
+                type: string
+              nextStatusIds:
+                x-clearflask-prop: { order: 3, name: 'Next Statuses', description: 'List of statuses that can be transitioned to from this status' }
+                x-clearflask-prop-link: { idPropName: 'statusId', linkPath: [ '..', '..', 'statuses' ], displayPropName: 'name', colorPropName: 'color' }
+                type: array
+                items:
+                  type: string
+              color:
+                x-clearflask-prop: { order: 2, subType: 'color', name: 'Color', description: 'Display color' }
+                type: string
+              disableFunding:
+                x-clearflask-prop: { order: 4, name: 'Freeze funding', description: 'Overrides parent settings to freeze funding during this status', trueLabel: 'Frozen', falseLabel: 'Default' }
+                type: boolean
+              disableVoting:
+                x-clearflask-prop: { order: 5, name: 'Freeze voting', description: 'Overrides parent settings to freeze voting during this status', trueLabel: 'Frozen', falseLabel: 'Default' }
+                type: boolean
+              disableExpressions:
+                x-clearflask-prop: { order: 5, name: 'Freeze expressions', description: 'Overrides parent settings to freeze expressions during this status', trueLabel: 'Frozen', falseLabel: 'Default' }
+                type: boolean
+              disableIdeaEdits:
+                x-clearflask-prop: { order: 6, name: 'Freeze edits by author', description: 'Overrides parent settings to disable editing of the post during this status', trueLabel: 'Frozen', falseLabel: 'Default' }
+                type: boolean
+              disableComments:
+                x-clearflask-prop: { order: 7, name: 'Freeze new comments', description: 'Overrides parent settings to disable commenting during this status', trueLabel: 'Frozen', falseLabel: 'Default' }
+                type: boolean
+    tagging:
+      x-clearflask-page: { order: 80, name: 'Tagging', description: 'Tags allow you to group content into categories. These categories can be used to for searching and filtering throughout the project.' }
+      title: Tagging
+      type: object
+      required:
+        - tags
+        - tagGroups
+      properties:
+        tags:
+          x-clearflask-prop: { order: 1, name: 'Tags', description: 'List of all tags for this content. Consider carefully the tags you want to use: do not fragment your content into unnecessary and unpopular tags. You can always introduce additional tags later.' }
+          type: array
+          items:
+            title: Tag
+            type: object
+            required:
+              - tagId
+              - name
+            properties:
+              tagId:
+                x-clearflask-prop: { order: 3, name: 'Tag ID', description: 'For use in API calls', subType: 'id' }
+                type: string
+              name:
+                x-clearflask-prop: { defaultValue: 'Tag <>', order: 1, name: 'Tag Name', description: "Short name used for this tag" }
+                type: string
+              color:
+                x-clearflask-prop: { subType: 'color', order: 2, name: 'Color', description: 'Assign a color for displaying this tag' }
+                type: string
+        tagGroups:
+          x-clearflask-page-group: { order: 2, name: 'Tag Groups', description: 'Combine multiple tags into a single group. Allows you to apply restrictions such as only be able to select a specific amount of tags within a group.', tablePropertyNames: [ 'name', 'tagIds' ] }
+          type: array
+          items:
+            x-clearflask-page: { order: 5, name: 'Tag Group', nameFromProp: 'name' }
+            title: TagGroup
+            type: object
+            required:
+              - tagGroupId
+              - name
+              - userSettable
+              - tagIds
+            properties:
+              tagGroupId:
+                x-clearflask-prop: { order: 0, name: 'Tag Group ID', description: 'For use in API calls', subType: 'id' }
+                x-clearflask-hide: true
+                type: string
+              name:
+                x-clearflask-prop: { order: 1, defaultValue: 'Tag Group <>', name: 'Group Name', description: "Short name used for this group" }
+                type: string
+              minRequired:
+                x-clearflask-prop: { order: 2, name: 'Minimum required', description: 'Minimum number of tags in this group that need to be chosen by user' }
+                type: integer
+                format: int64
+              maxRequired:
+                x-clearflask-prop: { order: 3, name: 'Maximum required', description: 'Maximum number of tags in this group that can be chosen by user' }
+                type: integer
+                format: int64
+              userSettable:
+                x-clearflask-prop: { order: 4, name: 'User settable', description: 'Tags in this group can be set by the user', trueLabel: 'Allowed by user', falseLabel: 'Only admins', defaultValue: true }
+                type: boolean
+              tagIds:
+                x-clearflask-prop: { order: 5, name: 'Tags', description: 'Select tags that belong to this group' }
+                x-clearflask-prop-link: { idPropName: 'tagId', linkPath: [ '..', '..', 'tags' ], displayPropName: 'name', colorPropName: 'color' }
+                type: array
+                items:
+                  type: string
+    content:
+      x-clearflask-page: { order: 10, name: 'Content', description: 'Define unique content categories here such as user idea, blog entry, forum post, or knowledge article. Each category has its own defined prioritization, workflow and tagging.' }
+      title: Content
+      type: object
+      required:
+        - categories
+      properties:
+        categories:
+          x-clearflask-page-group: { order: 2, name: 'Categories', tablePropertyNames: [ 'name', 'color', 'userCreatable' ], disableReordering: true }
+          type: array
+          items:
+            x-clearflask-page: { name: 'Category', nameFromProp: 'name', colorFromProp: 'color' }
+            title: Category
+            type: object
+            required:
+              - categoryId
+              - name
+              - userCreatable
+              - workflow
+              - support
+              - tagging
+              - visibility
+            properties:
+              categoryId:
+                x-clearflask-prop: { order: 0, name: 'Category ID', description: 'For use in API calls', subType: 'id' }
+                type: string
+              name:
+                x-clearflask-prop: { defaultValue: 'Category <>', order: 10, name: 'Name', description: 'Category name. Keep it short as the name is visible in tight spaces.' }
+                type: string
+              color:
+                x-clearflask-prop: { subType: 'color', order: 20, name: 'Color', description: 'Optional display color to associate with this category' }
+                type: string
+              userCreatable:
+                x-clearflask-prop: { order: 20, name: 'User creatable', description: 'Whether content under this category can be created by users', defaultValue: true }
+                type: boolean
+              userMergeableCategoryIds:
+                x-clearflask-prop: { order: 40, name: 'User mergeable', description: 'Which categories can user merge content into from this category. Mainly used for merging own feedback into related feedback.' }
+                x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: [ 'content', 'categories' ], displayPropName: 'name', colorPropName: 'color' }
+                type: array
+                items:
+                  type: string
+              useCover:
+                x-clearflask-prop: { order: 50, name: 'Cover image', description: 'Whether to allow cover images to be added to posts by admins', defaultValue: false }
+                type: boolean
+              subscription:
+                $ref: 'api-project.yaml#/components/schemas/subscription'
+              workflow:
+                $ref: 'api-project.yaml#/components/schemas/workflow'
+              support:
+                $ref: 'api-project.yaml#/components/schemas/support'
+              tagging:
+                $ref: 'api-project.yaml#/components/schemas/tagging'
+    integrations:
+      x-clearflask-page: { order: 20, name: 'Integrations', description: 'Configure various integrations with ClearFlask.' }
+      x-clearflask-additional-children: { children: [ { path: [ 'github' ] }, { path: [ 'gitlab' ] } ] }
+      title: Integrations
+      type: object
+      properties:
+        googleAnalytics:
+          $ref: 'api-project.yaml#/components/schemas/googleAnalytics'
+        hotjar:
+          $ref: 'api-project.yaml#/components/schemas/hotjar'
+        intercom:
+          $ref: 'api-project.yaml#/components/schemas/intercom'
+    cookieConsent:
+      x-clearflask-page: { order: 30, name: 'Cookie consent', description: 'Enable dialogs to prompt user for cookie consent.' }
+      title: CookieConsent
+      type: object
+      properties:
+        builtIn:
+          x-clearflask-prop: { order: 10, name: 'Built-in', description: 'Enable dialogs to prompt user for cookie consent.' }
+          title: BuiltIn
+          type: object
+          properties:
+            title:
+              x-clearflask-prop: { order: 10, subType: 'i18n', name: 'Dialog Title', description: 'Cookie consent title to show', placeholder: 'Cookie consent' }
+              type: string
+            description:
+              x-clearflask-prop: { order: 20, subType: 'i18n', name: 'Dialog Description', description: 'Description of the consent form to show.', placeholder: 'This website uses cookies that...' }
+              type: string
+            accept:
+              x-clearflask-prop: { order: 30, subType: 'i18n', name: 'Button Accept', description: 'Button text for accepting all cookies.', placeholder: 'Accept' }
+              type: string
+            reject:
+              x-clearflask-prop: { order: 40, subType: 'i18n', name: 'Button Reject', description: 'Button text for rejecting all cookies.', placeholder: 'Reject' }
+              type: string
+        cookieYes:
+          $ref: 'api-project.yaml#/components/schemas/cookieYes'
+    googleAnalytics:
+      x-clearflask-page: { order: 2, name: 'Google Analytics', description: 'Add Google Analytics tracking' }
+      title: GoogleAnalytics
+      type: object
+      properties:
+        trackingCode:
+          x-clearflask-prop: { order: 0, name: 'Tracking Code (Deprecated Universal Analytics)', description: 'Visit Google Analytics, create a new Universal Analytics property and paste your tracking code here. Support for Google Analytics V4 with codes in the format G-XXXXXXXXXX is coming soon.', placeholder: 'UA-000000000' }
+          x-clearflask-hide: true
+          type: string
+          pattern: '^UA-.*$'
+        trackingCodeV4:
+          x-clearflask-prop: { order: 0, name: 'Tracking Code', description: 'Visit Google Analytics, create a new property and paste your tracking code here.', placeholder: 'G-XXXXXXXXXX' }
+          type: string
+          pattern: '^G-.+$'
+    hotjar:
+      x-clearflask-page: { order: 2, name: 'Hotjar', description: 'Add HotJar monitoring' }
+      title: Hotjar
+      type: object
+      required:
+        - trackingCode
+      properties:
+        trackingCode:
+          x-clearflask-prop: { order: 0, name: 'Tracking Code', description: 'Visit HotJar and create a new site. Paste your tracking number here.', placeholder: '0000000' }
+          type: string
+    intercom:
+      x-clearflask-page: { order: 2, name: 'Intercom', description: 'Add Intercom messenger.' }
+      x-clearflask-additional-children: { children: [ { path: [ 'intercomIdentityVerificationSecret' ] } ] }
+      title: Intercom
+      type: object
+      required:
+        - appId
+      properties:
+        appId:
+          x-clearflask-prop: { order: 0, name: 'App ID', description: 'Visit Intercom and paste your App ID here. Please ensure you add ClearFlask as part of your trusted domains in Intercom.', placeholder: 'xxxxxxxx' }
+          type: string
+    cookieYes:
+      x-clearflask-prop: { order: 40, name: 'CookieYes', description: 'Third-party cookie consent for GDPR and CCPA compliance.' }
+      title: CookieYes
+      type: object
+      required:
+        - clientId
+      properties:
+        clientId:
+          x-clearflask-prop: { order: 0, name: 'Client ID', description: 'Visit app.cookieyes.com/site-settings, click "Get Script" and copy the characters between "client_data/" and "/script.js".', placeholder: 'A0A0A0A0A0A0A0A0A0A0A0A0' }
+          type: string
+    ConfigAdmin:
+      description: >-
+        All Config properties available for admins.
+        Used for both reading and writing.
+      allOf:
+        - $ref: 'api-project.yaml#/components/schemas/Config'
+        - type: object
+          properties:
+            ssoSecretKey:
+              x-clearflask-hide: true
+              x-clearflask-prop: { subType: 'keygen', order: 2, name: 'Secret Key', description: 'Secret Key for signing JWT tokens. Do not publicly expose.' }
+              type: string
+            oauthClientSecrets:
+              x-clearflask-hide: true
+              type: object
+              additionalProperties:
+                x-clearflask-prop: { order: 3, name: 'Client Secret', decription: 'Given by your OAuth Provider as Client Secret.' }
+                type: string
+            intercomIdentityVerificationSecret:
+              x-clearflask-hide: true
+              x-clearflask-prop: { order: 3, name: 'Identity Verification Secret', description: 'Optional verification secret that prevents third parties from impersonating your logged-in users and seeing their conversations. Your users will be identified by email, if the user does not have an email, they will not be identified. Also note that if you allow onboarding without email verification, those users will not be verified either. (Does not apply to SSO)', placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' }
+              type: string
+            usedAdvancedSettings:
+              x-clearflask-hide: true
+              type: boolean
+            github:
+              x-clearflask-hide: true
+              x-clearflask-page: { order: 5, name: 'GitHub Connect', description: 'Synchronize GitHub issues with ClearFlask.' }
+              title: GitHub
+              type: object
+              required:
+                - installationId
+                - repositoryId
+                - name
+                - createWithCategoryId
+              properties:
+                installationId:
+                  x-clearflask-prop: { order: 0, name: 'Installation ID', description: 'Linked GitHub installation ID. Can only be changed by authenticating and proving ownership.' }
+                  type: integer
+                  format: int64
+                repositoryId:
+                  x-clearflask-prop: { order: 0, name: 'Repository ID', description: 'Linked GitHub repository ID. Can only be changed by authenticating and proving ownership.' }
+                  type: integer
+                  format: int64
+                name:
+                  x-clearflask-prop: { order: 10, name: 'Repository Name', description: 'Name of the linked repository. For information only.' }
+                  type: string
+                createWithCategoryId:
+                  x-clearflask-prop: { order: 20, name: 'Create Issue as', description: 'Pick which category should be used to create ClearFlask posts when a GitHub issue is created.', subType: 'id' }
+                  x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: [ 'content', 'categories' ], displayPropName: 'name', colorPropName: 'color' }
+                  type: string
+                initialStatusId:
+                  x-clearflask-prop: { order: 30, name: 'Status', description: 'Pick which status should be used when creating a new post in ClearFlask in response to a new GitHub issue. Otherwise default initial status is used.' }
+                  x-clearflask-prop-link: { idPropName: 'statusId', linkPath: [ 'content', 'categories', '<$>', 'workflow', 'statuses' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '.', 'createWithCategoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
+                  type: string
+                createWithTags:
+                  x-clearflask-prop: { order: 40, name: 'Apply tags', description: 'Optionally add these tags to post created from GitHub' }
+                  x-clearflask-prop-link: { idPropName: 'tagId', linkPath: [ 'content', 'categories', '<$>', 'tagging', 'tags' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '.', 'createWithCategoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
+                  type: array
+                  items:
+                    type: string
+                statusSync:
+                  x-clearflask-prop: { order: 50, name: 'Status sync', description: 'If enabled, ClearFlask status will be set as a GitHub label.', falseAsUndefined: true }
+                  type: object
+                  properties:
+                    closedStatuses:
+                      x-clearflask-prop: { order: 20, name: 'CF -> GH Closed statuses', description: 'List which ClearFlask statuses should trigger GitHub issue to close. Leave empty to disable.' }
+                      x-clearflask-prop-link: { idPropName: 'statusId', linkPath: [ 'content', 'categories', '<$>', 'workflow', 'statuses' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '..', 'createWithCategoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
+                      type: array
+                      items:
+                        type: string
+                    closedStatus:
+                      x-clearflask-prop: { order: 20, name: 'GH -> CF Closed status', description: 'List which ClearFlask status should be used when GitHub issue is closed. Leave empty to disable.' }
+                      x-clearflask-prop-link: { idPropName: 'statusId', linkPath: [ 'content', 'categories', '<$>', 'workflow', 'statuses' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '..', 'createWithCategoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
+                      type: string
+                    openStatus:
+                      x-clearflask-prop: { order: 20, name: 'GH -> CF Open status', description: 'Which ClearFlask status should be used when GitHub issue is re-opened. Leave empty to disable.' }
+                      x-clearflask-prop-link: { idPropName: 'statusId', linkPath: [ 'content', 'categories', '<$>', 'workflow', 'statuses' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '..', 'createWithCategoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
+                      type: string
+                responseSync:
+                  x-clearflask-prop: { order: 60, name: 'Response sync', defaultValue: true, description: 'Create a comment on GitHub Issue when Response changes in ClearFlask.', falseAsUndefined: true }
+                  type: boolean
+                commentSync:
+                  x-clearflask-prop: { order: 70, name: 'Comment sync', defaultValue: true, description: 'Creating a comment on GitHub or ClearFlask will mirror the comment in the other.', falseAsUndefined: true }
+                  type: boolean
+                createReleaseWithCategoryId:
+                  x-clearflask-prop: { order: 90, name: 'Create Release as', description: 'Pick which category should be used to create ClearFlask posts when a GitHub release is created.', subType: 'id' }
+                  x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: [ 'content', 'categories' ], displayPropName: 'name', colorPropName: 'color' }
+                  type: string
+                releaseNotifyAll:
+                  x-clearflask-prop: { order: 95, name: 'Announcement notify', defaultValue: true, description: 'Mirrored ClearFlask Announcement from a GitHub Release should notify subscribers in ClearFlask.', falseAsUndefined: true }
+                  type: boolean
+            gitlab:
+              x-clearflask-hide: true
+              x-clearflask-page: { order: 6, name: 'GitLab Connect', description: 'Synchronize GitLab issues with ClearFlask.' }
+              title: GitLab
+              type: object
+              required:
+                - projectId
+                - projectPath
+                - name
+                - createWithCategoryId
+              properties:
+                gitlabInstanceUrl:
+                  x-clearflask-prop: { order: 0, name: 'GitLab Instance URL', description: 'GitLab instance URL. Defaults to https://gitlab.com for GitLab.com.' }
+                  type: string
+                projectId:
+                  x-clearflask-prop: { order: 5, name: 'Project ID', description: 'Linked GitLab project ID. Can only be changed by authenticating and proving ownership.' }
+                  type: integer
+                  format: int64
+                projectPath:
+                  x-clearflask-prop: { order: 10, name: 'Project Path', description: 'GitLab project path (e.g., group/subgroup/project).' }
+                  type: string
+                name:
+                  x-clearflask-prop: { order: 15, name: 'Project Name', description: 'Name of the linked project. For information only.' }
+                  type: string
+                createWithCategoryId:
+                  x-clearflask-prop: { order: 20, name: 'Create Issue as', description: 'Pick which category should be used to create ClearFlask posts when a GitLab issue is created.', subType: 'id' }
+                  x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: [ 'content', 'categories' ], displayPropName: 'name', colorPropName: 'color' }
+                  type: string
+                initialStatusId:
+                  x-clearflask-prop: { order: 30, name: 'Status', description: 'Pick which status should be used when creating a new post in ClearFlask in response to a new GitLab issue. Otherwise default initial status is used.' }
+                  x-clearflask-prop-link: { idPropName: 'statusId', linkPath: [ 'content', 'categories', '<$>', 'workflow', 'statuses' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '.', 'createWithCategoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
+                  type: string
+                createWithTags:
+                  x-clearflask-prop: { order: 40, name: 'Apply tags', description: 'Optionally add these tags to post created from GitLab' }
+                  x-clearflask-prop-link: { idPropName: 'tagId', linkPath: [ 'content', 'categories', '<$>', 'tagging', 'tags' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '.', 'createWithCategoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
+                  type: array
+                  items:
+                    type: string
+                statusSync:
+                  x-clearflask-prop: { order: 50, name: 'Status sync', description: 'If enabled, ClearFlask status will be set as a GitLab label.', falseAsUndefined: true }
+                  type: object
+                  properties:
+                    closedStatuses:
+                      x-clearflask-prop: { order: 20, name: 'CF -> GL Closed statuses', description: 'List which ClearFlask statuses should trigger GitLab issue to close. Leave empty to disable.' }
+                      x-clearflask-prop-link: { idPropName: 'statusId', linkPath: [ 'content', 'categories', '<$>', 'workflow', 'statuses' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '..', 'createWithCategoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
+                      type: array
+                      items:
+                        type: string
+                    closedStatus:
+                      x-clearflask-prop: { order: 20, name: 'GL -> CF Closed status', description: 'Which ClearFlask status should be used when GitLab issue is closed. Leave empty to disable.' }
+                      x-clearflask-prop-link: { idPropName: 'statusId', linkPath: [ 'content', 'categories', '<$>', 'workflow', 'statuses' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '..', 'createWithCategoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
+                      type: string
+                    openStatus:
+                      x-clearflask-prop: { order: 20, name: 'GL -> CF Open status', description: 'Which ClearFlask status should be used when GitLab issue is re-opened. Leave empty to disable.' }
+                      x-clearflask-prop-link: { idPropName: 'statusId', linkPath: [ 'content', 'categories', '<$>', 'workflow', 'statuses' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '..', 'createWithCategoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
+                      type: string
+                responseSync:
+                  x-clearflask-prop: { order: 60, name: 'Response sync', defaultValue: true, description: 'Create a comment on GitLab Issue when Response changes in ClearFlask.', falseAsUndefined: true }
+                  type: boolean
+                commentSync:
+                  x-clearflask-prop: { order: 70, name: 'Comment sync', defaultValue: true, description: 'Creating a comment on GitLab or ClearFlask will mirror the comment in the other.', falseAsUndefined: true }
+                  type: boolean
+                createReleaseWithCategoryId:
+                  x-clearflask-prop: { order: 90, name: 'Create Release as', description: 'Pick which category should be used to create ClearFlask posts when a GitLab release is created.', subType: 'id' }
+                  x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: [ 'content', 'categories' ], displayPropName: 'name', colorPropName: 'color' }
+                  type: string
+                releaseNotifyAll:
+                  x-clearflask-prop: { order: 95, name: 'Announcement notify', defaultValue: true, description: 'Mirrored ClearFlask Announcement from a GitLab Release should notify subscribers in ClearFlask.', falseAsUndefined: true }
+                  type: boolean
+            forceSearchEngine:
+              x-clearflask-super-admin-only: true
+              x-clearflask-prop: { subType: 'Search Engine', order: 2, name: 'Which search engine to use' }
+              type: string
+              enum: [ ElasticSearch, Mysql, ElasticSearchWriteBoth, MysqlWriteBoth ]
+    PageBoard:
+      x-clearflask-page: { order: 6, name: 'Board', description: 'Series of vertical panels of ideas. Typically used for displaying a roadmap with panels such as: Planned, In progress, Completed.' }
+      type: object
+      properties:
+        title:
+          x-clearflask-prop: { order: 1, subType: 'i18n', name: 'Board title' }
+          type: string
+        panels:
+          x-clearflask-page-group: { order: 3, name: 'Panels', description: 'Vertical panels of content. Typically used for showing a roadmap.', tablePropertyNames: [ 'title' ] }
+          type: array
+          items:
+            $ref: 'api-project.yaml#/components/schemas/PagePanelWithHideIfEmpty'
+      required:
+        - panels
+    PostDisplay:
+      x-clearflask-prop: { order: 200, name: 'Customize look', description: 'Customize how this panel should look. The default look is automatically determined.', defaultValue: true }
+      type: object
+      title: PanelDisplay
+      properties:
+        titleTruncateLines:
+          x-clearflask-prop: { order: 1, name: 'Title lines', description: 'Maximum number of lines to display for title otherwise an elipsis will be shown.', placeholder: 1 }
+          type: integer
+          format: int64
+          minimum: 1
+        descriptionTruncateLines:
+          x-clearflask-prop: { order: 2, name: 'Description lines', description: 'Maximum number of lines to display for description otherwise an elipsis will be shown. Set to zero to hide.', placeholder: 2 }
+          type: integer
+          format: int64
+          minimum: 0
+        responseTruncateLines:
+          x-clearflask-prop: { order: 2, name: 'Response lines', description: 'Maximum number of lines to display for a response otherwise an elipsis will be shown. Set to zero to hide.', placeholder: 1 }
+          type: integer
+          format: int64
+          minimum: 0
+        showCommentCount:
+          x-clearflask-prop: { order: 5, name: 'Comment count', description: 'Force show/hide the comment count' }
+          type: boolean
+        showCategoryName:
+          x-clearflask-prop: { order: 6, name: 'Category', description: 'Force show/hide the category name' }
+          type: boolean
+        showCreated:
+          x-clearflask-prop: { order: 7, name: 'Created', description: 'Force show/hide the created timestamp' }
+          type: boolean
+        showAuthor:
+          x-clearflask-prop: { order: 8, name: 'Author', description: "Force show/hide the author's name" }
+          type: boolean
+        showStatus:
+          x-clearflask-prop: { order: 9, name: 'Status', description: 'Force show/hide the status' }
+          type: boolean
+        showTags:
+          x-clearflask-prop: { order: 10, name: 'Tags', description: 'Force show/hide tags' }
+          type: boolean
+        showVoting:
+          x-clearflask-prop: { order: 11, name: 'Voting', description: 'Force show/hide voting arrows' }
+          type: boolean
+        showVotingCount:
+          x-clearflask-prop: { order: 12, name: 'Voting count', description: 'Force show/hide voting count' }
+          type: boolean
+        showFunding:
+          x-clearflask-prop: { order: 13, name: 'Funding', description: 'Force show/hide the funding bar' }
+          type: boolean
+        showExpression:
+          x-clearflask-prop: { order: 14, name: 'Expressions', description: 'Force show/hide the expressions' }
+          type: boolean
+        showEdit:
+          x-clearflask-hide: true
+          type: boolean
+    PagePanel:
+      x-clearflask-page: { name: 'Panel', nameFromProp: 'title' }
+      type: object
+      required:
+        - search
+        - display
+      properties:
+        search:
+          $ref: 'api-idea.yaml#/components/schemas/IdeaSearch'
+        display:
+          $ref: 'api-project.yaml#/components/schemas/PostDisplay'
+    PagePanelWithHideIfEmpty:
+      allOf:
+        - $ref: 'api-project.yaml#/components/schemas/PagePanel'
+        - type: object
+          x-clearflask-page: { order: 7, name: 'Panel', nameFromProp: 'title' }
+          required:
+            - hideIfEmpty
+          properties:
+            title:
+              x-clearflask-prop: { order: 1, subType: 'i18n', name: 'Title', description: 'Title to display above content' }
+              type: string
+            color:
+              x-clearflask-prop: { subType: 'color', order: 2, name: 'Title color', description: 'Optional display color for title' }
+              type: string
+            hideIfEmpty:
+              x-clearflask-prop: { order: 3, name: 'Hide if empty', description: 'If this panel has no results, it will be hidden', defaultValue: false }
+              type: boolean
+    PageExplorer:
+      allOf:
+        - $ref: 'api-project.yaml#/components/schemas/PagePanel'
+        - type: object
+          x-clearflask-page: { order: 7, name: 'Explorer', nameFromProp: 'title', description: 'A vertical content explorer with a search bar and an option to submit own content.' }
+          properties:
+            allowSearch:
+              x-clearflask-prop: { order: 1, name: 'Allow search', defaultValue: true }
+              type: object
+              required:
+                - enableSort
+                - enableSearchText
+                - enableSearchByCategory
+                - enableSearchByStatus
+                - enableSearchByTag
+              properties:
+                enableSort:
+                  x-clearflask-prop: { order: 1, name: 'Sort', description: 'Enable sorting', defaultValue: true }
+                  type: boolean
+                enableSearchText:
+                  x-clearflask-prop: { order: 2, name: 'Type to search', description: 'Enable searching by text', defaultValue: true }
+                  type: boolean
+                enableSearchByCategory:
+                  x-clearflask-prop: { order: 3, name: 'Category', description: 'Enable filtering by categories if present', defaultValue: true }
+                  type: boolean
+                enableSearchByStatus:
+                  x-clearflask-prop: { order: 4, name: 'Status', description: 'Enable filtering by statuses if present', defaultValue: true }
+                  type: boolean
+                enableSearchByTag:
+                  x-clearflask-prop: { order: 5, name: 'Tag', description: 'Enable filtering by tags if present', defaultValue: true }
+                  type: boolean
+            allowCreate:
+              x-clearflask-prop: { order: 2, name: 'Create form', description: 'Determine whether to show a form for adding new content.', defaultValue: true }
+              type: object
+              properties:
+                actionTitle:
+                  x-clearflask-prop: { order: 1, subType: 'i18n', name: 'Action title', description: 'Short title to display to user. (Examples: "Add", "Suggest", "Report")', placeholder: 'Add' }
+                  type: string
+                actionTitleLong:
+                  x-clearflask-prop: { order: 1, subType: 'i18n', name: 'Action title (Long)', description: 'Optional short title to display to user. (Examples: "Add new post", "Suggest an idea", "Report a bug")', placeholder: 'Add new post' }
+                  type: string
+    PageFeedback:
+      x-clearflask-page: { order: 8, name: 'Collect Feedback', description: 'Collect feedback and show similar results if any.' }
+      type: object
+      required:
+        - categoryId
+      properties:
+        categoryId:
+          x-clearflask-prop: { order: 5, name: 'Feedback Category', description: 'Select which category sshould be submitted by user. Must be set to user-creatable', subType: 'id' }
+          x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: [ 'content', 'categories' ], displayPropName: 'name', colorPropName: 'color' }
+          type: string
+        labelTitle:
+          x-clearflask-prop: { order: 10, subType: 'i18n', name: 'Title input label', description: 'Title input label to display to user. (Examples: "Title", "Idea", "Feedback")', placeholder: 'Idea' }
+          type: string
+        labelDescription:
+          x-clearflask-prop: { order: 20, subType: 'i18n', name: 'Details input label', description: 'Details input label to display to user.', placeholder: 'Details (optional)' }
+          type: string
+        labelSubmit:
+          x-clearflask-prop: { order: 25, subType: 'i18n', name: 'Submit button label', description: 'Submit button label to display to user.', placeholder: 'Post idea' }
+          type: string
+        help:
+          x-clearflask-page: { order: 30, name: 'Help', description: 'Shown as you type to entice user to solve their own problem by showing help articles' }
+          title: PageFeedbackHelp
+          type: object
+          required:
+            - panel
+          properties:
+            panel:
+              $ref: 'api-project.yaml#/components/schemas/PagePanelWithHideIfEmpty'
+        related:
+          x-clearflask-page: { order: 40, name: 'Related', description: 'After submission, allow user to merge with an existing post if they are related' }
+          title: PageFeedbackRelated
+          type: object
+          required:
+            - panel
+          properties:
+            panel:
+              $ref: 'api-project.yaml#/components/schemas/PagePanelWithHideIfEmpty'
+        debate:
+          x-clearflask-page: { order: 50, name: 'Debate', description: 'Show these posts at the bottom to get user to comment on these. Typically used for Tasks in Ideation status.' }
+          title: PageFeedbackDebate
+          type: object
+          required:
+            - panel
+          properties:
+            panel:
+              $ref: 'api-project.yaml#/components/schemas/PagePanelWithHideIfEmpty'
+        debate2:
+          x-clearflask-page: { order: 60, name: 'Debate (additional)', description: 'Show these posts even further at the bottom to get user to comment on these. Typically used for lower priority tasks or feedback.' }
+          title: PageFeedbackDebate
+          type: object
+          required:
+            - panel
+          properties:
+            panel:
+              $ref: 'api-project.yaml#/components/schemas/PagePanelWithHideIfEmpty'
+    VersionedConfig:
+      type: object
+      required:
+        - version
+        - config
+      properties:
+        config:
+          $ref: 'api-project.yaml#/components/schemas/Config'
+        version:
+          type: string
+    VersionedConfigAdmin:
+      type: object
+      required:
+        - version
+        - config
+      properties:
+        config:
+          $ref: 'api-project.yaml#/components/schemas/ConfigAdmin'
+        version:
+          type: string
+    ProjectAdmin:
+      allOf:
+        - $ref: 'api-account.yaml#/components/schemas/Account'
+        - type: object
+          required:
+            - role
+          properties:
+            role:
+              type: string
+              enum:
+                - Owner
+                - Admin
+    InvitationAdmin:
+      type: object
+      required:
+        - invitationId
+        - email
+      properties:
+        invitationId:
+          type: string
+        email:
+          type: string
+
+/slug/{slug}/bind/configAndUser:
+  post:
+    operationId: configAndUserBindSlug
+    tags: [ Project ]
+    parameters:
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-user.yaml#/components/schemas/UserBind'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: ConfigAndUserBindSlugResult
+              type: object
+              required:
+                - projectId
+              properties:
+                projectId:
+                  type: string
+                config:
+                  $ref: 'api-project.yaml#/components/schemas/VersionedConfig'
+                onboardBefore: # For private projects, you have to first onboard before receiving config
+                  $ref: 'api-project.yaml#/components/schemas/onboarding'
+                user:
+                  $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
+/slug/{slug}/bind/config:
+  post:
+    operationId: configBindSlug
+    tags: [ Project ]
+    parameters:
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: ConfigBindSlugResult
+              type: object
+              required:
+                - projectId
+              properties:
+                projectId:
+                  type: string
+                config:
+                  $ref: 'api-project.yaml#/components/schemas/VersionedConfig'
+                onboardBefore:
+                  $ref: 'api-project.yaml#/components/schemas/onboarding'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
+/slug/{slug}/bind/user:
+  post:
+    operationId: userBindSlug
+    tags: [ Project ]
+    parameters:
+      - name: slug
+        in: path
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-user.yaml#/components/schemas/UserBind'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: UserBindSlugResult
+              type: object
+              properties:
+                user:
+                  $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
+/project/config/admin:
+  get:
+    operationId: configGetAllAndUserBindAllAdmin
+    tags: [ ProjectAdmin ]
+    parameters:
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: ConfigAndBindAllResult
+              type: object
+              required:
+                - byProjectId
+              properties:
+                byProjectId:
+                  type: object
+                  additionalProperties:
+                    type: object
+                    required:
+                      - config
+                      - user
+                      - isExternal
+                    properties:
+                      config:
+                        $ref: 'api-project.yaml#/components/schemas/VersionedConfigAdmin'
+                      user:
+                        $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
+                      isExternal:
+                        type: boolean
+/project/admin:
+  post:
+    operationId: projectCreateAdmin
+    tags: [ ProjectAdmin ]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-project.yaml#/components/schemas/ConfigAdmin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: NewProjectResult
+              type: object
+              required:
+                - projectId
+                - config
+                - user
+              properties:
+                projectId:
+                  type: string
+                config:
+                  $ref: 'api-project.yaml#/components/schemas/VersionedConfigAdmin'
+                user:
+                  $ref: 'api-user.yaml#/components/schemas/UserMeWithBalance'
+/project/{projectId}/admin:
+  delete:
+    operationId: projectDeleteAdmin
+    tags: [ ProjectAdmin ]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
+/project/{projectId}/admin/config:
+  get:
+    operationId: configGetAdmin
+    tags: [ ProjectAdmin ]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-project.yaml#/components/schemas/VersionedConfigAdmin'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
+  put:
+    operationId: configSetAdmin
+    tags: [ ProjectAdmin ]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: versionLast
+        in: query
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-project.yaml#/components/schemas/ConfigAdmin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-project.yaml#/components/schemas/VersionedConfigAdmin'
+      '412':
+        $ref: 'api-client.yaml#/components/responses/ConfigChanged'
+      '404':
+        $ref: 'api-client.yaml#/components/responses/NotFound'
+/project/{projectId}/admin/import/post:
+  post:
+    operationId: projectImportPostAdmin
+    tags: [ ProjectAdmin ]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: firstRowIsHeader
+        in: query
+        schema:
+          type: boolean
+      - name: categoryId
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: authorUserId
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: indexTitle
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: indexDescription
+        in: query
+        schema:
+          type: integer
+          format: int64
+      - name: indexStatusId
+        in: query
+        schema:
+          type: integer
+          format: int64
+      - name: indexStatusName
+        in: query
+        schema:
+          type: integer
+          format: int64
+      - name: indexTagIds
+        in: query
+        schema:
+          type: integer
+          format: int64
+      - name: indexTagNames
+        in: query
+        schema:
+          type: integer
+          format: int64
+      - name: indexVoteValue
+        in: query
+        schema:
+          type: integer
+          format: int64
+      - name: indexDateTime
+        in: query
+        schema:
+          type: integer
+          format: int64
+      - name: tzOffInMin
+        in: query
+        schema:
+          type: integer
+          format: int64
+    requestBody:
+      required: true
+      content:
+        application/csv:
+          schema:
+            type: string
+            format: binary
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: ImportResponse
+              type: object
+              properties:
+                userFacingMessage:
+                  type: string
+                isError:
+                  type: boolean
+/project/{projectId}/admin/export:
+  get:
+    operationId: projectExportAdmin
+    tags: [ ProjectAdmin ]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: includePosts
+        in: query
+        schema:
+          type: boolean
+      - name: includeUsers
+        in: query
+        schema:
+          type: boolean
+      - name: includeComments
+        in: query
+        schema:
+          type: boolean
+    responses:
+      '200':
+        content:
+          application/zip:
+            schema:
+              type: string
+              format: binary
+/project/{projectId}/admin/admins:
+  get:
+    operationId: projectAdminsListAdmin
+    tags: [ ProjectAdmin ]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: ProjectAdminsListResult
+              type: object
+              required:
+                - admins
+                - invitations
+              properties:
+                admins:
+                  type: array
+                  items:
+                    $ref: 'api-project.yaml#/components/schemas/ProjectAdmin'
+                invitations:
+                  type: array
+                  items:
+                    $ref: 'api-project.yaml#/components/schemas/InvitationAdmin'
+  post:
+    operationId: projectAdminsInviteAdmin
+    tags: [ ProjectAdmin ]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: email
+        in: query
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: ProjectAdminsInviteResult
+              type: object
+              required:
+                - invitation
+              properties:
+                invitation:
+                  $ref: 'api-project.yaml#/components/schemas/InvitationAdmin'
+  delete:
+    operationId: projectAdminsRemoveAdmin
+    tags: [ ProjectAdmin ]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: accountId
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: invitationId
+        in: query
+        required: false
+        schema:
+          type: string
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'

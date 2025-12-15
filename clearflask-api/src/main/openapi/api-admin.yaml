@@ -24,6 +24,10 @@ paths:
     $ref: 'api-account.yaml#/~1admin~1account~1bind'
   /admin/account/login:
     $ref: 'api-account.yaml#/~1admin~1account~1login'
+  /admin/account/forgot:
+    $ref: 'api-account.yaml#/~1admin~1account~1forgot'
+  /admin/account/password-reset:
+    $ref: 'api-account.yaml#/~1admin~1account~1password-reset'
   /admin/account/noop:
     $ref: 'api-account.yaml#/~1admin~1account~1noop'
   /admin/account/invitation:
@@ -56,6 +60,10 @@ paths:
     $ref: 'api-account.yaml#/~1superadmin~1account~1billing~1credit'
   /admin/account/github/repos:
     $ref: 'api-account.yaml#/~1admin~1account~1github~1repos'
+  /admin/account/gitlab/projects:
+    $ref: 'api-account.yaml#/~1admin~1account~1gitlab~1projects'
+  /admin/account/jira/projects:
+    $ref: 'api-account.yaml#/~1admin~1account~1jira~1projects'
   /admin/account/delete:
     $ref: 'api-account.yaml#/~1admin~1account~1delete'
   /superadmin/account/delete:
@@ -80,6 +88,8 @@ paths:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}'
   /project/{projectId}/admin/idea/{ideaId}/voters:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1voters'
+  /project/{projectId}/admin/vote/idea/{ideaId}:
+    $ref: 'api-vote.yaml#/~1project~1{projectId}~1admin~1vote~1idea~1{ideaId}'
   /project/{projectId}/admin/idea/{ideaId}/merge/{parentIdeaId}:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1merge~1{parentIdeaId}'
   /project/{projectId}/admin/idea/{ideaId}/unmerge/{parentIdeaId}:
@@ -104,6 +114,8 @@ paths:
     $ref: 'api-comment.yaml#/~1project~1{projectId}~1admin~1commentsearch'
   /project/{projectId}/admin/comment/histogram:
     $ref: 'api-comment.yaml#/~1project~1{projectId}~1admin~1comment~1histogram'
+  /project/{projectId}/admin/idea/{ideaId}/comment:
+    $ref: 'api-comment.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1comment'
   /project/{projectId}/admin/idea/{ideaId}/comment/{commentId}:
     $ref: 'api-comment.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1comment~1{commentId}'
   /project/{projectId}/admin/transaction/search:

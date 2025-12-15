@@ -5,6 +5,7 @@ package com.smotana.clearflask.web.resource;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.smotana.clearflask.TestUtil;
+import com.smotana.clearflask.api.model.*;
 import com.smotana.clearflask.api.model.AccountAdmin;
 import com.smotana.clearflask.api.model.AccountSignupAdmin;
 import com.smotana.clearflask.api.model.AccountUpdateAdmin;
@@ -20,6 +21,8 @@ import com.smotana.clearflask.api.model.IdeaUpdateAdmin;
 import com.smotana.clearflask.api.model.IdeaVote;
 import com.smotana.clearflask.api.model.IdeaVoteGetOwnResponse;
 import com.smotana.clearflask.api.model.IdeaVoteUpdate;
+import com.smotana.clearflask.api.model.IdeaVoteUpdateAdmin;
+import com.smotana.clearflask.api.model.IdeaVoteUpdateAdminResponse;
 import com.smotana.clearflask.api.model.IdeaVoteUpdateExpressions;
 import com.smotana.clearflask.api.model.IdeaVoteUpdateResponse;
 import com.smotana.clearflask.api.model.IdeaWithVote;
@@ -44,6 +47,7 @@ import java.util.stream.Stream;
 
 import static com.smotana.clearflask.testutil.HtmlUtil.textToSimpleHtml;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 @Slf4j
 @RunWith(Parameterized.class)
@@ -215,6 +219,105 @@ public class BlackboxIT extends AbstractBlackboxIT {
                 commentVoteGetOwnResponse);
     }
 
+    @Test(timeout = 300_000L)
+    public void testAdminProxyVoting() throws Exception {
+        AccountAndProject account = getTrialAccount();
+        String projectId = account.getProject().getProjectId();
+
+        // Create a regular user
+        UserMeWithBalance regularUser = userResource.userCreate(projectId, UserCreate.builder()
+                .name("regularUser").build()).getUser();
+
+        // Create an idea
+        IdeaWithVote idea = ideaResource.ideaCreate(projectId, IdeaCreate.builder()
+                .authorUserId(regularUser.getUserId())
+                .title("Test idea for proxy voting")
+                .categoryId(account.getProject().getConfig().getConfig().getContent().getCategories().get(0).getCategoryId())
+                .tagIds(ImmutableList.of())
+                .build());
+
+        // Verify initial vote value (auto-upvoted by author on creation)
+        assertEquals(Long.valueOf(1L), idea.getVoteValue());
+
+        // Admin votes on behalf of regular user (upvote)
+        IdeaVoteUpdateAdminResponse upvoteResponse = voteResource.ideaVoteUpdateAdmin(
+                projectId,
+                idea.getIdeaId(),
+                IdeaVoteUpdateAdmin.builder()
+                        .voterUserId(regularUser.getUserId())
+                        .vote(VoteOption.UPVOTE)
+                        .build());
+
+        // Verify vote value remains the same (user already has an upvote)
+        assertEquals(Long.valueOf(1L), upvoteResponse.getIdea().getVoteValue());
+        assertEquals(regularUser.getUserId(), upvoteResponse.getVoter().getUserId());
+
+        // Admin removes vote on behalf of regular user
+        IdeaVoteUpdateAdminResponse removeVoteResponse = voteResource.ideaVoteUpdateAdmin(
+                projectId,
+                idea.getIdeaId(),
+                IdeaVoteUpdateAdmin.builder()
+                        .voterUserId(regularUser.getUserId())
+                        .vote(VoteOption.NONE)
+                        .build());
+
+        // Verify vote value decreased
+        assertEquals(Long.valueOf(0L), removeVoteResponse.getIdea().getVoteValue());
+
+        // Test error case: voting on merged post should fail
+        IdeaWithVote parentIdea = ideaResource.ideaCreate(projectId, IdeaCreate.builder()
+                .authorUserId(regularUser.getUserId())
+                .title("Parent idea")
+                .categoryId(account.getProject().getConfig().getConfig().getContent().getCategories().get(0).getCategoryId())
+                .tagIds(ImmutableList.of())
+                .build());
+
+        // Merge the idea
+        ideaResource.ideaMerge(projectId, idea.getIdeaId(), parentIdea.getIdeaId());
+
+        // Attempt to vote on merged post should fail
+        try {
+            voteResource.ideaVoteUpdateAdmin(
+                    projectId,
+                    idea.getIdeaId(),
+                    IdeaVoteUpdateAdmin.builder()
+                            .voterUserId(regularUser.getUserId())
+                            .vote(VoteOption.UPVOTE)
+                            .build());
+            fail("Expected exception for voting on merged post");
+        } catch (Exception e) {
+            // Expected
+        }
+
+        // Test error case: non-existent user should fail
+        try {
+            voteResource.ideaVoteUpdateAdmin(
+                    projectId,
+                    parentIdea.getIdeaId(),
+                    IdeaVoteUpdateAdmin.builder()
+                            .voterUserId("non-existent-user-id")
+                            .vote(VoteOption.UPVOTE)
+                            .build());
+            fail("Expected exception for non-existent user");
+        } catch (Exception e) {
+            // Expected
+        }
+
+        // Test error case: empty voterUserId should fail
+        try {
+            voteResource.ideaVoteUpdateAdmin(
+                    projectId,
+                    parentIdea.getIdeaId(),
+                    IdeaVoteUpdateAdmin.builder()
+                            .voterUserId("")
+                            .vote(VoteOption.UPVOTE)
+                            .build());
+            fail("Expected exception for empty voterUserId");
+        } catch (Exception e) {
+            // Expected
+        }
+    }
+
     private UserMeWithBalance addUserAndDoThings(String projectId, ConfigAdmin configAdmin) {
         long newUserNumber = userNumber++;
         UserMeWithBalance user = userResource.userCreate(projectId, UserCreate.builder()
@@ -263,5 +366,64 @@ public class BlackboxIT extends AbstractBlackboxIT {
                 .build());
         assertEquals(Long.valueOf(-1L), comment1vote1.getComment().getVoteValue());
         return user;
+    }
+
+    @Test(timeout = 30_000L)
+    public void testAdminNotes() throws Exception {
+        AccountAndProject account = getTrialAccount();
+        String projectId = account.getProject().getProjectId();
+        String categoryId = account.getProject().getConfig().getConfig().getContent().getCategories().get(0).getCategoryId();
+
+        // Create a regular user
+        UserMeWithBalance regularUser = userResource.userCreate(projectId, UserCreate.builder()
+                .name("regular-user")
+                .build()).getUser();
+
+        // Regular user creates a post without admin notes
+        IdeaWithVote ideaByRegularUser = ideaResource.ideaCreate(projectId, IdeaCreate.builder()
+                .authorUserId(regularUser.getUserId())
+                .title("Regular user post")
+                .categoryId(categoryId)
+                .tagIds(ImmutableList.of())
+                .build());
+
+        // Admin creates a post with admin notes
+        IdeaWithVote ideaByAdmin = ideaResource.ideaCreateAdmin(
+                projectId,
+                com.smotana.clearflask.api.model.IdeaCreateAdmin.builder()
+                        .authorUserId(regularUser.getUserId())
+                        .title("Admin created post")
+                        .categoryId(categoryId)
+                        .tagIds(ImmutableList.of())
+                        .adminNotes("Private admin note - should not be visible to regular users")
+                        .build(),
+                null);
+
+        // Admin updates post with admin notes
+        com.smotana.clearflask.api.model.Idea ideaUpdatedByAdmin = ideaResource.ideaUpdateAdmin(
+                projectId,
+                ideaByRegularUser.getIdeaId(),
+                IdeaUpdateAdmin.builder()
+                        .adminNotes("Admin added this private note")
+                        .build());
+
+        // Verify admin can see admin notes via ideaGetAdmin
+        com.smotana.clearflask.api.model.Idea ideaAdminView = ideaResource.ideaGetAdmin(projectId, ideaByAdmin.getIdeaId());
+        assertEquals("Private admin note - should not be visible to regular users", ideaAdminView.getAdminNotes());
+
+        // Verify regular ideaGet does NOT expose admin notes
+        IdeaWithVote ideaRegularView = ideaResource.ideaGet(projectId, ideaByAdmin.getIdeaId());
+        assertEquals(null, ideaRegularView.getAdminNotes());
+
+        // Verify admin can clear admin notes
+        ideaResource.ideaUpdateAdmin(
+                projectId,
+                ideaByAdmin.getIdeaId(),
+                IdeaUpdateAdmin.builder()
+                        .adminNotes("")
+                        .build());
+
+        ideaAdminView = ideaResource.ideaGetAdmin(projectId, ideaByAdmin.getIdeaId());
+        assertEquals(null, ideaAdminView.getAdminNotes());
     }
 }

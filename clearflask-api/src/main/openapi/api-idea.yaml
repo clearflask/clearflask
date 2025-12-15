@@ -2,6 +2,11 @@
 ## SPDX-License-Identifier: Apache-2.0
 components:
   schemas:
+    IdeaVisibility:
+      type: string
+      enum:
+        - Public
+        - Private
     IdeaSearch:
       x-clearflask-prop: { order: 100, name: 'Filter', description: 'Custom filter to limit the ideas shown to the user' }
       type: object
@@ -165,6 +170,10 @@ components:
           type: string
         authorIsMod:
           type: boolean
+        authorPic:
+          type: string
+        authorPicUrl:
+          type: string
         created:
           type: string
           format: date-time
@@ -177,6 +186,10 @@ components:
         responseAuthorUserId:
           type: string
         responseAuthorName:
+          type: string
+        responseAuthorPic:
+          type: string
+        responseAuthorPicUrl:
           type: string
         responseEdited:
           type: string
@@ -241,7 +254,16 @@ components:
           format: double
         linkedGitHubUrl:
           type: string
+        linkedGitLabUrl:
+          type: string
+        externalUrl:
+          type: string
         coverImg:
+          type: string
+        visibility:
+          $ref: 'api-idea.yaml#/components/schemas/IdeaVisibility'
+        adminNotes:
+          description: Private notes visible only to admins and moderators
           type: string
     IdeaConnectResponse:
       type: object
@@ -322,6 +344,11 @@ components:
               format: double
             coverImg:
               type: string
+            visibility:
+              $ref: 'api-idea.yaml#/components/schemas/IdeaVisibility'
+            adminNotes:
+              description: Private notes visible only to admins and moderators
+              type: string
     IdeaDraftAdmin:
       allOf:
         - $ref: 'api-idea.yaml#/components/schemas/IdeaCreateAdmin'
@@ -341,6 +368,8 @@ components:
         title:
           type: string
         description:
+          type: string
+        externalUrl:
           type: string
     IdeaUpdateAdmin:
       allOf:
@@ -367,6 +396,11 @@ components:
               type: number
               format: double
             coverImg:
+              type: string
+            visibility:
+              $ref: 'api-idea.yaml#/components/schemas/IdeaVisibility'
+            adminNotes:
+              description: Private notes visible only to admins and moderators
               type: string
     Hits:
       type: object

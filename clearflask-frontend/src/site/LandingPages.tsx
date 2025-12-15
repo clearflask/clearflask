@@ -2073,6 +2073,53 @@ export function LandingIntegrations() {
       <HorizontalPanels wrapBelow="sm" maxContentWidth="sm" maxWidth="md" staggerHeight={200}>
         <BlockContent
           variant="content"
+          title="GitLab"
+          description="Sync GitLab issues with ClearFlask, manage feedback from one place."
+          icon={(
+            <img
+              alt=""
+              className={classes.integrationImage}
+              src="/img/landing/gitlab.svg"
+            />
+          )}
+          className={classes.smallBlock}
+          buttonTitle="Setup"
+          buttonLink="/dashboard/settings/project/gitlab"
+        />
+        <BlockContent
+          variant="content"
+          title="Jira"
+          description="Connect Jira issues with ClearFlask to track feedback across both platforms."
+          icon={(
+            <img
+              alt=""
+              className={classes.integrationImage}
+              src="/img/landing/jira.svg"
+            />
+          )}
+          className={classes.smallBlock}
+          buttonTitle="Setup"
+          buttonLink="/dashboard/settings/project/jira"
+        />
+      </HorizontalPanels>
+      <HorizontalPanels wrapBelow="sm" maxContentWidth="sm" maxWidth="md" staggerHeight={200}>
+        <BlockContent
+          variant="content"
+          title="Slack"
+          description="Get notified in Slack when new feedback arrives or status changes occur."
+          icon={(
+            <img
+              alt=""
+              className={classes.integrationImage}
+              src="/img/landing/slack.png"
+            />
+          )}
+          className={classes.smallBlock}
+          buttonTitle="Setup"
+          buttonLink="/dashboard/settings/project/slack"
+        />
+        <BlockContent
+          variant="content"
           title="Google Analytics"
           description="Extend your Analytics reach to feedback pages"
           icon={(

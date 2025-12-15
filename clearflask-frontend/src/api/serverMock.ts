@@ -470,6 +470,25 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     });
   }
 
+  gitLabGetProjectsAdmin(request: Admin.GitLabGetProjectsAdminRequest): Promise<Admin.GitLabAvailableProjects> {
+    return this.returnLater({
+      projects: [
+        { projectId: 123, projectPath: 'clearflask/clearflask', name: 'ClearFlask' },
+        { projectId: 456, projectPath: 'clearflask/docs', name: 'ClearFlask Docs' },
+      ],
+    });
+  }
+
+  jiraGetProjectsAdmin(request: Admin.JiraGetProjectsAdminRequest): Promise<Admin.AvailableJiraProjects> {
+    return this.returnLater({
+      projects: [
+        { cloudId: 'cloud-123', cloudName: 'ClearFlask Cloud', projectKey: 'CF', projectName: 'ClearFlask Project' },
+        { cloudId: 'cloud-123', cloudName: 'ClearFlask Cloud', projectKey: 'DOC', projectName: 'Documentation' },
+        { cloudId: 'cloud-456', cloudName: 'Dev Cloud', projectKey: 'DEV', projectName: 'Development' },
+      ],
+    });
+  }
+
   accountDeleteAdmin(): Promise<void> {
     if (!this.account) return this.throwLater(403, 'Not logged in');
     this.loggedIn = false;

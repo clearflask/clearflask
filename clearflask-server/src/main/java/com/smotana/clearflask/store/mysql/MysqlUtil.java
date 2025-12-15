@@ -121,7 +121,7 @@ public class MysqlUtil {
         Condition on;
     }
 
-    public <R extends Record> Table<R> join(Table<R> table, ImmutableList<Join> joins) {
+    public <R extends org.jooq.Record> Table<R> join(Table<R> table, ImmutableList<Join> joins) {
         Table returnTable = table;
         for (Join join : joins) {
             returnTable = returnTable.join(join.getTable(), join.getType())
@@ -131,7 +131,7 @@ public class MysqlUtil {
     }
 
     @SneakyThrows
-    public <R extends Record> HistogramResponse histogram(
+    public <R extends org.jooq.Record> HistogramResponse histogram(
             Table<R> table,
             Condition projectIdCondition,
             Field<Instant> aggregateFieldName,

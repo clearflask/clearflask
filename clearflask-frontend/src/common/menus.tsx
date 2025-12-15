@@ -184,6 +184,7 @@ export function MenuItems(props: {
           case 'header':
             return (
               <MenuItemHeader
+                key={`header-${index}`}
                 insideDrawer={props.insideDrawer}
                 item={item}
               />
@@ -191,6 +192,7 @@ export function MenuItems(props: {
           case 'button':
             return (
               <MenuItemButton
+                key={`button-${index}`}
                 item={item}
                 onClick={props.onClick}
                 isOuter={isOuter}
@@ -201,6 +203,7 @@ export function MenuItems(props: {
           case 'divider':
             return (
               <MenuItemDivider
+                key={`divider-${index}`}
                 insideDropdown={props.insideDropdown}
                 insideDrawer={props.insideDrawer}
                 item={item}
@@ -209,19 +212,18 @@ export function MenuItems(props: {
           case 'dropdown':
             if (props.insideDrawer) {
               return (
-                <>
+                <React.Fragment key={`dropdown-drawer-${index}`}>
                   <MenuItemHeader
                     insideDrawer={props.insideDrawer}
                     item={{ type: 'header', title: item.title }}
                   />
                   <MenuItems
-                    key={item.title}
                     items={item.items}
                     onClick={props.onClick}
                     insideDrawer={props.insideDrawer}
                     insideDropdown={props.insideDropdown}
                   />
-                </>
+                </React.Fragment>
               );
             } else {
               return (

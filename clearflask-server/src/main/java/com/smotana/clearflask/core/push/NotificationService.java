@@ -32,6 +32,8 @@ public interface NotificationService {
 
     void onAccountSignup(Account account);
 
+    void onAdminForgotPassword(Account account, String resetToken);
+
     void onTrialEnding(Account account, Instant trialEnd);
 
     void onTrialEnded(Account account, boolean hasPaymentMethod);
@@ -51,6 +53,8 @@ public interface NotificationService {
     void onEmailLogin(ConfigAdmin configAdmin, UserModel user, String token);
 
     void onPostCreated(Project project, IdeaModel idea, NotifySubscribers notifySubscribers, UserModel author);
+
+    void onPostCreatedOnBehalfOf(Project project, IdeaModel idea, UserModel author);
 
     void onDigest(Account account, Digest projects);
 

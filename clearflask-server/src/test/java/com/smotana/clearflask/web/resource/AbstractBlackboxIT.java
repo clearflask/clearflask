@@ -53,7 +53,10 @@ import com.smotana.clearflask.core.push.message.OnAccountSignup;
 import com.smotana.clearflask.core.push.message.OnCommentReply;
 import com.smotana.clearflask.core.push.message.OnCreditChange;
 import com.smotana.clearflask.core.push.message.OnDigest;
+import com.smotana.clearflask.core.push.message.OnPostCreated;
+import com.smotana.clearflask.core.push.message.OnPostCreatedOnBehalfOf;
 import com.smotana.clearflask.core.push.message.OnEmailChanged;
+import com.smotana.clearflask.core.push.message.OnAdminForgotPassword;
 import com.smotana.clearflask.core.push.message.OnForgotPassword;
 import com.smotana.clearflask.core.push.message.OnInvoicePaymentSuccess;
 import com.smotana.clearflask.core.push.message.OnModInvite;
@@ -205,6 +208,9 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
         install(GuavaRateLimiters.testModule(controllableSleepingStopwatch));
         bind(ControllableSleepingStopwatch.class).toInstance(controllableSleepingStopwatch);
         bindMock(AmazonRoute53.class);
+        bindMock(com.smotana.clearflask.store.JiraStore.class);
+        bindMock(com.smotana.clearflask.store.SlackStore.class);
+        bindMock(com.smotana.clearflask.store.GitLabStore.class);
 
         install(Modules.override(
                 MockExtendedSecurityContext.module(),
@@ -254,6 +260,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 OnPaymentFailed.module(),
                 OnInvoicePaymentSuccess.module(),
                 OnForgotPassword.module(),
+                OnAdminForgotPassword.module(),
                 OnAccountSignup.module(),
                 OnTeammateInvite.module(),
                 IntercomUtil.module(),
@@ -262,6 +269,8 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 OnModInvite.module(),
                 OnEmailChanged.module(),
                 OnDigest.module(),
+                OnPostCreated.module(),
+                OnPostCreatedOnBehalfOf.module(),
                 EmailVerify.module(),
                 EmailLogin.module(),
                 MockBrowserPushService.module(),

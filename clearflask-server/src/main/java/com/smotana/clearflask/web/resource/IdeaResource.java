@@ -77,6 +77,10 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     private WebhookService webhookService;
     @Inject
     private GitHubStore gitHubStore;
+    @Inject
+    private JiraStore jiraStore;
+    @Inject
+    private SlackStore slackStore;
 
     @RolesAllowed({Role.PROJECT_USER})
     @Limit(requiredPermits = 30, challengeAfter = 20)
@@ -98,6 +102,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 user.getUserId(),
                 user.getName(),
                 user.getIsMod(),
+                user.getPic(),
+                user.getPicUrl(),
                 Instant.now(),
                 ideaCreate.getTitle(),
                 Strings.emptyToNull(ideaCreate.getDescription()),
@@ -105,6 +111,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 null,
                 null,
                 null,
+                null,
+                null,  // responseEdited
                 ideaCreate.getCategoryId(),
                 project.getCategory(ideaCreate.getCategoryId())
                         .map(Category::getWorkflow)
@@ -128,7 +136,9 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 ImmutableSet.of(),
                 null,
                 null,
-                null);
+                null,  // coverImg
+                null,  // visibility - always public for user-created ideas
+                null); // adminNotes
         boolean votingAllowed = project.isVotingAllowed(VoteValue.Upvote, ideaModel.getCategoryId(), Optional.ofNullable(ideaModel.getStatusId()));
         if (votingAllowed) {
             ideaModel = ideaStore.createIdeaAndUpvote(ideaModel).getIdea();
@@ -137,7 +147,9 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         }
 
         webhookService.eventPostNew(ideaModel, user);
+        slackStore.cfPostCreatedAsync(project, ideaModel, user);
         billing.recordUsage(UsageType.POST, project.getAccountId(), project.getProjectId(), user);
+        jiraStore.cfPostCreatedAsync(project, ideaModel, user);
         return ideaModel.toIdeaWithVote(
                 IdeaVote.builder().vote(votingAllowed ? VoteOption.UPVOTE : null).build(),
                 sanitizer);
@@ -156,6 +168,19 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     public IdeaWithVote ideaCreateAdmin(String projectId, IdeaCreateAdmin ideaCreateAdmin, @Nullable String deleteDraftId) {
         sanitizer.postTitle(ideaCreateAdmin.getTitle());
         sanitizer.content(ideaCreateAdmin.getDescription());
+        sanitizer.content(ideaCreateAdmin.getAdminNotes());
+
+        // Validate that only admins/mods can set visibility to Private
+        // (method is already @RolesAllowed, but extra check for clarity)
+        if (IdeaVisibility.PRIVATE.equals(ideaCreateAdmin.getVisibility())) {
+            if (!securityContext.isUserInRole(Role.PROJECT_ADMIN_ACTIVE)
+                    && !securityContext.isUserInRole(Role.PROJECT_ADMIN)
+                    && !securityContext.isUserInRole(Role.PROJECT_MODERATOR_ACTIVE)
+                    && !securityContext.isUserInRole(Role.PROJECT_MODERATOR)) {
+                throw new ApiException(Response.Status.FORBIDDEN,
+                        "Only admins and moderators can create private posts");
+            }
+        }
 
         Project project = projectStore.getProject(projectId, true).get();
         UserModel author = userStore.getUser(projectId, ideaCreateAdmin.getAuthorUserId())
@@ -167,12 +192,16 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 author.getUserId(),
                 author.getName(),
                 author.getIsMod(),
+                author.getPic(),
+                author.getPicUrl(),
                 Instant.now(),
                 ideaCreateAdmin.getTitle(),
                 Strings.emptyToNull(ideaCreateAdmin.getDescription()),
                 Strings.emptyToNull(ideaCreateAdmin.getResponse()),
                 Strings.isNullOrEmpty(ideaCreateAdmin.getResponse()) ? null : author.getUserId(),
                 Strings.isNullOrEmpty(ideaCreateAdmin.getResponse()) ? null : author.getName(),
+                Strings.isNullOrEmpty(ideaCreateAdmin.getResponse()) ? null : author.getPic(),
+                Strings.isNullOrEmpty(ideaCreateAdmin.getResponse()) ? null : author.getPicUrl(),
                 Strings.isNullOrEmpty(ideaCreateAdmin.getResponse()) ? null : Instant.now(),
                 ideaCreateAdmin.getCategoryId(),
                 Optional.ofNullable(ideaCreateAdmin.getStatusId())
@@ -198,7 +227,9 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 ImmutableSet.of(),
                 ideaCreateAdmin.getOrder(),
                 null,
-                ideaCreateAdmin.getCoverImg());
+                ideaCreateAdmin.getCoverImg(),
+                ideaCreateAdmin.getVisibility(),
+                Strings.emptyToNull(ideaCreateAdmin.getAdminNotes()));
         boolean votingAllowed = project.isVotingAllowed(VoteValue.Upvote, ideaModel.getCategoryId(), Optional.ofNullable(ideaModel.getStatusId()));
         try {
             if (votingAllowed) {
@@ -232,7 +263,15 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         if (ideaCreateAdmin.getNotifySubscribers() != null) {
             notificationService.onPostCreated(project, ideaModel, ideaCreateAdmin.getNotifySubscribers(), author);
         }
+        // Notify the author if the post was created on their behalf by a different user or via API
+        Optional<String> loggedInUserId = getExtendedPrincipal()
+                .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
+                .map(UserSession::getUserId);
+        if (!loggedInUserId.isPresent() || !loggedInUserId.get().equals(author.getUserId())) {
+            notificationService.onPostCreatedOnBehalfOf(project, ideaModel, author);
+        }
         webhookService.eventPostNew(ideaModel, author);
+        slackStore.cfPostCreatedAsync(project, ideaModel, author);
         billing.recordUsage(UsageType.POST, project.getAccountId(), projectId, author);
         return ideaModel.toIdeaWithVote(
                 IdeaVote.builder().vote(votingAllowed ? VoteOption.UPVOTE : null).build(),
@@ -248,6 +287,14 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
         return ideaStore.getIdea(projectId, ideaId)
+                .filter(ideaModel -> {
+                    // Filter out private posts for non-admin users
+                    if (IdeaVisibility.PRIVATE.equals(ideaModel.getVisibility())) {
+                        return securityContext.isUserInRole(Role.PROJECT_ADMIN)
+                                || securityContext.isUserInRole(Role.PROJECT_MODERATOR);
+                    }
+                    return true;
+                })
                 .map(ideaModel -> userOpt.map(user -> toIdeaWithVote(user, ideaModel))
                         .orElseGet(() -> ideaModel.toIdeaWithVote(
                                 IdeaVote.builder().build(),
@@ -263,9 +310,14 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId)
                 .flatMap(userId -> userStore.getUser(projectId, userId));
+        boolean isModOrAdmin = securityContext.isUserInRole(Role.PROJECT_ADMIN)
+                || securityContext.isUserInRole(Role.PROJECT_MODERATOR);
         ImmutableCollection<IdeaModel> ideaModels = ideaStore.getIdeas(projectId, ideaGetAll.getPostIds().stream()
                 .filter(Objects::nonNull)
-                .collect(ImmutableList.toImmutableList())).values();
+                .collect(ImmutableList.toImmutableList())).values().stream()
+                // Filter out private posts for non-admin users
+                .filter(ideaModel -> isModOrAdmin || !IdeaVisibility.PRIVATE.equals(ideaModel.getVisibility()))
+                .collect(ImmutableList.toImmutableList());
         return new IdeaGetAllResponse(userOpt.map(user -> toIdeasWithVotes(user, ideaModels))
                 .orElseGet(() -> ideaModels.stream()
                         .map(ideaModel -> ideaModel.toIdeaWithVote(
@@ -279,7 +331,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Override
     public Idea ideaGetAdmin(String projectId, String ideaId) {
         return ideaStore.getIdea(projectId, ideaId)
-                .map(idea -> idea.toIdea(sanitizer))
+                .map(idea -> idea.toIdeaAdmin(sanitizer))
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Idea not found"));
     }
 
@@ -296,7 +348,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     public IdeaConnectResponse ideaLinkAdmin(String projectId, String ideaId, String parentIdeaId) {
         Project project = projectStore.getProject(projectId, true).get();
         IdeaStore.LinkResponse linkResponse = ideaStore.linkIdeas(projectId, ideaId, parentIdeaId, false, project::getCategoryExpressionWeight);
-        return new IdeaConnectResponse(linkResponse.getIdea().toIdea(sanitizer), linkResponse.getParentIdea().toIdea(sanitizer));
+        return new IdeaConnectResponse(linkResponse.getIdea().toIdeaAdmin(sanitizer), linkResponse.getParentIdea().toIdeaAdmin(sanitizer));
     }
 
     @RolesAllowed({Role.PROJECT_MODERATOR_ACTIVE})
@@ -305,7 +357,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     public IdeaConnectResponse ideaUnLinkAdmin(String projectId, String ideaId, String parentIdeaId) {
         Project project = projectStore.getProject(projectId, true).get();
         IdeaStore.LinkResponse linkResponse = ideaStore.linkIdeas(projectId, ideaId, parentIdeaId, true, project::getCategoryExpressionWeight);
-        return new IdeaConnectResponse(linkResponse.getIdea().toIdea(sanitizer), linkResponse.getParentIdea().toIdea(sanitizer));
+        return new IdeaConnectResponse(linkResponse.getIdea().toIdeaAdmin(sanitizer), linkResponse.getParentIdea().toIdeaAdmin(sanitizer));
     }
 
     @RolesAllowed({Role.IDEA_OWNER})
@@ -337,7 +389,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     public IdeaConnectResponse ideaMergeAdmin(String projectId, String ideaId, String parentIdeaId) {
         Project project = projectStore.getProject(projectId, true).get();
         IdeaStore.MergeResponse mergeResponse = ideaStore.mergeIdeas(projectId, ideaId, parentIdeaId, false, project::getCategoryExpressionWeight);
-        return new IdeaConnectResponse(mergeResponse.getIdea().toIdea(sanitizer), mergeResponse.getParentIdea().toIdea(sanitizer));
+        return new IdeaConnectResponse(mergeResponse.getIdea().toIdeaAdmin(sanitizer), mergeResponse.getParentIdea().toIdeaAdmin(sanitizer));
     }
 
     @RolesAllowed({Role.PROJECT_MODERATOR_ACTIVE})
@@ -346,7 +398,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     public IdeaConnectResponse ideaUnMergeAdmin(String projectId, String ideaId, String parentIdeaId) {
         Project project = projectStore.getProject(projectId, true).get();
         IdeaStore.MergeResponse mergeResponse = ideaStore.mergeIdeas(projectId, ideaId, parentIdeaId, true, project::getCategoryExpressionWeight);
-        return new IdeaConnectResponse(mergeResponse.getIdea().toIdea(sanitizer), mergeResponse.getParentIdea().toIdea(sanitizer));
+        return new IdeaConnectResponse(mergeResponse.getIdea().toIdeaAdmin(sanitizer), mergeResponse.getParentIdea().toIdeaAdmin(sanitizer));
     }
 
     @RolesAllowed({Role.PROJECT_ANON})
@@ -363,6 +415,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 projectId,
                 ideaSearch,
                 userOpt.map(UserModel::getUserId),
+                ImmutableSet.of(),
                 Optional.ofNullable(Strings.emptyToNull(cursor)));
         if (searchResponse.getIdeaIds().isEmpty()) {
             return new IdeaWithVoteSearchResponse(
@@ -410,7 +463,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 searchResponse.getIdeaIds().stream()
                         .map(ideasById::get)
                         .filter(Objects::nonNull)
-                        .map(idea -> idea.toIdea(sanitizer))
+                        .map(idea -> idea.toIdeaAdmin(sanitizer))
                         .collect(ImmutableList.toImmutableList()),
                 new Hits(
                         searchResponse.getTotalHits(),
@@ -424,6 +477,16 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         sanitizer.postTitle(ideaUpdate.getTitle());
         sanitizer.content(ideaUpdate.getDescription());
 
+        // Filter out private posts for non-admin users before allowing update
+        IdeaModel existingIdea = ideaStore.getIdea(projectId, ideaId)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Idea not found"));
+        if (IdeaVisibility.PRIVATE.equals(existingIdea.getVisibility())) {
+            if (!securityContext.isUserInRole(Role.PROJECT_ADMIN)
+                    && !securityContext.isUserInRole(Role.PROJECT_MODERATOR)) {
+                throw new ApiException(Response.Status.NOT_FOUND, "Idea not found");
+            }
+        }
+
         return ideaStore.updateIdea(projectId, ideaId, ideaUpdate)
                 .getIdea()
                 .toIdea(sanitizer);
@@ -435,6 +498,19 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     public Idea ideaUpdateAdmin(String projectId, String ideaId, IdeaUpdateAdmin ideaUpdateAdmin) {
         sanitizer.postTitle(ideaUpdateAdmin.getTitle());
         sanitizer.content(ideaUpdateAdmin.getDescription());
+        sanitizer.content(ideaUpdateAdmin.getAdminNotes());
+
+        // Validate that only admins/mods can set visibility to Private
+        // (method is already @RolesAllowed, but extra check for clarity)
+        if (IdeaVisibility.PRIVATE.equals(ideaUpdateAdmin.getVisibility())) {
+            if (!securityContext.isUserInRole(Role.PROJECT_ADMIN_ACTIVE)
+                    && !securityContext.isUserInRole(Role.PROJECT_ADMIN)
+                    && !securityContext.isUserInRole(Role.PROJECT_MODERATOR_ACTIVE)
+                    && !securityContext.isUserInRole(Role.PROJECT_MODERATOR)) {
+                throw new ApiException(Response.Status.FORBIDDEN,
+                        "Only admins and moderators can set private visibility");
+            }
+        }
 
         Project project = projectStore.getProject(projectId, true).get();
         ConfigAdmin configAdmin = project.getVersionedConfigAdmin().getConfig();
@@ -458,6 +534,13 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         }
         if (statusChanged || responseChanged) {
             gitHubStore.cfStatusAndOrResponseChangedAsync(project, idea, statusChanged, responseChanged);
+            jiraStore.cfStatusAndOrResponseChangedAsync(project, idea, statusChanged, responseChanged);
+        }
+        if (statusChanged) {
+            slackStore.cfPostStatusChangedAsync(project, idea);
+        }
+        if (responseChanged) {
+            slackStore.cfResponseChangedAsync(project, idea);
         }
         if (ideaUpdateAdmin.getTagIds() != null) {
             webhookService.eventPostTagsChanged(idea);
@@ -468,7 +551,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         if (responseChanged) {
             webhookService.eventPostResponseChanged(idea);
         }
-        return idea.toIdea(sanitizer);
+        return idea.toIdeaAdmin(sanitizer);
     }
 
     @RolesAllowed({Role.PROJECT_MODERATOR})

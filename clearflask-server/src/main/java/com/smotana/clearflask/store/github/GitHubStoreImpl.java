@@ -396,9 +396,13 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                         user.getUserId(),
                         user.getName(),
                         user.getIsMod(),
+                        user.getPic(),
+                        user.getPicUrl(),
                         Instant.now(),
                         ghIssue.getIssue().getTitle(),
                         markdownAndQuillUtil.markdownToQuill(project.getProjectId(), "gh-new-post", ideaId, ghIssue.getIssue().getBody()),
+                        null,
+                        null,
                         null,
                         null,
                         null,
@@ -429,7 +433,9 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                         ImmutableSet.of(),
                         null,
                         ghIssue.getIssue().getHtmlUrl().toExternalForm(),
-                        null)));
+                        null,
+                        null,  // visibility
+                        null))); // adminNotes
             case "reopened":
             case "closed":
                 Optional<String> switchToStatusOpt = Optional.ofNullable(integration.getStatusSync())
@@ -503,6 +509,8 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                             user.getUserId(),
                             user.getName(),
                             user.getIsMod(),
+                            user.getPic(),
+                            user.getPicUrl(),
                             Instant.now(),
                             null,
                             markdownAndQuillUtil.markdownToQuill(project.getProjectId(), "gh-new-comment", commentId, ghIssueComment.getComment().getBody()),
@@ -553,9 +561,13 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                             user.getUserId(),
                             user.getName(),
                             user.getIsMod(),
+                            user.getPic(),
+                            user.getPicUrl(),
                             Instant.now(),
                             ghRelease.getRelease().getName(),
                             markdownAndQuillUtil.markdownToQuill(project.getProjectId(), "gh-new-post", ideaId, ghRelease.getRelease().getBody()),
+                            null,
+                            null,
                             null,
                             null,
                             null,
@@ -580,7 +592,9 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                             ImmutableSet.of(),
                             null,
                             ghRelease.getRelease().getHtmlUrl().toExternalForm(),
-                            null));
+                            null,
+                            null,  // visibility
+                            null)); // adminNotes
                     if (Boolean.TRUE.equals(integration.getReleaseNotifyAll())) {
                         notificationService.onPostCreated(
                                 project,

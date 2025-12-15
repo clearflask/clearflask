@@ -6,9 +6,11 @@ import classNames from 'classnames';
 import React, { Component } from 'react';
 import { WithTranslation, withTranslation } from 'react-i18next';
 import { Server } from '../../api/server';
+import BareTextField from '../../common/BareTextField';
 import RichEditor from '../../common/RichEditor';
 import RichEditorImageUpload from '../../common/RichEditorImageUpload';
 import ScrollAnchor from '../../common/util/ScrollAnchor';
+import UserSelection from '../../site/dashboard/UserSelection';
 
 const styles = (theme: Theme) => createStyles({
   addCommentForm: {
@@ -29,6 +31,11 @@ const styles = (theme: Theme) => createStyles({
   addCommentSubmitButton: {
     margin: theme.spacing(1),
   },
+  userSelection: {
+    marginBottom: theme.spacing(1),
+    alignSelf: 'flex-start',
+    width: '100%',
+  },
 });
 
 interface Props {
@@ -47,12 +54,14 @@ interface Props {
 
 interface State {
   newCommentInput?: string;
+  selectedAuthorId?: string;
 }
 
 class Post extends Component<Props & WithTranslation<'app'> & WithStyles<typeof styles, true>, State> {
   state: State = {};
   readonly richEditorImageUploadRef = React.createRef<RichEditorImageUpload>();
   readonly inputRef: React.RefObject<HTMLInputElement> = React.createRef();
+  readonly formRef: React.RefObject<HTMLDivElement> = React.createRef();
 
   componentDidMount() {
     if (this.props.focusOnIn && this.props.collapseIn === true) {
@@ -74,13 +83,36 @@ class Post extends Component<Props & WithTranslation<'app'> & WithStyles<typeof 
   }
 
   render() {
+    const isMod = this.props.server.isModOrAdminLoggedIn();
+    const loggedInUserId = this.props.server.getStore().getState().users.loggedIn.user?.userId;
     return (
       <Collapse
         mountOnEnter
         in={this.props.collapseIn !== false}
         className={classNames(this.props.className, this.props.classes.addCommentFormOuter)}
       >
-        <div className={this.props.classes.addCommentForm}>
+        <div className={this.props.classes.addCommentForm} ref={this.formRef}>
+          {isMod && (
+            <UserSelection
+              className={this.props.classes.userSelection}
+              variant='outlined'
+              size='small'
+              server={this.props.server}
+              initialUserId={loggedInUserId}
+              width='100%'
+              suppressInitialOnChange
+              onChange={selectedUserLabel => this.setState({ selectedAuthorId: selectedUserLabel?.value })}
+              allowCreate
+              SelectionPickerProps={{
+                width: 'unset',
+                forceDropdownIcon: true,
+                TextFieldComponent: BareTextField,
+                TextFieldProps: {
+                  fullWidth: false,
+                },
+              }}
+            />
+          )}
           <RichEditor
             uploadImage={(file) => this.richEditorImageUploadRef.current!.uploadImage(file)}
             variant='outlined'
@@ -97,7 +129,13 @@ class Post extends Component<Props & WithTranslation<'app'> & WithStyles<typeof 
             InputProps={{
               inputRef: this.inputRef,
               // onBlurAndEmpty after a while, fixes issue where pasting causes blur.
-              onBlur: () => setTimeout(() => !this.state.newCommentInput && this.props.onBlurAndEmpty && this.props.onBlurAndEmpty(), 200),
+              onBlur: (e) => setTimeout(() => {
+                // Check if focus moved to an element within our form
+                const focusMovedWithinForm = this.formRef.current?.contains(document.activeElement);
+                if (!this.state.newCommentInput && !focusMovedWithinForm && this.props.onBlurAndEmpty) {
+                  this.props.onBlurAndEmpty();
+                }
+              }, 200),
             }}
           />
           <RichEditorImageUpload
@@ -112,17 +150,35 @@ class Post extends Component<Props & WithTranslation<'app'> & WithStyles<typeof 
               className={this.props.classes.addCommentSubmitButton}
               disabled={!this.state.newCommentInput}
               onClick={e => {
-                this.props.logIn().then(() => this.props.server.dispatch().then(d => d.commentCreate({
-                  projectId: this.props.server.getProjectId(),
-                  ideaId: this.props.ideaId,
-                  commentCreate: {
+                this.props.logIn().then(() => {
+                  const commentData = {
                     content: this.state.newCommentInput!,
                     parentCommentId: this.props.mergedPostId === this.props.parentCommentId ? undefined : this.props.parentCommentId,
                     mergedPostId: this.props.mergedPostId,
-                  },
-                }))).then(comment => {
-                  this.setState({ newCommentInput: undefined })
+                  };
+                  if (this.state.selectedAuthorId) {
+                    return this.props.server.dispatchAdmin().then(d => d.commentCreateAdmin({
+                      projectId: this.props.server.getProjectId(),
+                      ideaId: this.props.ideaId,
+                      commentCreateAdmin: {
+                        ...commentData,
+                        authorUserId: this.state.selectedAuthorId!,
+                      },
+                    }));
+                  } else {
+                    return this.props.server.dispatch().then(d => d.commentCreate({
+                      projectId: this.props.server.getProjectId(),
+                      ideaId: this.props.ideaId,
+                      commentCreate: commentData,
+                    }));
+                  }
+                }).then(comment => {
+                  this.setState({ newCommentInput: undefined, selectedAuthorId: undefined })
                   this.props.onSubmitted && this.props.onSubmitted();
+                }).catch(err => {
+                  // Error will be displayed by the server's error handling
+                  // Keep the form state so user can retry or fix the issue
+                  console.error('Failed to create comment:', err);
                 });
               }}
             >

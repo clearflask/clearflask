@@ -122,6 +122,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Inject
     private GitHubStore gitHubStore;
     @Inject
+    private GitLabStore gitLabStore;
+    @Inject
     private AccountStore accountStore;
     @Inject
     private UserStore userStore;
@@ -319,6 +321,10 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 accountId,
                 Optional.of(project.getVersionedConfigAdmin().getConfig()),
                 configAdmin);
+        gitLabStore.setupConfigGitLabIntegration(
+                accountId,
+                Optional.of(project.getVersionedConfigAdmin().getConfig()),
+                configAdmin);
 
         VersionedConfigAdmin versionedConfigAdmin = new VersionedConfigAdmin(configAdmin, projectStore.genConfigVersion());
         projectStore.updateConfig(
@@ -434,6 +440,10 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         planVerifyStore.verifyConfigChangeMeetsRestrictions(isSuperAdmin, Optional.empty(), configAdmin);
 
         gitHubStore.setupConfigGitHubIntegration(
+                account.getAccountId(),
+                Optional.empty(),
+                configAdmin);
+        gitLabStore.setupConfigGitLabIntegration(
                 account.getAccountId(),
                 Optional.empty(),
                 configAdmin);
@@ -766,11 +776,15 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                         authorOpt.get().getUserId(),
                         authorOpt.get().getName(),
                         authorOpt.get().getIsMod(),
+                        authorOpt.get().getPic(),
+                        authorOpt.get().getPicUrl(),
                         createdOpt.orElseGet(Instant::now),
                         title,
                         Optional.ofNullable(indexDescription).map(Long::intValue).map(record::get)
                                 .map(desc -> sanitizer.richHtml(desc, "idea", "import", projectId, true))
                                 .orElse(null),
+                        null,
+                        null,
                         null,
                         null,
                         null,
@@ -795,7 +809,9 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                         ImmutableSet.of(),
                         null,
                         null,
-                        null);
+                        null,
+                        null,  // visibility
+                        null); // adminNotes
             }).collect(Collectors.toList())).get();
         } catch (ApiException ex) {
             throw ex;

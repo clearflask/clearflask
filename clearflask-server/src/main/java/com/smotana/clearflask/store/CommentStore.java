@@ -33,6 +33,10 @@ public interface CommentStore {
         return "github-" + commentId;
     }
 
+    default String genDeterministicCommentIdForGitlabNote(long noteId) {
+        return "gitlab-" + noteId;
+    }
+
     /**
      * Returns optional empty if index already exists
      */
@@ -123,6 +127,10 @@ public interface CommentStore {
 
         Boolean authorIsMod;
 
+        String authorPic;
+
+        String authorPicUrl;
+
         @NonNull
         Instant created;
 
@@ -170,6 +178,8 @@ public interface CommentStore {
                     getAuthorUserId(),
                     getAuthorName(),
                     getAuthorIsMod(),
+                    getAuthorPic(),
+                    getAuthorPicUrl(),
                     getCreated(),
                     getEdited(),
                     null,
@@ -193,6 +203,8 @@ public interface CommentStore {
                     getAuthorUserId(),
                     getAuthorName(),
                     getAuthorIsMod(),
+                    getAuthorPic(),
+                    getAuthorPicUrl(),
                     getCreated(),
                     getEdited(),
                     null,

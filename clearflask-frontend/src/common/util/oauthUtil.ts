@@ -14,6 +14,37 @@ const GitHubAppProvider = {
   authorizeUrl: 'https://github.com/login/oauth/authorize',
 };
 
+// GitLab OAuth provider for gitlab.com
+// For self-hosted GitLab, the authorizeUrl needs to be constructed dynamically
+// NOTE: This client ID must match the backend GitLab OAuth configuration
+const GitLabProvider: OAuthProvider = {
+  clientId: isProd()
+    ? process.env.REACT_APP_GITLAB_CLIENT_ID || (() => { throw new Error('REACT_APP_GITLAB_CLIENT_ID environment variable must be set for GitLab OAuth'); })()
+    : 'gitlab-client-id',
+  authorizeUrl: 'https://gitlab.com/oauth/authorize',
+  scope: 'api read_user',
+};
+
+// Jira OAuth provider for Atlassian
+// NOTE: This client ID must match the backend Jira OAuth configuration
+const JiraProvider: OAuthProvider = {
+  clientId: isProd()
+    ? process.env.REACT_APP_JIRA_CLIENT_ID || (() => { throw new Error('REACT_APP_JIRA_CLIENT_ID environment variable must be set for Jira OAuth'); })()
+    : 'jira-client-id',
+  authorizeUrl: 'https://auth.atlassian.com/authorize',
+  scope: 'read:jira-work write:jira-work offline_access',
+};
+
+// Slack OAuth provider
+// NOTE: This client ID must match the backend Slack OAuth configuration
+const SlackProvider: OAuthProvider = {
+  clientId: isProd()
+    ? process.env.REACT_APP_SLACK_CLIENT_ID || (() => { throw new Error('REACT_APP_SLACK_CLIENT_ID environment variable must be set for Slack OAuth'); })()
+    : 'slack-client-id',
+  authorizeUrl: 'https://slack.com/oauth/v2/authorize',
+  scope: 'channels:read channels:write.invites chat:write chat:write.public',
+};
+
 export type Unsubscribe = () => void;
 export interface OAuthToken {
   id: string;
@@ -85,6 +116,41 @@ export class OAuthFlow {
 
     windowIso.location.href = `https://github.com/apps/clearflask?`
       + `${OAUTH_STATE_PARAM_NAME}=${oauthStateStr}`;
+  }
+
+  /**
+   * Open GitLab OAuth authorization for gitlab.com
+   */
+  openForGitLab() {
+    this.open(GitLabProvider, 'self');
+  }
+
+  /**
+   * Open GitLab OAuth authorization for a self-hosted GitLab instance
+   * @param gitlabInstanceUrl The base URL of the GitLab instance (e.g., https://gitlab.mycompany.com)
+   * @param clientId The OAuth application client ID configured on the GitLab instance
+   */
+  openForSelfHostedGitLab(gitlabInstanceUrl: string, clientId: string) {
+    const provider: OAuthProvider = {
+      clientId,
+      authorizeUrl: `${gitlabInstanceUrl.replace(/\/$/, '')}/oauth/authorize`,
+      scope: 'api read_user',
+    };
+    this.open(provider, 'self', gitlabInstanceUrl);
+  }
+
+  /**
+   * Open Jira OAuth authorization for Atlassian Cloud
+   */
+  openForJira() {
+    this.open(JiraProvider, 'self');
+  }
+
+  /**
+   * Open Slack OAuth authorization
+   */
+  openForSlack() {
+    this.open(SlackProvider, 'self');
   }
 
   open(provider: OAuthProvider, openTarget: 'window' | 'self', extraData?: string) {

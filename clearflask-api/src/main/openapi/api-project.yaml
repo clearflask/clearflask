@@ -718,6 +718,9 @@ components:
               disableComments:
                 x-clearflask-prop: { order: 7, name: 'Freeze new comments', description: 'Overrides parent settings to disable commenting during this status', trueLabel: 'Frozen', falseLabel: 'Default' }
                 type: boolean
+              disablePublicDisplay:
+                x-clearflask-prop: { order: 8, name: 'Hide from public', defaultValue: false, description: 'Hide ideas with this status from public view', trueLabel: 'Hidden', falseLabel: 'Visible' }
+                type: boolean
     tagging:
       x-clearflask-page: { order: 80, name: 'Tagging', description: 'Tags allow you to group content into categories. These categories can be used to for searching and filtering throughout the project.' }
       title: Tagging
@@ -836,7 +839,7 @@ components:
                 $ref: 'api-project.yaml#/components/schemas/tagging'
     integrations:
       x-clearflask-page: { order: 20, name: 'Integrations', description: 'Configure various integrations with ClearFlask.' }
-      x-clearflask-additional-children: { children: [ { path: [ 'github' ] } ] }
+      x-clearflask-additional-children: { children: [ { path: [ 'github' ] }, { path: [ 'gitlab' ] } ] }
       title: Integrations
       type: object
       properties:
@@ -1007,6 +1010,165 @@ components:
                 releaseNotifyAll:
                   x-clearflask-prop: { order: 95, name: 'Announcement notify', defaultValue: true, description: 'Mirrored ClearFlask Announcement from a GitHub Release should notify subscribers in ClearFlask.', falseAsUndefined: true }
                   type: boolean
+            gitlab:
+              x-clearflask-hide: true
+              x-clearflask-page: { order: 6, name: 'GitLab Connect', description: 'Synchronize GitLab issues with ClearFlask.' }
+              title: GitLab
+              type: object
+              required:
+                - projectId
+                - projectPath
+                - name
+                - createWithCategoryId
+              properties:
+                gitlabInstanceUrl:
+                  x-clearflask-prop: { order: 0, name: 'GitLab Instance URL', description: 'GitLab instance URL. Defaults to https://gitlab.com for GitLab.com.' }
+                  type: string
+                projectId:
+                  x-clearflask-prop: { order: 5, name: 'Project ID', description: 'Linked GitLab project ID. Can only be changed by authenticating and proving ownership.' }
+                  type: integer
+                  format: int64
+                projectPath:
+                  x-clearflask-prop: { order: 10, name: 'Project Path', description: 'GitLab project path (e.g., group/subgroup/project).' }
+                  type: string
+                name:
+                  x-clearflask-prop: { order: 15, name: 'Project Name', description: 'Name of the linked project. For information only.' }
+                  type: string
+                createWithCategoryId:
+                  x-clearflask-prop: { order: 20, name: 'Create Issue as', description: 'Pick which category should be used to create ClearFlask posts when a GitLab issue is created.', subType: 'id' }
+                  x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: [ 'content', 'categories' ], displayPropName: 'name', colorPropName: 'color' }
+                  type: string
+                initialStatusId:
+                  x-clearflask-prop: { order: 30, name: 'Status', description: 'Pick which status should be used when creating a new post in ClearFlask in response to a new GitLab issue. Otherwise default initial status is used.' }
+                  x-clearflask-prop-link: { idPropName: 'statusId', linkPath: [ 'content', 'categories', '<$>', 'workflow', 'statuses' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '.', 'createWithCategoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
+                  type: string
+                createWithTags:
+                  x-clearflask-prop: { order: 40, name: 'Apply tags', description: 'Optionally add these tags to post created from GitLab' }
+                  x-clearflask-prop-link: { idPropName: 'tagId', linkPath: [ 'content', 'categories', '<$>', 'tagging', 'tags' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '.', 'createWithCategoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
+                  type: array
+                  items:
+                    type: string
+                statusSync:
+                  x-clearflask-prop: { order: 50, name: 'Status sync', description: 'If enabled, ClearFlask status will be set as a GitLab label.', falseAsUndefined: true }
+                  type: object
+                  properties:
+                    closedStatuses:
+                      x-clearflask-prop: { order: 20, name: 'CF -> GL Closed statuses', description: 'List which ClearFlask statuses should trigger GitLab issue to close. Leave empty to disable.' }
+                      x-clearflask-prop-link: { idPropName: 'statusId', linkPath: [ 'content', 'categories', '<$>', 'workflow', 'statuses' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '..', 'createWithCategoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
+                      type: array
+                      items:
+                        type: string
+                    closedStatus:
+                      x-clearflask-prop: { order: 20, name: 'GL -> CF Closed status', description: 'Which ClearFlask status should be used when GitLab issue is closed. Leave empty to disable.' }
+                      x-clearflask-prop-link: { idPropName: 'statusId', linkPath: [ 'content', 'categories', '<$>', 'workflow', 'statuses' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '..', 'createWithCategoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
+                      type: string
+                    openStatus:
+                      x-clearflask-prop: { order: 20, name: 'GL -> CF Open status', description: 'Which ClearFlask status should be used when GitLab issue is re-opened. Leave empty to disable.' }
+                      x-clearflask-prop-link: { idPropName: 'statusId', linkPath: [ 'content', 'categories', '<$>', 'workflow', 'statuses' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '..', 'createWithCategoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
+                      type: string
+                responseSync:
+                  x-clearflask-prop: { order: 60, name: 'Response sync', defaultValue: true, description: 'Create a comment on GitLab Issue when Response changes in ClearFlask.', falseAsUndefined: true }
+                  type: boolean
+                commentSync:
+                  x-clearflask-prop: { order: 70, name: 'Comment sync', defaultValue: true, description: 'Creating a comment on GitLab or ClearFlask will mirror the comment in the other.', falseAsUndefined: true }
+                  type: boolean
+                createReleaseWithCategoryId:
+                  x-clearflask-prop: { order: 90, name: 'Create Release as', description: 'Pick which category should be used to create ClearFlask posts when a GitLab release is created.', subType: 'id' }
+                  x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: [ 'content', 'categories' ], displayPropName: 'name', colorPropName: 'color' }
+                  type: string
+                releaseNotifyAll:
+                  x-clearflask-prop: { order: 95, name: 'Announcement notify', defaultValue: true, description: 'Mirrored ClearFlask Announcement from a GitLab Release should notify subscribers in ClearFlask.', falseAsUndefined: true }
+                  type: boolean
+            jira:
+              x-clearflask-hide: true
+              x-clearflask-page: { order: 6, name: 'Jira Connect', description: 'Synchronize Jira issues with ClearFlask.' }
+              title: Jira
+              type: object
+              required:
+                - cloudId
+                - projectKey
+                - createWithCategoryId
+              properties:
+                cloudId:
+                  x-clearflask-prop: { order: 0, name: 'Cloud ID', description: 'Jira Cloud instance ID.' }
+                  type: string
+                cloudName:
+                  x-clearflask-prop: { order: 5, name: 'Cloud Name', description: 'Jira Cloud instance name for display.' }
+                  type: string
+                projectKey:
+                  x-clearflask-prop: { order: 10, name: 'Project Key', description: 'Jira project key (e.g., PROJ).' }
+                  type: string
+                projectName:
+                  x-clearflask-prop: { order: 15, name: 'Project Name', description: 'Display name of the linked Jira project.' }
+                  type: string
+                createWithCategoryId:
+                  x-clearflask-prop: { order: 20, name: 'Create Issue as', description: 'Category for posts created from Jira issues.', subType: 'id' }
+                  x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: [ 'content', 'categories' ], displayPropName: 'name', colorPropName: 'color' }
+                  type: string
+                initialStatusId:
+                  x-clearflask-prop: { order: 30, name: 'Status', description: 'Initial status for posts from Jira. Uses default if not set.' }
+                  x-clearflask-prop-link: { idPropName: 'statusId', linkPath: [ 'content', 'categories', '<$>', 'workflow', 'statuses' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '.', 'createWithCategoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
+                  type: string
+                createWithTags:
+                  x-clearflask-prop: { order: 40, name: 'Apply tags', description: 'Tags to apply to posts from Jira.' }
+                  x-clearflask-prop-link: { idPropName: 'tagId', linkPath: [ 'content', 'categories', '<$>', 'tagging', 'tags' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '.', 'createWithCategoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
+                  type: array
+                  items:
+                    type: string
+                issueTypeId:
+                  x-clearflask-prop: { order: 45, name: 'Issue Type ID', description: 'Jira issue type to create when syncing from ClearFlask (Bug, Story, Task).' }
+                  type: string
+                autoCreateIssue:
+                  x-clearflask-prop: { order: 47, name: 'Auto-create Jira issues', defaultValue: false, description: 'Automatically create a Jira issue when a ClearFlask post is created in the linked category.' }
+                  type: boolean
+                statusSync:
+                  x-clearflask-prop: { order: 50, name: 'Status sync', description: 'Map ClearFlask statuses to Jira transitions for bidirectional sync.', falseAsUndefined: true }
+                  type: object
+                  properties:
+                    statusMapping:
+                      x-clearflask-prop: { order: 10, name: 'CF -> Jira Status Mapping', description: 'Map ClearFlask status IDs to Jira transition/status names.' }
+                      type: object
+                      additionalProperties:
+                        type: string
+                    reverseStatusMapping:
+                      x-clearflask-prop: { order: 20, name: 'Jira -> CF Status Mapping', description: 'Map Jira status names to ClearFlask status IDs.' }
+                      type: object
+                      additionalProperties:
+                        type: string
+                responseSync:
+                  x-clearflask-prop: { order: 60, name: 'Response sync', defaultValue: true, description: 'Create Jira comment when Response changes in ClearFlask.', falseAsUndefined: true }
+                  type: boolean
+                commentSync:
+                  x-clearflask-prop: { order: 70, name: 'Comment sync', defaultValue: true, description: 'Mirror comments between Jira and ClearFlask.', falseAsUndefined: true }
+                  type: boolean
+            slack:
+              x-clearflask-hide: true
+              x-clearflask-page: { order: 6, name: 'Slack Connect', description: 'Synchronize ClearFlask posts with Slack channels. Get updates directly in Slack when posts are created, updated, or commented.' }
+              title: Slack
+              type: object
+              required:
+                - teamId
+                - accessToken
+                - botUserId
+                - channelLinks
+              properties:
+                teamId:
+                  x-clearflask-prop: { order: 0, name: 'Team ID', description: 'Slack workspace ID. Set automatically during OAuth connection.' }
+                  type: string
+                teamName:
+                  x-clearflask-prop: { order: 1, name: 'Workspace Name', description: 'Name of the connected Slack workspace. For information only.' }
+                  type: string
+                accessToken:
+                  x-clearflask-prop: { order: 2, name: 'Access Token', description: 'OAuth access token. Set automatically during OAuth connection.' }
+                  type: string
+                botUserId:
+                  x-clearflask-prop: { order: 3, name: 'Bot User ID', description: 'Bot user ID for filtering self-messages. Set automatically during OAuth connection.' }
+                  type: string
+                channelLinks:
+                  x-clearflask-page-group: { order: 10, name: 'Channel Links', description: 'Link Slack channels to ClearFlask categories for two-way synchronization.', tablePropertyNames: [ 'channelName', 'categoryId' ] }
+                  type: array
+                  items:
+                    $ref: 'api-project.yaml#/components/schemas/SlackChannelLink'
             forceSearchEngine:
               x-clearflask-super-admin-only: true
               x-clearflask-prop: { subType: 'Search Engine', order: 2, name: 'Which search engine to use' }
@@ -1245,6 +1407,50 @@ components:
           type: string
         email:
           type: string
+    SlackChannelLink:
+      type: object
+      required:
+        - channelId
+        - categoryId
+      properties:
+        channelId:
+          x-clearflask-prop: { order: 0, name: 'Channel ID', description: 'Slack channel ID (e.g., C01234567). Set automatically when selecting a channel.' }
+          type: string
+        channelName:
+          x-clearflask-prop: { order: 1, name: 'Channel Name', description: 'Name of the linked Slack channel. For information only.' }
+          type: string
+        categoryId:
+          x-clearflask-prop: { order: 10, name: 'Category', description: 'ClearFlask category to link with this Slack channel.', subType: 'id' }
+          x-clearflask-prop-link: { idPropName: 'categoryId', linkPath: [ 'content', 'categories' ], displayPropName: 'name', colorPropName: 'color' }
+          type: string
+        initialStatusId:
+          x-clearflask-prop: { order: 20, name: 'Initial Status', description: 'Status for posts created from Slack messages. Uses default if not set.' }
+          x-clearflask-prop-link: { idPropName: 'statusId', linkPath: [ 'content', 'categories', '<$>', 'workflow', 'statuses' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '.', 'categoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
+          type: string
+        createWithTags:
+          x-clearflask-prop: { order: 30, name: 'Apply Tags', description: 'Tags to apply to posts created from Slack.' }
+          x-clearflask-prop-link: { idPropName: 'tagId', linkPath: [ 'content', 'categories', '<$>', 'tagging', 'tags' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '.', 'categoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
+          type: array
+          items:
+            type: string
+        syncPostsToSlack:
+          x-clearflask-prop: { order: 40, name: 'Posts → Slack', defaultValue: true, description: 'Send new ClearFlask posts to Slack channel.' }
+          type: boolean
+        syncSlackToPosts:
+          x-clearflask-prop: { order: 50, name: 'Slack → Posts', defaultValue: false, description: 'Create posts from new Slack messages in this channel.' }
+          type: boolean
+        syncCommentsToReplies:
+          x-clearflask-prop: { order: 60, name: 'Comments → Replies', defaultValue: true, description: 'Mirror ClearFlask comments as Slack thread replies.' }
+          type: boolean
+        syncRepliesToComments:
+          x-clearflask-prop: { order: 70, name: 'Replies → Comments', defaultValue: true, description: 'Create ClearFlask comments from Slack thread replies.' }
+          type: boolean
+        syncStatusUpdates:
+          x-clearflask-prop: { order: 80, name: 'Status Updates', defaultValue: true, description: 'Update Slack message when post status changes.' }
+          type: boolean
+        syncResponseUpdates:
+          x-clearflask-prop: { order: 90, name: 'Response Updates', defaultValue: true, description: 'Post idea responses to Slack thread.' }
+          type: boolean
 
 /slug/{slug}/bind/configAndUser:
   post:

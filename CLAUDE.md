@@ -90,6 +90,33 @@ OpenAPI YAML files in `clearflask-api/src/main/openapi/` generate:
 1. TypeScript client → `clearflask-frontend/src/api/`
 2. Java server interfaces → `clearflask-api/target/`
 
+### Adding New API Endpoints
+
+When adding a new API endpoint (especially admin endpoints), you must update multiple files:
+
+1. **Define the endpoint** in the appropriate API file:
+   - `api-comment.yaml`, `api-idea.yaml`, `api-user.yaml`, etc.
+   - Define schemas (e.g., `CommentCreateAdmin`) and paths (e.g., `/project/{projectId}/admin/idea/{ideaId}/comment`)
+
+2. **Add references** in these files (use encoded path format with `~1` for `/`):
+   - `clearflask-api/src/main/openapi/api.yaml` - Main API (all endpoints)
+   - `clearflask-api/src/main/openapi/api-admin.yaml` - Admin API (admin endpoints only)
+   - `clearflask-api/src/main/openapi/api-docs.yaml` - API documentation
+
+3. **Rebuild the API module** to generate Java/TypeScript clients:
+   ```bash
+   cd clearflask-api && mvn clean install -DskipTests
+   ```
+
+4. **Implement the endpoint** in the corresponding resource class:
+   - Backend: `clearflask-server/src/main/java/com/smotana/clearflask/web/resource/`
+
+Example path reference format:
+```yaml
+/project/{projectId}/admin/idea/{ideaId}/comment:
+  $ref: 'api-comment.yaml#/~1project~1{projectId}~1admin~1idea~1{ideaId}~1comment'
+```
+
 ## Key Technologies
 
 - **Backend**: Java 11, Maven, Guice, Jersey, Lombok
@@ -110,6 +137,25 @@ When running `make local-up`:
 - Kibana: `http://localhost:5601`
 - KillBill Kaui: `http://localhost:8081` (admin/password)
 - LocalStack AWS: `aws --endpoint-url=http://localhost:4566`
+
+## Context Management for Claude Code
+
+**IMPORTANT**: Commands like `make local-up`, `mvn install`, and other build/deploy commands produce verbose output that can overload Claude's context window, causing it to fail mid-task.
+
+To avoid context overload:
+- **Use quiet flags** when possible: `mvn install -q -DskipTests`, `make local-up 2>&1 | tail -20`
+- **Run commands in background**: Use `run_in_background: true` parameter for long-running commands
+- **Avoid running verbose commands** if context is already high
+- **Limit output**: Pipe to `tail` or `head` to capture only relevant output
+- **Monitor context usage**: If you see "Context low" warnings, avoid running more verbose commands
+
+Example:
+```bash
+# Instead of: make local-up
+# Use: make local-up 2>&1 | tail -50
+
+# Or run in background and check logs selectively
+```
 
 ## Plans
 

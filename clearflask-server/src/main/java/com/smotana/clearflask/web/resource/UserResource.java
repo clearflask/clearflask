@@ -560,7 +560,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         return userStore.histogram(projectId, histogramSearchAdmin);
     }
 
-    @RolesAllowed({Role.PROJECT_ADMIN, Role.PROJECT_MODERATOR})
+    @RolesAllowed({Role.PROJECT_ADMIN, Role.PROJECT_MODERATOR, Role.PROJECT_MODERATOR_ACTIVE})
     @Limit(requiredPermits = 10)
     @Override
     public UserSearchResponse userSearchAdmin(String projectId, UserSearchAdmin userSearchAdmin, String cursor) {

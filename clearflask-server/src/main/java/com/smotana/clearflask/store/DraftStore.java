@@ -112,6 +112,13 @@ public interface DraftStore {
 
         String coverImg;
 
+        com.smotana.clearflask.api.model.IdeaVisibility visibility;
+
+        /**
+         * WARNING: Unsanitized text.
+         */
+        String adminNotes;
+
         public String getDescriptionSanitized(Sanitizer sanitizer) {
             return sanitizer.richHtml(getDescription(), "draft", getDraftId(), getProjectId(), false);
         }
@@ -146,6 +153,8 @@ public interface DraftStore {
                     getLinkedFromPostIds().asList(),
                     getOrder(),
                     sanitizer.signCoverImg(projectId, getCoverImg()).orElse(null),
+                    getVisibility(),
+                    getAdminNotes(),
                     getDraftId(),
                     getLastSaved());
         }

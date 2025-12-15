@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 const { useBabelRc, override, removeModuleScopePlugin } = require('customize-cra');
 const LoadablePlugin = require('@loadable/webpack-plugin');
+const webpack = require('webpack');
 
 module.exports = override(
   useBabelRc(),
@@ -9,6 +10,11 @@ module.exports = override(
   (config, env) => {
 
     config.plugins.push(new LoadablePlugin());
+
+    // Provide process polyfill for browser
+    config.plugins.push(new webpack.ProvidePlugin({
+      process: 'process/browser',
+    }));
 
     // https://github.com/webpack/webpack/issues/6876#issuecomment-376417847
     config.optimization.namedChunks = false;

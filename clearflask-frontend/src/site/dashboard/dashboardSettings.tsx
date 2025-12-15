@@ -25,6 +25,9 @@ import {
   ProjectSettingsDomain,
   ProjectSettingsFeedback,
   ProjectSettingsGitHub,
+  ProjectSettingsGitLab,
+  ProjectSettingsJira,
+  ProjectSettingsSlack,
   ProjectSettingsGoogleAnalytics,
   ProjectSettingsHotjar,
   ProjectSettingsInstall,
@@ -81,6 +84,9 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
               { type: 'item', slug: 'settings/project/data', name: this.props.t('data'), offset: 1 },
               { type: 'heading', text: this.props.t('integrations'), offset: 1 },
               { type: 'item', slug: 'settings/project/github', name: 'GitHub', offset: 2 },
+              { type: 'item', slug: 'settings/project/gitlab', name: 'GitLab (Beta)', offset: 2 },
+              { type: 'item', slug: 'settings/project/jira', name: 'Jira (Beta)', offset: 2 },
+              { type: 'item', slug: 'settings/project/slack', name: 'Slack (Beta)', offset: 2 },
               { type: 'item', slug: 'settings/project/intercom', name: 'Intercom', offset: 2 },
               { type: 'item', slug: 'settings/project/google-analytics', name: 'Google Analytics', offset: 2 },
               { type: 'item', slug: 'settings/project/hotjar', name: 'Hotjar', offset: 2 },
@@ -175,6 +181,15 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
           break;
         case 'github':
           mainContent = (<ProjectSettingsGitHub project={activeProject} server={activeProject.server} editor={activeProject.editor} />);
+          break;
+        case 'gitlab':
+          mainContent = (<ProjectSettingsGitLab project={activeProject} server={activeProject.server} editor={activeProject.editor} />);
+          break;
+        case 'jira':
+          mainContent = (<ProjectSettingsJira project={activeProject} server={activeProject.server} editor={activeProject.editor} />);
+          break;
+        case 'slack':
+          mainContent = (<ProjectSettingsSlack project={activeProject} server={activeProject.server} editor={activeProject.editor} />);
           break;
         case 'google-analytics':
           mainContent = (<ProjectSettingsGoogleAnalytics server={activeProject.server} editor={activeProject.editor} />);

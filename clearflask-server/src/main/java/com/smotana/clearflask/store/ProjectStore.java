@@ -119,6 +119,12 @@ public interface ProjectStore {
 
         Optional<IdeaStatus> getStatus(String categoryId, String statusId);
 
+        /**
+         * Returns all status IDs that have disablePublicDisplay set to true.
+         * These posts should be hidden from non-admin users.
+         */
+        ImmutableSet<String> getHiddenStatusIds();
+
         boolean isVotingAllowed(VoteValue voteValue, String categoryId, Optional<String> statusIdOpt);
 
         boolean isExpressingAllowed(String categoryId, Optional<String> statusIdOpt);
@@ -144,6 +150,8 @@ public interface ProjectStore {
         }
 
         Optional<GitHub> getGitHubIntegration();
+
+        Optional<GitLab> getGitLabIntegration();
 
         Optional<SearchEngine> getSearchEngineOverride();
     }

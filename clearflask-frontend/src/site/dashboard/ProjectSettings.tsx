@@ -105,7 +105,7 @@ import { TourAnchor, TourDefinitionGuideState } from '../../common/tour';
 import { notEmpty } from '../../common/util/arrayUtil';
 import { Bag } from '../../common/util/bag';
 import debounce, { SearchTypeDebounceTime } from '../../common/util/debounce';
-import { detectEnv, Environment, isProd } from '../../common/util/detectEnv';
+import { detectEnv, Environment } from '../../common/util/detectEnv';
 import { OAUTH_CODE_PARAM_NAME, OAuthFlow } from '../../common/util/oauthUtil';
 import { getProjectLink } from '../../common/util/projectUtil';
 import randomUuid from '../../common/util/uuid';
@@ -2530,6 +2530,7 @@ export const ProjectSettingsFeedbackStatus = (props: {
   const initialStatusIdProp = (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'workflow', 'entryStatus']) as ConfigEditor.StringProperty);
   const nameProp = (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'workflow', 'statuses', props.statusIndex, 'name']) as ConfigEditor.StringProperty);
   const colorProp = (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'workflow', 'statuses', props.statusIndex, 'color']) as ConfigEditor.StringProperty);
+  const disablePublicDisplayProp = (props.editor.getProperty(['content', 'categories', props.feedback.categoryAndIndex.index, 'workflow', 'statuses', props.statusIndex, 'disablePublicDisplay']) as ConfigEditor.BooleanProperty);
   const [statusName, setStatusName] = useDebounceProp<string>(
     nameProp.value || '',
     text => nameProp.set(text));
@@ -2577,6 +2578,12 @@ export const ProjectSettingsFeedbackStatus = (props: {
                   checked={initialStatusIdProp.value === props.status.statusId}
                   disabled={initialStatusIdProp.value === props.status.statusId}
                   onChange={e => initialStatusIdProp.set(props.status.statusId)}
+        />
+      )} />
+      <FormControlLabel label="Hidden from public view" control={(
+        <Checkbox size="small" color="primary"
+                  checked={!!disablePublicDisplayProp.value}
+                  onChange={e => disablePublicDisplayProp.set(e.target.checked)}
         />
       )} />
       <PropertyByPath
@@ -3387,7 +3394,7 @@ export const ProjectSettingsGitHub = (props: {
                     disableElevation
                     color="primary"
                     disabled={hasUnsavedChanges}
-                    onClick={() => isProd() ? oauthFlow.openForGitHubAppInstall() : getRepos('my-code')}
+                    onClick={() => detectEnv() === Environment.DEVELOPMENT_FRONTEND ? getRepos('my-code') : oauthFlow.openForGitHubAppInstall()}
                   >Install</Button>
                 </p>
                 <p>
@@ -3396,7 +3403,7 @@ export const ProjectSettingsGitHub = (props: {
                   </Typography>
                   <MuiLink
                     href="#"
-                    onClick={() => isProd() ? oauthFlow.openForGitHubApp() : getRepos('my-code')}
+                    onClick={() => detectEnv() === Environment.DEVELOPMENT_FRONTEND ? getRepos('my-code') : oauthFlow.openForGitHubApp()}
                   >
                     <Typography component="span" variant="caption" color="primary">
                       Link your installation
@@ -3506,6 +3513,610 @@ export const ProjectSettingsGitHub = (props: {
   );
 };
 
+export const ProjectSettingsGitLab = (props: {
+  project: AdminProject;
+  server: Server;
+  editor: ConfigEditor.Editor;
+}) => {
+  const classes = useStyles();
+  const theme = useTheme();
+  const [projects, setProjects] = useState<Array<{ projectId: number; projectPath: string; name: string }> | undefined>();
+  const [selfHostedUrl, setSelfHostedUrl] = useState<string>('');
+  const [selfHostedClientId, setSelfHostedClientId] = useState<string>('');
+  const [showSelfHosted, setShowSelfHosted] = useState<boolean>(false);
+
+  const accountBasePlanId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
+  const accountAddons = useSelector<ReduxStateAdmin, {
+    [addonId: string]: string
+  }>(state => state.account.account.account?.addons || {}, shallowEqual);
+  const accountSubscriptionStatus = useSelector<ReduxStateAdmin, Admin.SubscriptionStatus | undefined>(state => state.account.account.account?.subscriptionStatus, shallowEqual);
+
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(props.project.hasUnsavedChanges());
+  useEffect(() => {
+    return props.project.subscribeToUnsavedChanges(() => {
+      setHasUnsavedChanges(props.project.hasUnsavedChanges());
+    });
+  }, [props.project]);
+
+  const [gitLab, setGitLab] = useState<Admin.GitLab | undefined>(props.editor.getConfig().gitlab);
+  useEffect(() => {
+    return props.editor.subscribe(() => {
+      setGitLab(props.editor.getConfig().gitlab);
+    });
+  }, [props.editor]);
+
+  const getProjects = (code: string, gitlabInstanceUrl?: string) => ServerAdmin.get().dispatchAdmin()
+    .then(d => d.gitLabGetProjectsAdmin({ gitLabGetProjectsBody: { code, gitlabInstanceUrl } }))
+    .then(result => setProjects(result.projects));
+
+  const oauthFlow = new OAuthFlow({
+    accountType: 'gitlab-integration',
+    redirectPath: '/dashboard/settings/project/gitlab',
+  });
+  const oauthResult = oauthFlow.checkResult();
+  if (oauthResult) {
+    // extraData contains the GitLab instance URL for self-hosted instances
+    getProjects(oauthResult.code, oauthResult.extraData);
+  }
+
+  return (
+    <ProjectSettingsBase title="GitLab Integration"
+                         description="Mirror GitLab Issues and Releases into ClearFlask. Resolve issues from ClearFlask and mirror into GitLab.">
+      <div style={{ marginTop: 16 }}>
+        <Message
+          message="Beta: This integration is actively being tested and may not work properly in all scenarios. Please report any issues to our support team."
+          severity="warning"
+        />
+      </div>
+      <br />
+      <UpgradeWrapper
+        accountBasePlanId={accountBasePlanId}
+        accountAddons={accountAddons}
+        subscriptionStatus={accountSubscriptionStatus}
+        propertyPath={['gitlab']}
+      >
+        <Collapse in={!!gitLab}>
+          <Section
+            title="Configure synchronization"
+            description={(
+              <>
+                Your linked GitLab project <b>{gitLab?.name}</b> synchronization can be configured
+                here.
+              </>
+            )}
+            content={!!gitLab && (
+              <>
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['gitlab', 'createWithCategoryId']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['gitlab', 'initialStatusId']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['gitlab', 'createWithTags']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['gitlab', 'statusSync']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['gitlab', 'responseSync']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['gitlab', 'commentSync']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['gitlab', 'createReleaseWithCategoryId']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['gitlab', 'releaseNotifyAll']} />
+                <p>
+                  <Button
+                    style={{ color: theme.palette.error.dark }}
+                    color="inherit"
+                    onClick={() => props.editor.getPage(['gitlab']).set(undefined)}
+                  >Delete</Button>
+                </p>
+              </>
+            )}
+          />
+        </Collapse>
+        <Section
+          title="Select new project"
+          description="Link your GitLab project by authorizing ClearFlask"
+          content={(
+            <>
+              <Collapse in={!projects && hasUnsavedChanges}>
+                <p>
+                  <Message
+                    message="You must publish unsaved changes before we can redirect you to GitLab"
+                    severity="warning" />
+                </p>
+              </Collapse>
+              <Collapse in={!projects && !hasUnsavedChanges}>
+                <p>
+                  <Button
+                    variant="contained"
+                    disableElevation
+                    color="primary"
+                    disabled={hasUnsavedChanges}
+                    onClick={() => detectEnv() === Environment.DEVELOPMENT_FRONTEND ? getProjects('my-code') : oauthFlow.openForGitLab()}
+                  >Install</Button>
+                </p>
+                <p>
+                  <MuiLink
+                    href="#"
+                    onClick={(e) => { e.preventDefault(); setShowSelfHosted(!showSelfHosted); }}
+                  >
+                    <Typography component="span" variant="caption" color="primary">
+                      {showSelfHosted ? 'Hide self-hosted options' : 'Using self-hosted GitLab?'}
+                    </Typography>
+                  </MuiLink>
+                </p>
+                <Collapse in={showSelfHosted}>
+                  <div style={{ marginTop: 16 }}>
+                    <TextField
+                      label="GitLab Instance URL"
+                      placeholder="https://gitlab.mycompany.com"
+                      value={selfHostedUrl}
+                      onChange={e => setSelfHostedUrl(e.target.value)}
+                      fullWidth
+                      margin="dense"
+                      helperText="Your self-hosted GitLab URL"
+                    />
+                    <TextField
+                      label="OAuth Application ID"
+                      placeholder="Application ID from GitLab"
+                      value={selfHostedClientId}
+                      onChange={e => setSelfHostedClientId(e.target.value)}
+                      fullWidth
+                      margin="dense"
+                      helperText={(
+                        <>
+                          Create an OAuth application in your GitLab instance under{' '}
+                          <MuiLink href="https://docs.gitlab.com/ee/integration/oauth_provider.html" target="_blank" rel="noopener noreferrer">
+                            Admin Area &gt; Applications
+                          </MuiLink>
+                          {' with redirect URI: '}<code>{windowIso.location.protocol}{'//'}{windowIso.location.host}/dashboard/settings/project/gitlab</code>
+                        </>
+                      )}
+                    />
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      disabled={!selfHostedUrl || !selfHostedClientId || hasUnsavedChanges}
+                      onClick={() => oauthFlow.openForSelfHostedGitLab(selfHostedUrl, selfHostedClientId)}
+                      style={{ marginTop: 8 }}
+                    >Install</Button>
+                  </div>
+                </Collapse>
+              </Collapse>
+              {!!projects && (projects.length ? (
+                <TemplateWrapper<[FeedbackInstance | undefined, ChangelogInstance | undefined]>
+                  key="feedback-changelog"
+                  editor={props.editor}
+                  mapper={templater => Promise.all([templater.feedbackGet(), templater.changelogGet()])}
+                  renderResolved={(templater, [feedback, changelog]) => (
+                    <Collapse in={!!projects} appear>
+                      <Table className={classes.githubReposTable}>
+                        <TableBody>
+                          {projects.map(project => {
+                            const selected = gitLab?.projectId === project.projectId;
+                            return (
+                              <TableRow key={project.projectPath}>
+                                <TableCell key="project">
+                                  <Typography>{project.name}</Typography>
+                                  <Typography variant="caption" color="textSecondary">{project.projectPath}</Typography>
+                                </TableCell>
+                                <TableCell key="action">
+                                  <Typography>
+                                    <Button
+                                      variant="contained"
+                                      disableElevation
+                                      color="primary"
+                                      disabled={selected}
+                                      onClick={() => {
+                                        if (selected) return;
+                                        const gitLabPage = props.editor.getPage(['gitlab']);
+                                        if (!gitLabPage.value) {
+                                          gitLabPage.set(true);
+                                          (props.editor.getProperty(['gitlab', 'statusSync']) as ConfigEditor.ObjectProperty)
+                                            .set(true);
+
+                                          var category: Admin.Category | undefined;
+                                          var closedStatuses: Array<string> | undefined;
+                                          var closedStatus: string | undefined;
+                                          var openStatus: string | undefined;
+                                          if (feedback) {
+                                            category = feedback.categoryAndIndex.category;
+                                          } else if (!!props.editor.getConfig().content.categories.length) {
+                                            category = props.editor.getConfig().content.categories[0];
+                                          }
+                                          closedStatuses = [
+                                            ...(feedback?.statusIdAccepted ? [feedback.statusIdAccepted] : []),
+                                            ...(category ? category.workflow.statuses
+                                              .filter(status => ['accepted', 'closed', 'completed', 'complete', 'cancelled'].includes(status.name?.toLowerCase()))
+                                              .map(status => status.statusId) : []),
+                                          ];
+                                          closedStatus = feedback?.statusIdAccepted || closedStatuses?.[0];
+                                          openStatus = category?.workflow.entryStatus || category?.workflow.statuses.find(s => !closedStatuses?.includes(s.statusId))?.statusId;
+
+                                          category && (props.editor.getProperty(['gitlab', 'createWithCategoryId']) as ConfigEditor.StringProperty)
+                                            .set(category.categoryId);
+                                          closedStatuses?.length && (props.editor.getProperty(['gitlab', 'statusSync', 'closedStatuses']) as ConfigEditor.LinkMultiProperty)
+                                            .set(new Set(closedStatuses));
+                                          closedStatus && (props.editor.getProperty(['gitlab', 'statusSync', 'closedStatus']) as ConfigEditor.StringProperty)
+                                            .set(closedStatus);
+                                          openStatus && (props.editor.getProperty(['gitlab', 'statusSync', 'openStatus']) as ConfigEditor.StringProperty)
+                                            .set(openStatus);
+
+                                          // Release sync
+                                          var releaseCategory: Admin.Category | undefined;
+                                          if (changelog) {
+                                            releaseCategory = changelog.categoryAndIndex.category;
+                                          } else if (!!props.editor.getConfig().content.categories.length) {
+                                            releaseCategory = props.editor.getConfig().content.categories[props.editor.getConfig().content.categories.length - 1];
+                                          }
+                                          releaseCategory && (props.editor.getProperty(['gitlab', 'createReleaseWithCategoryId']) as ConfigEditor.StringProperty)
+                                            .set(releaseCategory.categoryId);
+                                        }
+                                        (props.editor.getProperty(['gitlab', 'name']) as ConfigEditor.StringProperty)
+                                          .set(project.name);
+                                        (props.editor.getProperty(['gitlab', 'projectId']) as ConfigEditor.NumberProperty)
+                                          .set(project.projectId);
+                                        (props.editor.getProperty(['gitlab', 'projectPath']) as ConfigEditor.StringProperty)
+                                          .set(project.projectPath);
+                                        // Store the GitLab instance URL if using self-hosted
+                                        if (selfHostedUrl) {
+                                          (props.editor.getProperty(['gitlab', 'gitlabInstanceUrl']) as ConfigEditor.StringProperty)
+                                            .set(selfHostedUrl);
+                                        }
+                                      }}
+                                    >
+                                      {selected ? 'Linked' : 'Link'}
+                                    </Button>
+                                  </Typography>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </Collapse>
+                  )} />
+              ) : (
+                <Message message="No projects found" severity="warning" />
+              ))}
+            </>
+          )
+          }
+        />
+      </UpgradeWrapper>
+      <br /><br />
+      <NeedHelpInviteTeammate server={props.server} />
+    </ProjectSettingsBase>
+  );
+};
+
+export const ProjectSettingsJira = (props: {
+  project: AdminProject;
+  server: Server;
+  editor: ConfigEditor.Editor;
+}) => {
+  const classes = useStyles();
+  const theme = useTheme();
+  const [projects, setProjects] = useState<Array<{ cloudId: string; cloudName?: string; projectKey: string; projectName: string }> | undefined>();
+
+  const accountBasePlanId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
+  const accountAddons = useSelector<ReduxStateAdmin, {
+    [addonId: string]: string
+  }>(state => state.account.account.account?.addons || {}, shallowEqual);
+  const accountSubscriptionStatus = useSelector<ReduxStateAdmin, Admin.SubscriptionStatus | undefined>(state => state.account.account.account?.subscriptionStatus, shallowEqual);
+
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(props.project.hasUnsavedChanges());
+  useEffect(() => {
+    return props.project.subscribeToUnsavedChanges(() => {
+      setHasUnsavedChanges(props.project.hasUnsavedChanges());
+    });
+  }, [props.project]);
+
+  const [jira, setJira] = useState<Admin.Jira | undefined>(props.editor.getConfig().jira);
+  useEffect(() => {
+    return props.editor.subscribe(() => {
+      setJira(props.editor.getConfig().jira);
+    });
+  }, [props.editor]);
+
+  const getProjects = (code: string) => ServerAdmin.get().dispatchAdmin()
+    .then(d => d.jiraGetProjectsAdmin(code))
+    .then(result => setProjects(result.projects));
+
+  const oauthFlow = new OAuthFlow({
+    accountType: 'jira-integration',
+    redirectPath: '/dashboard/settings/project/jira',
+  });
+  const oauthResult = oauthFlow.checkResult();
+  if (oauthResult) {
+    getProjects(oauthResult.code);
+  }
+
+  return (
+    <ProjectSettingsBase title="Jira Integration"
+                         description="Synchronize Jira issues with ClearFlask. Create and update issues from ClearFlask and mirror status changes.">
+      <div style={{ marginTop: 16 }}>
+        <Message
+          message="Beta: This integration is actively being tested and may not work properly in all scenarios. Please report any issues to our support team."
+          severity="warning"
+        />
+      </div>
+      <br />
+      <UpgradeWrapper
+        accountBasePlanId={accountBasePlanId}
+        accountAddons={accountAddons}
+        subscriptionStatus={accountSubscriptionStatus}
+        propertyPath={['jira']}
+      >
+        <Collapse in={!!jira}>
+          <Section
+            title="Configure synchronization"
+            description={(
+              <>
+                Your linked Jira project <b>{jira?.projectName}</b> ({jira?.cloudName}) synchronization can be configured here.
+              </>
+            )}
+            content={!!jira && (
+              <>
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['jira', 'createWithCategoryId']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['jira', 'initialStatusId']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['jira', 'createWithTags']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['jira', 'issueTypeId']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['jira', 'autoCreateIssue']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['jira', 'statusSync']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['jira', 'responseSync']} />
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['jira', 'commentSync']} />
+                <p>
+                  <Button
+                    style={{ color: theme.palette.error.dark }}
+                    color="inherit"
+                    onClick={() => props.editor.getPage(['jira']).set(undefined)}
+                  >Delete</Button>
+                </p>
+              </>
+            )}
+          />
+        </Collapse>
+        <Section
+          title="Select new project"
+          description="Link your Jira project by authorizing ClearFlask"
+          content={(
+            <>
+              <Collapse in={!projects && hasUnsavedChanges}>
+                <p>
+                  <Message
+                    message="You must publish unsaved changes before we can redirect you to Jira"
+                    severity="warning" />
+                </p>
+              </Collapse>
+              <Collapse in={!projects && !hasUnsavedChanges}>
+                <p>
+                  <Button
+                    variant="contained"
+                    disableElevation
+                    color="primary"
+                    disabled={hasUnsavedChanges}
+                    onClick={() => detectEnv() === Environment.DEVELOPMENT_FRONTEND ? getProjects('my-code') : oauthFlow.openForJira()}
+                  >Install</Button>
+                </p>
+              </Collapse>
+              {!!projects && (projects.length ? (
+                <TemplateWrapper<[FeedbackInstance | undefined]>
+                  key="feedback"
+                  editor={props.editor}
+                  mapper={templater => Promise.all([templater.feedbackGet()])}
+                  renderResolved={(templater, [feedback]) => (
+                    <Collapse in={!!projects} appear>
+                      <Table className={classes.githubReposTable}>
+                        <TableBody>
+                          {projects.map(project => {
+                            const selected = jira?.projectKey === project.projectKey && jira?.cloudId === project.cloudId;
+                            return (
+                              <TableRow key={`${project.cloudId}-${project.projectKey}`}>
+                                <TableCell key="project">
+                                  <Typography>{project.projectName}</Typography>
+                                  <Typography variant="caption" color="textSecondary">
+                                    {project.cloudName || project.cloudId} - {project.projectKey}
+                                  </Typography>
+                                </TableCell>
+                                <TableCell key="action">
+                                  <Typography>
+                                    <Button
+                                      variant="contained"
+                                      disableElevation
+                                      color="primary"
+                                      disabled={selected}
+                                      onClick={() => {
+                                        if (selected) return;
+                                        const jiraPage = props.editor.getPage(['jira']);
+                                        if (!jiraPage.value) {
+                                          jiraPage.set(true);
+
+                                          var category: Admin.Category | undefined;
+                                          if (feedback) {
+                                            category = feedback.categoryAndIndex.category;
+                                          } else if (!!props.editor.getConfig().content.categories.length) {
+                                            category = props.editor.getConfig().content.categories[0];
+                                          }
+
+                                          category && (props.editor.getProperty(['jira', 'createWithCategoryId']) as ConfigEditor.StringProperty)
+                                            .set(category.categoryId);
+                                        }
+                                        (props.editor.getProperty(['jira', 'cloudId']) as ConfigEditor.StringProperty)
+                                          .set(project.cloudId);
+                                        if (project.cloudName) {
+                                          (props.editor.getProperty(['jira', 'cloudName']) as ConfigEditor.StringProperty)
+                                            .set(project.cloudName);
+                                        }
+                                        (props.editor.getProperty(['jira', 'projectKey']) as ConfigEditor.StringProperty)
+                                          .set(project.projectKey);
+                                        (props.editor.getProperty(['jira', 'projectName']) as ConfigEditor.StringProperty)
+                                          .set(project.projectName);
+                                      }}
+                                    >
+                                      {selected ? 'Linked' : 'Link'}
+                                    </Button>
+                                  </Typography>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </Collapse>
+                  )} />
+              ) : (
+                <Message message="No projects found" severity="warning" />
+              ))}
+            </>
+          )
+          }
+        />
+      </UpgradeWrapper>
+      <br /><br />
+      <NeedHelpInviteTeammate server={props.server} />
+    </ProjectSettingsBase>
+  );
+};
+
+export const ProjectSettingsSlack = (props: {
+  project: AdminProject;
+  server: Server;
+  editor: ConfigEditor.Editor;
+}) => {
+  const theme = useTheme();
+
+  const accountBasePlanId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
+  const accountAddons = useSelector<ReduxStateAdmin, {
+    [addonId: string]: string
+  }>(state => state.account.account.account?.addons || {}, shallowEqual);
+  const accountSubscriptionStatus = useSelector<ReduxStateAdmin, Admin.SubscriptionStatus | undefined>(state => state.account.account.account?.subscriptionStatus, shallowEqual);
+
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(props.project.hasUnsavedChanges());
+  useEffect(() => {
+    return props.project.subscribeToUnsavedChanges(() => {
+      setHasUnsavedChanges(props.project.hasUnsavedChanges());
+    });
+  }, [props.project]);
+
+  const [slack, setSlack] = useState<Admin.Slack | undefined>(props.editor.getConfig().slack);
+  useEffect(() => {
+    return props.editor.subscribe(() => {
+      setSlack(props.editor.getConfig().slack);
+    });
+  }, [props.editor]);
+
+  const oauthFlow = new OAuthFlow({
+    accountType: 'slack-integration',
+    redirectPath: '/dashboard/settings/project/slack',
+  });
+  const oauthResult = oauthFlow.checkResult();
+  if (oauthResult) {
+    // Process Slack OAuth callback
+    // The backend will handle the OAuth code exchange and store the tokens
+    // For now, we'll just trigger a config refresh
+    props.editor.refreshConfig();
+  }
+
+  return (
+    <ProjectSettingsBase title="Slack Integration"
+                         description="Connect Slack channels to ClearFlask categories. Receive notifications in Slack when posts are created or updated.">
+      <div style={{ marginTop: 16 }}>
+        <Message
+          message="Beta: This integration is actively being tested and may not work properly in all scenarios. Please report any issues to our support team."
+          severity="warning"
+        />
+      </div>
+      <br />
+      <UpgradeWrapper
+        accountBasePlanId={accountBasePlanId}
+        accountAddons={accountAddons}
+        subscriptionStatus={accountSubscriptionStatus}
+        propertyPath={['slack']}
+      >
+        <Collapse in={!!slack}>
+          <Section
+            title="Connected workspace"
+            description={(
+              <>
+                <b>{slack?.teamName}</b>
+              </>
+            )}
+            content={!!slack && (
+              <>
+                <PropertyByPath server={props.server} editor={props.editor}
+                                path={['slack', 'channelLinks']} />
+                <p>
+                  <Button
+                    style={{ color: theme.palette.error.dark }}
+                    color="inherit"
+                    onClick={() => props.editor.getPage(['slack']).set(undefined)}
+                  >Disconnect Slack</Button>
+                </p>
+              </>
+            )}
+          />
+        </Collapse>
+        <Section
+          title="Connect workspace"
+          description="Authorize ClearFlask to access your Slack workspace"
+          content={(
+            <>
+              <Collapse in={!slack && hasUnsavedChanges}>
+                <p>
+                  <Message
+                    message="You must publish unsaved changes before we can redirect you to Slack"
+                    severity="warning" />
+                </p>
+              </Collapse>
+              <Collapse in={!slack && !hasUnsavedChanges}>
+                <p>
+                  <Button
+                    variant="contained"
+                    disableElevation
+                    color="primary"
+                    disabled={hasUnsavedChanges}
+                    onClick={() => {
+                      if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
+                        // Mock mode: set up a mock Slack workspace (only in frontend dev mode)
+                        const slackPage = props.editor.getPage(['slack']);
+                        slackPage.set(true);
+                        (props.editor.getProperty(['slack', 'teamId']) as ConfigEditor.StringProperty)
+                          .set('T01234567');
+                        (props.editor.getProperty(['slack', 'teamName']) as ConfigEditor.StringProperty)
+                          .set('Mock Workspace');
+                        (props.editor.getProperty(['slack', 'accessToken']) as ConfigEditor.StringProperty)
+                          .set('mock-token');
+                        (props.editor.getProperty(['slack', 'botUserId']) as ConfigEditor.StringProperty)
+                          .set('U01234567');
+                        (props.editor.getProperty(['slack', 'channelLinks']) as ConfigEditor.ArrayProperty)
+                          .set([]);
+                      } else {
+                        oauthFlow.openForSlack();
+                      }
+                    }}
+                  >Install</Button>
+                </p>
+              </Collapse>
+            </>
+          )
+          }
+        />
+      </UpgradeWrapper>
+      <br /><br />
+      <NeedHelpInviteTeammate server={props.server} />
+    </ProjectSettingsBase>
+  );
+};
+
 export const ProjectSettingsIntercom = (props: {
   server: Server;
   editor: ConfigEditor.Editor;
@@ -3570,6 +4181,8 @@ export const ProjectSettingsGoogleAnalytics = (props: {
             <Provider store={ServerAdmin.get().getStore()}>
               <PropertyByPath server={props.server} editor={props.editor}
                               path={['integrations', 'googleAnalytics', 'trackingCode']} />
+              <PropertyByPath server={props.server} editor={props.editor}
+                              path={['integrations', 'googleAnalytics', 'trackingCodeV4']} />
             </Provider>
           </ProjectSettingsEnableCheckbox>
         </Provider>

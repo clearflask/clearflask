@@ -90,7 +90,7 @@ public class JooqIdeaFunders extends TableImpl<JooqIdeaFundersRecord> {
         this(DSL.name("idea_funders"), null);
     }
 
-    public <O extends Record> JooqIdeaFunders(Table<O> child, ForeignKey<O, JooqIdeaFundersRecord> key) {
+    public <O extends org.jooq.Record> JooqIdeaFunders(Table<O> child, ForeignKey<O, JooqIdeaFundersRecord> key) {
         super(child, key, IDEA_FUNDERS);
     }
 
