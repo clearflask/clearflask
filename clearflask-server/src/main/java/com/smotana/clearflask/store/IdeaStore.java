@@ -195,6 +195,10 @@ public interface IdeaStore {
 
         Boolean authorIsMod;
 
+        String authorPic;
+
+        String authorPicUrl;
+
         @NonNull
         Instant created;
 
@@ -220,6 +224,10 @@ public interface IdeaStore {
         String responseAuthorUserId;
 
         String responseAuthorName;
+
+        String responseAuthorPic;
+
+        String responseAuthorPicUrl;
 
         Instant responseEdited;
 
@@ -327,12 +335,16 @@ public interface IdeaStore {
                     getAuthorUserId(),
                     getAuthorName(),
                     getAuthorIsMod(),
+                    getAuthorPic(),
+                    getAuthorPicUrl(),
                     getCreated(),
                     getTitle(),
                     getDescriptionSanitized(sanitizer),
                     getResponseSanitized(sanitizer),
                     getResponseAuthorUserId(),
                     getResponseAuthorName(),
+                    getResponseAuthorPic(),
+                    getResponseAuthorPicUrl(),
                     getResponseEdited(),
                     getCategoryId(),
                     getStatusId(),
@@ -354,6 +366,7 @@ public interface IdeaStore {
                     getOrder(),
                     getLinkedGitHubUrl(),
                     null, // linkedGitLabUrl - not used yet
+                    null, // externalUrl - not used yet
                     sanitizer.signCoverImg(projectId, getCoverImg()).orElse(null),
                     getVisibility(),
                     null); // adminNotes - not returned for non-admin endpoints
@@ -365,12 +378,16 @@ public interface IdeaStore {
                     getAuthorUserId(),
                     getAuthorName(),
                     getAuthorIsMod(),
+                    getAuthorPic(),
+                    getAuthorPicUrl(),
                     getCreated(),
                     getTitle(),
                     getDescriptionSanitized(sanitizer),
                     getResponseSanitized(sanitizer),
                     getResponseAuthorUserId(),
                     getResponseAuthorName(),
+                    getResponseAuthorPic(),
+                    getResponseAuthorPicUrl(),
                     getResponseEdited(),
                     getCategoryId(),
                     getStatusId(),
@@ -392,6 +409,7 @@ public interface IdeaStore {
                     getOrder(),
                     getLinkedGitHubUrl(),
                     null, // linkedGitLabUrl - not used yet
+                    null, // externalUrl - not used yet
                     sanitizer.signCoverImg(projectId, getCoverImg()).orElse(null),
                     getVisibility(),
                     getAdminNotes());
@@ -403,12 +421,16 @@ public interface IdeaStore {
                     getAuthorUserId(),
                     getAuthorName(),
                     getAuthorIsMod(),
+                    getAuthorPic(),
+                    getAuthorPicUrl(),
                     getCreated(),
                     getTitle(),
                     getDescriptionSanitized(sanitizer),
                     getResponseSanitized(sanitizer),
                     getResponseAuthorUserId(),
                     getResponseAuthorName(),
+                    getResponseAuthorPic(),
+                    getResponseAuthorPicUrl(),
                     getResponseEdited(),
                     getCategoryId(),
                     getStatusId(),
@@ -430,6 +452,7 @@ public interface IdeaStore {
                     getOrder(),
                     getLinkedGitHubUrl(),
                     null, // linkedGitLabUrl - not used yet
+                    null, // externalUrl - not used yet
                     sanitizer.signCoverImg(projectId, getCoverImg()).orElse(null),
                     getVisibility(),
                     null, // adminNotes - not returned for non-admin endpoints

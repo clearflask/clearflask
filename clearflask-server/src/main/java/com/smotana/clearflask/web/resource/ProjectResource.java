@@ -776,11 +776,15 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                         authorOpt.get().getUserId(),
                         authorOpt.get().getName(),
                         authorOpt.get().getIsMod(),
+                        authorOpt.get().getPic(),
+                        authorOpt.get().getPicUrl(),
                         createdOpt.orElseGet(Instant::now),
                         title,
                         Optional.ofNullable(indexDescription).map(Long::intValue).map(record::get)
                                 .map(desc -> sanitizer.richHtml(desc, "idea", "import", projectId, true))
                                 .orElse(null),
+                        null,
+                        null,
                         null,
                         null,
                         null,

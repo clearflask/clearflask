@@ -170,6 +170,10 @@ components:
           type: string
         authorIsMod:
           type: boolean
+        authorPic:
+          type: string
+        authorPicUrl:
+          type: string
         created:
           type: string
           format: date-time
@@ -182,6 +186,10 @@ components:
         responseAuthorUserId:
           type: string
         responseAuthorName:
+          type: string
+        responseAuthorPic:
+          type: string
+        responseAuthorPicUrl:
           type: string
         responseEdited:
           type: string

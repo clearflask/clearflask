@@ -25,19 +25,17 @@ public class ModelUtil {
                 null,
                 new CookieConsent(null, null),
                 new Layout(null, ImmutableList.of(), ImmutableList.of()),
-                new Content(ImmutableList.of(new Category(
-                        IdUtil.randomId(),
-                        "My category",
-                        "#aabbdd",
-                        true,
-                        null,
-                        null,
-                        null,
-                        new Workflow(null, ImmutableList.of(
+                new Content(ImmutableList.of(Category.builder()
+                        .categoryId(IdUtil.randomId())
+                        .name("My category")
+                        .color("#aabbdd")
+                        .userCreatable(true)
+                        .workflow(new Workflow(null, ImmutableList.of(
                                 new IdeaStatus(IdUtil.randomId(), "COMPLETE", null, "#bbddaa", false, false, false, false, false, false)
-                        )),
-                        new Support(true, new Voting(true, null), new Expressing(true, null), true),
-                        new Tagging(ImmutableList.of(), ImmutableList.of())))),
+                        )))
+                        .support(new Support(true, new Voting(true, null), new Expressing(true, null), true))
+                        .tagging(new Tagging(ImmutableList.of(), ImmutableList.of()))
+                        .build())),
                 new Style(
                         new Flow(true),
                         new Palette(false, null, null, null, null, null, null),
@@ -68,7 +66,8 @@ public class ModelUtil {
                 null,
                 null,
                 null,
-                null
+                null,
+                null  // forceSearchEngine
         ), IdUtil.randomAscId());
     }
 }

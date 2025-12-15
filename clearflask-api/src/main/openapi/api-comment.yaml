@@ -58,6 +58,10 @@ components:
           type: string
         authorIsMod:
           type: boolean
+        authorPic:
+          type: string
+        authorPicUrl:
+          type: string
         created:
           type: string
           format: date-time

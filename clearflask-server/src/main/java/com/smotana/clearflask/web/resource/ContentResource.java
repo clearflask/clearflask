@@ -100,8 +100,8 @@ public class ContentResource extends AbstractResource implements ContentApi, Con
     }
 
     private String uploadProfilePic(String projectId, String userId, InputStream body) {
-        // Normalize with smaller dimensions for profile pictures (500x500)
-        Image imageNormalized = normalizeImageWithSize(body, 500.0, 500.0);
+        // Normalize with smaller dimensions for profile pictures (250x250)
+        Image imageNormalized = normalizeImageWithSize(body, 250.0, 250.0);
         ContentStore.ContentType contentType = checkNotNull(
                 ContentStore.ContentType.MEDIA_TYPE_TO_CONTENT_TYPE.get(imageNormalized.getMediaType()));
 

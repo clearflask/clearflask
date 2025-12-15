@@ -460,12 +460,16 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
                 user.getUserId(),
                 user.getName(),
                 user.getIsMod(),
+                user.getPic(),
+                user.getPicUrl(),
                 Instant.now(),
                 event.getSummary(),  // title
                 descriptionQuill,    // description
                 null, // response
                 null, // responseAuthorUserId
                 null, // responseAuthorName
+                null, // responseAuthorPic
+                null, // responseAuthorPicUrl
                 null, // responseEdited
                 jiraConfig.getCreateWithCategoryId(),
                 statusId,
@@ -632,6 +636,8 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
                 user.getUserId(),
                 user.getName(),
                 user.getIsMod(),
+                user.getPic(),
+                user.getPicUrl(),
                 Instant.now(),
                 null, // edited
                 contentQuill,

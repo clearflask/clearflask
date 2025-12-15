@@ -127,6 +127,10 @@ public interface CommentStore {
 
         Boolean authorIsMod;
 
+        String authorPic;
+
+        String authorPicUrl;
+
         @NonNull
         Instant created;
 
@@ -174,6 +178,8 @@ public interface CommentStore {
                     getAuthorUserId(),
                     getAuthorName(),
                     getAuthorIsMod(),
+                    getAuthorPic(),
+                    getAuthorPicUrl(),
                     getCreated(),
                     getEdited(),
                     null,
@@ -197,6 +203,8 @@ public interface CommentStore {
                     getAuthorUserId(),
                     getAuthorName(),
                     getAuthorIsMod(),
+                    getAuthorPic(),
+                    getAuthorPicUrl(),
                     getCreated(),
                     getEdited(),
                     null,

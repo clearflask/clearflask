@@ -388,7 +388,7 @@ public class BlackboxIT extends AbstractBlackboxIT {
                 .build());
 
         // Admin creates a post with admin notes
-        com.smotana.clearflask.api.model.Idea ideaByAdmin = ideaResourceAdmin.ideaCreateAdmin(
+        IdeaWithVote ideaByAdmin = ideaResource.ideaCreateAdmin(
                 projectId,
                 com.smotana.clearflask.api.model.IdeaCreateAdmin.builder()
                         .authorUserId(regularUser.getUserId())
@@ -400,7 +400,7 @@ public class BlackboxIT extends AbstractBlackboxIT {
                 null);
 
         // Admin updates post with admin notes
-        com.smotana.clearflask.api.model.Idea ideaUpdatedByAdmin = ideaResourceAdmin.ideaUpdateAdmin(
+        com.smotana.clearflask.api.model.Idea ideaUpdatedByAdmin = ideaResource.ideaUpdateAdmin(
                 projectId,
                 ideaByRegularUser.getIdeaId(),
                 IdeaUpdateAdmin.builder()
@@ -408,7 +408,7 @@ public class BlackboxIT extends AbstractBlackboxIT {
                         .build());
 
         // Verify admin can see admin notes via ideaGetAdmin
-        com.smotana.clearflask.api.model.Idea ideaAdminView = ideaResourceAdmin.ideaGetAdmin(projectId, ideaByAdmin.getIdeaId());
+        com.smotana.clearflask.api.model.Idea ideaAdminView = ideaResource.ideaGetAdmin(projectId, ideaByAdmin.getIdeaId());
         assertEquals("Private admin note - should not be visible to regular users", ideaAdminView.getAdminNotes());
 
         // Verify regular ideaGet does NOT expose admin notes
@@ -416,14 +416,14 @@ public class BlackboxIT extends AbstractBlackboxIT {
         assertEquals(null, ideaRegularView.getAdminNotes());
 
         // Verify admin can clear admin notes
-        ideaResourceAdmin.ideaUpdateAdmin(
+        ideaResource.ideaUpdateAdmin(
                 projectId,
                 ideaByAdmin.getIdeaId(),
                 IdeaUpdateAdmin.builder()
                         .adminNotes("")
                         .build());
 
-        ideaAdminView = ideaResourceAdmin.ideaGetAdmin(projectId, ideaByAdmin.getIdeaId());
+        ideaAdminView = ideaResource.ideaGetAdmin(projectId, ideaByAdmin.getIdeaId());
         assertEquals(null, ideaAdminView.getAdminNotes());
     }
 }

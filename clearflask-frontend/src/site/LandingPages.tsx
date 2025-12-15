@@ -2079,7 +2079,7 @@ export function LandingIntegrations() {
             <img
               alt=""
               className={classes.integrationImage}
-              src="/img/landing/gitlab.png"
+              src="/img/landing/gitlab.svg"
             />
           )}
           className={classes.smallBlock}
@@ -2094,7 +2094,7 @@ export function LandingIntegrations() {
             <img
               alt=""
               className={classes.integrationImage}
-              src="/img/landing/jira.png"
+              src="/img/landing/jira.svg"
             />
           )}
           className={classes.smallBlock}
