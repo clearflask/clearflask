@@ -208,6 +208,9 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
         install(GuavaRateLimiters.testModule(controllableSleepingStopwatch));
         bind(ControllableSleepingStopwatch.class).toInstance(controllableSleepingStopwatch);
         bindMock(AmazonRoute53.class);
+        bindMock(com.smotana.clearflask.store.JiraStore.class);
+        bindMock(com.smotana.clearflask.store.SlackStore.class);
+        bindMock(com.smotana.clearflask.store.GitLabStore.class);
 
         install(Modules.override(
                 MockExtendedSecurityContext.module(),
