@@ -364,6 +364,8 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 idea.getAuthorUserId(),
                 idea.getAuthorName(),
                 idea.getAuthorIsMod(),
+                idea.getAuthorPic(),
+                idea.getAuthorPicUrl(),
                 idea.getCreated(),
                 null,
                 idea.getIdeaId(),

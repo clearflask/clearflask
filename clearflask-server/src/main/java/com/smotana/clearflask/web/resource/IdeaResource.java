@@ -112,6 +112,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 null,
                 null,
                 null,
+                null,  // responseEdited
                 ideaCreate.getCategoryId(),
                 project.getCategory(ideaCreate.getCategoryId())
                         .map(Category::getWorkflow)
@@ -135,7 +136,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 ImmutableSet.of(),
                 null,
                 null,
-                null,
+                null,  // coverImg
                 null,  // visibility - always public for user-created ideas
                 null); // adminNotes
         boolean votingAllowed = project.isVotingAllowed(VoteValue.Upvote, ideaModel.getCategoryId(), Optional.ofNullable(ideaModel.getStatusId()));

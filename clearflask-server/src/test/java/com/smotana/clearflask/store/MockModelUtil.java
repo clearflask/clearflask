@@ -84,12 +84,16 @@ public class MockModelUtil {
                 IdUtil.randomId(),
                 IdUtil.randomId(),
                 null,
+                null,  // authorPic
+                null,  // authorPicUrl
                 Instant.now(),
                 "title\uD83E\uDD23",
                 textToSimpleHtml("description\uD83E\uDD23"),
                 textToSimpleHtml("response\uD83E\uDD23"),
                 IdUtil.randomId(),
                 IdUtil.randomId(),
+                null,  // responseAuthorPic
+                null,  // responseAuthorPicUrl
                 Instant.now(),
                 IdUtil.randomId(),
                 IdUtil.randomId(),
@@ -111,7 +115,7 @@ public class MockModelUtil {
                 ImmutableSet.of(),
                 null,
                 null,
-                null,
+                null,  // coverImg
                 null,  // visibility
                 null); // adminNotes
     }
@@ -127,6 +131,8 @@ public class MockModelUtil {
                 "Matus Faro",
                 "john@example.com",
                 false,
+                null,  // authorPic
+                null,  // authorPicUrl
                 Instant.now(),
                 null,
                 textToSimpleHtml("This is a \uD83E\uDD23 comment " + IdUtil.randomId()),
