@@ -138,6 +138,55 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
     // ===== Configuration =====
 
     @Override
+    public SlackWorkspaceInfo getWorkspaceInfoForUser(String accountId, String code) {
+        if (!config.enabled()) {
+            log.debug("Slack integration not enabled, skipping");
+            throw new com.smotana.clearflask.web.ApiException(javax.ws.rs.core.Response.Status.SERVICE_UNAVAILABLE, "Slack integration is disabled");
+        }
+
+        try {
+            // Exchange authorization code for access token
+            String redirectUri = "https://" + configApp.domain() + "/dashboard/settings/project/slack";
+
+            com.slack.api.methods.response.oauth.OAuthV2AccessResponse oauthResponse = slackClientProvider
+                    .getOAuthClient()
+                    .oauthV2Access(r -> r
+                            .clientId(slackClientProvider.getClientId())
+                            .clientSecret(slackClientProvider.getClientSecret())
+                            .code(code)
+                            .redirectUri(redirectUri));
+
+            if (!oauthResponse.isOk()) {
+                log.warn("Failed to exchange Slack OAuth code: {}", oauthResponse.getError());
+                throw new com.smotana.clearflask.web.ApiException(javax.ws.rs.core.Response.Status.BAD_REQUEST,
+                        "Failed to authenticate with Slack: " + oauthResponse.getError());
+            }
+
+            String accessToken = oauthResponse.getAccessToken();
+            String teamId = oauthResponse.getTeam().getId();
+            String teamName = oauthResponse.getTeam().getName();
+            String botUserId = oauthResponse.getBotUserId();
+
+            // Get available channels using the access token
+            MethodsClient client = slackClientProvider.getClientWithToken(accessToken);
+            List<SlackChannel> channels = fetchChannels(client);
+
+            return SlackWorkspaceInfo.builder()
+                    .teamId(teamId)
+                    .teamName(teamName)
+                    .accessToken(accessToken)
+                    .botUserId(botUserId)
+                    .channels(channels)
+                    .build();
+
+        } catch (IOException | SlackApiException e) {
+            log.warn("Failed to get Slack workspace info for user", e);
+            throw new com.smotana.clearflask.web.ApiException(javax.ws.rs.core.Response.Status.BAD_REQUEST,
+                    "Failed to authenticate with Slack", e);
+        }
+    }
+
+    @Override
     public List<SlackChannel> getAvailableChannels(String projectId) {
         if (!config.enabled()) {
             return ImmutableList.of();
@@ -155,30 +204,37 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
                 return ImmutableList.of();
             }
 
-            ConversationsListResponse response = client.getClient().conversationsList(r -> r
-                    .types(List.of(ConversationType.PUBLIC_CHANNEL, ConversationType.PRIVATE_CHANNEL))
-                    .excludeArchived(true)
-                    .limit(200));
-
-            if (!response.isOk()) {
-                log.warn("Failed to list Slack channels for project {}: {}", projectId, response.getError());
-                return ImmutableList.of();
-            }
-
-            List<SlackChannel> channels = new ArrayList<>();
-            for (Conversation conv : response.getChannels()) {
-                channels.add(new SlackChannel(
-                        conv.getId(),
-                        conv.getName(),
-                        conv.isPrivate(),
-                        conv.isMember()));
-            }
-            return channels;
+            return fetchChannels(client.getClient());
 
         } catch (IOException | SlackApiException e) {
             log.warn("Error fetching Slack channels for project {}", projectId, e);
             return ImmutableList.of();
         }
+    }
+
+    /**
+     * Fetch channels from Slack API.
+     */
+    private List<SlackChannel> fetchChannels(MethodsClient client) throws IOException, SlackApiException {
+        ConversationsListResponse response = client.conversationsList(r -> r
+                .types(List.of(ConversationType.PUBLIC_CHANNEL, ConversationType.PRIVATE_CHANNEL))
+                .excludeArchived(true)
+                .limit(200));
+
+        if (!response.isOk()) {
+            log.warn("Failed to list Slack channels: {}", response.getError());
+            return ImmutableList.of();
+        }
+
+        List<SlackChannel> channels = new ArrayList<>();
+        for (Conversation conv : response.getChannels()) {
+            channels.add(new SlackChannel(
+                    conv.getId(),
+                    conv.getName(),
+                    conv.isPrivate(),
+                    conv.isMember()));
+        }
+        return channels;
     }
 
     @Override

@@ -132,6 +132,22 @@ public class SlackClientProviderImpl implements SlackClientProvider {
         return slack.methods(accessToken);
     }
 
+    @Override
+    public MethodsClient getOAuthClient() {
+        // OAuth client doesn't need a token for the oauth.v2.access call
+        return slack.methods();
+    }
+
+    @Override
+    public String getClientId() {
+        return config.clientId();
+    }
+
+    @Override
+    public String getClientSecret() {
+        return config.clientSecret();
+    }
+
     /**
      * Invalidate the cached client for a project.
      * Call this when the Slack configuration changes.

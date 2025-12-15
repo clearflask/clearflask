@@ -29,6 +29,27 @@ public interface SlackClientProvider {
      */
     MethodsClient getClientWithToken(String accessToken);
 
+    /**
+     * Get OAuth client for token exchange.
+     *
+     * @return Slack OAuth client
+     */
+    MethodsClient getOAuthClient();
+
+    /**
+     * Get the configured OAuth client ID.
+     *
+     * @return Client ID
+     */
+    String getClientId();
+
+    /**
+     * Get the configured OAuth client secret.
+     *
+     * @return Client secret
+     */
+    String getClientSecret();
+
     @Value
     class SlackClientWithRateLimiter {
         MethodsClient client;

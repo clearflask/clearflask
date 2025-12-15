@@ -78,6 +78,7 @@ import com.smotana.clearflask.store.AccountStore.SearchAccountsResponse;
 import com.smotana.clearflask.store.GitHubStore;
 import com.smotana.clearflask.store.JiraStore;
 import com.smotana.clearflask.store.GitLabStore;
+import com.smotana.clearflask.store.SlackStore;
 import com.smotana.clearflask.store.LegalStore;
 import com.smotana.clearflask.store.LocalLicenseStore;
 import com.smotana.clearflask.store.ProjectStore;
@@ -195,6 +196,8 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
     private JiraStore jiraStore;
     @Inject
     private GitLabStore gitLabStore;
+    @Inject
+    private SlackStore slackStore;
     @Inject
     private CouponStore couponStore;
     @Inject
@@ -855,6 +858,31 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
                 .get();
 
         return gitLabStore.getProjectsForUser(accountId, body.getCode(), body.getGitlabInstanceUrl());
+    }
+
+    @RolesAllowed({Role.ADMINISTRATOR_ACTIVE})
+    @Limit(requiredPermits = 10, challengeAfter = 15)
+    @Override
+    public com.smotana.clearflask.api.model.SlackWorkspaceInfo slackGetWorkspaceInfoAdmin(String code) {
+        String accountId = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .get();
+
+        SlackStore.SlackWorkspaceInfo workspaceInfo = slackStore.getWorkspaceInfoForUser(accountId, code);
+
+        // Convert from store model to API model
+        return new com.smotana.clearflask.api.model.SlackWorkspaceInfo()
+                .teamId(workspaceInfo.getTeamId())
+                .teamName(workspaceInfo.getTeamName())
+                .accessToken(workspaceInfo.getAccessToken())
+                .botUserId(workspaceInfo.getBotUserId())
+                .channels(workspaceInfo.getChannels().stream()
+                        .map(ch -> new com.smotana.clearflask.api.model.SlackChannel()
+                                .channelId(ch.getChannelId())
+                                .channelName(ch.getChannelName())
+                                .isPrivate(ch.isPrivate())
+                                .isMember(ch.isMember()))
+                        .collect(java.util.stream.Collectors.toList()));
     }
 
     @RolesAllowed({Role.SUPER_ADMIN})

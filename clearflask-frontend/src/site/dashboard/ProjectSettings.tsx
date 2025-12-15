@@ -4014,16 +4014,31 @@ export const ProjectSettingsSlack = (props: {
     });
   }, [props.editor]);
 
+  const getWorkspaceInfo = (code: string) => ServerAdmin.get().dispatchAdmin()
+    .then(d => d.slackGetWorkspaceInfoAdmin(code))
+    .then(result => {
+      // Store workspace info in project config
+      const slackPage = props.editor.getPage(['slack']);
+      slackPage.set(true);
+      (props.editor.getProperty(['slack', 'teamId']) as ConfigEditor.StringProperty)
+        .set(result.teamId);
+      (props.editor.getProperty(['slack', 'teamName']) as ConfigEditor.StringProperty)
+        .set(result.teamName);
+      (props.editor.getProperty(['slack', 'accessToken']) as ConfigEditor.StringProperty)
+        .set(result.accessToken);
+      (props.editor.getProperty(['slack', 'botUserId']) as ConfigEditor.StringProperty)
+        .set(result.botUserId);
+      (props.editor.getProperty(['slack', 'channelLinks']) as ConfigEditor.ArrayProperty)
+        .set([]);
+    });
+
   const oauthFlow = new OAuthFlow({
     accountType: 'slack-integration',
     redirectPath: '/dashboard/settings/project/slack',
   });
   const oauthResult = oauthFlow.checkResult();
   if (oauthResult) {
-    // Process Slack OAuth callback
-    // The backend will handle the OAuth code exchange and store the tokens
-    // For now, we'll just trigger a config refresh
-    props.editor.refreshConfig();
+    getWorkspaceInfo(oauthResult.code);
   }
 
   return (
