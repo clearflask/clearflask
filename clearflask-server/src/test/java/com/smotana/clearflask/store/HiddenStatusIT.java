@@ -15,7 +15,9 @@ import com.smotana.clearflask.store.IdeaStore.SearchResponse;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.dynamo.InMemoryDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
+import com.smotana.clearflask.store.elastic.ElasticUtil;
 import com.smotana.clearflask.store.impl.*;
+import com.smotana.clearflask.store.mysql.MysqlUtil;
 import com.smotana.clearflask.testutil.AbstractIT;
 import com.smotana.clearflask.util.*;
 import com.smotana.clearflask.web.security.Sanitizer;
@@ -75,6 +77,8 @@ public class HiddenStatusIT extends AbstractIT {
                 DynamoElasticUserStore.module(),
                 DynamoVoteStore.module(),
                 Sanitizer.module(),
+                MysqlUtil.module(),
+                ElasticUtil.module(),
                 DefaultServerSecret.module(Names.named("cursor")),
                 WebhookServiceImpl.module(),
                 DynamoProjectStore.module(),
