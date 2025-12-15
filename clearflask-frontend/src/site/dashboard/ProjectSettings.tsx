@@ -4028,8 +4028,7 @@ export const ProjectSettingsSlack = (props: {
         .set(result.accessToken);
       (props.editor.getProperty(['slack', 'botUserId']) as ConfigEditor.StringProperty)
         .set(result.botUserId);
-      (props.editor.getProperty(['slack', 'channelLinks']) as ConfigEditor.ArrayProperty)
-        .set([]);
+      // channelLinks is a page group and is automatically initialized
     });
 
   const oauthFlow = new OAuthFlow({
@@ -4112,8 +4111,7 @@ export const ProjectSettingsSlack = (props: {
                           .set('mock-token');
                         (props.editor.getProperty(['slack', 'botUserId']) as ConfigEditor.StringProperty)
                           .set('U01234567');
-                        (props.editor.getProperty(['slack', 'channelLinks']) as ConfigEditor.ArrayProperty)
-                          .set([]);
+                        // channelLinks is a page group and is automatically initialized
                       } else {
                         oauthFlow.openForSlack();
                       }
