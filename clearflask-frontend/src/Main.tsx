@@ -4,7 +4,6 @@ import loadable from '@loadable/component';
 import { createMuiTheme, NoSsr, Theme } from '@material-ui/core';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import { MuiThemeProvider, StylesProvider } from '@material-ui/core/styles';
-import { generateClassName } from './common/util/classNameGenerator';
 import { ErrorBoundary } from '@sentry/react';
 import i18n from 'i18next';
 import { SnackbarProvider } from 'notistack';
@@ -167,7 +166,7 @@ class Main extends Component<Props> {
       <ErrorBoundary showDialog>
         <React.StrictMode>
           <I18nextProvider i18n={this.props.i18n}>
-            <StylesProvider injectFirst generateClassName={generateClassName}>
+            <StylesProvider injectFirst>
               <MuiThemeProvider theme={this.theme}>
                 <MuiSnackbarProvider notistackRef={notistackRef}>
                   <CssBaseline />
