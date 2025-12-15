@@ -1080,7 +1080,6 @@ components:
                   x-clearflask-prop: { order: 95, name: 'Announcement notify', defaultValue: true, description: 'Mirrored ClearFlask Announcement from a GitLab Release should notify subscribers in ClearFlask.', falseAsUndefined: true }
                   type: boolean
             jira:
-              x-clearflask-hide: true
               x-clearflask-page: { order: 6, name: 'Jira Connect', description: 'Synchronize Jira issues with ClearFlask.' }
               title: Jira
               type: object
@@ -1142,7 +1141,6 @@ components:
                   x-clearflask-prop: { order: 70, name: 'Comment sync', defaultValue: true, description: 'Mirror comments between Jira and ClearFlask.', falseAsUndefined: true }
                   type: boolean
             slack:
-              x-clearflask-hide: true
               x-clearflask-page: { order: 6, name: 'Slack Connect', description: 'Synchronize ClearFlask posts with Slack channels. Get updates directly in Slack when posts are created, updated, or commented.' }
               title: Slack
               type: object
