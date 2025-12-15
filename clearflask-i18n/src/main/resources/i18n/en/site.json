@@ -223,5 +223,18 @@
   "you-have-unsaved-changes": "You have unsaved changes",
   "empty": "Empty",
   "notifications": "Notifications",
-  "talk": "Talk"
+  "talk": "Talk",
+  "forgot-password": "Forgot password?",
+  "email-sent": "Email sent!",
+  "password-reset-email-sent": "If an account exists with this email, you will receive a password reset link shortly.",
+  "enter-email-for-password-reset": "Enter your email address and we'll send you a link to reset your password.",
+  "send-reset-link": "Send reset link",
+  "remember-password": "Remember your password?",
+  "invalid-reset-link": "Invalid reset link",
+  "reset-link-invalid-or-expired": "This password reset link is invalid or has expired.",
+  "need-new-link": "Need a new link?",
+  "request-new-link": "Request new link",
+  "reset-your-password": "Reset your password",
+  "new-password": "New password",
+  "reset-password": "Reset password"
 }
