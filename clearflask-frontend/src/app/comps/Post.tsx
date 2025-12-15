@@ -18,14 +18,11 @@ import AddIcon from '@material-ui/icons/Add';
 import UnmergeIcon from '@material-ui/icons/CallSplit';
 /* alternatives: comment, chat bubble (outline), forum, mode comment, add comment */
 import SpeechIcon from '@material-ui/icons/ChatBubbleOutlineRounded';
-import CheckCircleIcon from '@material-ui/icons/CheckCircleOutline';
 import DeleteIcon from '@material-ui/icons/DeleteOutline';
 import CopyIcon from '@material-ui/icons/FileCopyOutlined';
 import RespondIcon from '@material-ui/icons/FeedbackOutlined';
-import FlashOnIcon from '@material-ui/icons/FlashOn';
 import ImgIcon from '@material-ui/icons/Image';
 import AddEmojiIcon from '@material-ui/icons/InsertEmoticon';
-import NewReleasesIcon from '@material-ui/icons/NewReleasesOutlined';
 import classNames from 'classnames';
 import {BaseEmoji} from 'emoji-mart/dist-es/index.js';
 import {useSnackbar, withSnackbar, WithSnackbarProps} from 'notistack';

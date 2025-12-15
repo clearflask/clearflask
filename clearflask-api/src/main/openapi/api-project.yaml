@@ -1150,6 +1150,7 @@ components:
                 - teamId
                 - accessToken
                 - botUserId
+                - channelLinks
               properties:
                 teamId:
                   x-clearflask-prop: { order: 0, name: 'Team ID', description: 'Slack workspace ID. Set automatically during OAuth connection.' }

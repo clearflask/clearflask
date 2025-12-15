@@ -3562,6 +3562,13 @@ export const ProjectSettingsGitLab = (props: {
   return (
     <ProjectSettingsBase title="GitLab Integration"
                          description="Mirror GitLab Issues and Releases into ClearFlask. Resolve issues from ClearFlask and mirror into GitLab.">
+      <div style={{ marginTop: 16 }}>
+        <Message
+          message="Beta: This integration is actively being tested and may not work properly in all scenarios. Please report any issues to our support team."
+          severity="warning"
+        />
+      </div>
+      <br />
       <UpgradeWrapper
         accountBasePlanId={accountBasePlanId}
         accountAddons={accountAddons}
@@ -3626,7 +3633,7 @@ export const ProjectSettingsGitLab = (props: {
                     color="primary"
                     disabled={hasUnsavedChanges}
                     onClick={() => isProd() ? oauthFlow.openForGitLab() : getProjects('my-code')}
-                  >Connect GitLab.com</Button>
+                  >Install</Button>
                 </p>
                 <p>
                   <MuiLink
@@ -3662,7 +3669,7 @@ export const ProjectSettingsGitLab = (props: {
                           <MuiLink href="https://docs.gitlab.com/ee/integration/oauth_provider.html" target="_blank" rel="noopener noreferrer">
                             Admin Area &gt; Applications
                           </MuiLink>
-                          {' '}with redirect URI: <code>{windowIso.location.protocol}//{windowIso.location.host}/dashboard/settings/project/gitlab</code>
+                          {' with redirect URI: '}<code>{windowIso.location.protocol}{'//'}{windowIso.location.host}/dashboard/settings/project/gitlab</code>
                         </>
                       )}
                     />
@@ -3672,7 +3679,7 @@ export const ProjectSettingsGitLab = (props: {
                       disabled={!selfHostedUrl || !selfHostedClientId || hasUnsavedChanges}
                       onClick={() => oauthFlow.openForSelfHostedGitLab(selfHostedUrl, selfHostedClientId)}
                       style={{ marginTop: 8 }}
-                    >Connect Self-Hosted GitLab</Button>
+                    >Install</Button>
                   </div>
                 </Collapse>
               </Collapse>
@@ -3828,6 +3835,13 @@ export const ProjectSettingsJira = (props: {
   return (
     <ProjectSettingsBase title="Jira Integration"
                          description="Synchronize Jira issues with ClearFlask. Create and update issues from ClearFlask and mirror status changes.">
+      <div style={{ marginTop: 16 }}>
+        <Message
+          message="Beta: This integration is actively being tested and may not work properly in all scenarios. Please report any issues to our support team."
+          severity="warning"
+        />
+      </div>
+      <br />
       <UpgradeWrapper
         accountBasePlanId={accountBasePlanId}
         accountAddons={accountAddons}
@@ -3891,7 +3905,7 @@ export const ProjectSettingsJira = (props: {
                     color="primary"
                     disabled={hasUnsavedChanges}
                     onClick={() => isProd() ? oauthFlow.openForJira() : getProjects('my-code')}
-                  >Connect Jira</Button>
+                  >Install</Button>
                 </p>
               </Collapse>
               {!!projects && (projects.length ? (
@@ -3978,7 +3992,6 @@ export const ProjectSettingsSlack = (props: {
   server: Server;
   editor: ConfigEditor.Editor;
 }) => {
-  const classes = useStyles();
   const theme = useTheme();
 
   const accountBasePlanId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
@@ -4016,6 +4029,13 @@ export const ProjectSettingsSlack = (props: {
   return (
     <ProjectSettingsBase title="Slack Integration"
                          description="Connect Slack channels to ClearFlask categories. Receive notifications in Slack when posts are created or updated.">
+      <div style={{ marginTop: 16 }}>
+        <Message
+          message="Beta: This integration is actively being tested and may not work properly in all scenarios. Please report any issues to our support team."
+          severity="warning"
+        />
+      </div>
+      <br />
       <UpgradeWrapper
         accountBasePlanId={accountBasePlanId}
         accountAddons={accountAddons}
@@ -4024,10 +4044,10 @@ export const ProjectSettingsSlack = (props: {
       >
         <Collapse in={!!slack}>
           <Section
-            title="Configure channels"
+            title="Connected workspace"
             description={(
               <>
-                Your Slack workspace <b>{slack?.teamName}</b> is connected. Configure channel links below.
+                <b>{slack?.teamName}</b>
               </>
             )}
             content={!!slack && (
@@ -4047,7 +4067,7 @@ export const ProjectSettingsSlack = (props: {
         </Collapse>
         <Section
           title="Connect workspace"
-          description="Link your Slack workspace by authorizing ClearFlask"
+          description="Authorize ClearFlask to access your Slack workspace"
           content={(
             <>
               <Collapse in={!slack && hasUnsavedChanges}>
@@ -4064,8 +4084,26 @@ export const ProjectSettingsSlack = (props: {
                     disableElevation
                     color="primary"
                     disabled={hasUnsavedChanges}
-                    onClick={() => isProd() ? oauthFlow.openForSlack() : props.editor.getPage(['slack']).set(true)}
-                  >Connect Slack</Button>
+                    onClick={() => {
+                      if (isProd()) {
+                        oauthFlow.openForSlack();
+                      } else {
+                        // Mock mode: set up a mock Slack workspace
+                        const slackPage = props.editor.getPage(['slack']);
+                        slackPage.set(true);
+                        (props.editor.getProperty(['slack', 'teamId']) as ConfigEditor.StringProperty)
+                          .set('T01234567');
+                        (props.editor.getProperty(['slack', 'teamName']) as ConfigEditor.StringProperty)
+                          .set('Mock Workspace');
+                        (props.editor.getProperty(['slack', 'accessToken']) as ConfigEditor.StringProperty)
+                          .set('mock-token');
+                        (props.editor.getProperty(['slack', 'botUserId']) as ConfigEditor.StringProperty)
+                          .set('U01234567');
+                        (props.editor.getProperty(['slack', 'channelLinks']) as ConfigEditor.ArrayProperty)
+                          .set([]);
+                      }
+                    }}
+                  >Install</Button>
                 </p>
               </Collapse>
             </>
