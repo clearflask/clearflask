@@ -12,6 +12,7 @@ public class ModelUtil {
     }
 
     public static VersionedConfigAdmin createEmptyConfig(String projectId) {
+        String categoryId = IdUtil.randomId();
         return new VersionedConfigAdmin(new ConfigAdmin(
                 5L,
                 projectId,
@@ -26,10 +27,11 @@ public class ModelUtil {
                 new CookieConsent(null, null),
                 new Layout(null, ImmutableList.of(), ImmutableList.of()),
                 new Content(ImmutableList.of(Category.builder()
-                        .categoryId(IdUtil.randomId())
+                        .categoryId(categoryId)
                         .name("My category")
                         .color("#aabbdd")
                         .userCreatable(true)
+                        .userMergeableCategoryIds(ImmutableList.of(categoryId))
                         .workflow(new Workflow(null, ImmutableList.of(
                                 new IdeaStatus(IdUtil.randomId(), "COMPLETE", null, "#bbddaa", false, false, false, false, false, false)
                         )))
