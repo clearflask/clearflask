@@ -4181,6 +4181,8 @@ export const ProjectSettingsGoogleAnalytics = (props: {
             <Provider store={ServerAdmin.get().getStore()}>
               <PropertyByPath server={props.server} editor={props.editor}
                               path={['integrations', 'googleAnalytics', 'trackingCode']} />
+              <PropertyByPath server={props.server} editor={props.editor}
+                              path={['integrations', 'googleAnalytics', 'trackingCodeV4']} />
             </Provider>
           </ProjectSettingsEnableCheckbox>
         </Provider>
