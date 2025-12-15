@@ -74,6 +74,8 @@ export interface ChatwootWrapperConnectProps {
   };
 }
 class ChatwootWrapper extends Component<ChatwootWrapperConnectProps & WithTranslation<'site'>> {
+  private mounted = false;
+
   constructor(props) {
     super(props);
 
@@ -81,8 +83,20 @@ class ChatwootWrapper extends Component<ChatwootWrapperConnectProps & WithTransl
 
     if (!loadedToken && this.props.websiteToken) {
       loadedToken = this.props.websiteToken;
-      loadWidget(this.props.websiteToken, () => this.forceUpdate());
+      loadWidget(this.props.websiteToken, () => {
+        if (this.mounted) {
+          this.forceUpdate();
+        }
+      });
     }
+  }
+
+  componentDidMount() {
+    this.mounted = true;
+  }
+
+  componentWillUnmount() {
+    this.mounted = false;
   }
 
   render() {
@@ -101,7 +115,11 @@ class ChatwootWrapper extends Component<ChatwootWrapperConnectProps & WithTransl
       return null;
     }
     if (!loadedToken) {
-      loadWidget(this.props.websiteToken, () => this.forceUpdate());
+      loadWidget(this.props.websiteToken, () => {
+        if (this.mounted) {
+          this.forceUpdate();
+        }
+      });
       loadedToken = this.props.websiteToken;
     }
 
