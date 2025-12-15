@@ -24,12 +24,17 @@ export const createClassNameGenerator = (seed?: string) => {
   // 1. SSR server may not have NODE_ENV=production set
   // 2. Development builds need consistent class names
   // 3. We want predictable class names for customer CSS targeting
-  return (rule: any, styleSheet: any) => {
+  const wrapper = (rule: any, styleSheet: any) => {
     const className = muiGenerator(rule, styleSheet);
     // Replace 'jss' prefix with 'cf', keeping everything else the same
     // Examples: jss123 -> cf123, jss1 -> cf1
-    return className.replace(/^jss/, 'cf');
+    const result = className.replace(/^jss/, 'cf');
+    console.log('[ClassNameGenerator]', className, '->', result);
+    return result;
   };
+
+  console.log('[ClassNameGenerator] Created wrapper for seed:', seed || '(default)');
+  return wrapper;
 };
 
 /**
