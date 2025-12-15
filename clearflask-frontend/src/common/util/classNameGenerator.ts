@@ -12,28 +12,22 @@ import { createGenerateClassName } from '@material-ui/core/styles';
  * @param seed Optional seed to avoid class name collisions when multiple style providers exist
  */
 export const createClassNameGenerator = (seed?: string) => {
-  // Material-UI's createGenerateClassName with custom prefix
-  // In production: uses productionPrefix
-  // In development: still uses 'jss' prefix by default, but we force 'cf' below
+  // Material-UI's createGenerateClassName - we'll wrap it to force 'cf' prefix
   const muiGenerator = createGenerateClassName({
     disableGlobal: false,  // Keep MuiButton-root style names
-    productionPrefix: 'cf',  // Use 'cf' prefix in production
+    productionPrefix: 'cf',  // Attempt to use 'cf' prefix (only works when NODE_ENV=production at build time)
     seed: seed || '',
   });
 
-  // Track if we're in production mode (webpack sets NODE_ENV=production)
-  const isProduction = process.env.NODE_ENV === 'production';
-
-  // In production, MUI already uses our prefix, so just return the generator
-  if (isProduction) {
-    return muiGenerator;
-  }
-
-  // In development, wrap the generator to replace 'jss' with 'cf'
-  // This ensures consistent class names across all environments
+  // Always wrap the generator to ensure 'cf' prefix in ALL environments
+  // This is necessary because:
+  // 1. SSR server may not have NODE_ENV=production set
+  // 2. Development builds need consistent class names
+  // 3. We want predictable class names for customer CSS targeting
   return (rule: any, styleSheet: any) => {
     const className = muiGenerator(rule, styleSheet);
-    // Only replace the prefix, keep the counter (jss123 -> cf123)
+    // Replace 'jss' prefix with 'cf', keeping everything else the same
+    // Examples: jss123 -> cf123, jss1 -> cf1
     return className.replace(/^jss/, 'cf');
   };
 };
