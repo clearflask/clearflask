@@ -105,7 +105,7 @@ import { TourAnchor, TourDefinitionGuideState } from '../../common/tour';
 import { notEmpty } from '../../common/util/arrayUtil';
 import { Bag } from '../../common/util/bag';
 import debounce, { SearchTypeDebounceTime } from '../../common/util/debounce';
-import { detectEnv, Environment, isProd } from '../../common/util/detectEnv';
+import { detectEnv, Environment } from '../../common/util/detectEnv';
 import { OAUTH_CODE_PARAM_NAME, OAuthFlow } from '../../common/util/oauthUtil';
 import { getProjectLink } from '../../common/util/projectUtil';
 import randomUuid from '../../common/util/uuid';
@@ -3394,7 +3394,7 @@ export const ProjectSettingsGitHub = (props: {
                     disableElevation
                     color="primary"
                     disabled={hasUnsavedChanges}
-                    onClick={() => isProd() ? oauthFlow.openForGitHubAppInstall() : getRepos('my-code')}
+                    onClick={() => detectEnv() === Environment.DEVELOPMENT_FRONTEND ? getRepos('my-code') : oauthFlow.openForGitHubAppInstall()}
                   >Install</Button>
                 </p>
                 <p>
@@ -3403,7 +3403,7 @@ export const ProjectSettingsGitHub = (props: {
                   </Typography>
                   <MuiLink
                     href="#"
-                    onClick={() => isProd() ? oauthFlow.openForGitHubApp() : getRepos('my-code')}
+                    onClick={() => detectEnv() === Environment.DEVELOPMENT_FRONTEND ? getRepos('my-code') : oauthFlow.openForGitHubApp()}
                   >
                     <Typography component="span" variant="caption" color="primary">
                       Link your installation
@@ -3632,7 +3632,7 @@ export const ProjectSettingsGitLab = (props: {
                     disableElevation
                     color="primary"
                     disabled={hasUnsavedChanges}
-                    onClick={() => isProd() ? oauthFlow.openForGitLab() : getProjects('my-code')}
+                    onClick={() => detectEnv() === Environment.DEVELOPMENT_FRONTEND ? getProjects('my-code') : oauthFlow.openForGitLab()}
                   >Install</Button>
                 </p>
                 <p>
@@ -3904,7 +3904,7 @@ export const ProjectSettingsJira = (props: {
                     disableElevation
                     color="primary"
                     disabled={hasUnsavedChanges}
-                    onClick={() => isProd() ? oauthFlow.openForJira() : getProjects('my-code')}
+                    onClick={() => detectEnv() === Environment.DEVELOPMENT_FRONTEND ? getProjects('my-code') : oauthFlow.openForJira()}
                   >Install</Button>
                 </p>
               </Collapse>
@@ -4085,10 +4085,8 @@ export const ProjectSettingsSlack = (props: {
                     color="primary"
                     disabled={hasUnsavedChanges}
                     onClick={() => {
-                      if (isProd()) {
-                        oauthFlow.openForSlack();
-                      } else {
-                        // Mock mode: set up a mock Slack workspace
+                      if (detectEnv() === Environment.DEVELOPMENT_FRONTEND) {
+                        // Mock mode: set up a mock Slack workspace (only in frontend dev mode)
                         const slackPage = props.editor.getPage(['slack']);
                         slackPage.set(true);
                         (props.editor.getProperty(['slack', 'teamId']) as ConfigEditor.StringProperty)
@@ -4101,6 +4099,8 @@ export const ProjectSettingsSlack = (props: {
                           .set('U01234567');
                         (props.editor.getProperty(['slack', 'channelLinks']) as ConfigEditor.ArrayProperty)
                           .set([]);
+                      } else {
+                        oauthFlow.openForSlack();
                       }
                     }}
                   >Install</Button>
