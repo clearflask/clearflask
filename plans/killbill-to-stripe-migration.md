@@ -16,6 +16,12 @@ This document outlines the migration from KillBill (billing orchestration layer)
 6. [Implementation Plan](#6-implementation-plan)
 7. [Risk Assessment](#7-risk-assessment)
 8. [Rollback Strategy](#8-rollback-strategy)
+9. [Timeline Summary](#9-timeline-summary)
+10. [Benefits Summary](#10-benefits-summary)
+11. [Plan-Based Feature Gating Strategy](#11-plan-based-feature-gating-strategy) ⭐ NEW
+12. [Customer & Payment Method Migration](#12-customer--payment-method-migration) ⭐ NEW
+13. [Open Questions](#13-open-questions)
+14. [Appendix: Plan Mapping](#14-appendix-plan-mapping)
 
 ---
 
@@ -656,7 +662,523 @@ public class StripeMigration {
 
 ---
 
-## 11. Open Questions
+## 11. Plan-Based Feature Gating Strategy
+
+### 11.1 Current Feature Gating System
+
+The current system uses **plan IDs as the primary key** for feature gating. Features are NOT stored in KillBill - they're hardcoded in both backend and frontend:
+
+**Backend** (`CommonPlanVerifyStore.java`):
+```java
+// Restricted features by plan
+STARTER_GROWTH_PLANS = ["cloud-free", "starter-unlimited", "growth2-monthly", ...]
+
+if (STARTER_GROWTH_PLANS.contains(planId)) {
+    // Restrict: whitelabel, OAuth, SSO, private projects, integrations
+}
+```
+
+**Frontend** (`UpgradeWrapper.tsx`):
+```typescript
+RestrictedPropertiesByPlan = {
+  'growth2-monthly': [whitelabel, oauth, sso, visibility, templates, github, integrations],
+  'standard2-monthly': [whitelabel],
+  'cloud-yearly': [],  // Unrestricted
+}
+```
+
+### 11.2 How Stripe Handles Feature Entitlements
+
+Stripe provides **three approaches** for feature management:
+
+#### Option A: Continue Using Plan ID (Recommended for Migration)
+Keep the current approach - store plan ID in ClearFlask's DynamoDB and use it for feature checks.
+
+```
+Stripe Subscription → Price ID → Map to Plan ID → Feature lookup in code
+```
+
+**Pros**: Minimal code changes, same logic works
+**Cons**: Feature definitions still in code
+
+#### Option B: Stripe Product Metadata
+Store feature flags in Stripe Product/Price metadata:
+
+```java
+// When creating Price in Stripe
+Price.create(Map.of(
+    "product", productId,
+    "metadata", Map.of(
+        "planId", "growth2-monthly",
+        "features", "basic,analytics",           // CSV of features
+        "maxTeammates", "2",
+        "maxProjects", "unlimited",
+        "allowWhitelabel", "false",
+        "allowSSO", "false"
+    )
+));
+```
+
+**Pros**: Features managed in Stripe dashboard
+**Cons**: Need to fetch from Stripe on every check (cache needed)
+
+#### Option C: Stripe Entitlements (New Feature - 2024)
+Stripe recently introduced [Entitlements](https://stripe.com/docs/billing/entitlements) for feature management:
+
+```java
+// Create a Feature in Stripe
+Feature feature = Feature.create(Map.of(
+    "name", "SSO Access",
+    "lookup_key", "sso-access"
+));
+
+// Attach to Product
+ProductFeature.create(Map.of(
+    "product", productId,
+    "entitlement_feature", feature.getId()
+));
+
+// Check entitlement at runtime
+ActiveEntitlementCollection entitlements =
+    ActiveEntitlement.list(Map.of("customer", customerId));
+
+boolean hasSso = entitlements.getData().stream()
+    .anyMatch(e -> e.getFeature().getLookupKey().equals("sso-access"));
+```
+
+**Pros**: Native Stripe feature management, dashboard UI
+**Cons**: Newer API, requires more refactoring
+
+### 11.3 Handling Plan Changes & Grandfathering
+
+#### The Grandfathering Problem
+> "What happens when I want to add/remove a feature from a plan but have existing users retain the original?"
+
+**Current Problem**: Features are tied to plan ID, so changing features affects ALL users on that plan.
+
+#### Solution: Price Versioning in Stripe
+
+**Strategy**: Create new Prices (not Products) when features change, keep old Prices active.
+
+```
+Products (Features)          Prices (Versions)
+─────────────────           ─────────────────
+Growth Product       →      growth-v1-monthly (original features)
+                     →      growth-v2-monthly (new features, new signups)
+                     →      growth-v3-monthly (future version)
+```
+
+**Implementation**:
+
+```java
+// When plan features change, create new Price
+Price growthV2 = Price.create(Map.of(
+    "product", growthProductId,
+    "unit_amount", 5000,
+    "currency", "usd",
+    "recurring", Map.of("interval", "month"),
+    "lookup_key", "growth-v2-monthly",
+    "metadata", Map.of(
+        "planId", "growth2-v2-monthly",      // New plan ID
+        "version", "2",
+        "effectiveDate", "2025-01-15",
+        "features", "basic,analytics,newFeature"
+    )
+));
+
+// Archive old price (no new signups, existing subs continue)
+Price.update(growthV1Id, Map.of("active", false));
+```
+
+**Feature Check Logic**:
+```java
+public boolean hasFeature(String accountId, String feature) {
+    String planId = accountStore.getPlanId(accountId);  // e.g., "growth2-v1-monthly"
+
+    // Plan ID includes version, so old users keep old features
+    return PlanFeatures.get(planId).contains(feature);
+}
+```
+
+### 11.4 Recommended Feature Gating Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    Feature Gating Flow                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Stripe Subscription                                            │
+│       │                                                         │
+│       ▼                                                         │
+│  Price ID (e.g., price_abc123)                                  │
+│       │                                                         │
+│       ▼                                                         │
+│  Price Metadata: { planId: "growth2-v2-monthly" }               │
+│       │                                                         │
+│       ▼                                                         │
+│  Store planId in DynamoDB Account                               │
+│       │                                                         │
+│       ▼                                                         │
+│  ┌─────────────────────────────────────────┐                    │
+│  │  PlanFeatureStore (in-memory/cached)    │                    │
+│  │  ─────────────────────────────────────  │                    │
+│  │  "growth2-v1-monthly" → [basic, analytics]                   │
+│  │  "growth2-v2-monthly" → [basic, analytics, sso]              │
+│  │  "standard2-monthly"  → [all features]                       │
+│  └─────────────────────────────────────────┘                    │
+│       │                                                         │
+│       ▼                                                         │
+│  Feature check: planFeatureStore.hasFeature(planId, "sso")      │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 11.5 Migration Steps for Feature Gating
+
+1. **Keep current plan IDs** as the feature lookup key
+2. **Store planId in Price metadata** when creating Stripe Prices
+3. **On subscription webhook**, extract planId from Price metadata → store in DynamoDB
+4. **When changing plan features**:
+   - Create new Price with new planId (e.g., `growth2-v2-monthly`)
+   - Archive old Price (existing customers unaffected)
+   - Update PlanFeatureStore with new planId → features mapping
+5. **Existing customers** keep their original planId, get original features
+6. **New customers** get new planId, get new features
+
+### 11.6 Code Changes Required
+
+**Backend** - New `StripePlanStore.java`:
+```java
+@Singleton
+public class StripePlanStore implements PlanStore {
+
+    // Plan ID → Features mapping (loaded from config or Stripe)
+    private final Map<String, PlanFeatures> planFeatures;
+
+    // Version tracking
+    private final Map<String, String> currentPlanVersions = Map.of(
+        "growth", "growth2-v2-monthly",      // Latest version for new signups
+        "standard", "standard2-monthly"
+    );
+
+    public PlanFeatures getFeatures(String planId) {
+        return planFeatures.get(planId);
+    }
+
+    public String getCurrentPriceId(String basePlan) {
+        return priceIdMapping.get(currentPlanVersions.get(basePlan));
+    }
+}
+```
+
+**Frontend** - Update `UpgradeWrapper.tsx`:
+```typescript
+// Add version-aware feature checking
+const RestrictedPropertiesByPlan: { [planId: string]: Set<Property> } = {
+  'growth2-v1-monthly': new Set([whitelabel, oauth, sso, ...]),
+  'growth2-v2-monthly': new Set([whitelabel, oauth]),  // SSO now allowed
+  'standard2-monthly': new Set([whitelabel]),
+};
+```
+
+---
+
+## 12. Customer & Payment Method Migration
+
+### 12.1 Current State: KillBill-Stripe Plugin Architecture
+
+The KillBill Stripe plugin creates Stripe objects internally, but ClearFlask doesn't track them:
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   ClearFlask    │     │    KillBill     │     │     Stripe      │
+├─────────────────┤     ├─────────────────┤     ├─────────────────┤
+│ Account ID: abc │────▶│ KB Account: xyz │────▶│ Customer: cus_* │
+│ (DynamoDB)      │     │ PaymentMethod   │     │ PaymentMethod   │
+│                 │     │ Subscription    │     │ Subscription    │
+│ NO Stripe IDs   │     │ (MySQL)         │     │ (Stripe DB)     │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+```
+
+**Key Finding**: ClearFlask has NO record of Stripe Customer IDs (`cus_*`) or PaymentMethod IDs (`pm_*`).
+
+### 12.2 Good News: Payment Methods Already Exist in Stripe
+
+When users add payment methods through the current flow:
+1. Frontend uses `Stripe.js` to create a token
+2. Token is sent to KillBill
+3. **KillBill's Stripe plugin creates the PaymentMethod in Stripe**
+4. Only card metadata (last4, brand, expiry) is returned to ClearFlask
+
+**The PaymentMethods already exist in Stripe** - we just need to find them.
+
+### 12.3 Finding Existing Stripe Customers
+
+#### Method 1: Query Stripe by Email (Recommended)
+
+```java
+public String findStripeCustomerByEmail(String email) {
+    CustomerSearchResult result = Customer.search(Map.of(
+        "query", "email:'" + email + "'"
+    ));
+
+    if (!result.getData().isEmpty()) {
+        return result.getData().get(0).getId();  // Found existing customer
+    }
+    return null;  // Need to create new customer
+}
+```
+
+**Note**: KillBill's Stripe plugin typically creates customers with the same email.
+
+#### Method 2: Query KillBill for Plugin Properties
+
+The Stripe plugin may store the Stripe Customer ID in plugin properties:
+
+```java
+public String findStripeCustomerFromKillBill(String accountId) {
+    UUID kbAccountId = getKbAccountId(accountId);
+
+    // Get payment methods from KillBill
+    List<PaymentMethod> methods = kbPaymentMethod.getPaymentMethodsForAccount(
+        kbAccountId, null, null, KillBillUtil.roDefault());
+
+    for (PaymentMethod method : methods) {
+        if ("killbill-stripe".equals(method.getPluginName())) {
+            // Check plugin properties for Stripe customer ID
+            for (PluginProperty prop : method.getPluginInfo().getProperties()) {
+                if ("customerId".equals(prop.getKey())) {
+                    return (String) prop.getValue();  // cus_xxxxx
+                }
+            }
+        }
+    }
+    return null;
+}
+```
+
+#### Method 3: Query Stripe Plugin Database Directly
+
+The Stripe plugin stores mappings in KillBill's MySQL:
+
+```sql
+SELECT stripe_customer_id
+FROM stripe_payment_methods
+WHERE kb_account_id = ?;
+```
+
+### 12.4 Migration Script: Retaining Payment Methods
+
+```java
+public class CustomerMigration {
+
+    public MigrationResult migrateCustomer(String accountId) {
+        Account cfAccount = accountStore.getAccount(accountId);
+        MigrationResult result = new MigrationResult(accountId);
+
+        // Step 1: Find or create Stripe Customer
+        String stripeCustomerId = findExistingStripeCustomer(cfAccount.getEmail());
+
+        if (stripeCustomerId != null) {
+            result.setCustomerStatus(FOUND_EXISTING);
+            log.info("Found existing Stripe customer {} for account {}",
+                     stripeCustomerId, accountId);
+        } else {
+            // Create new customer
+            Customer customer = Customer.create(Map.of(
+                "email", cfAccount.getEmail(),
+                "name", cfAccount.getName(),
+                "metadata", Map.of(
+                    "accountId", accountId,
+                    "migratedAt", Instant.now().toString()
+                )
+            ));
+            stripeCustomerId = customer.getId();
+            result.setCustomerStatus(CREATED_NEW);
+        }
+
+        // Step 2: Find and attach payment methods
+        List<PaymentMethod> existingMethods = PaymentMethod.list(Map.of(
+            "customer", stripeCustomerId,
+            "type", "card"
+        )).getData();
+
+        if (!existingMethods.isEmpty()) {
+            result.setPaymentMethodStatus(ALREADY_ATTACHED);
+            result.setPaymentMethodCount(existingMethods.size());
+
+            // Set default payment method if not set
+            Customer customer = Customer.retrieve(stripeCustomerId);
+            if (customer.getInvoiceSettings().getDefaultPaymentMethod() == null) {
+                Customer.update(stripeCustomerId, Map.of(
+                    "invoice_settings", Map.of(
+                        "default_payment_method", existingMethods.get(0).getId()
+                    )
+                ));
+            }
+        } else {
+            // Try to find orphaned payment methods by email
+            result.setPaymentMethodStatus(NOT_FOUND);
+            log.warn("No payment methods found for customer {}", stripeCustomerId);
+        }
+
+        // Step 3: Store mapping in DynamoDB
+        accountStore.setStripeCustomerId(accountId, stripeCustomerId);
+
+        return result;
+    }
+
+    private String findExistingStripeCustomer(String email) {
+        try {
+            CustomerSearchResult result = Customer.search(Map.of(
+                "query", "email:'" + email + "'"
+            ));
+
+            // Return most recently created customer if multiple
+            return result.getData().stream()
+                .max(Comparator.comparing(Customer::getCreated))
+                .map(Customer::getId)
+                .orElse(null);
+        } catch (StripeException e) {
+            log.error("Error searching for customer by email", e);
+            return null;
+        }
+    }
+}
+```
+
+### 12.5 Handling Edge Cases
+
+#### Case 1: Multiple Stripe Customers with Same Email
+```java
+// If multiple customers found, merge payment methods to primary
+List<Customer> customers = Customer.search(Map.of(
+    "query", "email:'" + email + "'"
+)).getData();
+
+if (customers.size() > 1) {
+    Customer primary = customers.get(0);  // Use oldest as primary
+
+    for (int i = 1; i < customers.size(); i++) {
+        // Move payment methods from secondary to primary
+        List<PaymentMethod> methods = PaymentMethod.list(Map.of(
+            "customer", customers.get(i).getId()
+        )).getData();
+
+        for (PaymentMethod pm : methods) {
+            pm.attach(Map.of("customer", primary.getId()));
+        }
+    }
+}
+```
+
+#### Case 2: Payment Method Not Found in Stripe
+If the payment method truly doesn't exist (shouldn't happen normally):
+
+```java
+if (paymentMethodNotFound) {
+    // Option 1: Mark account for re-collection
+    accountStore.updateStatus(accountId, SubscriptionStatus.NOPAYMENTMETHOD);
+    notificationService.sendPaymentMethodRequired(accountId);
+
+    // Option 2: Create subscription without payment method (trial)
+    Subscription.create(Map.of(
+        "customer", stripeCustomerId,
+        "items", List.of(Map.of("price", priceId)),
+        "payment_behavior", "default_incomplete",  // Won't charge until PM added
+        "trial_end", calculateTrialEnd()
+    ));
+}
+```
+
+#### Case 3: Customer Has Active KillBill Subscription
+Don't double-charge! Check KillBill subscription end date:
+
+```java
+Subscription kbSub = killBilling.getSubscription(accountId);
+Instant billingPeriodEnd = kbSub.getChargedThroughDate();
+
+// Create Stripe subscription starting AFTER KillBill period ends
+Subscription.create(Map.of(
+    "customer", stripeCustomerId,
+    "items", List.of(Map.of("price", priceId)),
+    "billing_cycle_anchor", billingPeriodEnd.getEpochSecond(),
+    "proration_behavior", "none"
+));
+```
+
+### 12.6 Schema Change: AccountStore
+
+Add `stripeCustomerId` to the Account model:
+
+```java
+// In AccountStore.java
+@DynamoTable(partitionKeys = "accountId", rangePrefix = "account")
+class Account {
+    String accountId;
+    String email;
+    String name;
+    String planid;
+    SubscriptionStatus status;
+
+    // NEW FIELD
+    @DynamoAttribute
+    String stripeCustomerId;  // Stripe Customer ID (cus_xxxxx)
+
+    // ... existing fields
+}
+```
+
+### 12.7 Migration Validation Checklist
+
+Before cutover, validate for each migrated account:
+
+| Check | Query | Expected |
+|-------|-------|----------|
+| Customer exists | `Customer.retrieve(stripeCustomerId)` | 200 OK |
+| Payment method attached | `PaymentMethod.list(customer=X)` | ≥1 method |
+| Default PM set | `customer.invoice_settings.default_payment_method` | Not null |
+| Subscription created | `Subscription.list(customer=X)` | Matches KillBill |
+| Balance migrated | `customer.balance` | Matches KillBill |
+| Metadata correct | `customer.metadata.accountId` | Matches ClearFlask |
+
+### 12.8 Migration Summary
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│               Customer Migration Flow                          │
+├────────────────────────────────────────────────────────────────┤
+│                                                                │
+│  For each ClearFlask Account:                                  │
+│                                                                │
+│  1. Search Stripe for existing Customer (by email)             │
+│     ├─ Found? → Use existing (payment methods already there)   │
+│     └─ Not found? → Create new Customer                        │
+│                                                                │
+│  2. Verify payment methods are attached                        │
+│     ├─ Yes? → Set default payment method                       │
+│     └─ No? → Flag for manual review / notify user              │
+│                                                                │
+│  3. Create Stripe Subscription                                 │
+│     ├─ Match current plan (via Price lookup)                   │
+│     ├─ Align billing cycle with KillBill end date              │
+│     └─ Migrate credits to Customer balance                     │
+│                                                                │
+│  4. Store stripeCustomerId in DynamoDB                         │
+│                                                                │
+│  5. Validate: Customer, PaymentMethod, Subscription all exist  │
+│                                                                │
+└────────────────────────────────────────────────────────────────┘
+```
+
+**Key Insight**: Since the KillBill Stripe plugin already creates real Stripe objects, most customers will have existing Stripe Customers and PaymentMethods. The migration primarily involves:
+1. **Finding** the existing Stripe Customer ID
+2. **Storing** the mapping in DynamoDB
+3. **Creating** new Stripe Subscriptions (since KillBill manages subscriptions separately)
+
+---
+
+## 13. Open Questions
 
 1. **Historical invoices**: Should old KillBill invoices be migrated or archived?
 2. **Coupon migration**: Are there active coupons that need special handling?
@@ -666,7 +1188,7 @@ public class StripeMigration {
 
 ---
 
-## 12. Appendix: Plan Mapping
+## 14. Appendix: Plan Mapping
 
 ### Current KillBill Plans → Stripe Products/Prices
 
