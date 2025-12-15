@@ -485,6 +485,43 @@ components:
         password:
           type: string
           minLength: 1
+    SlackWorkspaceInfo:
+      type: object
+      required:
+        - teamId
+        - teamName
+        - accessToken
+        - botUserId
+        - channels
+      properties:
+        teamId:
+          type: string
+        teamName:
+          type: string
+        accessToken:
+          type: string
+        botUserId:
+          type: string
+        channels:
+          type: array
+          items:
+            $ref: 'api-account.yaml#/components/schemas/SlackChannel'
+    SlackChannel:
+      type: object
+      required:
+        - channelId
+        - channelName
+        - isPrivate
+        - isMember
+      properties:
+        channelId:
+          type: string
+        channelName:
+          type: string
+        isPrivate:
+          type: boolean
+        isMember:
+          type: boolean
 
 /support/message:
   post:
@@ -1099,42 +1136,7 @@ components:
         content:
           application/json:
             schema:
-              title: SlackWorkspaceInfo
-              type: object
-              required:
-                - teamId
-                - teamName
-                - accessToken
-                - botUserId
-                - channels
-              properties:
-                teamId:
-                  type: string
-                teamName:
-                  type: string
-                accessToken:
-                  type: string
-                botUserId:
-                  type: string
-                channels:
-                  type: array
-                  items:
-                    title: SlackChannel
-                    type: object
-                    required:
-                      - channelId
-                      - channelName
-                      - isPrivate
-                      - isMember
-                    properties:
-                      channelId:
-                        type: string
-                      channelName:
-                        type: string
-                      isPrivate:
-                        type: boolean
-                      isMember:
-                        type: boolean
+              $ref: 'api-account.yaml#/components/schemas/SlackWorkspaceInfo'
 /admin/account/delete:
   delete:
     operationId: accountDeleteAdmin

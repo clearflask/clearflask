@@ -839,7 +839,7 @@ components:
                 $ref: 'api-project.yaml#/components/schemas/tagging'
     integrations:
       x-clearflask-page: { order: 20, name: 'Integrations', description: 'Configure various integrations with ClearFlask.' }
-      x-clearflask-additional-children: { children: [ { path: [ 'github' ] }, { path: [ 'gitlab' ] } ] }
+      x-clearflask-additional-children: { children: [ { path: [ 'github' ] }, { path: [ 'gitlab' ] }, { path: [ 'jira' ] }, { path: [ 'slack' ] } ] }
       title: Integrations
       type: object
       properties:
