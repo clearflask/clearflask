@@ -404,6 +404,13 @@ public class HiddenStatusIT extends AbstractIT {
         VersionedConfigAdmin versionedConfigAdmin = new VersionedConfigAdmin(configAdmin, IdUtil.randomId());
         projectStore.createProject(IdUtil.randomId(), projectId, versionedConfigAdmin);
         ideaStore.createIndex(projectId).get();
+        userStore.createIndex(projectId);
+
+        // Create the author user
+        userStore.createUser(MockModelUtil.getRandomUser().toBuilder()
+                .projectId(projectId)
+                .userId(authorId)
+                .build());
 
         // Create post by specific author with hidden status
         IdeaModel hiddenPost = MockModelUtil.getRandomIdea().toBuilder()
@@ -512,6 +519,10 @@ public class HiddenStatusIT extends AbstractIT {
         VersionedConfigAdmin versionedConfigAdmin = new VersionedConfigAdmin(configAdmin, IdUtil.randomId());
         projectStore.createProject(IdUtil.randomId(), projectId, versionedConfigAdmin);
         ideaStore.createIndex(projectId).get();
+        userStore.createIndex(projectId);
+
+        // Create a test user
+        String userId = userStore.createUser(MockModelUtil.getRandomUser().toBuilder().projectId(projectId).build()).getUser().getUserId();
 
         Project project = projectStore.getProject(projectId, true).get();
         ImmutableSet<String> hiddenStatusIds = project.getHiddenStatusIds();
@@ -519,6 +530,7 @@ public class HiddenStatusIT extends AbstractIT {
         // Create post with visible status initially
         IdeaModel post = MockModelUtil.getRandomIdea().toBuilder()
                 .projectId(projectId)
+                .authorUserId(userId)
                 .categoryId(categoryId)
                 .statusId(visibleStatusId)
                 .title("Test Post")
@@ -543,7 +555,7 @@ public class HiddenStatusIT extends AbstractIT {
         // Change status to hidden
         ideaStore.updateIdea(projectId, post.getIdeaId(),
                 IdeaUpdateAdmin.builder().statusId(hiddenStatusId).build(),
-                Optional.empty());
+                Optional.empty()).getIndexingFuture().get();
 
         // Verify post is now hidden
         SearchResponse searchResponse2 = ideaStore.searchIdeas(
@@ -561,7 +573,7 @@ public class HiddenStatusIT extends AbstractIT {
         // Change status back to visible
         ideaStore.updateIdea(projectId, post.getIdeaId(),
                 IdeaUpdateAdmin.builder().statusId(visibleStatusId).build(),
-                Optional.empty());
+                Optional.empty()).getIndexingFuture().get();
 
         // Verify post is visible again
         SearchResponse searchResponse3 = ideaStore.searchIdeas(
@@ -631,6 +643,10 @@ public class HiddenStatusIT extends AbstractIT {
         VersionedConfigAdmin versionedConfigAdmin = new VersionedConfigAdmin(configAdmin, IdUtil.randomId());
         projectStore.createProject(IdUtil.randomId(), projectId, versionedConfigAdmin);
         ideaStore.createIndex(projectId).get();
+        userStore.createIndex(projectId);
+
+        // Create a test user
+        String userId = userStore.createUser(MockModelUtil.getRandomUser().toBuilder().projectId(projectId).build()).getUser().getUserId();
 
         Project project = projectStore.getProject(projectId, true).get();
         ImmutableSet<String> hiddenStatusIds = project.getHiddenStatusIds();
@@ -638,6 +654,7 @@ public class HiddenStatusIT extends AbstractIT {
         // Create post with valid category but hidden status
         IdeaModel postWithCategory = MockModelUtil.getRandomIdea().toBuilder()
                 .projectId(projectId)
+                .authorUserId(userId)
                 .categoryId(categoryId)
                 .statusId(hiddenStatusId)
                 .title("Post with Category")
@@ -729,6 +746,10 @@ public class HiddenStatusIT extends AbstractIT {
         VersionedConfigAdmin versionedConfigAdmin = new VersionedConfigAdmin(configAdmin, IdUtil.randomId());
         projectStore.createProject(IdUtil.randomId(), projectId, versionedConfigAdmin);
         ideaStore.createIndex(projectId).get();
+        userStore.createIndex(projectId);
+
+        // Create a test user
+        String userId = userStore.createUser(MockModelUtil.getRandomUser().toBuilder().projectId(projectId).build()).getUser().getUserId();
 
         Project project = projectStore.getProject(projectId, true).get();
         ImmutableSet<String> hiddenStatusIds = project.getHiddenStatusIds();
@@ -737,6 +758,7 @@ public class HiddenStatusIT extends AbstractIT {
         for (int i = 0; i < 5; i++) {
             IdeaModel visiblePost = MockModelUtil.getRandomIdea().toBuilder()
                     .projectId(projectId)
+                    .authorUserId(userId)
                     .categoryId(categoryId)
                     .statusId(visibleStatusId)
                     .title("Visible Post " + i)
@@ -746,6 +768,7 @@ public class HiddenStatusIT extends AbstractIT {
 
             IdeaModel hiddenPost = MockModelUtil.getRandomIdea().toBuilder()
                     .projectId(projectId)
+                    .authorUserId(userId)
                     .categoryId(categoryId)
                     .statusId(hiddenStatusId)
                     .title("Hidden Post " + i)
