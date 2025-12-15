@@ -8,7 +8,7 @@ import { detectEnv, Environment, isProd } from './common/util/detectEnv';
 import { getI18n } from './i18n-csr';
 import Main from './Main';
 
-// Suppress React.createFactory deprecation warnings from third-party libraries
+// Suppress third-party library warnings and errors
 const originalWarn = console.warn;
 console.warn = (...args: any[]) => {
   const message = args[0];
@@ -16,6 +16,18 @@ console.warn = (...args: any[]) => {
     return;
   }
   originalWarn.apply(console, args);
+};
+
+const originalError = console.error;
+console.error = (...args: any[]) => {
+  const message = args[0];
+  if (message instanceof TypeError && message.message?.includes("can't redefine non-configurable property \"Worker\"")) {
+    return;
+  }
+  if (typeof message === 'string' && message.includes("can't redefine non-configurable property \"Worker\"")) {
+    return;
+  }
+  originalError.apply(console, args);
 };
 
 Sentry.init({
