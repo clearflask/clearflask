@@ -20,9 +20,12 @@ This document outlines the migration from KillBill (billing orchestration layer)
 10. [Benefits Summary](#10-benefits-summary)
 11. [Plan-Based Feature Gating Strategy](#11-plan-based-feature-gating-strategy)
 12. [Customer & Payment Method Migration](#12-customer--payment-method-migration)
-13. [Stripe Pricing & Cost Analysis](#13-stripe-pricing--cost-analysis) ⭐ NEW
-14. [Open Questions](#14-open-questions)
-15. [Appendix: Plan Mapping](#15-appendix-plan-mapping)
+13. [Stripe Pricing & Cost Analysis](#13-stripe-pricing--cost-analysis)
+14. [UI Plan Display Configuration in Stripe](#14-ui-plan-display-configuration-in-stripe) ⭐ NEW
+15. [New Pricing Structure (Tracked Users Model)](#15-new-pricing-structure-tracked-users-model) ⭐ NEW
+16. [Feature Flag & Gradual Rollout Strategy](#16-feature-flag--gradual-rollout-strategy) ⭐ NEW
+17. [Open Questions](#17-open-questions)
+18. [Appendix: Plan Mapping](#18-appendix-plan-mapping)
 
 ---
 
@@ -1335,7 +1338,869 @@ Features you gain at no extra cost:
 
 ---
 
-## 14. Open Questions
+## 14. UI Plan Display Configuration in Stripe
+
+### 14.1 Current Plan Display Architecture
+
+Currently, plan display configuration is split across multiple files:
+
+| File | What It Controls |
+|------|------------------|
+| `KillBillPlanStore.java` | Plan definitions, perks, feature tables, visibility |
+| `UpgradeWrapper.tsx` | Feature restrictions, teammate/post limits |
+| `PricingPage.tsx` | UI rendering, plan categorization |
+| `PricingPlan.tsx` | Individual plan card display |
+
+**The Problem**: Plan metadata (titles, perks, features) is hardcoded in Java and TypeScript. Any change requires code deployment.
+
+### 14.2 Moving Plan Configuration to Stripe
+
+Stripe Products and Prices support extensive **metadata** (up to 50 keys, 500 chars per value). We can store all UI configuration there.
+
+#### Product Metadata (Shared across all Prices)
+```json
+{
+  "display_title": "Pro",
+  "display_subtitle": "For growing teams",
+  "display_order": 3,
+  "show_on_landing": "true",
+  "category": "cloud",
+  "perks": "Unlimited teammates|Custom domain|Private projects|SSO and OAuth",
+  "perk_tooltips": "|TERMS_CUSTOM_DOMAIN|TERMS_PRIVATE_PROJECTS|TERMS_SSO_AND_OAUTH",
+  "features_json": "{\"teammates\":\"unlimited\",\"posts\":\"unlimited\",\"projects\":\"unlimited\",\"privateProjects\":true,\"sso\":true,\"oauth\":true,\"whitelabel\":false,\"api\":true,\"github\":true,\"intercom\":true}"
+}
+```
+
+#### Price Metadata (Version-specific)
+```json
+{
+  "planId": "pro-v1-monthly",
+  "version": "1",
+  "base_tracked_users": "100",
+  "additional_user_price_cents": "10",
+  "cta_text": "Start Free Trial",
+  "cta_url": "/signup?plan=pro-v1-monthly",
+  "highlight": "true",
+  "highlight_text": "Most Popular"
+}
+```
+
+### 14.3 New Plan Display Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                  Plan Display Architecture                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  1. Frontend requests plans                                     │
+│     GET /api/v1/admin/plan                                      │
+│                                                                 │
+│  2. Backend fetches from Stripe                                 │
+│     ┌─────────────────────────────────────────┐                 │
+│     │  Stripe.Product.list(active=true)       │                 │
+│     │  Stripe.Price.list(active=true)         │                 │
+│     └─────────────────────────────────────────┘                 │
+│                                                                 │
+│  3. Backend parses metadata → Plan objects                      │
+│     ┌─────────────────────────────────────────┐                 │
+│     │  Filter: metadata.show_on_landing=true  │                 │
+│     │  Sort: metadata.display_order           │                 │
+│     │  Parse: perks, features_json            │                 │
+│     └─────────────────────────────────────────┘                 │
+│                                                                 │
+│  4. Return PlansGetResponse to frontend                         │
+│                                                                 │
+│  5. Frontend renders using existing PricingPlan.tsx             │
+│     (No frontend changes needed!)                               │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 14.4 StripePlanStore Implementation
+
+```java
+@Singleton
+public class StripePlanStore implements PlanStore {
+
+    // Cache plans for 5 minutes
+    private final LoadingCache<String, PlansGetResponse> plansCache;
+
+    @Override
+    public PlansGetResponse getPublicPlans() {
+        return plansCache.get("public");
+    }
+
+    private PlansGetResponse fetchPlansFromStripe() {
+        // Fetch all active products with show_on_landing=true
+        ProductCollection products = Product.list(Map.of(
+            "active", true
+        ));
+
+        List<Plan> plans = new ArrayList<>();
+
+        for (Product product : products.getData()) {
+            Map<String, String> meta = product.getMetadata();
+
+            // Skip if not meant for landing page
+            if (!"true".equals(meta.get("show_on_landing"))) continue;
+
+            // Get active prices for this product
+            PriceCollection prices = Price.list(Map.of(
+                "product", product.getId(),
+                "active", true
+            ));
+
+            for (Price price : prices.getData()) {
+                Map<String, String> priceMeta = price.getMetadata();
+
+                Plan plan = Plan.builder()
+                    .basePlanId(priceMeta.get("planId"))
+                    .title(meta.get("display_title"))
+                    .perks(parsePerks(meta.get("perks"), meta.get("perk_tooltips")))
+                    .pricing(extractPricing(price, priceMeta))
+                    .features(parseFeatures(meta.get("features_json")))
+                    .order(Integer.parseInt(meta.getOrDefault("display_order", "99")))
+                    .category(meta.get("category"))
+                    .highlight("true".equals(priceMeta.get("highlight")))
+                    .highlightText(priceMeta.get("highlight_text"))
+                    .build();
+
+                plans.add(plan);
+            }
+        }
+
+        // Sort by display_order
+        plans.sort(Comparator.comparingInt(Plan::getOrder));
+
+        return new PlansGetResponse(plans, buildFeaturesTable(plans));
+    }
+
+    private List<PlanPerk> parsePerks(String perks, String tooltips) {
+        String[] perkList = perks.split("\\|");
+        String[] tooltipList = tooltips != null ? tooltips.split("\\|") : new String[0];
+
+        List<PlanPerk> result = new ArrayList<>();
+        for (int i = 0; i < perkList.length; i++) {
+            String tooltip = i < tooltipList.length ? tooltipList[i] : null;
+            result.add(new PlanPerk(perkList[i], tooltip.isEmpty() ? null : tooltip));
+        }
+        return result;
+    }
+}
+```
+
+### 14.5 Features Table from Stripe
+
+Instead of hardcoding the features comparison table, generate it from Stripe metadata:
+
+```java
+private FeaturesTable buildFeaturesTable(List<Plan> plans) {
+    // Define feature rows
+    List<String> featureNames = List.of(
+        "Tracked Users", "Teammates", "Posts", "Projects",
+        "Custom Domain", "Private Projects", "SSO/OAuth",
+        "API Access", "Whitelabel", "Priority Support"
+    );
+
+    // Build columns from plans
+    List<FeaturesTableColumn> columns = plans.stream()
+        .map(p -> new FeaturesTableColumn(p.getTitle(), p.getBasePlanId()))
+        .collect(toList());
+
+    // Build rows
+    List<FeaturesTableRow> rows = featureNames.stream()
+        .map(feature -> {
+            List<String> values = plans.stream()
+                .map(p -> p.getFeatures().getDisplayValue(feature))
+                .collect(toList());
+            return new FeaturesTableRow(feature, values);
+        })
+        .collect(toList());
+
+    return new FeaturesTable(columns, rows);
+}
+```
+
+### 14.6 Managing Plans in Stripe Dashboard
+
+**To add a new plan:**
+1. Create Product in Stripe Dashboard
+2. Add metadata (display_title, perks, features_json, etc.)
+3. Create Price with planId in metadata
+4. Set `show_on_landing: true` if public
+
+**To update plan features:**
+1. Edit Product metadata in Stripe Dashboard
+2. Cache expires in 5 minutes → UI updates automatically
+3. No code deployment needed!
+
+**To archive a plan:**
+1. Set `show_on_landing: false` in metadata
+2. Or archive the Price (existing subscriptions unaffected)
+
+### 14.7 Benefits of Stripe-Based Plan Configuration
+
+| Benefit | Description |
+|---------|-------------|
+| **No code deploys** | Change plan titles, perks, features via Stripe Dashboard |
+| **Version control** | Stripe maintains change history |
+| **A/B testing** | Create multiple Prices, show different plans to different users |
+| **Instant updates** | 5-minute cache means quick iteration |
+| **Single source of truth** | Plans defined in one place (Stripe) |
+| **Less code** | Remove 300+ lines from KillBillPlanStore |
+
+---
+
+## 15. New Pricing Structure (Tracked Users Model)
+
+### 15.1 New Plan Tiers
+
+The new Stripe plans will be based on **tracked users** (Monthly Active Users):
+
+| Plan | Tracked Users | Price | Key Features |
+|------|---------------|-------|--------------|
+| **Free** | 25 | $0/month | Basic features, 1 project |
+| **Starter** | 100 | $10/month | Core features, 3 projects |
+| **Pro** | 100 base + metered | $49/month | All features, unlimited projects |
+
+### 15.2 Detailed Plan Specifications
+
+#### Free Plan
+```yaml
+Product: ClearFlask Free
+Price: free-monthly
+  - Amount: $0
+  - Tracked Users: 25 (hard limit)
+  - Features:
+    - 1 project
+    - 1 teammate
+    - 100 posts
+    - Basic roadmap
+    - Community support
+  - Restrictions:
+    - No custom domain
+    - No private projects
+    - No SSO/OAuth
+    - No API access
+    - ClearFlask branding
+```
+
+#### Starter Plan
+```yaml
+Product: ClearFlask Starter
+Price: starter-monthly
+  - Amount: $10/month
+  - Tracked Users: 100 (included)
+  - Overage: $0.10 per additional user
+  - Features:
+    - 3 projects
+    - 3 teammates
+    - Unlimited posts
+    - Custom domain
+    - Email support
+  - Restrictions:
+    - No private projects
+    - No SSO/OAuth
+    - No API access
+    - ClearFlask branding (removable addon)
+```
+
+#### Pro Plan
+```yaml
+Product: ClearFlask Pro
+Price: pro-monthly
+  - Amount: $49/month
+  - Tracked Users: 100 (included)
+  - Overage: $0.25 per additional user
+  - Features:
+    - Unlimited projects
+    - 10 teammates (expandable)
+    - Unlimited posts
+    - Custom domain
+    - Private projects ✓
+    - SSO/OAuth ✓
+    - API access ✓
+    - GitHub integration ✓
+    - Intercom integration ✓
+    - Whitelabel (removable branding)
+    - Priority support
+```
+
+### 15.3 Stripe Product/Price Setup
+
+#### Create Products
+```java
+// Free Product
+Product freeProduct = Product.create(Map.of(
+    "name", "ClearFlask Free",
+    "metadata", Map.of(
+        "display_title", "Free",
+        "display_subtitle", "For personal projects",
+        "display_order", "1",
+        "show_on_landing", "true",
+        "category", "cloud",
+        "perks", "25 tracked users|1 project|Basic roadmap|Community support",
+        "features_json", "{\"trackedUsers\":25,\"teammates\":1,\"posts\":100,\"projects\":1,\"privateProjects\":false,\"sso\":false,\"oauth\":false,\"api\":false,\"whitelabel\":false}"
+    )
+));
+
+// Starter Product
+Product starterProduct = Product.create(Map.of(
+    "name", "ClearFlask Starter",
+    "metadata", Map.of(
+        "display_title", "Starter",
+        "display_subtitle", "For small teams",
+        "display_order", "2",
+        "show_on_landing", "true",
+        "category", "cloud",
+        "perks", "100 tracked users|3 projects|Custom domain|Email support",
+        "features_json", "{\"trackedUsers\":100,\"teammates\":3,\"posts\":\"unlimited\",\"projects\":3,\"privateProjects\":false,\"sso\":false,\"oauth\":false,\"api\":false,\"whitelabel\":false,\"customDomain\":true}"
+    )
+));
+
+// Pro Product
+Product proProduct = Product.create(Map.of(
+    "name", "ClearFlask Pro",
+    "metadata", Map.of(
+        "display_title", "Pro",
+        "display_subtitle", "For growing teams",
+        "display_order", "3",
+        "show_on_landing", "true",
+        "category", "cloud",
+        "highlight", "true",
+        "perks", "100+ tracked users|Unlimited projects|Private projects|SSO & OAuth|API access|Priority support",
+        "features_json", "{\"trackedUsers\":100,\"teammates\":10,\"posts\":\"unlimited\",\"projects\":\"unlimited\",\"privateProjects\":true,\"sso\":true,\"oauth\":true,\"api\":true,\"whitelabel\":true,\"customDomain\":true,\"github\":true,\"intercom\":true}"
+    )
+));
+```
+
+#### Create Prices
+```java
+// Free Price (no charge)
+Price freePrice = Price.create(Map.of(
+    "product", freeProduct.getId(),
+    "currency", "usd",
+    "unit_amount", 0,
+    "recurring", Map.of("interval", "month"),
+    "metadata", Map.of(
+        "planId", "free-monthly",
+        "tracked_users_limit", "25",
+        "cta_text", "Get Started",
+        "highlight", "false"
+    )
+));
+
+// Starter Price ($10 flat + metered overage)
+Price starterBasePrice = Price.create(Map.of(
+    "product", starterProduct.getId(),
+    "currency", "usd",
+    "unit_amount", 1000,  // $10.00
+    "recurring", Map.of("interval", "month"),
+    "metadata", Map.of(
+        "planId", "starter-monthly",
+        "base_tracked_users", "100",
+        "cta_text", "Start Free Trial",
+        "highlight", "false"
+    )
+));
+
+// Starter Overage Price (metered)
+Price starterOveragePrice = Price.create(Map.of(
+    "product", starterProduct.getId(),
+    "currency", "usd",
+    "recurring", Map.of(
+        "interval", "month",
+        "usage_type", "metered",
+        "aggregate_usage", "max"  // Bill for peak usage
+    ),
+    "unit_amount", 10,  // $0.10 per user
+    "metadata", Map.of(
+        "planId", "starter-monthly-overage",
+        "type", "overage",
+        "unit", "tracked-user"
+    )
+));
+
+// Pro Price ($49 flat + metered overage)
+Price proBasePrice = Price.create(Map.of(
+    "product", proProduct.getId(),
+    "currency", "usd",
+    "unit_amount", 4900,  // $49.00
+    "recurring", Map.of("interval", "month"),
+    "metadata", Map.of(
+        "planId", "pro-monthly",
+        "base_tracked_users", "100",
+        "cta_text", "Start Free Trial",
+        "highlight", "true",
+        "highlight_text", "Most Popular"
+    )
+));
+
+// Pro Overage Price (metered)
+Price proOveragePrice = Price.create(Map.of(
+    "product", proProduct.getId(),
+    "currency", "usd",
+    "recurring", Map.of(
+        "interval", "month",
+        "usage_type", "metered",
+        "aggregate_usage", "max"
+    ),
+    "unit_amount", 25,  // $0.25 per user
+    "metadata", Map.of(
+        "planId", "pro-monthly-overage",
+        "type", "overage",
+        "unit", "tracked-user"
+    )
+));
+```
+
+### 15.4 Subscription Creation with Metered Billing
+
+```java
+public void createSubscription(String customerId, String planId) {
+    switch (planId) {
+        case "free-monthly":
+            // Simple subscription, no overage
+            Subscription.create(Map.of(
+                "customer", customerId,
+                "items", List.of(Map.of("price", freePriceId))
+            ));
+            break;
+
+        case "starter-monthly":
+        case "pro-monthly":
+            // Base + metered overage
+            String basePriceId = getPriceId(planId);
+            String overagePriceId = getPriceId(planId + "-overage");
+
+            Subscription.create(Map.of(
+                "customer", customerId,
+                "items", List.of(
+                    Map.of("price", basePriceId),
+                    Map.of("price", overagePriceId)  // Metered item
+                ),
+                "trial_period_days", 14
+            ));
+            break;
+    }
+}
+```
+
+### 15.5 Usage Reporting for Tracked Users
+
+```java
+@Scheduled(cron = "0 0 * * *")  // Daily at midnight
+public void reportTrackedUserUsage() {
+    for (Account account : accountStore.getAllActiveAccounts()) {
+        String subscriptionItemId = getMeteredSubscriptionItemId(account);
+        if (subscriptionItemId == null) continue;
+
+        // Count tracked users across all projects
+        long trackedUsers = userStore.countTrackedUsers(account.getAccountId());
+
+        // Report to Stripe
+        UsageRecord.createOnSubscriptionItem(
+            subscriptionItemId,
+            Map.of(
+                "quantity", trackedUsers,
+                "timestamp", Instant.now().getEpochSecond(),
+                "action", "set"  // Set absolute value (not increment)
+            )
+        );
+    }
+}
+```
+
+### 15.6 Plan Comparison for Landing Page
+
+| Feature | Free | Starter | Pro |
+|---------|------|---------|-----|
+| **Price** | $0/mo | $10/mo | $49/mo |
+| **Tracked Users** | 25 | 100 (+$0.10/user) | 100 (+$0.25/user) |
+| **Projects** | 1 | 3 | Unlimited |
+| **Teammates** | 1 | 3 | 10 |
+| **Posts** | 100 | Unlimited | Unlimited |
+| **Custom Domain** | ❌ | ✓ | ✓ |
+| **Private Projects** | ❌ | ❌ | ✓ |
+| **SSO/OAuth** | ❌ | ❌ | ✓ |
+| **API Access** | ❌ | ❌ | ✓ |
+| **Integrations** | ❌ | ❌ | ✓ |
+| **Whitelabel** | ❌ | ❌ | ✓ |
+| **Support** | Community | Email | Priority |
+
+---
+
+## 16. Feature Flag & Gradual Rollout Strategy
+
+### 16.1 Overview
+
+To safely migrate from KillBill to Stripe, we need:
+
+1. **Feature flag** to control which billing system handles new signups
+2. **Query parameter** for testing Stripe flow on landing page
+3. **Staging Stripe environment** for testing with fake cards
+4. **Gradual rollout** capability
+
+### 16.2 Feature Flag Configuration
+
+```java
+// In application config
+public interface BillingConfig {
+
+    @Config("billing.newSignups.useStripe")
+    @DefaultValue("false")
+    boolean useStripeForNewSignups();
+
+    @Config("billing.stripe.testMode.enabled")
+    @DefaultValue("false")
+    boolean stripeTestModeEnabled();
+
+    @Config("billing.stripe.testMode.queryParam")
+    @DefaultValue("stripe_test")
+    String stripeTestModeQueryParam();
+
+    @Config("billing.stripe.apiKey.live")
+    String stripeLiveApiKey();
+
+    @Config("billing.stripe.apiKey.test")
+    String stripeTestApiKey();
+}
+```
+
+### 16.3 Billing Factory with Feature Flag
+
+```java
+@Singleton
+public class BillingFactory {
+
+    @Inject private KillBilling killBilling;
+    @Inject private StripeBilling stripeBilling;
+    @Inject private BillingConfig config;
+
+    /**
+     * Get the appropriate billing implementation for new signups.
+     *
+     * @param isTestMode Whether to use Stripe test/staging environment
+     * @return Billing implementation to use
+     */
+    public Billing getBillingForNewSignup(boolean isTestMode) {
+        if (isTestMode) {
+            // Always use Stripe in test mode (staging environment)
+            return stripeBilling.withTestMode(true);
+        }
+
+        if (config.useStripeForNewSignups()) {
+            return stripeBilling;
+        }
+
+        return killBilling;
+    }
+
+    /**
+     * Get billing for existing account (based on what system created it)
+     */
+    public Billing getBillingForAccount(Account account) {
+        if (account.getStripeCustomerId() != null) {
+            return stripeBilling;
+        }
+        return killBilling;
+    }
+}
+```
+
+### 16.4 StripeBilling with Test Mode Support
+
+```java
+@Singleton
+public class StripeBilling implements Billing {
+
+    @Inject private BillingConfig config;
+
+    private boolean testMode = false;
+
+    public StripeBilling withTestMode(boolean testMode) {
+        StripeBilling copy = new StripeBilling();
+        copy.testMode = testMode;
+        return copy;
+    }
+
+    private String getApiKey() {
+        return testMode
+            ? config.stripeTestApiKey()    // sk_test_xxx
+            : config.stripeLiveApiKey();   // sk_live_xxx
+    }
+
+    @Override
+    public void createAccountWithSubscriptionAsync(Account account) {
+        // Use appropriate API key
+        RequestOptions options = RequestOptions.builder()
+            .setApiKey(getApiKey())
+            .build();
+
+        Customer customer = Customer.create(Map.of(
+            "email", account.getEmail(),
+            "name", account.getName(),
+            "metadata", Map.of(
+                "accountId", account.getAccountId(),
+                "testMode", String.valueOf(testMode)
+            )
+        ), options);
+
+        // Store with test mode indicator
+        accountStore.setStripeCustomerId(
+            account.getAccountId(),
+            customer.getId(),
+            testMode  // Flag to know this is test data
+        );
+    }
+}
+```
+
+### 16.5 Frontend: Query Parameter Detection
+
+**Landing Page / Signup Flow:**
+
+```typescript
+// In SignupPage.tsx or PricingPage.tsx
+
+const STRIPE_TEST_PARAM = 'stripe_test';
+
+export function useStripeTestMode(): boolean {
+    const location = useLocation();
+    const params = new URLSearchParams(location.search);
+
+    // Check for ?stripe_test=1 or ?stripe_test=true
+    const testParam = params.get(STRIPE_TEST_PARAM);
+    return testParam === '1' || testParam === 'true';
+}
+
+export function SignupPage() {
+    const isStripeTestMode = useStripeTestMode();
+
+    // Pass to signup API
+    const handleSignup = async (formData: SignupForm) => {
+        await ServerAdmin.get().dispatchAdmin().then(d =>
+            d.accountSignupAdmin({
+                accountSignupAdmin: {
+                    ...formData,
+                    stripeTestMode: isStripeTestMode  // New field
+                }
+            })
+        );
+    };
+
+    // Show indicator in test mode
+    return (
+        <div>
+            {isStripeTestMode && (
+                <Alert severity="info">
+                    🧪 Stripe Test Mode - Use card 4242424242424242
+                </Alert>
+            )}
+            {/* ... signup form */}
+        </div>
+    );
+}
+```
+
+**Stripe.js Configuration:**
+
+```typescript
+// In BillingPage.tsx or PaymentForm.tsx
+
+export function useStripeClient(isTestMode: boolean) {
+    const [stripe, setStripe] = useState<Stripe | null>(null);
+
+    useEffect(() => {
+        const key = isTestMode
+            ? process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY_TEST  // pk_test_xxx
+            : process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY_LIVE; // pk_live_xxx
+
+        loadStripe(key).then(setStripe);
+    }, [isTestMode]);
+
+    return stripe;
+}
+```
+
+### 16.6 Backend: Signup Endpoint Changes
+
+```java
+// In AccountResource.java
+
+@POST
+@Path("/admin/account/signup")
+public AccountSignupAdminResponse accountSignupAdmin(
+        AccountSignupAdmin request,
+        @Context HttpServletRequest httpRequest) {
+
+    // Check for test mode
+    boolean stripeTestMode = Boolean.TRUE.equals(request.getStripeTestMode());
+
+    // Validate test mode is only allowed with query param
+    if (stripeTestMode && !config.stripeTestModeEnabled()) {
+        throw new ApiException(Response.Status.BAD_REQUEST,
+            "Stripe test mode is not enabled");
+    }
+
+    // Create account
+    Account account = accountStore.createAccount(
+        request.getEmail(),
+        request.getName(),
+        request.getBasePlanId()
+    );
+
+    // Get appropriate billing implementation
+    Billing billing = billingFactory.getBillingForNewSignup(stripeTestMode);
+
+    // Create subscription
+    billing.createAccountWithSubscriptionAsync(account);
+
+    return new AccountSignupAdminResponse(account);
+}
+```
+
+### 16.7 API Schema Changes
+
+```yaml
+# In api-account.yaml
+
+AccountSignupAdmin:
+  type: object
+  required:
+    - email
+    - name
+    - basePlanId
+  properties:
+    email:
+      type: string
+    name:
+      type: string
+    basePlanId:
+      type: string
+    stripeTestMode:           # NEW
+      type: boolean
+      description: Use Stripe staging environment for testing
+```
+
+### 16.8 Configuration for Different Environments
+
+```properties
+# config-production.cfg
+billing.newSignups.useStripe=false
+billing.stripe.testMode.enabled=true
+billing.stripe.apiKey.live=sk_live_xxxxx
+billing.stripe.apiKey.test=sk_test_xxxxx
+
+# config-staging.cfg
+billing.newSignups.useStripe=true
+billing.stripe.testMode.enabled=true
+billing.stripe.apiKey.live=sk_test_xxxxx  # Use test key even for "live"
+billing.stripe.apiKey.test=sk_test_xxxxx
+```
+
+### 16.9 Testing with Stripe Test Cards
+
+When `?stripe_test=1` is set, users can use Stripe test cards:
+
+| Card Number | Description |
+|-------------|-------------|
+| 4242 4242 4242 4242 | Success |
+| 4000 0000 0000 3220 | 3D Secure required |
+| 4000 0000 0000 9995 | Decline (insufficient funds) |
+| 4000 0000 0000 0341 | Attaching fails |
+
+**Expiry**: Any future date
+**CVC**: Any 3 digits
+**ZIP**: Any 5 digits
+
+### 16.10 Rollout Phases
+
+```
+Phase 1: Development (Current)
+├── Feature flag: useStripeForNewSignups = false
+├── Test mode: enabled with ?stripe_test=1
+├── All new signups go to KillBill
+└── Developers test with fake cards
+
+Phase 2: Internal Testing
+├── Feature flag: useStripeForNewSignups = false
+├── Test mode: enabled
+├── Internal team uses ?stripe_test=1 for real testing
+└── Validate full signup → subscription → payment flow
+
+Phase 3: Beta Rollout (Percentage)
+├── Feature flag: useStripeForNewSignups = true (10%)
+├── 10% of new signups go to Stripe (live)
+├── 90% continue with KillBill
+└── Monitor for issues
+
+Phase 4: Full Rollout
+├── Feature flag: useStripeForNewSignups = true (100%)
+├── All new signups go to Stripe
+├── Existing customers remain on KillBill
+└── Begin migration of existing customers
+
+Phase 5: Migration Complete
+├── All customers on Stripe
+├── KillBill decommissioned
+└── Feature flag removed
+```
+
+### 16.11 Monitoring & Alerts
+
+```java
+// Track which billing system is used
+@Singleton
+public class BillingMetrics {
+
+    private final Counter signupsKillBill = Counter.build()
+        .name("signups_killbill_total")
+        .help("Total signups via KillBill")
+        .register();
+
+    private final Counter signupsStripe = Counter.build()
+        .name("signups_stripe_total")
+        .help("Total signups via Stripe")
+        .labelNames("test_mode")
+        .register();
+
+    public void recordSignup(boolean isStripe, boolean isTestMode) {
+        if (isStripe) {
+            signupsStripe.labels(String.valueOf(isTestMode)).inc();
+        } else {
+            signupsKillBill.inc();
+        }
+    }
+}
+```
+
+### 16.12 Summary: Feature Flag Flow
+
+```
+User visits landing page
+       │
+       ▼
+┌─────────────────────────────┐
+│  ?stripe_test=1 in URL?     │
+└─────────────────────────────┘
+       │
+       ├── Yes ──▶ Use Stripe TEST environment (sk_test_xxx)
+       │           Show "Test Mode" banner
+       │           Allow test card numbers
+       │
+       └── No ──▶ Check feature flag
+                      │
+                      ├── useStripeForNewSignups = true
+                      │   └── Use Stripe LIVE environment
+                      │
+                      └── useStripeForNewSignups = false
+                          └── Use KillBill (existing flow)
+```
+
+---
+
+## 17. Open Questions
 
 1. **Historical invoices**: Should old KillBill invoices be migrated or archived?
 2. **Coupon migration**: Are there active coupons that need special handling?
@@ -1345,7 +2210,7 @@ Features you gain at no extra cost:
 
 ---
 
-## 15. Appendix: Plan Mapping
+## 18. Appendix: Plan Mapping
 
 ### Current KillBill Plans → Stripe Products/Prices
 
