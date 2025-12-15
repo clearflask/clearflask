@@ -89,6 +89,7 @@ interface State {
   suppressNotifications?: boolean;
   visibility?: Client.IdeaVisibility;
   adminNotes?: string;
+  externalUrl?: string;
 }
 class PostEdit extends Component<Props & WithMediaQuery & WithTranslation<'app'> & WithStyles<typeof styles, true>, State> {
   state: State = {};
@@ -106,7 +107,8 @@ class PostEdit extends Component<Props & WithMediaQuery & WithTranslation<'app'>
         || this.state.tagIds !== undefined
         || this.state.fundGoal !== undefined
         || this.state.visibility !== undefined
-        || this.state.adminNotes !== undefined)
+        || this.state.adminNotes !== undefined
+        || this.state.externalUrl !== undefined)
     );
     const notifyReasons = [
       this.state.statusId !== undefined ? 'status' : undefined,
@@ -249,6 +251,20 @@ class PostEdit extends Component<Props & WithMediaQuery & WithTranslation<'app'>
                       />
                     </Grid>
                   )}
+                  {isModOrAdminLoggedIn && (
+                    <Grid item xs={12} className={this.props.classes.row}>
+                      <TextField
+                        variant='outlined'
+                        size='small'
+                        disabled={this.state.isSubmitting}
+                        label='External URL (Jira, GitHub, etc.)'
+                        helperText='Link to external issue tracker (e.g., Jira, GitHub, GitLab)'
+                        fullWidth
+                        value={(this.state.externalUrl === undefined ? this.props.idea.externalUrl : this.state.externalUrl) || ''}
+                        onChange={e => this.setState({ externalUrl: e.target.value })}
+                      />
+                    </Grid>
+                  )}
                   <Grid item xs={12}>
                     <Collapse in={!!notifyReasons}>
                       <FormControlLabel
@@ -292,6 +308,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithTranslation<'app'>
                     suppressNotifications: this.state.suppressNotifications,
                     visibility: this.state.visibility,
                     adminNotes: this.state.adminNotes,
+                    externalUrl: this.state.externalUrl,
                   },
                 }))
                 : this.props.server.dispatch().then(d => d.ideaUpdate({
@@ -300,6 +317,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithTranslation<'app'>
                   ideaUpdate: {
                     title: this.state.title,
                     description: this.state.description,
+                    externalUrl: this.state.externalUrl,
                   },
                 })))
                 .then(idea => {
@@ -314,6 +332,7 @@ class PostEdit extends Component<Props & WithMediaQuery & WithTranslation<'app'>
                     suppressNotifications: undefined,
                     visibility: undefined,
                     adminNotes: undefined,
+                    externalUrl: undefined,
                   });
                   this.props.onClose();
                 })

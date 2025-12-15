@@ -248,6 +248,8 @@ components:
           type: string
         linkedGitLabUrl:
           type: string
+        externalUrl:
+          type: string
         coverImg:
           type: string
         visibility:

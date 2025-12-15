@@ -594,6 +594,7 @@ class Post extends Component<Props & ConnectProps & WithTranslation<'app'> & Wit
                             {this.renderAdminNotes()}
                             {this.renderMerged()}
                             {this.renderLinkedToGitHub()}
+                            {this.renderExternalUrl()}
                             {this.renderLinks()}
                         </div>
                         {this.props.contentBeforeComments && (
@@ -1672,6 +1673,64 @@ class Post extends Component<Props & ConnectProps & WithTranslation<'app'> & Wit
                 >
                     <OutlinePostContent>
                         {content}
+                    </OutlinePostContent>
+                </ConnectedPostsContainer>
+            </div>
+        );
+    }
+
+    renderExternalUrl() {
+        if (!this.props.idea
+            || this.props.variant === 'list'
+            || !this.props.idea.externalUrl) return null;
+
+        // Try to extract meaningful text from common issue tracker URLs
+        var content: React.ReactNode = this.props.idea.externalUrl;
+
+        // Jira: https://company.atlassian.net/browse/PROJ-123
+        const jiraMatch = (new RegExp(/(?:https?:\/\/[^/]+\/browse\/)([A-Z]+-[0-9]+)/i))
+            .exec(this.props.idea.externalUrl);
+        if (jiraMatch) {
+            content = jiraMatch[1];
+        }
+
+        // GitHub: https://github.com/user/repo/issues/123
+        const githubMatch = (new RegExp(/https:\/\/github.com\/([^/]+)\/([^/]+)\/issues\/([0-9]+)/))
+            .exec(this.props.idea.externalUrl);
+        if (githubMatch) {
+            const issueNumber = githubMatch[3];
+            content = `#${issueNumber}`;
+        }
+
+        // GitLab: https://gitlab.com/user/repo/-/issues/123
+        const gitlabMatch = (new RegExp(/https:\/\/[^/]+\/([^/]+\/[^/]+)\/-\/issues\/([0-9]+)/))
+            .exec(this.props.idea.externalUrl);
+        if (gitlabMatch) {
+            const issueNumber = gitlabMatch[2];
+            content = `#${issueNumber}`;
+        }
+
+        content = (
+            <MuiLink
+                href={this.props.idea.externalUrl}
+                target='_blank'
+                rel='noopener nofollow'
+                underline='none'
+                color='textPrimary'
+            >
+                {content}
+            </MuiLink>
+        );
+
+        return (
+            <div className={this.props.classes.links}>
+                <ConnectedPostsContainer
+                    type='link'
+                    direction='to'
+                    hasMultiple={false}
+                >
+                    <OutlinePostContent>
+                        External:&nbsp;{content}
                     </OutlinePostContent>
                 </ConnectedPostsContainer>
             </div>
