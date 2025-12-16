@@ -28,9 +28,6 @@ import com.smotana.clearflask.api.model.CommentUpdate;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.IdeaStatus;
 import com.smotana.clearflask.api.model.IdeaUpdate;
-import com.smotana.clearflask.api.model.JiraStatusSync;
-import com.smotana.clearflask.api.model.JiraStatusSyncStatusMapping;
-import com.smotana.clearflask.api.model.JiraStatusSyncReverseStatusMapping;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.core.push.NotificationService;
@@ -547,16 +544,9 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
             }
         }
 
-        // Update status if status sync is enabled and status mapping exists
-        if (jiraConfig.getStatusSync() != null
-                && jiraConfig.getStatusSync().getReverseStatusMapping() != null
-                && !Strings.isNullOrEmpty(event.getStatus())) {
-            String cfStatusId = getReverseStatusMappingValue(jiraConfig.getStatusSync(), event.getStatus());
-            if (cfStatusId != null && !cfStatusId.equals(idea.getStatusId())) {
-                builder.statusId(cfStatusId);
-                changed = true;
-            }
-        }
+        // TODO: Status sync mapping - currently simplified to boolean
+        // When statusSync is true, we could auto-map Jira statuses to CF statuses based on conventions
+        // For now, status sync is disabled for Jira -> CF direction
 
         if (!changed) {
             return Optional.empty();
@@ -871,9 +861,8 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
             return Futures.immediateFuture(Optional.empty());
         }
 
-        boolean shouldSyncStatus = statusChanged
-                && jiraConfig.getStatusSync() != null
-                && jiraConfig.getStatusSync().getStatusMapping() != null;
+        // Status sync is now a simple boolean - disable status sync until custom UI is built
+        boolean shouldSyncStatus = false;  // TODO: Re-enable when status mapping UI is implemented
         boolean shouldSyncResponse = responseChanged && Boolean.TRUE.equals(jiraConfig.getResponseSync());
 
         if (!shouldSyncStatus && !shouldSyncResponse) {
@@ -903,23 +892,9 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
                 JiraIssue issue = client.getApiClient().getIssue(issueKey);
                 JiraComment responseComment = null;
 
-                // Sync status via transition
-                if (shouldSyncStatus && idea.getStatusId() != null) {
-                    String jiraTransitionName = getStatusMappingValue(jiraConfig.getStatusSync(), idea.getStatusId());
-                    if (jiraTransitionName != null) {
-                        ImmutableList<JiraTransition> transitions = client.getApiClient().getTransitions(issueKey);
-                        Optional<JiraTransition> transitionOpt = transitions.stream()
-                                .filter(t -> t.getName().equalsIgnoreCase(jiraTransitionName)
-                                        || (t.getTo() != null && t.getTo().getName().equalsIgnoreCase(jiraTransitionName)))
-                                .findFirst();
-
-                        if (transitionOpt.isPresent()) {
-                            client.getApiClient().transitionIssue(issueKey, transitionOpt.get().getId());
-                            log.info("Transitioned Jira issue {} to {} for ClearFlask status change",
-                                    issueKey, jiraTransitionName);
-                        }
-                    }
-                }
+                // TODO: Status sync via transition - currently simplified to boolean
+                // When statusSync is true, we could auto-map CF statuses to Jira transitions based on conventions
+                // For now, status sync is disabled for CF -> Jira direction
 
                 // Sync response as comment
                 if (shouldSyncResponse && !Strings.isNullOrEmpty(idea.getResponseAsUnsafeHtml())) {
@@ -1009,33 +984,6 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
         String cloudId;
     }
 
-    /**
-     * Helper method to get status mapping value from CF status ID to Jira status/transition name
-     */
-    private String getStatusMappingValue(JiraStatusSync statusSync, String clearflaskStatusId) {
-        if (statusSync == null || statusSync.getStatusMapping() == null) {
-            return null;
-        }
-        return statusSync.getStatusMapping().stream()
-                .filter(mapping -> clearflaskStatusId.equals(mapping.getClearflaskStatusId()))
-                .map(JiraStatusSyncStatusMapping::getJiraStatusName)
-                .findFirst()
-                .orElse(null);
-    }
-
-    /**
-     * Helper method to get reverse status mapping value from Jira status name to CF status ID
-     */
-    private String getReverseStatusMappingValue(JiraStatusSync statusSync, String jiraStatusName) {
-        if (statusSync == null || statusSync.getReverseStatusMapping() == null) {
-            return null;
-        }
-        return statusSync.getReverseStatusMapping().stream()
-                .filter(mapping -> jiraStatusName.equals(mapping.getJiraStatusName()))
-                .map(JiraStatusSyncReverseStatusMapping::getClearflaskStatusId)
-                .findFirst()
-                .orElse(null);
-    }
 
     public static Module module() {
         return new AbstractModule() {
