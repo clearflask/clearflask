@@ -1121,6 +1121,90 @@ components:
                         type: string
                       projectName:
                         type: string
+/admin/account/jira/issue-types:
+  post:
+    operationId: jiraGetIssueTypesAdmin
+    tags: [ AccountAdmin ]
+    parameters:
+      - name: cloudId
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: projectKey
+        in: query
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: JiraIssueTypesResponse
+              type: object
+              required:
+                - issueTypes
+              properties:
+                issueTypes:
+                  type: array
+                  items:
+                    title: JiraIssueTypeInfo
+                    type: object
+                    required:
+                      - id
+                      - name
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      description:
+                        type: string
+                      iconUrl:
+                        type: string
+/admin/account/jira/statuses:
+  post:
+    operationId: jiraGetStatusesAdmin
+    tags: [ AccountAdmin ]
+    parameters:
+      - name: cloudId
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: projectKey
+        in: query
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: JiraStatusesResponse
+              type: object
+              required:
+                - statuses
+              properties:
+                statuses:
+                  type: array
+                  items:
+                    title: JiraStatusInfo
+                    type: object
+                    required:
+                      - id
+                      - name
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      description:
+                        type: string
+                      statusCategory:
+                        type: string
 /admin/account/slack/workspace:
   post:
     operationId: slackGetWorkspaceInfoAdmin

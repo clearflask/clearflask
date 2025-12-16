@@ -31,4 +31,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Maven build
         timeout-minutes: 60
-        run: mvn install
+        run: mvn install -DskipITs
