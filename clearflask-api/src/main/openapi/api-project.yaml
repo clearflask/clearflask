@@ -1012,7 +1012,7 @@ components:
                   type: boolean
             gitlab:
               x-clearflask-hide: true
-              x-clearflask-page: { order: 6, name: 'GitLab Connect', description: 'Synchronize GitLab issues with ClearFlask.' }
+              x-clearflask-page: { order: 5, name: 'GitLab Connect', description: 'Synchronize GitLab issues with ClearFlask.' }
               title: GitLab
               type: object
               required:
@@ -1080,7 +1080,7 @@ components:
                   x-clearflask-prop: { order: 95, name: 'Announcement notify', defaultValue: true, description: 'Mirrored ClearFlask Announcement from a GitLab Release should notify subscribers in ClearFlask.', falseAsUndefined: true }
                   type: boolean
             jira:
-              x-clearflask-page: { order: 6, name: 'Jira Connect', description: 'Synchronize Jira issues with ClearFlask.' }
+              x-clearflask-page: { order: 7, name: 'Jira Connect', description: 'Synchronize Jira issues with ClearFlask.' }
               title: Jira
               type: object
               required:
@@ -1161,7 +1161,7 @@ components:
                   x-clearflask-prop: { order: 70, name: 'Comment sync', defaultValue: true, description: 'Mirror comments between Jira and ClearFlask.', falseAsUndefined: true }
                   type: boolean
             slack:
-              x-clearflask-page: { order: 6, name: 'Slack Connect', description: 'Synchronize ClearFlask posts with Slack channels. Get updates directly in Slack when posts are created, updated, or commented.' }
+              x-clearflask-page: { order: 8, name: 'Slack Connect', description: 'Synchronize ClearFlask posts with Slack channels. Get updates directly in Slack when posts are created, updated, or commented.' }
               title: Slack
               type: object
               required:
