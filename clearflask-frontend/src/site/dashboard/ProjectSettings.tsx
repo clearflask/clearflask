@@ -3820,7 +3820,7 @@ export const ProjectSettingsJira = (props: {
   }, [props.editor]);
 
   const getProjects = (code: string) => ServerAdmin.get().dispatchAdmin()
-    .then(d => d.jiraGetProjectsAdmin(code))
+    .then(d => d.jiraGetProjectsAdmin({ code }))
     .then(result => setProjects(result.projects));
 
   const oauthFlow = new OAuthFlow({
