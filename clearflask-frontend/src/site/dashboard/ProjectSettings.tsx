@@ -4042,7 +4042,11 @@ export const ProjectSettingsSlack = (props: {
         .set(result.accessToken);
       (props.editor.getProperty(['slack', 'botUserId']) as ConfigEditor.StringProperty)
         .set(result.botUserId);
-      // channelLinks is a page group and is automatically initialized
+      // Initialize channelLinks array if it doesn't exist
+      const channelLinksProperty = props.editor.getProperty(['slack', 'channelLinks']);
+      if (!channelLinksProperty.get()) {
+        channelLinksProperty.set([]);
+      }
 
       // Clear OAuth parameters from URL
       const url = new URL(windowIso.location.href);
