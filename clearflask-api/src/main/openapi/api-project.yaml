@@ -1137,7 +1137,6 @@ components:
                 - teamId
                 - accessToken
                 - botUserId
-                - channelLinks
               properties:
                 teamId:
                   x-clearflask-prop: { order: 0, name: 'Team ID', description: 'Slack workspace ID. Set automatically during OAuth connection.' }
@@ -1154,7 +1153,6 @@ components:
                 channelLinks:
                   x-clearflask-page-group: { order: 10, name: 'Channel Links', description: 'Link Slack channels to ClearFlask categories for two-way synchronization.', tablePropertyNames: [ 'channelName', 'categoryId' ] }
                   type: array
-                  default: []
                   items:
                     $ref: 'api-project.yaml#/components/schemas/SlackChannelLink'
             forceSearchEngine:
