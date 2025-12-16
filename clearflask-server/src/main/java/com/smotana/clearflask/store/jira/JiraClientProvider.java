@@ -57,7 +57,7 @@ public interface JiraClientProvider {
     @Builder
     class OAuthTokens {
         @NonNull String accessToken;
-        @NonNull String refreshToken;
+        String refreshToken;  // Nullable - not provided when offline_access scope is not requested
         long expiresIn;  // seconds until expiration
         String scope;
     }
