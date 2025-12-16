@@ -210,7 +210,9 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
             ImmutableMap.Builder<Long, String> projectIdsBuilder = ImmutableMap.builder();
 
             // Get projects the user has access to (maintainer or higher for webhook creation)
-            for (org.gitlab4j.api.models.Project project : gitLabApi.getProjectApi().getMemberProjects()) {
+            log.info("Attempting to fetch GitLab projects for account {} from instance {}", accountId, instanceUrl);
+            try {
+                for (org.gitlab4j.api.models.Project project : gitLabApi.getProjectApi().getMemberProjects()) {
                 projectsBuilder.add(new GitLabAvailableProject(
                         project.getId(),
                         project.getPathWithNamespace(),
@@ -218,14 +220,20 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
                 projectIdsBuilder.put(project.getId(), instanceUrl);
             }
 
-            // Store authorization for the fetched projects
-            authorizeAccountForProjects(accountId, instanceUrl, projectIdsBuilder.build(),
-                    oAuthResponse.getAccessToken(),
-                    oAuthResponse.getRefreshToken(),
-                    oAuthResponse.getExpiresIn());
+                // Store authorization for the fetched projects
+                authorizeAccountForProjects(accountId, instanceUrl, projectIdsBuilder.build(),
+                        oAuthResponse.getAccessToken(),
+                        oAuthResponse.getRefreshToken(),
+                        oAuthResponse.getExpiresIn());
 
-            return new GitLabAvailableProjects(projectsBuilder.build());
-        } catch (IOException | GitLabApiException ex) {
+                log.info("Successfully fetched {} GitLab projects for account {}", projectsBuilder.build().size(), accountId);
+                return new GitLabAvailableProjects(projectsBuilder.build());
+            } catch (GitLabApiException ex) {
+                log.error("GitLab API error when fetching projects: HTTP {} - {}", ex.getHttpStatus(), ex.getMessage(), ex);
+                throw new ApiException(Response.Status.FORBIDDEN, "Failed to authorize with GitLab", ex);
+            }
+        } catch (IOException ex) {
+            log.error("IO error when communicating with GitLab", ex);
             throw new ApiException(Response.Status.FORBIDDEN, "Failed to authorize with GitLab", ex);
         }
     }
