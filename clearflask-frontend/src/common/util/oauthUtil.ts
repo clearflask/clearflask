@@ -180,7 +180,7 @@ export class OAuthFlow {
       + `response_type=code`
       + `&client_id=${provider.clientId}`
       + `&redirect_uri=${windowIso.location.protocol}//${windowIso.location.host}${this.props.redirectPath}`
-      + (provider.scope ? `&scope=${provider.scope}` : '')
+      + (provider.scope ? `&scope=${encodeURIComponent(provider.scope)}` : '')
       + `&${OAUTH_STATE_PARAM_NAME}=${oauthStateStr}`;
 
     if (openTarget === 'window') {
