@@ -3547,7 +3547,14 @@ export const ProjectSettingsGitLab = (props: {
 
   const getProjects = (code: string, gitlabInstanceUrl?: string) => ServerAdmin.get().dispatchAdmin()
     .then(d => d.gitLabGetProjectsAdmin({ gitLabGetProjectsBody: { code, gitlabInstanceUrl } }))
-    .then(result => setProjects(result.projects));
+    .then(result => {
+      setProjects(result.projects);
+      // Clear OAuth parameters from URL
+      const url = new URL(windowIso.location.href);
+      url.searchParams.delete('code');
+      url.searchParams.delete('state');
+      windowIso.history.replaceState({}, '', url.toString());
+    });
 
   const oauthFlow = new OAuthFlow({
     accountType: 'gitlab-integration',
@@ -3821,7 +3828,14 @@ export const ProjectSettingsJira = (props: {
 
   const getProjects = (code: string) => ServerAdmin.get().dispatchAdmin()
     .then(d => d.jiraGetProjectsAdmin({ code }))
-    .then(result => setProjects(result.projects));
+    .then(result => {
+      setProjects(result.projects);
+      // Clear OAuth parameters from URL
+      const url = new URL(windowIso.location.href);
+      url.searchParams.delete('code');
+      url.searchParams.delete('state');
+      windowIso.history.replaceState({}, '', url.toString());
+    });
 
   const oauthFlow = new OAuthFlow({
     accountType: 'jira-integration',
@@ -4029,6 +4043,12 @@ export const ProjectSettingsSlack = (props: {
       (props.editor.getProperty(['slack', 'botUserId']) as ConfigEditor.StringProperty)
         .set(result.botUserId);
       // channelLinks is a page group and is automatically initialized
+
+      // Clear OAuth parameters from URL
+      const url = new URL(windowIso.location.href);
+      url.searchParams.delete('code');
+      url.searchParams.delete('state');
+      windowIso.history.replaceState({}, '', url.toString());
     });
 
   const oauthFlow = new OAuthFlow({
