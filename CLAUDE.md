@@ -22,6 +22,27 @@ mvn install -DskipITs
 cd clearflask-server && mvn install -DskipTests
 ```
 
+## CRITICAL: Pre-Commit Requirements
+
+**MANDATORY**: Before running `git commit` and `git push`, you MUST:
+
+1. **Run a full build** to verify all modules compile:
+   ```bash
+   mvn clean install -DskipITs
+   ```
+
+2. **Never commit without verifying the build succeeds**
+   - Do NOT commit if you only tested one module (e.g., just clearflask-server)
+   - Do NOT skip this step to save time
+   - Build failures in CI waste time and break the pipeline
+
+3. **If the build fails**:
+   - Fix all compilation errors
+   - Run `mvn clean install -DskipITs` again
+   - Only commit once the build succeeds
+
+**Why this matters**: The project has multiple interdependent modules. A change in one module can break another. Building only one module doesn't catch all errors.
+
 ## Running Locally
 
 ```bash
