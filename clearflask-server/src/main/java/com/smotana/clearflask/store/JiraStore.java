@@ -39,6 +39,26 @@ public interface JiraStore {
     AvailableJiraProjects getProjectsForUser(String accountId, String code);
 
     /**
+     * Get available issue types for a Jira project.
+     *
+     * @param accountId  ClearFlask account ID
+     * @param cloudId    Jira Cloud instance ID
+     * @param projectKey Jira project key
+     * @return List of available issue types
+     */
+    com.smotana.clearflask.api.model.JiraIssueTypesResponse getIssueTypesForProject(String accountId, String cloudId, String projectKey);
+
+    /**
+     * Get available statuses for a Jira project.
+     *
+     * @param accountId  ClearFlask account ID
+     * @param cloudId    Jira Cloud instance ID
+     * @param projectKey Jira project key
+     * @return List of available statuses
+     */
+    com.smotana.clearflask.api.model.JiraStatusesResponse getStatusesForProject(String accountId, String cloudId, String projectKey);
+
+    /**
      * Set up or update the Jira integration configuration for a project.
      * This will register webhooks and store authorization.
      *

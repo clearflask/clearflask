@@ -1121,8 +1121,26 @@ components:
                   x-clearflask-prop: { order: 47, name: 'Auto-create Jira issues', defaultValue: false, description: 'Automatically create a Jira issue when a ClearFlask post is created in the linked category.' }
                   type: boolean
                 statusSync:
-                  x-clearflask-prop: { order: 50, name: 'Status sync', description: 'Enable to map ClearFlask statuses to Jira transitions. Configure mappings in advanced settings.', falseAsUndefined: true }
-                  type: boolean
+                  x-clearflask-prop: { order: 50, name: 'Status sync', description: 'Map ClearFlask statuses to Jira transitions for bidirectional sync.', falseAsUndefined: true }
+                  type: object
+                  properties:
+                    cfToJiraStatusMap:
+                      x-clearflask-prop: { order: 10, name: 'ClearFlask → Jira Status Map', description: 'Map ClearFlask status IDs to Jira transition/status names' }
+                      type: object
+                      additionalProperties:
+                        type: string
+                    jiraToCfStatusMap:
+                      x-clearflask-prop: { order: 20, name: 'Jira → ClearFlask Status Map', description: 'Map Jira status names to ClearFlask status IDs' }
+                      type: object
+                      additionalProperties:
+                        type: string
+                    defaultCfStatusId:
+                      x-clearflask-prop: { order: 30, name: 'Default ClearFlask Status', description: 'Fallback status for unmapped Jira statuses' }
+                      x-clearflask-prop-link: { idPropName: 'statusId', linkPath: [ 'content', 'categories', '<$>', 'workflow', 'statuses' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '..', 'createWithCategoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
+                      type: string
+                    defaultJiraStatusName:
+                      x-clearflask-prop: { order: 40, name: 'Default Jira Status', description: 'Fallback status name for unmapped ClearFlask statuses' }
+                      type: string
                 responseSync:
                   x-clearflask-prop: { order: 60, name: 'Response sync', defaultValue: true, description: 'Create Jira comment when Response changes in ClearFlask.', falseAsUndefined: true }
                   type: boolean
