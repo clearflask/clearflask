@@ -22,6 +22,7 @@ import com.kik.config.ice.naming.SimpleConfigNamingStrategy;
 import com.kik.config.ice.source.FileDynamicConfigSource;
 import com.kik.config.ice.source.JmxDynamicConfigSource;
 import com.smotana.clearflask.antispam.CastleAntiSpam;
+import com.smotana.clearflask.billing.BillingRouter;
 import com.smotana.clearflask.billing.CommonPlanVerifyStore;
 import com.smotana.clearflask.billing.DynamoCouponStore;
 import com.smotana.clearflask.billing.KillBillClientProvider;
@@ -30,6 +31,7 @@ import com.smotana.clearflask.billing.KillBillSync;
 import com.smotana.clearflask.billing.KillBilling;
 import com.smotana.clearflask.billing.SelfHostBilling;
 import com.smotana.clearflask.billing.SelfHostPlanStore;
+import com.smotana.clearflask.billing.StripeBilling;
 import com.smotana.clearflask.billing.StripeClientSetup;
 import com.smotana.clearflask.core.email.AmazonSimpleEmailServiceProvider;
 import com.smotana.clearflask.core.email.ProjectDeletionService;
@@ -349,17 +351,24 @@ public enum ServiceInjector {
                 install(NotificationResource.module());
                 install(LlmResource.module());
 
-                // Billing
+                // Billing - Install all billing implementations with named bindings
+                // BillingRouter will route to the appropriate one based on environment and account
                 install(CommonPlanVerifyStore.module());
+                install(BillingRouter.module());
+
+                // SelfHostBilling is always installed for self-hosted environments
+                install(SelfHostBilling.moduleNamed());
+
                 if (env == Environment.PRODUCTION_SELF_HOST) {
-                    install(SelfHostBilling.module());
                     install(SelfHostPlanStore.module());
                 } else {
+                    // Install KillBill and Stripe for non-self-hosted environments
                     install(KillBillClientProvider.module());
-                    install(KillBilling.module());
+                    install(KillBilling.moduleNamed());
                     install(KillBillSync.module());
                     install(StripeClientSetup.module());
                     install(KillBillPlanStore.module());
+                    install(StripeBilling.module());
                 }
 
                 // Other

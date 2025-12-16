@@ -17,6 +17,7 @@ import com.smotana.clearflask.api.model.AccountBillingPaymentActionRequired;
 import com.smotana.clearflask.api.model.Invoices;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.core.ManagedService;
+import com.smotana.clearflask.core.ServiceInjector.Environment;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.AccountStore.Account;
 import com.smotana.clearflask.store.UserStore.UserModel;
@@ -29,18 +30,22 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Routes billing calls to the appropriate implementation based on account configuration.
+ * Routes billing calls to the appropriate implementation based on environment and account configuration.
  * <p>
  * Routing logic:
- * 1. If account has stripeCustomerId set, use StripeBilling
- * 2. If StripeBillingConfig.useStripeForNewSignups() is true AND this is a new signup, use StripeBilling
- * 3. Otherwise, use KillBilling
+ * 1. If running in PRODUCTION_SELF_HOST environment, use SelfHostBilling
+ * 2. If account has stripeCustomerId set, use StripeBilling
+ * 3. If StripeBillingConfig.useStripeForNewSignups() is true AND this is a new signup, use StripeBilling
+ * 4. Otherwise, use KillBilling
  * <p>
- * This allows for gradual migration from KillBill to Stripe.
+ * This allows for gradual migration from KillBill to Stripe while supporting self-hosted installations.
  */
 @Slf4j
 @Singleton
 public class BillingRouter implements Billing {
+
+    @Inject
+    private Environment env;
 
     @Inject
     private StripeBillingConfig stripeBillingConfig;
@@ -52,6 +57,10 @@ public class BillingRouter implements Billing {
     @Inject
     @Named("stripe")
     private Provider<Billing> stripeBillingProvider;
+
+    @Inject
+    @Named("selfhost")
+    private Provider<Billing> selfHostBillingProvider;
 
     @Inject
     private AccountStore accountStore;
@@ -97,9 +106,22 @@ public class BillingRouter implements Billing {
     }
 
     /**
+     * Check if running in self-hosted environment.
+     */
+    private boolean isSelfHosted() {
+        return env == Environment.PRODUCTION_SELF_HOST;
+    }
+
+    /**
      * Determine which billing implementation to use for a given account.
      */
     private Billing getBillingForAccount(String accountId) {
+        // Self-hosted environments always use SelfHostBilling
+        if (isSelfHosted()) {
+            log.debug("Using SelfHostBilling for account {} (self-hosted environment)", accountId);
+            return selfHostBillingProvider.get();
+        }
+
         if (forceStripeBilling.get()) {
             log.debug("Using StripeBilling for account {} due to forced stripe billing flag", accountId);
             return stripeBillingProvider.get();
@@ -119,6 +141,12 @@ public class BillingRouter implements Billing {
      * Determine which billing to use for new account creation.
      */
     private Billing getBillingForNewAccount() {
+        // Self-hosted environments always use SelfHostBilling
+        if (isSelfHosted()) {
+            log.info("Using SelfHostBilling for new account (self-hosted environment)");
+            return selfHostBillingProvider.get();
+        }
+
         if (forceStripeBilling.get() || forceStripeTestMode.get()) {
             log.info("Using StripeBilling for new account due to forced stripe mode");
             return stripeBillingProvider.get();
@@ -147,7 +175,10 @@ public class BillingRouter implements Billing {
 
     @Override
     public org.killbill.billing.client.model.gen.Account getAccountByKbId(UUID accountIdKb) {
-        // This is KillBill-specific, delegate to KillBilling
+        // This is KillBill-specific, delegate to KillBilling (or SelfHostBilling for self-hosted)
+        if (isSelfHosted()) {
+            return selfHostBillingProvider.get().getAccountByKbId(accountIdKb);
+        }
         return killBillingProvider.get().getAccountByKbId(accountIdKb);
     }
 
@@ -181,7 +212,10 @@ public class BillingRouter implements Billing {
 
     @Override
     public Optional<AccountBillingPaymentActionRequired> getActions(UUID accountIdKb) {
-        // This uses KillBill UUID, delegate to KillBilling
+        // This uses KillBill UUID, delegate to KillBilling (or SelfHostBilling for self-hosted)
+        if (isSelfHosted()) {
+            return selfHostBillingProvider.get().getActions(accountIdKb);
+        }
         return killBillingProvider.get().getActions(accountIdKb);
     }
 
@@ -230,7 +264,10 @@ public class BillingRouter implements Billing {
         if (accountIdOpt.isPresent()) {
             return getBillingForAccount(accountIdOpt.get()).getInvoiceHtml(invoiceId, accountIdOpt);
         }
-        // If no account ID, default to KillBilling
+        // If no account ID, default to appropriate billing based on environment
+        if (isSelfHosted()) {
+            return selfHostBillingProvider.get().getInvoiceHtml(invoiceId, accountIdOpt);
+        }
         return killBillingProvider.get().getInvoiceHtml(invoiceId, accountIdOpt);
     }
 
@@ -241,12 +278,20 @@ public class BillingRouter implements Billing {
 
     @Override
     public Optional<PaymentMethodDetails> getDefaultPaymentMethodDetails(UUID accountIdKb) {
-        // This uses KillBill UUID, delegate to KillBilling
+        // This uses KillBill UUID, delegate to appropriate billing based on environment
+        if (isSelfHosted()) {
+            return selfHostBillingProvider.get().getDefaultPaymentMethodDetails(accountIdKb);
+        }
         return killBillingProvider.get().getDefaultPaymentMethodDetails(accountIdKb);
     }
 
     @Override
     public ImmutableSet<PlanDetail> getAvailablePlans(Optional<String> accountId) {
+        // Self-hosted always uses SelfHostBilling
+        if (isSelfHosted()) {
+            return selfHostBillingProvider.get().getAvailablePlans(accountId);
+        }
+
         if (accountId.isPresent()) {
             return getBillingForAccount(accountId.get()).getAvailablePlans(accountId);
         }
