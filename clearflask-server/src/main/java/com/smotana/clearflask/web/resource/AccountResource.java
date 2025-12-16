@@ -871,18 +871,20 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
         SlackStore.SlackWorkspaceInfo workspaceInfo = slackStore.getWorkspaceInfoForUser(accountId, code);
 
         // Convert from store model to API model
-        return new com.smotana.clearflask.api.model.SlackWorkspaceInfo()
+        return com.smotana.clearflask.api.model.SlackWorkspaceInfo.builder()
                 .teamId(workspaceInfo.getTeamId())
                 .teamName(workspaceInfo.getTeamName())
                 .accessToken(workspaceInfo.getAccessToken())
                 .botUserId(workspaceInfo.getBotUserId())
                 .channels(workspaceInfo.getChannels().stream()
-                        .map(ch -> new com.smotana.clearflask.api.model.SlackChannel()
+                        .map(ch -> com.smotana.clearflask.api.model.SlackChannel.builder()
                                 .channelId(ch.getChannelId())
                                 .channelName(ch.getChannelName())
                                 .isPrivate(ch.isPrivate())
-                                .isMember(ch.isMember()))
-                        .collect(java.util.stream.Collectors.toList()));
+                                .isMember(ch.isMember())
+                                .build())
+                        .collect(java.util.stream.Collectors.toList()))
+                .build();
     }
 
     @RolesAllowed({Role.SUPER_ADMIN})

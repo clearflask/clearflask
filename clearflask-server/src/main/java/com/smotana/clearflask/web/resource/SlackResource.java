@@ -4,6 +4,7 @@ package com.smotana.clearflask.web.resource;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.inject.AbstractModule;
@@ -220,7 +221,7 @@ public class SlackResource {
     private Optional<Project> getProjectBySlackTeamId(String teamId) {
         // Note: This is not the most efficient approach for large numbers of projects.
         // For production at scale, consider adding an index or cache mapping teamId -> projectId.
-        return projectStore.getProjects(false).stream()
+        return projectStore.getProjects(ImmutableSet.of(), false).stream()
                 .filter(project -> {
                     com.smotana.clearflask.api.model.Slack slackConfig =
                             project.getVersionedConfigAdmin().getConfig().getSlack();
