@@ -1125,12 +1125,12 @@ components:
                   type: object
                   properties:
                     statusMapping:
-                      x-clearflask-prop: { order: 10, name: 'CF -> Jira Status Mapping', description: 'Map ClearFlask status IDs to Jira transition/status names.' }
+                      x-clearflask-hide: true
                       type: object
                       additionalProperties:
                         type: string
                     reverseStatusMapping:
-                      x-clearflask-prop: { order: 20, name: 'Jira -> CF Status Mapping', description: 'Map Jira status names to ClearFlask status IDs.' }
+                      x-clearflask-hide: true
                       type: object
                       additionalProperties:
                         type: string
