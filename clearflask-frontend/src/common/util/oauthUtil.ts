@@ -9,6 +9,24 @@ export const OAUTH_CODE_PARAM_NAME = 'code';
 export const OAUTH_STATE_PARAM_NAME = 'state';
 const OAUTH_CSRF_SESSIONSTORAGE_KEY_PREFIX = 'oauth-state';
 
+// OAuth config injected by server at runtime
+interface OAuthConfig {
+  gitlabClientId?: string;
+  jiraClientId?: string;
+  slackClientId?: string;
+}
+
+declare global {
+  interface Window {
+    __OAUTH_CONFIG__?: OAuthConfig;
+  }
+}
+
+const getOAuthConfig = (): OAuthConfig => {
+  if (windowIso.isSsr) return {};
+  return windowIso.__OAUTH_CONFIG__ || {};
+};
+
 const GitHubAppProvider = {
   clientId: isProd() ? 'Iv1.4c1c98e9e6c71cae' : 'github-client-id',
   authorizeUrl: 'https://github.com/login/oauth/authorize',
@@ -19,7 +37,7 @@ const GitHubAppProvider = {
 // NOTE: This client ID must match the backend GitLab OAuth configuration
 const GitLabProvider: OAuthProvider = {
   clientId: isProd()
-    ? process.env.REACT_APP_GITLAB_CLIENT_ID || (() => { throw new Error('REACT_APP_GITLAB_CLIENT_ID environment variable must be set for GitLab OAuth'); })()
+    ? (getOAuthConfig().gitlabClientId || 'gitlab-client-id')
     : 'gitlab-client-id',
   authorizeUrl: 'https://gitlab.com/oauth/authorize',
   scope: 'api read_user',
@@ -29,7 +47,7 @@ const GitLabProvider: OAuthProvider = {
 // NOTE: This client ID must match the backend Jira OAuth configuration
 const JiraProvider: OAuthProvider = {
   clientId: isProd()
-    ? process.env.REACT_APP_JIRA_CLIENT_ID || (() => { throw new Error('REACT_APP_JIRA_CLIENT_ID environment variable must be set for Jira OAuth'); })()
+    ? (getOAuthConfig().jiraClientId || 'jira-client-id')
     : 'jira-client-id',
   authorizeUrl: 'https://auth.atlassian.com/authorize',
   scope: 'read:jira-work write:jira-work offline_access',
@@ -39,7 +57,7 @@ const JiraProvider: OAuthProvider = {
 // NOTE: This client ID must match the backend Slack OAuth configuration
 const SlackProvider: OAuthProvider = {
   clientId: isProd()
-    ? process.env.REACT_APP_SLACK_CLIENT_ID || (() => { throw new Error('REACT_APP_SLACK_CLIENT_ID environment variable must be set for Slack OAuth'); })()
+    ? (getOAuthConfig().slackClientId || 'slack-client-id')
     : 'slack-client-id',
   authorizeUrl: 'https://slack.com/oauth/v2/authorize',
   scope: 'channels:read channels:write.invites chat:write chat:write.public',

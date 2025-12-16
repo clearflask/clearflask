@@ -25,6 +25,7 @@ export interface RenderResult {
 
 const PH_ENV = '%ENV%';
 const PH_PARENT_DOMAIN = '%PARENT_DOMAIN%';
+const PH_OAUTH_CONFIG = '%OAUTH_CONFIG%';
 const PH_FAVICON_URL = '%FAVICON_URL%';
 const PH_PAGE_TITLE = '%PAGE_TITLE%';
 const PH_LINK_TAGS = '%LINK_TAGS%';
@@ -71,6 +72,7 @@ const indexHtmlPromise: Promise<string> = new Promise<string>((resolve, error) =
   $('head').append(PH_LINK_TAGS);
   $('body').append(PH_ENV);
   $('body').append(PH_PARENT_DOMAIN);
+  $('body').append(PH_OAUTH_CONFIG);
   $('body').append(PH_I18N_INIT_LNG);
   $('body').append(PH_I18N_INIT_STORE);
   $('body').append(PH_SCRIPT_TAGS);
@@ -170,6 +172,14 @@ export default function render(): Handler {
       } else {
         html = html.replace(PH_PARENT_DOMAIN, '');
       }
+
+      // Inject OAuth client IDs from config
+      const oauthConfig = {
+        gitlabClientId: connectConfig.gitlabClientId,
+        jiraClientId: connectConfig.jiraClientId,
+        slackClientId: connectConfig.slackClientId,
+      };
+      html = html.replace(PH_OAUTH_CONFIG, `<script>window.__OAUTH_CONFIG__=${JSON.stringify(oauthConfig)}</script>`);
 
       // Favicon
       html = html.replace(PH_FAVICON_URL, renderResult.faviconUrl || `${getParentDomainUrl()}/favicon.ico`);
