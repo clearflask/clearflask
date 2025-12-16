@@ -43,6 +43,16 @@ public interface SlackStore {
     // ===== Configuration =====
 
     /**
+     * Exchange OAuth code for Slack workspace access.
+     * Stores the authorization and returns available workspace info and channels.
+     *
+     * @param accountId The account ID connecting the workspace
+     * @param code OAuth authorization code from Slack
+     * @return Workspace information including teamId, teamName, and available channels
+     */
+    SlackWorkspaceInfo getWorkspaceInfoForUser(String accountId, String code);
+
+    /**
      * Get available Slack channels that can be linked.
      */
     List<SlackChannel> getAvailableChannels(String projectId);
@@ -110,6 +120,21 @@ public interface SlackStore {
     ListenableFuture<Optional<SlackMessageResult>> cfResponseChangedAsync(Project project, IdeaModel idea);
 
     // ===== Models =====
+
+    @Value
+    @Builder
+    class SlackWorkspaceInfo {
+        @NonNull
+        String teamId;
+        @NonNull
+        String teamName;
+        @NonNull
+        String accessToken;
+        @NonNull
+        String botUserId;
+        @NonNull
+        List<SlackChannel> channels;
+    }
 
     @Value
     class SlackChannel {

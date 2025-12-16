@@ -20,6 +20,10 @@ export interface ConnectConfig {
   // Only if disableAutoFetchCertificate is true,
   // whether to still redirect and assume https
   forceRedirectHttpToHttps?: boolean;
+  // OAuth client IDs for integrations
+  gitlabClientId?: string;
+  jiraClientId?: string;
+  slackClientId?: string;
 }
 
 var connectConfig: ConnectConfig = {

@@ -143,7 +143,7 @@ public class JiraClientProviderImpl implements JiraClientProvider {
                 JsonObject json = gson.fromJson(responseBody, JsonObject.class);
                 return OAuthTokens.builder()
                         .accessToken(json.get("access_token").getAsString())
-                        .refreshToken(json.get("refresh_token").getAsString())
+                        .refreshToken(json.has("refresh_token") ? json.get("refresh_token").getAsString() : null)
                         .expiresIn(json.has("expires_in") ? json.get("expires_in").getAsLong() : 3600)
                         .scope(json.has("scope") ? json.get("scope").getAsString() : null)
                         .build();

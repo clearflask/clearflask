@@ -4,6 +4,7 @@ package com.smotana.clearflask.web.resource;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.inject.AbstractModule;
@@ -47,7 +48,7 @@ import java.util.Optional;
 @Path(Application.RESOURCE_VERSION)
 public class SlackResource {
 
-    public static final String EVENTS_WEBHOOK_PATH = "/webhook/slack/project/{projectId}/events";
+    public static final String EVENTS_WEBHOOK_PATH = "/webhook/slack/events";
 
     // Slack request headers
     private static final String SLACK_SIGNATURE_HEADER = "X-Slack-Signature";
@@ -82,9 +83,7 @@ public class SlackResource {
     @Path(EVENTS_WEBHOOK_PATH)
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response webhookEvents(
-            @PathParam("projectId") @NotNull String projectId,
-            @Valid String payload) throws IOException {
+    public Response webhookEvents(@Valid String payload) throws IOException {
 
         // Verify signature
         String signature = request.getHeader(SLACK_SIGNATURE_HEADER);
@@ -113,6 +112,13 @@ public class SlackResource {
 
         // Handle event callbacks
         if ("event_callback".equals(type)) {
+            // Extract team_id to identify which project this event belongs to
+            String teamId = json.has("team_id") ? json.get("team_id").getAsString() : null;
+            if (Strings.isNullOrEmpty(teamId)) {
+                log.warn("Received Slack event without team_id");
+                return Response.ok().build();
+            }
+
             JsonObject event = json.getAsJsonObject("event");
             if (event == null) {
                 log.warn("Received event_callback without event object");
@@ -122,10 +128,10 @@ public class SlackResource {
             String eventType = event.has("type") ? event.get("type").getAsString() : null;
             String subtype = event.has("subtype") ? event.get("subtype").getAsString() : null;
 
-            // Get project
-            Optional<Project> projectOpt = getProject(projectId);
+            // Find project by Slack team ID
+            Optional<Project> projectOpt = getProjectBySlackTeamId(teamId);
             if (projectOpt.isEmpty()) {
-                log.info("Received Slack event for unknown project {}", projectId);
+                log.info("Received Slack event for unknown team ID: {}", teamId);
                 return Response.ok().build();
             }
 
@@ -208,20 +214,22 @@ public class SlackResource {
         }
     }
 
-    private Optional<Project> getProject(String projectId) {
-        for (boolean useCache : ImmutableList.of(Boolean.TRUE, Boolean.FALSE)) {
-            Optional<Project> projectOpt = projectStore.getProject(projectId, useCache);
-            if (projectOpt.isEmpty()) {
-                return Optional.empty();
-            }
-            // Verify Slack integration exists
-            com.smotana.clearflask.api.model.Slack slackConfig =
-                    projectOpt.get().getVersionedConfigAdmin().getConfig().getSlack();
-            if (slackConfig != null && slackConfig.getAccessToken() != null) {
-                return projectOpt;
-            }
-        }
-        return Optional.empty();
+    /**
+     * Find a project by its Slack team ID.
+     * This iterates through all projects to find one with matching teamId in Slack config.
+     */
+    private Optional<Project> getProjectBySlackTeamId(String teamId) {
+        // Note: This is not the most efficient approach for large numbers of projects.
+        // For production at scale, consider adding an index or cache mapping teamId -> projectId.
+        return projectStore.getProjects(ImmutableSet.of(), false).stream()
+                .filter(project -> {
+                    com.smotana.clearflask.api.model.Slack slackConfig =
+                            project.getVersionedConfigAdmin().getConfig().getSlack();
+                    return slackConfig != null
+                            && teamId.equals(slackConfig.getTeamId())
+                            && slackConfig.getAccessToken() != null;
+                })
+                .findFirst();
     }
 
     public static Module module() {

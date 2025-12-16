@@ -3,5 +3,8 @@
   "disableAutoFetchCertificate": true,
   "forceRedirectHttpToHttps": false,
   "parentDomain": "localhost",
-  "apiBasePath": "http://clearflask-server:8080"
+  "apiBasePath": "http://clearflask-server:8080",
+  "gitlabClientId": null,
+  "jiraClientId": null,
+  "slackClientId": null
 }

@@ -20,7 +20,7 @@ export function detectEnv(): Environment {
       envCache = Environment.DEVELOPMENT_LOCAL;
     } else if (envVar === 'selfhost') {
       envCache = Environment.PRODUCTION_SELF_HOST;
-    } else if (envVar === 'development' || process?.env?.NODE_ENV === 'development') {
+    } else if (envVar === 'development' || envVar === 'test' || process?.env?.NODE_ENV === 'development' || process?.env?.NODE_ENV === 'test') {
       const paramsEnv = !!windowIso.location?.href && new URL(windowIso.location.href).searchParams.get('env');
       if (!!paramsEnv && Object.values(Environment).includes(paramsEnv as any)) {
         envCache = paramsEnv as Environment;

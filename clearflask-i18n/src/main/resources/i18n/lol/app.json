@@ -136,6 +136,7 @@
   "as-user": "crwdns1276:0crwdne1276:0",
   "select-author": "crwdns1278:0crwdne1278:0",
   "notify-all-subscribers": "crwdns1280:0crwdne1280:0",
+  "private-visible-to-admins-only": "crwdns1302:0crwdne1302:0",
   "notification-title": "crwdns1282:0crwdne1282:0",
   "notification-body": "crwdns1284:0crwdne1284:0",
   "link-to": "crwdns1286:0crwdne1286:0",
@@ -143,5 +144,12 @@
   "reply": "crwdns1290:0crwdne1290:0",
   "edit": "crwdns1292:0crwdne1292:0",
   "edited": "crwdns1294:0crwdne1294:0",
-  "comment-deleted": "crwdns1296:0crwdne1296:0"
+  "comment-deleted": "crwdns1296:0crwdne1296:0",
+  "vote-on-behalf": "crwdns1304:0crwdne1304:0",
+  "search-user": "crwdns1306:0crwdne1306:0",
+  "add-vote": "crwdns1308:0crwdne1308:0",
+  "remove-vote": "crwdns1310:0crwdne1310:0",
+  "failed-to-add-vote": "crwdns1312:0crwdne1312:0",
+  "failed-to-remove-vote": "crwdns1314:0crwdne1314:0",
+  "action": "crwdns1316:0crwdne1316:0"
 }

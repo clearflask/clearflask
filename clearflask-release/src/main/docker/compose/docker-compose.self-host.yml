@@ -46,6 +46,7 @@ services:
       - '--secure-file-priv=/tmp'
     volumes:
       - ./data/mysql:/var/lib/mysql
+      - ./mysql-db:/docker-entrypoint-initdb.d
     ports:
       - 3306:3306
     environment:

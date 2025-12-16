@@ -497,6 +497,43 @@ components:
         password:
           type: string
           minLength: 1
+    SlackWorkspaceInfo:
+      type: object
+      required:
+        - teamId
+        - teamName
+        - accessToken
+        - botUserId
+        - channels
+      properties:
+        teamId:
+          type: string
+        teamName:
+          type: string
+        accessToken:
+          type: string
+        botUserId:
+          type: string
+        channels:
+          type: array
+          items:
+            $ref: 'api-account.yaml#/components/schemas/SlackChannel'
+    SlackChannel:
+      type: object
+      required:
+        - channelId
+        - channelName
+        - isPrivate
+        - isMember
+      properties:
+        channelId:
+          type: string
+        channelName:
+          type: string
+        isPrivate:
+          type: boolean
+        isMember:
+          type: boolean
 
 /support/message:
   post:
@@ -1096,6 +1133,22 @@ components:
                         type: string
                       projectName:
                         type: string
+/admin/account/slack/workspace:
+  post:
+    operationId: slackGetWorkspaceInfoAdmin
+    tags: [ AccountAdmin ]
+    parameters:
+      - name: code
+        in: query
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-account.yaml#/components/schemas/SlackWorkspaceInfo'
 /admin/account/delete:
   delete:
     operationId: accountDeleteAdmin
