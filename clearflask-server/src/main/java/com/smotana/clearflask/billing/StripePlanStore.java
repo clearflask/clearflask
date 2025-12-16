@@ -16,6 +16,7 @@ import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.*;
+import com.smotana.clearflask.api.model.PlanPricing.PeriodEnum;
 import com.smotana.clearflask.billing.CouponStore.CouponModel;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.store.AccountStore;
@@ -213,9 +214,7 @@ public class StripePlanStore extends ManagedService implements PlanStore {
         metadata.putAll(priceMetadata);
 
         String title = metadata.getOrDefault(META_TITLE, planId);
-        String description = metadata.get(META_DESCRIPTION);
-        String terms = metadata.get(META_TERMS);
-        Plan.PeriodEnum period = parsePeriod(metadata.getOrDefault(META_PERIOD, "MONTHLY"));
+        PeriodEnum period = parsePeriod(metadata.getOrDefault(META_PERIOD, "MONTHLY"));
 
         // Parse price
         long basePrice = 0;
@@ -223,64 +222,68 @@ public class StripePlanStore extends ManagedService implements PlanStore {
             basePrice = price.getUnitAmount(); // In cents
         }
 
-        // Parse tracked users limit
-        Long trackedUsersLimit = null;
+        // Parse tracked users settings for usage-based pricing
+        long baseMau = 0L;
+        long unitMau = 0L;
+        long unitPrice = 0L;
         String trackedUsersLimitStr = metadata.get(META_TRACKED_USERS_LIMIT);
         if (!Strings.isNullOrEmpty(trackedUsersLimitStr)) {
             try {
-                trackedUsersLimit = Long.parseLong(trackedUsersLimitStr);
+                baseMau = Long.parseLong(trackedUsersLimitStr);
             } catch (NumberFormatException ex) {
                 log.warn("Invalid tracked_users_limit for plan {}: {}", planId, trackedUsersLimitStr);
             }
         }
-
-        // Parse tracked users price (for metered billing)
-        Long trackedUsersPrice = null;
         String trackedUsersPriceStr = metadata.get(META_TRACKED_USERS_PRICE);
         if (!Strings.isNullOrEmpty(trackedUsersPriceStr)) {
             try {
-                trackedUsersPrice = Long.parseLong(trackedUsersPriceStr);
+                unitPrice = Long.parseLong(trackedUsersPriceStr);
+                unitMau = 1L; // Price per user
             } catch (NumberFormatException ex) {
                 log.warn("Invalid tracked_users_price for plan {}: {}", planId, trackedUsersPriceStr);
             }
         }
 
-        // Build perks/features list
-        ImmutableList.Builder<String> perks = ImmutableList.builder();
+        // Build PlanPricing object
+        PlanPricing planPricing = (basePrice == 0L && unitPrice == 0L) ? null
+                : PlanPricing.builder()
+                .basePrice(basePrice)
+                .baseMau(baseMau)
+                .unitPrice(unitPrice)
+                .unitMau(unitMau)
+                .period(period)
+                .build();
+
+        // Build perks/features list as PlanPerk objects
+        ImmutableList.Builder<PlanPerk> perks = ImmutableList.builder();
         for (String feature : KNOWN_FEATURES) {
             String featureKey = META_FEATURE_PREFIX + feature;
             if ("true".equalsIgnoreCase(metadata.get(featureKey))) {
-                perks.add(featureToDisplayName(feature));
+                perks.add(new PlanPerk(featureToDisplayName(feature), null));
             }
         }
 
-        // Build limits
-        ImmutableList.Builder<PlanPerk> limits = ImmutableList.builder();
-        if (trackedUsersLimit != null) {
-            limits.add(new PlanPerk(
-                    "Tracked Users",
-                    trackedUsersLimit == -1 ? "Unlimited" : String.valueOf(trackedUsersLimit),
+        // Add tracked users as a perk if set
+        if (baseMau > 0) {
+            perks.add(new PlanPerk(
+                    baseMau == -1 ? "Unlimited users" : baseMau + " tracked users",
                     null));
         }
 
         return new Plan(
                 planId,
                 title,
-                description,
-                terms,
-                period,
-                basePrice,
-                trackedUsersLimit,
-                trackedUsersPrice,
+                planPricing,
                 perks.build(),
-                limits.build());
+                null,  // comingSoon
+                null); // beta
     }
 
-    private Plan.PeriodEnum parsePeriod(String period) {
+    private PeriodEnum parsePeriod(String period) {
         try {
-            return Plan.PeriodEnum.valueOf(period.toUpperCase());
+            return PeriodEnum.valueOf(period.toUpperCase());
         } catch (IllegalArgumentException ex) {
-            return Plan.PeriodEnum.MONTHLY;
+            return PeriodEnum.MONTHLY;
         }
     }
 
