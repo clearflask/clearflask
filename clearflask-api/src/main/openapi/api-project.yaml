@@ -1121,7 +1121,7 @@ components:
                   x-clearflask-prop: { order: 47, name: 'Auto-create Jira issues', defaultValue: false, description: 'Automatically create a Jira issue when a ClearFlask post is created in the linked category.' }
                   type: boolean
                 statusSync:
-                  x-clearflask-prop: { order: 50, name: 'Status sync', description: 'Map ClearFlask statuses to Jira transitions for bidirectional sync.', falseAsUndefined: true }
+                  x-clearflask-page: { order: 50, name: 'Status sync', description: 'Map ClearFlask statuses to Jira transitions for bidirectional sync.', falseAsUndefined: true }
                   type: object
                   properties:
                     statusMapping:

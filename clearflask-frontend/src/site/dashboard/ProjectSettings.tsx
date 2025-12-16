@@ -4042,17 +4042,18 @@ export const ProjectSettingsSlack = (props: {
         .set(result.accessToken);
       (props.editor.getProperty(['slack', 'botUserId']) as ConfigEditor.StringProperty)
         .set(result.botUserId);
-      // Initialize channelLinks array if it doesn't exist
-      const channelLinksProperty = props.editor.getProperty(['slack', 'channelLinks']);
-      if (!channelLinksProperty.get()) {
-        channelLinksProperty.set([]);
-      }
+      // Initialize channelLinks array - required field
+      (props.editor.getProperty(['slack', 'channelLinks']) as ConfigEditor.ArrayProperty)
+        .set([]);
 
       // Clear OAuth parameters from URL
       const url = new URL(windowIso.location.href);
       url.searchParams.delete('code');
       url.searchParams.delete('state');
       windowIso.history.replaceState({}, '', url.toString());
+
+      // Force re-render to show the workspace name
+      setSlack(props.editor.getConfig().slack);
     });
 
   const oauthFlow = new OAuthFlow({
