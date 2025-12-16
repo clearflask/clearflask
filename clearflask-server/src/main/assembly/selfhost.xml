@@ -6,6 +6,12 @@
     <formats>
         <format>tar.gz</format>
     </formats>
+    <fileSets>
+        <fileSet>
+            <directory>${basedir}/src/main/resources/deploy/ddl-history</directory>
+            <outputDirectory>/mysql-db/</outputDirectory>
+        </fileSet>
+    </fileSets>
     <files>
         <file>
             <source>${basedir}/src/main/resources/logback-selfhost.xml</source>

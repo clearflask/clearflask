@@ -6,6 +6,12 @@
     <formats>
         <format>tar.gz</format>
     </formats>
+    <fileSets>
+        <fileSet>
+            <directory>${project.build.directory}/docker-compose-selfhost/mysql-db</directory>
+            <outputDirectory>/mysql-db/</outputDirectory>
+        </fileSet>
+    </fileSets>
     <files>
         <file>
             <source>${project.build.directory}/docker-compose-selfhost/config-selfhost.cfg</source>
