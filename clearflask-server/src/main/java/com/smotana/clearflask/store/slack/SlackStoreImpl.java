@@ -217,7 +217,7 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
      */
     private List<SlackChannel> fetchChannels(MethodsClient client) throws IOException, SlackApiException {
         ConversationsListResponse response = client.conversationsList(r -> r
-                .types(List.of(ConversationType.PUBLIC_CHANNEL))
+                .types(List.of(ConversationType.PUBLIC_CHANNEL, ConversationType.PRIVATE_CHANNEL))
                 .excludeArchived(true)
                 .limit(200));
 
