@@ -197,8 +197,7 @@ public interface JiraStore {
         @NonNull
         String accessToken;
 
-        @NonNull
-        String refreshToken;
+        String refreshToken;  // Nullable - not provided when offline_access scope is not requested
 
         @NonNull
         long ttlInEpochSec;
