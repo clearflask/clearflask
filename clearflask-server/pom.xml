@@ -804,6 +804,7 @@
                 <configuration>
                     <skip>${skipTests}${skipITs}</skip>
                     <startParallel>true</startParallel>
+                    <autoCreateCustomNetworks>true</autoCreateCustomNetworks>
                     <images>
                         <image>
                             <alias>mysql-db</alias>
@@ -816,6 +817,11 @@
                             </build>
                             <run>
                                 <platform>${docker.platform}</platform>
+                                <network>
+                                    <mode>custom</mode>
+                                    <name>clearflask-it-network</name>
+                                    <alias>mysql-db</alias>
+                                </network>
                                 <cmd>
                                     mysqld
                                     --port=3306
@@ -856,9 +862,11 @@
                             </build>
                             <run>
                                 <platform>${docker.platform}</platform>
-                                <links>
-                                    <link>mysql-db</link>
-                                </links>
+                                <network>
+                                    <mode>custom</mode>
+                                    <name>clearflask-it-network</name>
+                                    <alias>killbill-engine</alias>
+                                </network>
                                 <volumes>
                                     <bind>
                                         <volume>
@@ -913,6 +921,11 @@
                             </build>
                             <run>
                                 <platform>${docker.platform}</platform>
+                                <network>
+                                    <mode>custom</mode>
+                                    <name>clearflask-it-network</name>
+                                    <alias>aws-services</alias>
+                                </network>
                                 <env>
                                     <LOCALSTACK_HOSTNAME>localhost</LOCALSTACK_HOSTNAME>
                                     <HOSTNAME_EXTERNAL>s3.localhost.localstack.cloud</HOSTNAME_EXTERNAL>
