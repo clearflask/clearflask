@@ -50,7 +50,7 @@ const JiraProvider: OAuthProvider = {
     ? (getOAuthConfig().jiraClientId || 'jira-client-id')
     : 'jira-client-id',
   authorizeUrl: 'https://auth.atlassian.com/authorize',
-  scope: 'read:jira-work write:jira-work offline_access',
+  scope: 'read:jira-work write:jira-work',
 };
 
 // Slack OAuth provider
