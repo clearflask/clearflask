@@ -11,6 +11,7 @@ import com.smotana.clearflask.api.model.AccountSearchSuperAdmin;
 import com.smotana.clearflask.api.model.ProjectAdmin;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.billing.PlanStore;
+import com.smotana.clearflask.billing.StripeBillingConfig;
 import com.smotana.clearflask.core.ServiceInjector;
 import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.util.ChatwootUtil;
@@ -96,6 +97,16 @@ public interface AccountStore {
     Account setTrialReminderSent(String accountId);
 
     Account setProjectDeletionReminderSent(String accountId);
+
+    /**
+     * Set the Stripe Customer ID for direct Stripe billing.
+     *
+     * @param accountId       ClearFlask account ID
+     * @param stripeCustomerId Stripe Customer ID (cus_xxx)
+     * @param isTestMode      Whether this is a test mode customer
+     * @return Updated account
+     */
+    Account setStripeCustomerId(String accountId, String stripeCustomerId, boolean isTestMode);
 
     ListenableFuture<Void> deleteAccount(String accountId);
 
@@ -222,6 +233,18 @@ public interface AccountStore {
         Instant projectDeletionReminderSent;
 
         /**
+         * Stripe Customer ID (cus_xxx) for direct Stripe billing.
+         * Null if using KillBill billing system.
+         */
+        String stripeCustomerId;
+
+        /**
+         * If true, this account was created in Stripe test mode and
+         * should only interact with Stripe's test environment.
+         */
+        Boolean stripeTestMode;
+
+        /**
          * Workaround for Self-Hosted ClearFlask to get the status of the subscription on-deman
          */
         public SubscriptionStatus getStatus() {
@@ -251,7 +274,19 @@ public interface AccountStore {
         }
 
         public AccountAdmin toAccountAdmin(IntercomUtil intercomUtil, ChatwootUtil chatwootUtil, PlanStore planStore, ClearFlaskSso cfSso, SuperAdminPredicate superAdminPredicate) {
-            return new AccountAdmin(
+            return toAccountAdmin(intercomUtil, chatwootUtil, planStore, cfSso, superAdminPredicate, null);
+        }
+
+        public AccountAdmin toAccountAdmin(IntercomUtil intercomUtil, ChatwootUtil chatwootUtil, PlanStore planStore, ClearFlaskSso cfSso, SuperAdminPredicate superAdminPredicate, StripeBillingConfig stripeBillingConfig) {
+            // Determine Stripe publishable key based on account's test mode setting
+            String stripePublishableKey = null;
+            if (stripeBillingConfig != null && getStripeCustomerId() != null) {
+                stripePublishableKey = Boolean.TRUE.equals(getStripeTestMode())
+                        ? stripeBillingConfig.stripePublishableKeyTest()
+                        : stripeBillingConfig.stripePublishableKeyLive();
+            }
+
+            AccountAdmin admin = new AccountAdmin(
                     getAccountId(),
                     planStore.getBasePlanId(getPlanid()),
                     getStatus(),
@@ -265,6 +300,16 @@ public interface AccountStore {
                     getAttrs(),
                     getAddons(),
                     getDigestOptOutForProjectIds().asList());
+
+            // Set optional Stripe fields if available
+            if (getStripeTestMode() != null) {
+                admin.setStripeTestMode(getStripeTestMode());
+            }
+            if (stripePublishableKey != null) {
+                admin.setStripePublishableKey(stripePublishableKey);
+            }
+
+            return admin;
         }
 
         public ProjectAdmin toProjectAdmin(ProjectAdmin.RoleEnum role) {

@@ -1103,6 +1103,27 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         return account;
     }
 
+    @Override
+    public Account setStripeCustomerId(String accountId, String stripeCustomerId, boolean isTestMode) {
+        ExpressionBuilder expressionBuilder = accountSchema.expressionBuilder()
+                .conditionExists()
+                .set("stripeCustomerId", stripeCustomerId);
+        if (isTestMode) {
+            expressionBuilder.set("stripeTestMode", true);
+        }
+        Expression expression = expressionBuilder.build();
+        Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+                        .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
+                        .withConditionExpression(expression.conditionExpression().orElse(null))
+                        .withUpdateExpression(expression.updateExpression().orElse(null))
+                        .withNameMap(expression.nameMap().orElse(null))
+                        .withValueMap(expression.valMap().orElse(null))
+                        .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem());
+        accountCache.put(accountId, Optional.of(account));
+        return account;
+    }
+
     @Extern
     @Override
     public ListenableFuture<Void> deleteAccount(String accountId) {

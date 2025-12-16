@@ -59,7 +59,9 @@ import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.api.model.ViewCouponResponse;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.Billing.Gateway;
+import com.smotana.clearflask.billing.BillingRouter;
 import com.smotana.clearflask.billing.CouponStore;
+import com.smotana.clearflask.billing.StripeBillingConfig;
 import com.smotana.clearflask.billing.CouponStore.CouponModel;
 import com.smotana.clearflask.billing.KillBillPlanStore;
 import com.smotana.clearflask.billing.PlanStore;
@@ -219,6 +221,8 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
     private LocalLicenseStore localLicenseStore;
     @Inject
     private AntiSpam antiSpam;
+    @Inject
+    private StripeBillingConfig stripeBillingConfig;
 
     @PermitAll
     @Limit(requiredPermits = 10)
@@ -526,18 +530,33 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
     @Override
     public AccountAdmin accountSignupAdmin(AccountSignupAdmin signup) {
         antiSpam.onAccountSignup(request, signup);
-        Account account = createAccount(
-                signup.getEmail(),
-                signup.getName(),
-                Optional.of(signup.getPassword()),
-                Optional.empty(),
-                Optional.ofNullable(Strings.emptyToNull(signup.getInvitationId())),
-                Optional.ofNullable(Strings.emptyToNull(signup.getCouponId())),
-                Optional.of(signup.getBasePlanId()),
-                Optional.ofNullable(signup.getRequestedPrice())
-        );
 
-        return account.toAccountAdmin(intercomUtil, chatwootUtil, planStore, cfSso, superAdminPredicate);
+        // Check if Stripe test mode should be used
+        boolean useStripeTestMode = Boolean.TRUE.equals(signup.getUseStripeTestMode())
+                && stripeBillingConfig.allowStripeTestModeQueryParam();
+
+        try {
+            // Set BillingRouter flags for this request
+            if (useStripeTestMode) {
+                BillingRouter.setForceStripeTestMode(true);
+                BillingRouter.setForceStripeBilling(true);
+            }
+
+            Account account = createAccount(
+                    signup.getEmail(),
+                    signup.getName(),
+                    Optional.of(signup.getPassword()),
+                    Optional.empty(),
+                    Optional.ofNullable(Strings.emptyToNull(signup.getInvitationId())),
+                    Optional.ofNullable(Strings.emptyToNull(signup.getCouponId())),
+                    Optional.of(signup.getBasePlanId()),
+                    Optional.ofNullable(signup.getRequestedPrice())
+            );
+
+            return account.toAccountAdmin(intercomUtil, chatwootUtil, planStore, cfSso, superAdminPredicate, stripeBillingConfig);
+        } finally {
+            BillingRouter.clearThreadLocals();
+        }
     }
 
     private Account createAccount(
@@ -603,20 +622,22 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
                 PlanStore.PLANS_WITHOUT_TRIAL.contains(planId)
                         ? SubscriptionStatus.ACTIVE
                         : SubscriptionStatus.ACTIVETRIAL,
-                null,
+                null, // apiKey
                 planId,
                 Instant.now(),
                 name,
                 passwordOpt.map(password -> passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, password, email)).orElse(null),
-                ImmutableSet.of(),
+                ImmutableSet.of(), // projectIds
                 externalProjectIds,
-                guidOpt.orElse(null),
-                ImmutableMap.of(),
-                ImmutableMap.of(),
-                preferredPriceOpt.orElse(null),
-                ImmutableSet.of(),
-                null,
-                null);
+                guidOpt.orElse(null), // oauthGuid
+                ImmutableMap.of(), // attrs
+                ImmutableMap.of(), // addons
+                preferredPriceOpt.orElse(null), // requestedRecurringPrice
+                ImmutableSet.of(), // digestOptOutForProjectIds
+                null, // trialEndingReminderSent
+                null, // projectDeletionReminderSent
+                null, // stripeCustomerId - will be set by StripeBilling
+                null); // stripeTestMode - will be set by StripeBilling
         account = accountStore.createAccount(account).getAccount();
 
         // Create customer in KillBill asynchronously because:

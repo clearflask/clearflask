@@ -746,6 +746,23 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
         }
     }
 
+    @Override
+    public Optional<String> getStripePriceId(String planId) {
+        // KillBillPlanStore does not use direct Stripe pricing
+        // This is only used by StripeBilling which has its own StripePlanStore
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<Long> getTrialDays(String planId) {
+        // Check if plan has a trial period
+        if (PLANS_WITHOUT_TRIAL.contains(planId)) {
+            return Optional.empty();
+        }
+        // Default trial period is 14 days
+        return Optional.of(14L);
+    }
+
     public static Module module() {
         return new AbstractModule() {
             @Override

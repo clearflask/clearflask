@@ -103,6 +103,25 @@ public interface PlanStore {
         return planIdOrPrettyPlanName;
     }
 
+    /**
+     * Check if the given plan is a free plan (no billing required).
+     */
+    default boolean isFreePlan(String planId) {
+        return "cloud-free".equals(planId) || planId.startsWith("free-");
+    }
+
+    /**
+     * Get the Stripe Price ID for a given plan.
+     * Used for direct Stripe billing.
+     */
+    Optional<String> getStripePriceId(String planId);
+
+    /**
+     * Get the trial period in days for a given plan.
+     * Returns empty if no trial period.
+     */
+    Optional<Long> getTrialDays(String planId);
+
     @Value
     class PlanWithAddons {
         @NonNull
