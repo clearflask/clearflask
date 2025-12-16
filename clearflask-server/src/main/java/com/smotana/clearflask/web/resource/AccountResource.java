@@ -852,28 +852,6 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
     @RolesAllowed({Role.ADMINISTRATOR_ACTIVE})
     @Limit(requiredPermits = 10, challengeAfter = 15)
     @Override
-    public JiraIssueTypesResponse jiraGetIssueTypesAdmin(String cloudId, String projectKey) {
-        String accountId = getExtendedPrincipal()
-                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
-                .get();
-
-        return jiraStore.getIssueTypesForProject(accountId, cloudId, projectKey);
-    }
-
-    @RolesAllowed({Role.ADMINISTRATOR_ACTIVE})
-    @Limit(requiredPermits = 10, challengeAfter = 15)
-    @Override
-    public JiraStatusesResponse jiraGetStatusesAdmin(String cloudId, String projectKey) {
-        String accountId = getExtendedPrincipal()
-                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
-                .get();
-
-        return jiraStore.getStatusesForProject(accountId, cloudId, projectKey);
-    }
-
-    @RolesAllowed({Role.ADMINISTRATOR_ACTIVE})
-    @Limit(requiredPermits = 10, challengeAfter = 15)
-    @Override
     public GitLabAvailableProjects gitLabGetProjectsAdmin(GitLabGetProjectsBody body) {
         String accountId = getExtendedPrincipal()
                 .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
