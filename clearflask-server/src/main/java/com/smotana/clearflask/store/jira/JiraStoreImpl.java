@@ -157,9 +157,14 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
             throw new ApiException(Response.Status.SERVICE_UNAVAILABLE, "Jira integration is disabled");
         }
 
+        log.info("Attempting to exchange Jira OAuth code for account {}", accountId);
+
         try {
             String redirectUri = "https://" + configApp.domain() + "/dashboard/settings/project/jira";
             OAuthTokens tokens = jiraClientProvider.exchangeAuthorizationCode(code, redirectUri);
+
+            log.info("Successfully exchanged Jira OAuth code for account {}: hasRefreshToken={}",
+                    accountId, tokens.getRefreshToken() != null);
 
             ImmutableList<JiraCloudInstance> instances = jiraClientProvider.getAccessibleResources(tokens.getAccessToken());
 
@@ -173,6 +178,8 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
                 JiraClient client = jiraClientProvider.getClient(instance.getId(), tokens.getAccessToken());
                 try {
                     ImmutableList<JiraProject> projects = client.getApiClient().getProjects();
+                    log.info("Fetched {} projects from Jira cloud instance {} ({})",
+                            projects.size(), instance.getId(), instance.getName());
                     for (JiraProject project : projects) {
                         availableProjectsBuilder.add(AvailableJiraProject.builder()
                                 .cloudId(instance.getId())
@@ -184,16 +191,21 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
                                 .build());
                     }
                 } catch (IOException e) {
-                    log.warn("Failed to fetch projects for Jira cloud instance {}", instance.getId(), e);
+                    log.error("Failed to fetch projects for Jira cloud instance {} ({}): {}",
+                            instance.getId(), instance.getName(), e.getMessage(), e);
                 }
             }
 
+            ImmutableList<AvailableJiraProject> allProjects = availableProjectsBuilder.build();
+            log.info("Successfully fetched {} total Jira projects for account {} across {} cloud instances",
+                    allProjects.size(), accountId, instances.size());
+
             return AvailableJiraProjects.builder()
-                    .projects(availableProjectsBuilder.build())
+                    .projects(allProjects)
                     .build();
         } catch (IOException e) {
-            log.warn("Failed to get Jira projects for user", e);
-            throw new ApiException(Response.Status.BAD_REQUEST, "Failed to authenticate with Jira", e);
+            log.error("IOException during Jira OAuth token exchange for account {}: {}", accountId, e.getMessage(), e);
+            throw new ApiException(Response.Status.BAD_REQUEST, "Failed to authenticate with Jira: " + e.getMessage(), e);
         }
     }
 

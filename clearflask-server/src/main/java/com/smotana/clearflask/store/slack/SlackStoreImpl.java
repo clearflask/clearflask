@@ -144,6 +144,8 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
             throw new com.smotana.clearflask.web.ApiException(javax.ws.rs.core.Response.Status.SERVICE_UNAVAILABLE, "Slack integration is disabled");
         }
 
+        log.info("Attempting to exchange Slack OAuth code for account {}", accountId);
+
         try {
             // Exchange authorization code for access token
             String redirectUri = "https://" + configApp.domain() + "/dashboard/settings/project/slack";
@@ -157,7 +159,8 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
                             .redirectUri(redirectUri));
 
             if (!oauthResponse.isOk()) {
-                log.warn("Failed to exchange Slack OAuth code: {}", oauthResponse.getError());
+                log.error("Slack OAuth token exchange failed for account {}: error={}, warning={}",
+                        accountId, oauthResponse.getError(), oauthResponse.getWarning());
                 throw new com.smotana.clearflask.web.ApiException(javax.ws.rs.core.Response.Status.BAD_REQUEST,
                         "Failed to authenticate with Slack: " + oauthResponse.getError());
             }
@@ -171,6 +174,9 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
             MethodsClient client = slackClientProvider.getClientWithToken(accessToken);
             List<SlackChannel> channels = fetchChannels(client);
 
+            log.info("Successfully exchanged Slack OAuth code for account {}: teamId={}, teamName={}, channelCount={}",
+                    accountId, teamId, teamName, channels.size());
+
             return SlackWorkspaceInfo.builder()
                     .teamId(teamId)
                     .teamName(teamName)
@@ -179,10 +185,15 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
                     .channels(channels)
                     .build();
 
-        } catch (IOException | SlackApiException e) {
-            log.warn("Failed to get Slack workspace info for user", e);
+        } catch (IOException e) {
+            log.error("IOException during Slack OAuth token exchange for account {}: {}", accountId, e.getMessage(), e);
             throw new com.smotana.clearflask.web.ApiException(javax.ws.rs.core.Response.Status.BAD_REQUEST,
                     "Failed to authenticate with Slack", e);
+        } catch (SlackApiException e) {
+            log.error("Slack API error during OAuth token exchange for account {}: error={}, responseBody={}",
+                    accountId, e.getMessage(), e.getResponseBody(), e);
+            throw new com.smotana.clearflask.web.ApiException(javax.ws.rs.core.Response.Status.BAD_REQUEST,
+                    "Failed to authenticate with Slack: " + e.getMessage(), e);
         }
     }
 
@@ -222,7 +233,8 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
                 .limit(200));
 
         if (!response.isOk()) {
-            log.warn("Failed to list Slack channels: {}", response.getError());
+            log.error("Failed to list Slack channels: error={}, warning={}, needed={}",
+                    response.getError(), response.getWarning(), response.getNeeded());
             return ImmutableList.of();
         }
 
