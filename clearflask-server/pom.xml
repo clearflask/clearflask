@@ -837,11 +837,8 @@
                                     <port>3306:3306</port>
                                 </ports>
                                 <wait>
-                                    <time>120000</time>
-                                    <!-- Wait for init scripts to complete, not just server start -->
-                                    <!-- If init scripts fail, this will timeout after 2 minutes instead of continuing -->
-                                    <log>.*MySQL init process done\. Ready for start up\..*</log>
-                                    <kill>120000</kill>
+                                    <time>300000</time>
+                                    <log>.*mysqld: ready for connections\..*</log>
                                 </wait>
                                 <log>
                                     <prefix>mysql:</prefix>
