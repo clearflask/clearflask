@@ -4015,7 +4015,7 @@ export const ProjectSettingsSlack = (props: {
   }, [props.editor]);
 
   const getWorkspaceInfo = (code: string) => ServerAdmin.get().dispatchAdmin()
-    .then(d => d.slackGetWorkspaceInfoAdmin(code))
+    .then(d => d.slackGetWorkspaceInfoAdmin({ code }))
     .then(result => {
       // Store workspace info in project config
       const slackPage = props.editor.getPage(['slack']);
