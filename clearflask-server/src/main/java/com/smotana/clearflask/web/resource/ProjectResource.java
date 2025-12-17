@@ -917,15 +917,17 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
         List<SlackStore.SlackChannel> channels = slackStore.getAvailableChannels(projectId);
 
+        List<com.smotana.clearflask.api.model.SlackChannel2> apiChannels = channels.stream()
+                .map(ch -> com.smotana.clearflask.api.model.SlackChannel2.builder()
+                        .channelId(ch.getChannelId())
+                        .channelName(ch.getChannelName())
+                        .isPrivate(ch.isPrivate())
+                        .isMember(ch.isMember())
+                        .build())
+                .collect(Collectors.toList());
+
         return SlackChannelsResponse.builder()
-                .channels(channels.stream()
-                        .map(ch -> com.smotana.clearflask.api.model.SlackChannel.builder()
-                                .channelId(ch.getChannelId())
-                                .channelName(ch.getChannelName())
-                                .isPrivate(ch.isPrivate())
-                                .isMember(ch.isMember())
-                                .build())
-                        .collect(Collectors.toList()))
+                .channels(apiChannels)
                 .build();
     }
 

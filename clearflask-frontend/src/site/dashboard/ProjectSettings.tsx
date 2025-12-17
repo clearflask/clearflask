@@ -3953,7 +3953,14 @@ const JiraStatusSyncConfig = (props: {
     }
   };
 
-  const statusSync = props.editor.getConfig().jira?.statusSync;
+  // Use state to track statusSync so it updates reactively when changed
+  const [statusSync, setStatusSync] = useState<Admin.JiraStatusSync | undefined>(props.editor.getConfig().jira?.statusSync);
+
+  useEffect(() => {
+    return props.editor.subscribe(() => {
+      setStatusSync(props.editor.getConfig().jira?.statusSync);
+    });
+  }, [props.editor]);
 
   return (
     <div style={{ marginTop: 16, marginBottom: 16 }}>
@@ -4357,7 +4364,7 @@ const SlackChannelLinksConfig = (props: {
       channelId: '',
       channelName: '',
       categoryId: categories.length > 0 ? categories[0].categoryId : '',
-      syncSlackToPosts: false,
+      syncSlackToPosts: true,
       syncPostsToSlack: true,
       syncCommentsToReplies: true,
       syncRepliesToComments: true,
@@ -4408,15 +4415,33 @@ const SlackChannelLinksConfig = (props: {
                     value={link.channelId || ''}
                     onChange={(e) => handleChannelChange(index, e.target.value as string)}
                     displayEmpty
+                    renderValue={(value) => {
+                      if (!value) return <em>Select a channel...</em>;
+                      const channel = channels?.find(c => c.channelId === value);
+                      return (
+                        <div>
+                          <div># {channel?.channelName || value}</div>
+                          <Typography variant="caption" color="textSecondary" style={{ fontSize: '0.75em' }}>
+                            ID: {value}
+                          </Typography>
+                        </div>
+                      );
+                    }}
                   >
                     <MenuItem value="">
                       <em>Select a channel...</em>
                     </MenuItem>
                     {channels.map(channel => (
                       <MenuItem key={channel.channelId} value={channel.channelId}>
-                        # {channel.channelName}
-                        {channel.isPrivate && ' 🔒'}
-                        {!channel.isMember && ' (not a member)'}
+                        <div>
+                          # {channel.channelName}
+                          {channel.isPrivate && ' 🔒'}
+                          {!channel.isMember && ' (not a member)'}
+                          <br />
+                          <Typography variant="caption" color="textSecondary" style={{ fontSize: '0.75em' }}>
+                            ID: {channel.channelId}
+                          </Typography>
+                        </div>
                       </MenuItem>
                     ))}
                   </Select>
