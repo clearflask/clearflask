@@ -12,8 +12,6 @@ import { shallowEqual, useSelector } from 'react-redux';
 import { useEffect, useState } from 'react';
 import { ReduxState } from '../api/server';
 
-/** Matches CastleAntiSpam.java */
-const HEADER_CASTLE_REQUEST_TOKEN = 'castle-request-token';
 var castleInstance: ReturnType<typeof Castle.configure> | null | undefined = undefined;
 
 export const getCastle = (): ReturnType<typeof Castle.configure> | null => {
