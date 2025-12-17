@@ -4407,9 +4407,10 @@ const SlackChannelLinksConfig = (props: {
   const handleChannelChange = (index: number, channelId: string) => {
     const channel = channels?.find(c => c.channelId === channelId);
 
-    // For PageGroup items, use getProperty() with the full path including index as string
-    (props.editor.getProperty(['slack', 'channelLinks', index.toString(), 'channelId']) as ConfigEditor.StringProperty).set(channelId);
-    (props.editor.getProperty(['slack', 'channelLinks', index.toString(), 'channelName']) as ConfigEditor.StringProperty).set(channel?.channelName || '');
+    // For PageGroup items, use getPageGroup().get(index) to get the page, then getProperty on that page
+    const channelLinkPage = props.editor.getPageGroup(['slack', 'channelLinks']).get(index);
+    (channelLinkPage.getProperty('channelId') as ConfigEditor.StringProperty).set(channelId);
+    (channelLinkPage.getProperty('channelName') as ConfigEditor.StringProperty).set(channel?.channelName || '');
   };
 
   if (!props.slack) return null;
@@ -4477,8 +4478,8 @@ const SlackChannelLinksConfig = (props: {
                     fullWidth
                     value={link.categoryId || ''}
                     onChange={(e) => {
-                      const linkProp = props.editor.getProperty(['slack', 'channelLinks', index.toString()]);
-                      (linkProp as any).getProperty('categoryId').set(e.target.value as string);
+                      const channelLinkPage = props.editor.getPageGroup(['slack', 'channelLinks']).get(index);
+                      (channelLinkPage.getProperty('categoryId') as ConfigEditor.StringProperty).set(e.target.value as string);
                     }}
                     displayEmpty
                   >
@@ -4515,8 +4516,8 @@ const SlackChannelLinksConfig = (props: {
                       <Switch
                         checked={link.syncSlackToPosts === true}
                         onChange={(e) => {
-                          const linkProp = props.editor.getProperty(['slack', 'channelLinks', index.toString()]);
-                          (linkProp as any).getProperty('syncSlackToPosts').set(e.target.checked);
+                          const channelLinkPage = props.editor.getPageGroup(['slack', 'channelLinks']).get(index);
+                          (channelLinkPage.getProperty('syncSlackToPosts') as ConfigEditor.BooleanProperty).set(e.target.checked);
                         }}
                         color="primary"
                       />
