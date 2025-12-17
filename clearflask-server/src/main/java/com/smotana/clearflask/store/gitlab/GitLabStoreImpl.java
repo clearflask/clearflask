@@ -233,9 +233,9 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
             log.info("Attempting to fetch GitLab projects for account {} from instance {} with token starting with {}",
                     accountId, instanceUrl, oAuthResponse.getAccessToken().substring(0, Math.min(10, oAuthResponse.getAccessToken().length())));
             try {
-                // Use getProjects() instead of getMemberProjects() for OAuth tokens
-                // getMemberProjects() may not work with OAuth tokens, only with personal access tokens
-                for (org.gitlab4j.api.models.Project project : gitLabApi.getProjectApi().getProjects()) {
+                // Use getOwnedProjects() to only get projects where the user has sufficient permissions
+                // This works with OAuth tokens and avoids the 401 error from trying to fetch all projects
+                for (org.gitlab4j.api.models.Project project : gitLabApi.getProjectApi().getOwnedProjects()) {
                     if (project == null || project.getId() == null) {
                         log.warn("Skipping null project or project with null ID for account {}", accountId);
                         continue;
