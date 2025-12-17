@@ -4362,27 +4362,23 @@ const SlackChannelLinksConfig = (props: {
   }, [props.slack, props.projectId]);
 
   const handleAddChannelLink = () => {
-    const channelLinks = props.editor.getProperty(['slack', 'channelLinks']);
-    const currentLinks = channelLinks.value || [];
-
-    // Add new empty channel link
-    channelLinks.set([...currentLinks, {
-      channelId: '',
-      channelName: '',
-      categoryId: categories.length > 0 ? categories[0].categoryId : '',
-      syncSlackToPosts: true,
-      syncPostsToSlack: true,
-      syncCommentsToReplies: true,
-      syncRepliesToComments: true,
-      syncStatusUpdates: true,
-      syncResponseUpdates: true
-    }]);
+    props.editor.getPageGroup(['slack', 'channelLinks'])
+      .insert()
+      .setRaw(Admin.SlackChannelLinkToJSON({
+        channelId: '',
+        channelName: '',
+        categoryId: categories.length > 0 ? categories[0].categoryId : '',
+        syncSlackToPosts: true,
+        syncPostsToSlack: true,
+        syncCommentsToReplies: true,
+        syncRepliesToComments: true,
+        syncStatusUpdates: true,
+        syncResponseUpdates: true
+      }));
   };
 
   const handleRemoveChannelLink = (index: number) => {
-    const channelLinks = props.editor.getProperty(['slack', 'channelLinks']);
-    const currentLinks = channelLinks.value || [];
-    channelLinks.set(currentLinks.filter((_, i) => i !== index));
+    props.editor.getPageGroup(['slack', 'channelLinks']).remove(index);
   };
 
   const handleChannelChange = (index: number, channelId: string) => {
