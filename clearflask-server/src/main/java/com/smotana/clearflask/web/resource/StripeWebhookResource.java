@@ -259,14 +259,14 @@ public class StripeWebhookResource extends ManagedService {
 
         AccountStore.Account account = accountOpt.get();
 
-        // Send trial ending notification
-        int daysRemaining = 3; // Stripe sends this 3 days before trial ends
-        notificationService.onTrialEnding(
-                account.getAccountId(),
-                account.getEmail(),
-                daysRemaining);
+        // Calculate trial end time (Stripe sends this 3 days before trial ends)
+        java.time.Instant trialEnd = java.time.Instant.ofEpochSecond(subscription.getTrialEnd());
 
-        log.info("Trial will end for account {} in {} days", account.getAccountId(), daysRemaining);
+        // Send trial ending notification using the Billing interface's Account
+        org.killbill.billing.client.model.gen.Account billingAccount = billing.getAccount(account.getAccountId());
+        notificationService.onTrialEnding(billingAccount, trialEnd);
+
+        log.info("Trial will end for account {} at {}", account.getAccountId(), trialEnd);
     }
 
     private void handleInvoicePaymentSuccess(Invoice invoice) {
@@ -372,8 +372,15 @@ public class StripeWebhookResource extends ManagedService {
         // Search for account with matching stripeCustomerId
         // This is a linear scan - in production, you'd want an index
         AccountStore.SearchAccountsResponse response = accountStore.searchAccounts(
-                new com.smotana.clearflask.api.model.AccountSearchSuperAdmin()
-                        .filterStripeCustomerId(stripeCustomerId),
+                new com.smotana.clearflask.api.model.AccountSearchSuperAdmin(
+                        null,  // searchText
+                        null,  // filterStatus
+                        null,  // invertStatus
+                        null,  // filterPlanid
+                        null,  // invertPlanid
+                        null,  // filterCreatedStart
+                        null,  // filterCreatedEnd
+                        stripeCustomerId),  // filterStripeCustomerId
                 false,
                 Optional.empty(),
                 Optional.of(1));

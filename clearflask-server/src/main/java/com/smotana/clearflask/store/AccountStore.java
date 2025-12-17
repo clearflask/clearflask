@@ -286,7 +286,7 @@ public interface AccountStore {
                         : stripeBillingConfig.stripePublishableKeyLive();
             }
 
-            AccountAdmin admin = new AccountAdmin(
+            return new AccountAdmin(
                     getAccountId(),
                     planStore.getBasePlanId(getPlanid()),
                     getStatus(),
@@ -299,17 +299,9 @@ public interface AccountStore {
                     superAdminPredicate.isEmailSuperAdmin(getEmail()),
                     getAttrs(),
                     getAddons(),
-                    getDigestOptOutForProjectIds().asList());
-
-            // Set optional Stripe fields if available
-            if (getStripeTestMode() != null) {
-                admin.setStripeTestMode(getStripeTestMode());
-            }
-            if (stripePublishableKey != null) {
-                admin.setStripePublishableKey(stripePublishableKey);
-            }
-
-            return admin;
+                    getDigestOptOutForProjectIds().asList(),
+                    getStripeTestMode(),
+                    stripePublishableKey);
         }
 
         public ProjectAdmin toProjectAdmin(ProjectAdmin.RoleEnum role) {

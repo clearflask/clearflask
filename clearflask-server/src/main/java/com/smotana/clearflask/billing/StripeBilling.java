@@ -44,6 +44,7 @@ import com.stripe.param.CustomerUpdateParams;
 import com.stripe.param.InvoiceListParams;
 import com.stripe.param.PaymentMethodAttachParams;
 import com.stripe.param.PriceCreateParams;
+import com.stripe.param.SubscriptionCancelParams;
 import com.stripe.param.SubscriptionCreateParams;
 import com.stripe.param.SubscriptionListParams;
 import com.stripe.param.SubscriptionUpdateParams;
@@ -60,7 +61,6 @@ import org.killbill.billing.client.model.gen.PhasePrice;
 import org.killbill.billing.client.model.gen.PlanDetail;
 import org.killbill.billing.client.model.gen.Subscription;
 import org.killbill.billing.entitlement.api.Entitlement;
-import org.killbill.billing.invoice.api.InvoiceStatus;
 
 import javax.ws.rs.core.Response;
 import java.math.BigDecimal;
@@ -580,7 +580,7 @@ public class StripeBilling extends ManagedService implements Billing {
 
             String stripeCustomerId = cfAccount.getStripeCustomerId();
             if (Strings.isNullOrEmpty(stripeCustomerId)) {
-                return new Invoices(ImmutableList.of(), null);
+                return new Invoices(null, ImmutableList.of());
             }
 
             InvoiceListParams.Builder paramsBuilder = InvoiceListParams.builder()
@@ -593,26 +593,46 @@ public class StripeBilling extends ManagedService implements Billing {
 
             InvoiceCollection stripeInvoices = Invoice.list(paramsBuilder.build(), getRequestOptions());
 
-            ImmutableList.Builder<com.smotana.clearflask.api.model.Invoice> invoices = ImmutableList.builder();
+            ImmutableList.Builder<InvoiceItem> invoices = ImmutableList.builder();
             for (Invoice stripeInvoice : stripeInvoices.getData()) {
-                invoices.add(new com.smotana.clearflask.api.model.Invoice(
-                        stripeInvoice.getId(),
-                        java.time.Instant.ofEpochSecond(stripeInvoice.getCreated()),
-                        java.time.Instant.ofEpochSecond(stripeInvoice.getPeriodStart()),
-                        java.time.Instant.ofEpochSecond(stripeInvoice.getPeriodEnd()),
-                        stripeInvoice.getAmountDue() / 100.0,
-                        stripeInvoice.getAmountPaid() / 100.0,
-                        mapStripeInvoiceStatus(stripeInvoice.getStatus()),
-                        stripeInvoice.getDescription(),
-                        convertStripeInvoiceItems(stripeInvoice)
-                ));
+                // Determine invoice status
+                String status;
+                if ("void".equals(stripeInvoice.getStatus())) {
+                    status = "Void";
+                } else if (stripeInvoice.getAmountRemaining() != null && stripeInvoice.getAmountRemaining() > 0) {
+                    status = "Due";
+                } else {
+                    status = "Paid";
+                }
+
+                // Get description from line items or use default
+                String description = stripeInvoice.getDescription();
+                if (Strings.isNullOrEmpty(description) && stripeInvoice.getLines() != null) {
+                    description = stripeInvoice.getLines().getData().stream()
+                            .map(InvoiceLineItem::getDescription)
+                            .filter(d -> !Strings.isNullOrEmpty(d))
+                            .findFirst()
+                            .orElse("Invoice");
+                }
+
+                // Convert created timestamp to LocalDate
+                java.time.LocalDate invoiceDate = java.time.Instant.ofEpochSecond(stripeInvoice.getCreated())
+                        .atZone(java.time.ZoneId.systemDefault())
+                        .toLocalDate();
+
+                invoices.add(new InvoiceItem(
+                        invoiceDate,
+                        status,
+                        stripeInvoice.getAmountDue() != null ? stripeInvoice.getAmountDue() / 100.0 : 0.0,
+                        description,
+                        stripeInvoice.getId()));
             }
 
             String nextCursor = stripeInvoices.getHasMore() && !stripeInvoices.getData().isEmpty()
                     ? stripeInvoices.getData().get(stripeInvoices.getData().size() - 1).getId()
                     : null;
 
-            return new Invoices(invoices.build(), nextCursor);
+            return new Invoices(nextCursor, invoices.build());
         } catch (StripeException ex) {
             log.error("Failed to get invoices for account {}", accountId, ex);
             throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to get invoices");
@@ -796,7 +816,7 @@ public class StripeBilling extends ManagedService implements Billing {
 
             SubscriptionCollection subscriptions = com.stripe.model.Subscription.list(params, getRequestOptions());
             for (com.stripe.model.Subscription subscription : subscriptions.getData()) {
-                subscription.cancel(getRequestOptions());
+                subscription.cancel(SubscriptionCancelParams.builder().build(), getRequestOptions());
             }
 
             // Delete customer (or just mark as inactive - depending on data retention requirements)
@@ -933,12 +953,11 @@ public class StripeBilling extends ManagedService implements Billing {
         org.killbill.billing.client.model.gen.PaymentMethod kbPaymentMethod = new org.killbill.billing.client.model.gen.PaymentMethod(
                 UUID.nameUUIDFromBytes(paymentMethod.getId().getBytes()),
                 paymentMethod.getId(),
-                null,
-                true,
-                "stripe",
-                null,
-                null,
-                ImmutableList.of());
+                null,  // accountId
+                true,  // isDefault
+                "stripe",  // pluginName
+                null,  // pluginDetail
+                ImmutableList.of());  // auditLogs
 
         return new PaymentMethodDetails(
                 Gateway.STRIPE,
@@ -964,32 +983,6 @@ public class StripeBilling extends ManagedService implements Billing {
             default:
                 return Entitlement.EntitlementState.ACTIVE;
         }
-    }
-
-    private InvoiceStatus mapStripeInvoiceStatus(String status) {
-        switch (status) {
-            case "paid":
-                return InvoiceStatus.COMMITTED;
-            case "open":
-            case "draft":
-                return InvoiceStatus.DRAFT;
-            case "void":
-                return InvoiceStatus.VOID;
-            case "uncollectible":
-                return InvoiceStatus.VOID;
-            default:
-                return InvoiceStatus.DRAFT;
-        }
-    }
-
-    private ImmutableList<InvoiceItem> convertStripeInvoiceItems(Invoice stripeInvoice) {
-        ImmutableList.Builder<InvoiceItem> items = ImmutableList.builder();
-        for (InvoiceLineItem lineItem : stripeInvoice.getLines().getData()) {
-            items.add(new InvoiceItem(
-                    lineItem.getDescription(),
-                    lineItem.getAmount() / 100.0));
-        }
-        return items.build();
     }
 
     public static Module module() {

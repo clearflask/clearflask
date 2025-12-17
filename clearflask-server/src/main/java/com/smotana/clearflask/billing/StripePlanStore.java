@@ -308,7 +308,7 @@ public class StripePlanStore extends ManagedService implements PlanStore {
                 })
                 .collect(ImmutableList.toImmutableList());
 
-        return new PlansGetResponse(visiblePlans);
+        return new PlansGetResponse(visiblePlans, null, null);
     }
 
     @Override
