@@ -3932,9 +3932,6 @@ const JiraStatusSyncConfig = (props: {
     try {
       (props.editor.getProperty(['jira', 'statusSync', 'statusMap']) as any).set(newMap);
       console.log('Status map updated:', newMap);
-      // Force update with a new object reference to trigger React re-render
-      const currentStatusSync = props.editor.getConfig().jira?.statusSync;
-      setStatusSync(currentStatusSync ? { ...currentStatusSync } : undefined);
     } catch (err) {
       console.error('Failed to update status map:', err);
     }
@@ -3944,9 +3941,6 @@ const JiraStatusSyncConfig = (props: {
     console.log('handleDefaultCfStatusChange called:', cfStatusId);
     try {
       (props.editor.getProperty(['jira', 'statusSync', 'defaultCfStatusId']) as any).set(cfStatusId || undefined);
-      // Force update with a new object reference to trigger React re-render
-      const currentStatusSync = props.editor.getConfig().jira?.statusSync;
-      setStatusSync(currentStatusSync ? { ...currentStatusSync } : undefined);
     } catch (err) {
       console.error('Failed to update default CF status:', err);
     }
@@ -3956,9 +3950,6 @@ const JiraStatusSyncConfig = (props: {
     console.log('handleDefaultJiraStatusChange called:', jiraStatusName);
     try {
       (props.editor.getProperty(['jira', 'statusSync', 'defaultJiraStatusName']) as any).set(jiraStatusName || undefined);
-      // Force update with a new object reference to trigger React re-render
-      const currentStatusSync = props.editor.getConfig().jira?.statusSync;
-      setStatusSync(currentStatusSync ? { ...currentStatusSync } : undefined);
     } catch (err) {
       console.error('Failed to update default Jira status:', err);
     }
@@ -3969,7 +3960,9 @@ const JiraStatusSyncConfig = (props: {
 
   useEffect(() => {
     return props.editor.subscribe(() => {
-      setStatusSync(props.editor.getConfig().jira?.statusSync);
+      const newStatusSync = props.editor.getConfig().jira?.statusSync;
+      console.log('Editor subscription fired, new statusSync:', newStatusSync);
+      setStatusSync(newStatusSync);
     });
   }, [props.editor]);
 
