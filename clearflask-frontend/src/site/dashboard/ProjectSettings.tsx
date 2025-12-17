@@ -4592,6 +4592,29 @@ export const ProjectSettingsSlack = (props: {
         (props.editor.getProperty(['slack', 'botUserId']) as ConfigEditor.StringProperty)
           .set(result.botUserId);
 
+        // If a channel was selected during OAuth, automatically create a channel link
+        if (result.selectedChannelId && result.selectedChannelName) {
+          const categories = props.editor.getConfig().content.categories;
+          const firstCategory = categories.length > 0 ? categories[0].categoryId : '';
+
+          const newLink = Admin.SlackChannelLinkToJSON({
+            channelId: result.selectedChannelId,
+            channelName: result.selectedChannelName,
+            categoryId: firstCategory,
+            syncSlackToPosts: true,
+            syncPostsToSlack: true,
+            syncCommentsToReplies: true,
+            syncRepliesToComments: true,
+            syncStatusUpdates: true,
+            syncResponseUpdates: true
+          });
+
+          const pageGroup = props.editor.getPageGroup(['slack', 'channelLinks']);
+          pageGroup.insert().setRaw(newLink);
+
+          console.log('Auto-created channel link for selected channel:', result.selectedChannelName);
+        }
+
         // Force re-render to show the workspace name
         setSlack(props.editor.getConfig().slack);
       })

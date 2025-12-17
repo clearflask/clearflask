@@ -170,12 +170,22 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
             String teamName = oauthResponse.getTeam().getName();
             String botUserId = oauthResponse.getBotUserId();
 
+            // Extract incoming webhook info if present (from incoming-webhook scope)
+            String selectedChannelId = null;
+            String selectedChannelName = null;
+            if (oauthResponse.getIncomingWebhook() != null) {
+                selectedChannelId = oauthResponse.getIncomingWebhook().getChannelId();
+                selectedChannelName = oauthResponse.getIncomingWebhook().getChannel();
+                log.info("Slack OAuth included incoming webhook for channel: id={}, name={}",
+                        selectedChannelId, selectedChannelName);
+            }
+
             // Get available channels using the access token
             MethodsClient client = slackClientProvider.getClientWithToken(accessToken);
             List<SlackChannel> channels = fetchChannels(client);
 
-            log.info("Successfully exchanged Slack OAuth code for account {}: teamId={}, teamName={}, channelCount={}",
-                    accountId, teamId, teamName, channels.size());
+            log.info("Successfully exchanged Slack OAuth code for account {}: teamId={}, teamName={}, channelCount={}, selectedChannel={}",
+                    accountId, teamId, teamName, channels.size(), selectedChannelId);
 
             return SlackWorkspaceInfo.builder()
                     .teamId(teamId)
@@ -183,6 +193,8 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
                     .accessToken(accessToken)
                     .botUserId(botUserId)
                     .channels(channels)
+                    .selectedChannelId(selectedChannelId)
+                    .selectedChannelName(selectedChannelName)
                     .build();
 
         } catch (IOException e) {

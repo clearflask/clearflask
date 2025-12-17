@@ -550,6 +550,12 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SlackChannel'
+        selectedChannelId:
+          type: string
+          description: Channel ID selected during OAuth (from incoming-webhook scope)
+        selectedChannelName:
+          type: string
+          description: Channel name selected during OAuth (from incoming-webhook scope)
     SlackChannel:
       type: object
       required:
