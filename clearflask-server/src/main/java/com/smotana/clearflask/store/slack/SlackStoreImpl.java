@@ -281,29 +281,36 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
 
     @Override
     public Optional<IdeaAndIndexingFuture> slackMessageCreated(Project project, SlackMessageEvent event) {
+        log.info("slackMessageCreated: project={}, channel={}, msgTs={}",
+            project.getProjectId(), event.getChannelId(), event.getMessageTs());
+
         if (!config.enabled()) {
-            log.debug("Slack integration not enabled");
+            log.debug("Slack integration not enabled in config");
             return Optional.empty();
         }
 
         com.smotana.clearflask.api.model.Slack slackConfig = project.getVersionedConfigAdmin().getConfig().getSlack();
         if (slackConfig == null) {
+            log.debug("No Slack config found for project {}", project.getProjectId());
             return Optional.empty();
         }
 
         // Ignore messages from our bot
         if (event.getUserId() != null && event.getUserId().equals(slackConfig.getBotUserId())) {
+            log.debug("Ignoring message from our bot: {}", event.getUserId());
             return Optional.empty();
         }
 
         // Ignore thread replies (handled by slackReplyCreated)
         if (event.getThreadTs() != null && !event.getThreadTs().equals(event.getMessageTs())) {
+            log.debug("Ignoring thread reply (handled separately)");
             return Optional.empty();
         }
 
         // Find channel link for this channel
         Optional<SlackChannelLink> channelLinkOpt = findChannelLink(slackConfig, event.getChannelId());
         if (channelLinkOpt.isEmpty()) {
+            log.info("No channel link configured for Slack channel {}. Add channel link in settings.", event.getChannelId());
             return Optional.empty();
         }
 
@@ -311,8 +318,11 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
 
         // Check if syncSlackToPosts is enabled (default: false as per user request)
         if (link.getSyncSlackToPosts() != Boolean.TRUE) {
+            log.info("Slack → Posts disabled for channel {}. Enable 'Slack → Posts' in channel link settings.", event.getChannelId());
             return Optional.empty();
         }
+
+        log.info("Creating CF post from Slack message: channel={}, category={}", event.getChannelId(), link.getCategoryId());
 
         // Generate deterministic post ID
         String postId = genDeterministicPostIdForSlackMessage(event.getChannelId(), event.getMessageTs());
@@ -546,12 +556,22 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
 
     @Override
     public ListenableFuture<Optional<SlackMessageResult>> cfPostCreatedAsync(Project project, IdeaModel idea, UserModel author) {
+        log.info("cfPostCreatedAsync: project={}, idea={}, category={}",
+            project.getProjectId(), idea.getIdeaId(), idea.getCategoryId());
+
         if (!config.enabled()) {
+            log.debug("Slack integration not enabled in config");
             return Futures.immediateFuture(Optional.empty());
         }
 
         com.smotana.clearflask.api.model.Slack slackConfig = project.getVersionedConfigAdmin().getConfig().getSlack();
-        if (slackConfig == null || slackConfig.getChannelLinks() == null) {
+        if (slackConfig == null) {
+            log.debug("No Slack config found for project {}", project.getProjectId());
+            return Futures.immediateFuture(Optional.empty());
+        }
+
+        if (slackConfig.getChannelLinks() == null || slackConfig.getChannelLinks().isEmpty()) {
+            log.info("No Slack channel links configured. Add channel links in settings to enable CF→Slack sync.");
             return Futures.immediateFuture(Optional.empty());
         }
 
@@ -561,6 +581,7 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
                 .findFirst();
 
         if (channelLinkOpt.isEmpty()) {
+            log.debug("No Slack channel link found for category {}. Configure channel link for this category to enable sync.", idea.getCategoryId());
             return Futures.immediateFuture(Optional.empty());
         }
 
@@ -568,14 +589,18 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
 
         // Check if syncPostsToSlack is enabled (default: true)
         if (link.getSyncPostsToSlack() == Boolean.FALSE) {
+            log.info("Posts → Slack disabled for category {}. Enable in channel link settings.", idea.getCategoryId());
             return Futures.immediateFuture(Optional.empty());
         }
 
         // Don't sync if post originated from Slack (prevent loop)
         Optional<SlackMessageMapping> existingMapping = getMessageMappingByPostId(project.getProjectId(), idea.getIdeaId());
         if (existingMapping.isPresent()) {
+            log.debug("Post {} originated from Slack, skipping sync to prevent loop", idea.getIdeaId());
             return Futures.immediateFuture(Optional.empty());
         }
+
+        log.info("Posting CF idea {} to Slack channel {}", idea.getIdeaId(), link.getChannelId());
 
         return submit(() -> {
             Optional<SlackClientProvider.SlackClientWithRateLimiter> clientOpt = slackClientProvider.getClient(project.getProjectId());
