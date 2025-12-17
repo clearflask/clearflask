@@ -3848,10 +3848,12 @@ const JiraStatusSyncConfig = (props: {
     cfStatuses.forEach(cfStatus => {
       const cfNameLower = cfStatus.name.toLowerCase();
       const matchingJiraStatus = jiraStatusList.find(jStatus =>
-        jStatus.name.toLowerCase().includes(cfNameLower) ||
-        cfNameLower.includes(jStatus.name.toLowerCase())
+        jStatus.name && (
+          jStatus.name.toLowerCase().includes(cfNameLower) ||
+          cfNameLower.includes(jStatus.name.toLowerCase())
+        )
       );
-      if (matchingJiraStatus) {
+      if (matchingJiraStatus && matchingJiraStatus.name) {
         statusMap[cfStatus.statusId] = matchingJiraStatus.name;
       }
     });
@@ -4362,6 +4364,12 @@ const SlackChannelLinksConfig = (props: {
   }, [props.slack, props.projectId]);
 
   const handleAddChannelLink = () => {
+    // Ensure channelLinks array exists before inserting
+    const channelLinksProp = props.editor.getProperty(['slack', 'channelLinks']);
+    if (!channelLinksProp.value) {
+      channelLinksProp.set([]);
+    }
+
     props.editor.getPageGroup(['slack', 'channelLinks'])
       .insert()
       .setRaw(Admin.SlackChannelLinkToJSON({

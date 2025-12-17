@@ -522,11 +522,11 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
   jiraGetStatusesAdmin(request: Admin.JiraGetStatusesAdminRequest): Promise<Admin.AvailableJiraStatuses> {
     return this.returnLater({
       statuses: [
-        { statusId: '1', statusName: 'To Do' },
-        { statusId: '2', statusName: 'In Progress' },
-        { statusId: '3', statusName: 'In Review' },
-        { statusId: '4', statusName: 'Done' },
-        { statusId: '5', statusName: 'Blocked' },
+        { id: '1', name: 'To Do' },
+        { id: '2', name: 'In Progress' },
+        { id: '3', name: 'In Review' },
+        { id: '4', name: 'Done' },
+        { id: '5', name: 'Blocked' },
       ],
     });
   }
