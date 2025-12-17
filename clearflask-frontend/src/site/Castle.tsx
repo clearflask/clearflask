@@ -42,30 +42,8 @@ export const getCastle = (): ReturnType<typeof Castle.configure> | null => {
 };
 
 export const getCastleApiMiddleware = (): Admin.Middleware | Client.Middleware | null => {
-  const castle = getCastle();
-  if (!castle) {
-    return null;
-  }
-  return {
-    pre: async (context): Promise<Admin.FetchParams & Client.FetchParams | undefined> => {
-      try {
-        const token = await castle.createRequestToken();
-        return {
-          ...context,
-          init: {
-            ...context.init,
-            headers: {
-              ...context.init?.headers,
-              [HEADER_CASTLE_REQUEST_TOKEN]: token,
-            },
-          },
-        };
-      } catch (e) {
-        console.error('Castle fetch request token failed', e);
-        return context;
-      }
-    },
-  };
+  // Castle.io disabled
+  return null;
 };
 
 export const CastlePageTrack = (props: {
