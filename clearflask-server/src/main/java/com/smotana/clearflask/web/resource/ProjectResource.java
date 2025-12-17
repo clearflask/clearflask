@@ -124,6 +124,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Inject
     private GitLabStore gitLabStore;
     @Inject
+    private JiraStore jiraStore;
+    @Inject
     private AccountStore accountStore;
     @Inject
     private UserStore userStore;
@@ -324,6 +326,14 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 Optional.of(project.getVersionedConfigAdmin().getConfig()),
                 configAdmin);
         gitLabStore.setupConfigGitLabIntegration(
+                accountId,
+                Optional.of(project.getVersionedConfigAdmin().getConfig()),
+                configAdmin);
+        jiraStore.setupConfigJiraIntegration(
+                accountId,
+                Optional.of(project.getVersionedConfigAdmin().getConfig()),
+                configAdmin);
+        slackStore.setupConfigSlackIntegration(
                 accountId,
                 Optional.of(project.getVersionedConfigAdmin().getConfig()),
                 configAdmin);
