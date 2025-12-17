@@ -190,8 +190,19 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
             try (CloseableHttpResponse res = client.execute(reqAuthorize)) {
                 if (res.getStatusLine().getStatusCode() < 200
                         || res.getStatusLine().getStatusCode() > 299) {
-                    log.info("GitLab provider failed authorization for projects, url {} response status {}",
-                            reqAuthorize.getURI(), res.getStatusLine().getStatusCode());
+                    String responseBody = "";
+                    try {
+                        responseBody = new String(res.getEntity().getContent().readAllBytes(), StandardCharsets.UTF_8);
+                    } catch (Exception e) {
+                        log.warn("Failed to read error response body", e);
+                    }
+                    log.warn("GitLab OAuth token exchange failed: HTTP {} - Response: {}",
+                            res.getStatusLine().getStatusCode(), responseBody);
+
+                    if (res.getStatusLine().getStatusCode() == 401) {
+                        throw new ApiException(Response.Status.UNAUTHORIZED,
+                                "GitLab authorization failed. The authorization code may have expired or already been used. Please try connecting again.");
+                    }
                     throw new ApiException(Response.Status.FORBIDDEN, "Failed to authorize with GitLab");
                 }
                 try {
