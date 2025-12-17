@@ -534,11 +534,6 @@ public class JiraClientProviderImpl implements JiraClientProvider {
 
             JsonObject requestBody = new JsonObject();
             requestBody.addProperty("url", webhookRequest.getUrl());
-
-            JsonArray eventsArray = new JsonArray();
-            for (String event : webhookRequest.getEvents()) {
-                eventsArray.add(event);
-            }
             requestBody.add("webhooks", createWebhookArray(webhookRequest));
 
             request.setEntity(new StringEntity(gson.toJson(requestBody), Charsets.UTF_8));
