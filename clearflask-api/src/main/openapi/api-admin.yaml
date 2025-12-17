@@ -142,6 +142,8 @@ paths:
     $ref: 'api-project.yaml#/~1project~1{projectId}~1admin~1export'
   /project/{projectId}/admin/admins:
     $ref: 'api-project.yaml#/~1project~1{projectId}~1admin~1admins'
+  /project/{projectId}/admin/webhooks:
+    $ref: 'api-project.yaml#/~1project~1{projectId}~1admin~1webhooks'
   /project/{projectId}/admin/content/uploadAs:
     $ref: 'api-content.yaml#/~1project~1{projectId}~1admin~1content~1uploadAs'
   /project/{projectId}/admin/profilepic/uploadAs:

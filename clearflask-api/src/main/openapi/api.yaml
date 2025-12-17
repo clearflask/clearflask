@@ -220,6 +220,8 @@ paths:
     $ref: 'api-project.yaml#/~1project~1{projectId}~1admin~1export'
   /project/{projectId}/admin/admins:
     $ref: 'api-project.yaml#/~1project~1{projectId}~1admin~1admins'
+  /project/{projectId}/admin/webhooks:
+    $ref: 'api-project.yaml#/~1project~1{projectId}~1admin~1webhooks'
   /license/check:
     $ref: 'api-account.yaml#/~1license~1check'
   # api-connect.yaml

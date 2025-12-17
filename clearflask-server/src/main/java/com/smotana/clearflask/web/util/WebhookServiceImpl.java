@@ -256,25 +256,25 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
             return submit(() -> {
                 String payload = gson.toJson(payloadSupplier.get());
                 for (WebhookListener listener : listeners) {
-                    log.trace("Sending webhook callback, url {} payload {}", listener.getUrl(), payload);
+                    log.info("Sending webhook event {} to url {} for projectId {}", eventType, listener.getUrl(), projectId);
                     HttpPost req = new HttpPost(listener.getUrl());
                     req.setEntity(new StringEntity(payload, Charsets.UTF_8));
                     try (CloseableHttpResponse res = client.execute(req)) {
-                        if (res.getStatusLine().getStatusCode() == 410) {
+                        int statusCode = res.getStatusLine().getStatusCode();
+                        if (statusCode == 410) {
+                            log.info("Webhook returned 410 Gone, removing listener. url {} projectId {} event {}",
+                                    listener.getUrl(), projectId, eventType);
                             projectStore.removeWebhookListener(projectId, listener);
-                        } else if (res.getStatusLine().getStatusCode() < 200
-                                || res.getStatusLine().getStatusCode() > 299) {
-                            if (LogUtil.rateLimitAllowLog("webhookService-send-status-non-200")) {
-                                // TODO notify account owner
-                                log.info("Send to webhook got status {}, url {} projectId {} event {}",
-                                        res.getStatusLine().getStatusCode(), listener.getUrl(), projectId, eventType);
-                            }
+                        } else if (statusCode >= 200 && statusCode <= 299) {
+                            log.info("Webhook sent successfully with status {}. url {} projectId {} event {}",
+                                    statusCode, listener.getUrl(), projectId, eventType);
+                        } else {
+                            log.warn("Webhook returned non-success status {}. url {} projectId {} event {}",
+                                    statusCode, listener.getUrl(), projectId, eventType);
                         }
                     } catch (Exception ex) {
-                        if (LogUtil.rateLimitAllowLog("webhookService-send-failed")) {
-                            log.warn("Failed to send to webhook url {} for projectId {} event {}",
-                                    listener.getUrl(), projectId, eventType);
-                        }
+                        log.warn("Failed to send webhook. url {} projectId {} event {}",
+                                listener.getUrl(), projectId, eventType, ex);
                     }
                 }
             });

@@ -406,6 +406,20 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         }
     }
 
+    @RolesAllowed({Role.PROJECT_ADMIN})
+    @Limit(requiredPermits = 1)
+    @Override
+    public ProjectWebhooksListResult projectWebhooksListAdmin(String projectId) {
+        Project project = projectStore.getProject(projectId, true).get();
+        ImmutableList<com.smotana.clearflask.api.model.WebhookListener> webhooks = project.getAllWebhookListeners().stream()
+                .map(listener -> new com.smotana.clearflask.api.model.WebhookListener(
+                        com.smotana.clearflask.api.model.WebhookListener.ResourceTypeEnum.valueOf(listener.getResourceType().name()),
+                        listener.getEventType(),
+                        listener.getUrl()))
+                .collect(ImmutableList.toImmutableList());
+        return new ProjectWebhooksListResult(webhooks);
+    }
+
     @RolesAllowed({Role.ADMINISTRATOR_ACTIVE})
     @Limit(requiredPermits = 10, challengeAfter = 3)
     @Override
