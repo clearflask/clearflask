@@ -4336,6 +4336,14 @@ const SlackChannelLinksConfig = (props: {
   const [channels, setChannels] = useState<Array<Admin.SlackChannel> | undefined>();
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | undefined>();
+  const [channelLinks, setChannelLinks] = useState<Admin.SlackChannelLink[]>(props.editor.getConfig().slack?.channelLinks || []);
+
+  // Subscribe to config changes to update channelLinks reactively
+  useEffect(() => {
+    return props.editor.subscribe(() => {
+      setChannelLinks(props.editor.getConfig().slack?.channelLinks || []);
+    });
+  }, [props.editor]);
 
   // Get ClearFlask categories
   const categories = React.useMemo(() => {
@@ -4403,8 +4411,6 @@ const SlackChannelLinksConfig = (props: {
     (linkProp as any).getProperty('channelId').set(channelId);
     (linkProp as any).getProperty('channelName').set(channel?.channelName || '');
   };
-
-  const channelLinks = props.editor.getConfig().slack?.channelLinks || [];
 
   if (!props.slack) return null;
 
