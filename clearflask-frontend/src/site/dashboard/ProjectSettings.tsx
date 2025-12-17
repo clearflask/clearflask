@@ -3286,9 +3286,22 @@ export const ProjectSettingsGitHub = (props: {
     });
   }, [props.editor]);
 
-  const getRepos = (code: string) => ServerAdmin.get().dispatchAdmin()
-    .then(d => d.gitHubGetReposAdmin({ code }))
-    .then(result => setRepos(result.repos));
+  const getRepos = (code: string) => {
+    // Clear OAuth parameters from URL immediately to prevent reuse
+    const url = new URL(windowIso.location.href);
+    url.searchParams.delete('code');
+    url.searchParams.delete('state');
+    url.searchParams.delete('installation_id');
+    windowIso.history.replaceState({}, '', url.toString());
+
+    return ServerAdmin.get().dispatchAdmin()
+      .then(d => d.gitHubGetReposAdmin({ code }))
+      .then(result => setRepos(result.repos))
+      .catch(err => {
+        console.error('Failed to get GitHub repos:', err);
+        // Error will be shown by the API layer
+      });
+  };
   const oauthFlow = new OAuthFlow({
     accountType: 'github-integration',
     redirectPath: '/dashboard/settings/project/github',
@@ -3545,16 +3558,23 @@ export const ProjectSettingsGitLab = (props: {
     });
   }, [props.editor]);
 
-  const getProjects = (code: string, gitlabInstanceUrl?: string) => ServerAdmin.get().dispatchAdmin()
-    .then(d => d.gitLabGetProjectsAdmin({ gitLabGetProjectsBody: { code, gitlabInstanceUrl } }))
-    .then(result => {
-      setProjects(result.projects);
-      // Clear OAuth parameters from URL
-      const url = new URL(windowIso.location.href);
-      url.searchParams.delete('code');
-      url.searchParams.delete('state');
-      windowIso.history.replaceState({}, '', url.toString());
-    });
+  const getProjects = (code: string, gitlabInstanceUrl?: string) => {
+    // Clear OAuth parameters from URL immediately to prevent reuse
+    const url = new URL(windowIso.location.href);
+    url.searchParams.delete('code');
+    url.searchParams.delete('state');
+    windowIso.history.replaceState({}, '', url.toString());
+
+    return ServerAdmin.get().dispatchAdmin()
+      .then(d => d.gitLabGetProjectsAdmin({ gitLabGetProjectsBody: { code, gitlabInstanceUrl } }))
+      .then(result => {
+        setProjects(result.projects);
+      })
+      .catch(err => {
+        console.error('Failed to get GitLab projects:', err);
+        // Error will be shown by the API layer
+      });
+  };
 
   const oauthFlow = new OAuthFlow({
     accountType: 'gitlab-integration',
@@ -3797,6 +3817,300 @@ export const ProjectSettingsGitLab = (props: {
   );
 };
 
+const JiraStatusSyncConfig = (props: {
+  server: Server;
+  editor: ConfigEditor.Editor;
+  jira: Admin.Jira | undefined;
+}) => {
+  const [enabled, setEnabled] = useState<boolean>(!!props.editor.getConfig().jira?.statusSync);
+  const [jiraStatuses, setJiraStatuses] = useState<Array<{ id: string; name: string; description?: string; statusCategory?: string }> | undefined>();
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | undefined>();
+
+  // Get ClearFlask statuses from the linked category
+  const cfStatuses = React.useMemo(() => {
+    const statuses: Array<{ statusId: string; name: string; color?: string }> = [];
+    if (props.jira?.createWithCategoryId) {
+      const category = props.editor.getConfig().content.categories.find(c => c.categoryId === props.jira!.createWithCategoryId);
+      if (category?.workflow?.statuses) {
+        statuses.push(...category.workflow.statuses);
+      }
+    }
+    return statuses;
+  }, [props.jira, props.editor]);
+
+  const autoSuggestMappings = React.useCallback((jiraStatusList: Array<{ id: string; name: string }>) => {
+    if (!cfStatuses.length || !jiraStatusList.length) return;
+
+    const statusMap: { [key: string]: string } = {};
+
+    // Simple name matching (case-insensitive, partial match)
+    cfStatuses.forEach(cfStatus => {
+      const cfNameLower = cfStatus.name.toLowerCase();
+      const matchingJiraStatus = jiraStatusList.find(jStatus =>
+        jStatus.name.toLowerCase().includes(cfNameLower) ||
+        cfNameLower.includes(jStatus.name.toLowerCase())
+      );
+      if (matchingJiraStatus) {
+        statusMap[cfStatus.statusId] = matchingJiraStatus.name;
+      }
+    });
+
+    // Set the map
+    const statusSyncProp = props.editor.getProperty(['jira', 'statusSync']);
+    if (!statusSyncProp.value) {
+      statusSyncProp.set({});
+    }
+    (props.editor.getProperty(['jira', 'statusSync', 'statusMap']) as any).set(statusMap);
+  }, [cfStatuses, props.editor]);
+
+  // Fetch Jira statuses when enabled
+  useEffect(() => {
+    if (!enabled || !props.jira?.cloudId || !props.jira?.projectKey || jiraStatuses) return;
+
+    setLoading(true);
+    setError(undefined);
+
+    ServerAdmin.get().dispatchAdmin()
+      .then(d => d.jiraGetStatusesAdmin({
+        cloudId: props.jira!.cloudId,
+        projectKey: props.jira!.projectKey
+      }))
+      .then(result => {
+        console.log('Fetched Jira statuses:', result.statuses);
+
+        // Deduplicate statuses by ID
+        const uniqueStatuses = result.statuses.filter((status, index, self) =>
+          index === self.findIndex((s) => s.id === status.id)
+        );
+
+        console.log('Unique Jira statuses:', uniqueStatuses);
+        setJiraStatuses(uniqueStatuses);
+        setLoading(false);
+
+        // Auto-suggest mappings if map is empty
+        const currentStatusSync = props.editor.getConfig().jira?.statusSync;
+        if (!currentStatusSync?.statusMap || Object.keys(currentStatusSync.statusMap).length === 0) {
+          autoSuggestMappings(uniqueStatuses);
+        }
+      })
+      .catch(err => {
+        setError(err.message || 'Failed to fetch Jira statuses');
+        setLoading(false);
+      });
+  }, [enabled, props.jira, jiraStatuses, props.editor, autoSuggestMappings]);
+
+  const handleToggle = (newEnabled: boolean) => {
+    setEnabled(newEnabled);
+    const statusSyncProp = props.editor.getProperty(['jira', 'statusSync']);
+    if (newEnabled) {
+      statusSyncProp.set({});
+    } else {
+      statusSyncProp.set(undefined);
+    }
+  };
+
+  const handleStatusMappingChange = (cfStatusId: string, jiraStatusName: string) => {
+    console.log('handleStatusMappingChange called:', cfStatusId, jiraStatusName);
+
+    // Ensure statusSync object exists
+    const statusSyncProp = props.editor.getProperty(['jira', 'statusSync']);
+    if (!statusSyncProp.value) {
+      statusSyncProp.set({});
+    }
+
+    const currentMap = props.editor.getConfig().jira?.statusSync?.statusMap || {};
+    const newMap = { ...currentMap };
+    if (jiraStatusName) {
+      newMap[cfStatusId] = jiraStatusName;
+    } else {
+      delete newMap[cfStatusId];
+    }
+
+    try {
+      (props.editor.getProperty(['jira', 'statusSync', 'statusMap']) as any).set(newMap);
+      console.log('Status map updated:', newMap);
+      // Force update
+      setStatusSync(props.editor.getConfig().jira?.statusSync);
+    } catch (err) {
+      console.error('Failed to update status map:', err);
+    }
+  };
+
+  const handleDefaultCfStatusChange = (cfStatusId: string) => {
+    console.log('handleDefaultCfStatusChange called:', cfStatusId);
+    try {
+      (props.editor.getProperty(['jira', 'statusSync', 'defaultCfStatusId']) as any).set(cfStatusId || undefined);
+      // Force update
+      setStatusSync(props.editor.getConfig().jira?.statusSync);
+    } catch (err) {
+      console.error('Failed to update default CF status:', err);
+    }
+  };
+
+  const handleDefaultJiraStatusChange = (jiraStatusName: string) => {
+    console.log('handleDefaultJiraStatusChange called:', jiraStatusName);
+    try {
+      (props.editor.getProperty(['jira', 'statusSync', 'defaultJiraStatusName']) as any).set(jiraStatusName || undefined);
+      // Force update
+      setStatusSync(props.editor.getConfig().jira?.statusSync);
+    } catch (err) {
+      console.error('Failed to update default Jira status:', err);
+    }
+  };
+
+  // Use state to track statusSync so it updates reactively when changed
+  const [statusSync, setStatusSync] = useState<Admin.JiraStatusSync | undefined>(props.editor.getConfig().jira?.statusSync);
+
+  useEffect(() => {
+    return props.editor.subscribe(() => {
+      setStatusSync(props.editor.getConfig().jira?.statusSync);
+    });
+  }, [props.editor]);
+
+  return (
+    <div style={{ marginTop: 16, marginBottom: 16 }}>
+      <FormControlLabel
+        control={
+          <Switch
+            checked={enabled}
+            onChange={(e) => handleToggle(e.target.checked)}
+            color="primary"
+          />
+        }
+        label={<Typography>Status sync</Typography>}
+      />
+      <FormHelperText>
+        Map ClearFlask statuses to Jira statuses for bidirectional sync.
+      </FormHelperText>
+
+      <Collapse in={enabled}>
+        {loading && <Loading />}
+        {error && <Message message={error} severity="error" />}
+
+        {!loading && !error && jiraStatuses && cfStatuses.length > 0 && (
+          <div style={{ marginTop: 16 }}>
+            <Typography variant="subtitle2" gutterBottom>Status Mapping</Typography>
+            <Typography variant="caption" color="textSecondary" gutterBottom display="block" style={{ marginBottom: 8 }}>
+              Map ClearFlask statuses to Jira statuses. Syncs bidirectionally.
+            </Typography>
+            {cfStatuses.map(cfStatus => (
+              <div key={cfStatus.statusId} style={{ marginTop: 8, marginBottom: 8 }}>
+                <Grid container spacing={2} alignItems="center">
+                  <Grid item xs={4}>
+                    <Typography>
+                      <span style={{
+                        display: 'inline-block',
+                        width: 12,
+                        height: 12,
+                        borderRadius: '50%',
+                        backgroundColor: cfStatus.color || '#ccc',
+                        marginRight: 8
+                      }} />
+                      {cfStatus.name}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={1}>
+                    <Typography align="center">↔</Typography>
+                  </Grid>
+                  <Grid item xs={7}>
+                    <Select
+                      fullWidth
+                      value={statusSync?.statusMap?.[cfStatus.statusId] || ''}
+                      onChange={(e) => handleStatusMappingChange(cfStatus.statusId, e.target.value as string)}
+                      displayEmpty
+                    >
+                      <MenuItem value="">
+                        <em>No mapping</em>
+                      </MenuItem>
+                      {jiraStatuses.map(jiraStatus => (
+                        <MenuItem key={jiraStatus.id} value={jiraStatus.name}>
+                          {jiraStatus.name}
+                          {jiraStatus.statusCategory && (
+                            <span style={{ marginLeft: 8, color: '#999', fontSize: '0.85em' }}>
+                              ({jiraStatus.statusCategory})
+                            </span>
+                          )}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </Grid>
+                </Grid>
+              </div>
+            ))}
+
+            <div style={{ marginTop: 24, marginBottom: 16 }}>
+              <Typography variant="subtitle2" gutterBottom>Default ClearFlask Status</Typography>
+              <Typography variant="caption" color="textSecondary" gutterBottom>
+                Fallback status for unmapped Jira statuses
+              </Typography>
+              <Select
+                fullWidth
+                value={statusSync?.defaultCfStatusId || ''}
+                onChange={(e) => handleDefaultCfStatusChange(e.target.value as string)}
+                displayEmpty
+                style={{ marginTop: 8 }}
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                {cfStatuses.map(cfStatus => (
+                  <MenuItem key={cfStatus.statusId} value={cfStatus.statusId}>
+                    <span style={{
+                      display: 'inline-block',
+                      width: 12,
+                      height: 12,
+                      borderRadius: '50%',
+                      backgroundColor: cfStatus.color || '#ccc',
+                      marginRight: 8
+                    }} />
+                    {cfStatus.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </div>
+
+            <div style={{ marginTop: 24, marginBottom: 16 }}>
+              <Typography variant="subtitle2" gutterBottom>Default Jira Status</Typography>
+              <Typography variant="caption" color="textSecondary" gutterBottom>
+                Fallback status for unmapped ClearFlask statuses
+              </Typography>
+              <Select
+                fullWidth
+                value={statusSync?.defaultJiraStatusName || ''}
+                onChange={(e) => handleDefaultJiraStatusChange(e.target.value as string)}
+                displayEmpty
+                style={{ marginTop: 8 }}
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                {jiraStatuses.map(jiraStatus => (
+                  <MenuItem key={jiraStatus.id} value={jiraStatus.name}>
+                    {jiraStatus.name}
+                    {jiraStatus.statusCategory && (
+                      <span style={{ marginLeft: 8, color: '#999', fontSize: '0.85em' }}>
+                        ({jiraStatus.statusCategory})
+                      </span>
+                    )}
+                  </MenuItem>
+                ))}
+              </Select>
+            </div>
+          </div>
+        )}
+
+        {!loading && !error && enabled && cfStatuses.length === 0 && (
+          <Message
+            message="Please select a category in 'Create with category' above to configure status mapping."
+            severity="warning"
+          />
+        )}
+      </Collapse>
+    </div>
+  );
+};
+
 export const ProjectSettingsJira = (props: {
   project: AdminProject;
   server: Server;
@@ -3826,16 +4140,23 @@ export const ProjectSettingsJira = (props: {
     });
   }, [props.editor]);
 
-  const getProjects = (code: string) => ServerAdmin.get().dispatchAdmin()
-    .then(d => d.jiraGetProjectsAdmin({ code }))
-    .then(result => {
-      setProjects(result.projects);
-      // Clear OAuth parameters from URL
-      const url = new URL(windowIso.location.href);
-      url.searchParams.delete('code');
-      url.searchParams.delete('state');
-      windowIso.history.replaceState({}, '', url.toString());
-    });
+  const getProjects = (code: string) => {
+    // Clear OAuth parameters from URL immediately to prevent reuse
+    const url = new URL(windowIso.location.href);
+    url.searchParams.delete('code');
+    url.searchParams.delete('state');
+    windowIso.history.replaceState({}, '', url.toString());
+
+    return ServerAdmin.get().dispatchAdmin()
+      .then(d => d.jiraGetProjectsAdmin({ code }))
+      .then(result => {
+        setProjects(result.projects);
+      })
+      .catch(err => {
+        console.error('Failed to get Jira projects:', err);
+        // Error will be shown by the API layer
+      });
+  };
 
   const oauthFlow = new OAuthFlow({
     accountType: 'jira-integration',
@@ -3882,8 +4203,11 @@ export const ProjectSettingsJira = (props: {
                                 path={['jira', 'issueTypeId']} />
                 <PropertyByPath server={props.server} editor={props.editor}
                                 path={['jira', 'autoCreateIssue']} />
-                <PropertyByPath server={props.server} editor={props.editor}
-                                path={['jira', 'statusSync']} />
+                <JiraStatusSyncConfig
+                  server={props.server}
+                  editor={props.editor}
+                  jira={jira}
+                />
                 <PropertyByPath server={props.server} editor={props.editor}
                                 path={['jira', 'responseSync']} />
                 <PropertyByPath server={props.server} editor={props.editor}
@@ -4001,6 +4325,206 @@ export const ProjectSettingsJira = (props: {
   );
 };
 
+const SlackChannelLinksConfig = (props: {
+  server: Server;
+  editor: ConfigEditor.Editor;
+  projectId: string;
+  slack: Admin.Slack | undefined;
+}) => {
+  const [channels, setChannels] = useState<Array<Admin.SlackChannel> | undefined>();
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | undefined>();
+
+  // Get ClearFlask categories
+  const categories = React.useMemo(() => {
+    return props.editor.getConfig().content.categories;
+  }, [props.editor]);
+
+  // Fetch Slack channels when component mounts
+  useEffect(() => {
+    if (!props.slack) return;
+
+    setLoading(true);
+    setError(undefined);
+
+    ServerAdmin.get().dispatchAdmin()
+      .then(d => d.slackGetChannelsAdmin({ projectId: props.projectId }))
+      .then(result => {
+        console.log('Fetched Slack channels:', result.channels);
+        setChannels(result.channels);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to fetch Slack channels:', err);
+        setError(err.message || 'Failed to fetch Slack channels');
+        setLoading(false);
+      });
+  }, [props.slack, props.projectId]);
+
+  const handleAddChannelLink = () => {
+    const channelLinks = props.editor.getProperty(['slack', 'channelLinks']);
+    const currentLinks = channelLinks.value || [];
+
+    // Add new empty channel link
+    channelLinks.set([...currentLinks, {
+      channelId: '',
+      channelName: '',
+      categoryId: categories.length > 0 ? categories[0].categoryId : '',
+      syncSlackToPosts: true,
+      syncPostsToSlack: true,
+      syncCommentsToReplies: true,
+      syncRepliesToComments: true,
+      syncStatusUpdates: true,
+      syncResponseUpdates: true
+    }]);
+  };
+
+  const handleRemoveChannelLink = (index: number) => {
+    const channelLinks = props.editor.getProperty(['slack', 'channelLinks']);
+    const currentLinks = channelLinks.value || [];
+    channelLinks.set(currentLinks.filter((_, i) => i !== index));
+  };
+
+  const handleChannelChange = (index: number, channelId: string) => {
+    const channel = channels?.find(c => c.channelId === channelId);
+    const linkProp = props.editor.getProperty(['slack', 'channelLinks', index.toString()]);
+
+    (linkProp as any).getProperty('channelId').set(channelId);
+    (linkProp as any).getProperty('channelName').set(channel?.channelName || '');
+  };
+
+  const channelLinks = props.editor.getConfig().slack?.channelLinks || [];
+
+  if (!props.slack) return null;
+
+  return (
+    <div style={{ marginTop: 16, marginBottom: 16 }}>
+      <Typography variant="subtitle1" gutterBottom>Channel Links</Typography>
+      <Typography variant="caption" color="textSecondary" gutterBottom display="block" style={{ marginBottom: 16 }}>
+        Link Slack channels to ClearFlask categories for two-way synchronization.
+      </Typography>
+
+      {loading && <Loading />}
+      {error && <Message message={error} severity="error" />}
+
+      {!loading && !error && channels && (
+        <>
+          {channelLinks.map((link, index) => (
+            <div key={index} style={{ marginTop: 16, marginBottom: 16, padding: 16, border: '1px solid #e0e0e0', borderRadius: 4 }}>
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={5}>
+                  <Typography variant="caption" color="textSecondary" gutterBottom display="block">
+                    Slack Channel
+                  </Typography>
+                  <Select
+                    fullWidth
+                    value={link.channelId || ''}
+                    onChange={(e) => handleChannelChange(index, e.target.value as string)}
+                    displayEmpty
+                    renderValue={(value) => {
+                      if (!value) return <em>Select a channel...</em>;
+                      const channel = channels?.find(c => c.channelId === value);
+                      return (
+                        <div>
+                          <div># {channel?.channelName || value}</div>
+                          <Typography variant="caption" color="textSecondary" style={{ fontSize: '0.75em' }}>
+                            ID: {value}
+                          </Typography>
+                        </div>
+                      );
+                    }}
+                  >
+                    <MenuItem value="">
+                      <em>Select a channel...</em>
+                    </MenuItem>
+                    {channels.map(channel => (
+                      <MenuItem key={channel.channelId} value={channel.channelId}>
+                        <div>
+                          # {channel.channelName}
+                          {channel.isPrivate && ' 🔒'}
+                          {!channel.isMember && ' (not a member)'}
+                          <br />
+                          <Typography variant="caption" color="textSecondary" style={{ fontSize: '0.75em' }}>
+                            ID: {channel.channelId}
+                          </Typography>
+                        </div>
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </Grid>
+                <Grid item xs={5}>
+                  <Typography variant="caption" color="textSecondary" gutterBottom display="block">
+                    ClearFlask Category
+                  </Typography>
+                  <Select
+                    fullWidth
+                    value={link.categoryId || ''}
+                    onChange={(e) => {
+                      const linkProp = props.editor.getProperty(['slack', 'channelLinks', index.toString()]);
+                      (linkProp as any).getProperty('categoryId').set(e.target.value as string);
+                    }}
+                    displayEmpty
+                  >
+                    <MenuItem value="">
+                      <em>Select a category...</em>
+                    </MenuItem>
+                    {categories.map(category => (
+                      <MenuItem key={category.categoryId} value={category.categoryId}>
+                        <span style={{
+                          display: 'inline-block',
+                          width: 12,
+                          height: 12,
+                          borderRadius: '50%',
+                          backgroundColor: category.color || '#ccc',
+                          marginRight: 8
+                        }} />
+                        {category.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </Grid>
+                <Grid item xs={2}>
+                  <Button
+                    color="secondary"
+                    onClick={() => handleRemoveChannelLink(index)}
+                    style={{ marginTop: 16 }}
+                  >
+                    Remove
+                  </Button>
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={link.syncSlackToPosts === true}
+                        onChange={(e) => {
+                          const linkProp = props.editor.getProperty(['slack', 'channelLinks', index.toString()]);
+                          (linkProp as any).getProperty('syncSlackToPosts').set(e.target.checked);
+                        }}
+                        color="primary"
+                      />
+                    }
+                    label={<Typography variant="body2">Slack → Posts (Create ClearFlask posts from Slack messages)</Typography>}
+                  />
+                </Grid>
+              </Grid>
+            </div>
+          ))}
+
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={handleAddChannelLink}
+            style={{ marginTop: 16 }}
+          >
+            + Add Channel Link
+          </Button>
+        </>
+      )}
+    </div>
+  );
+};
+
 export const ProjectSettingsSlack = (props: {
   project: AdminProject;
   server: Server;
@@ -4028,28 +4552,36 @@ export const ProjectSettingsSlack = (props: {
     });
   }, [props.editor]);
 
-  const getWorkspaceInfo = (code: string) => ServerAdmin.get().dispatchAdmin()
-    .then(d => d.slackGetWorkspaceInfoAdmin({ code }))
-    .then(result => {
-      // Store workspace info in project config
-      const slackPage = props.editor.getPage(['slack']);
-      slackPage.set(true);
-      (props.editor.getProperty(['slack', 'teamId']) as ConfigEditor.StringProperty)
-        .set(result.teamId);
-      (props.editor.getProperty(['slack', 'teamName']) as ConfigEditor.StringProperty)
-        .set(result.teamName);
-      (props.editor.getProperty(['slack', 'accessToken']) as ConfigEditor.StringProperty)
-        .set(result.accessToken);
-      (props.editor.getProperty(['slack', 'botUserId']) as ConfigEditor.StringProperty)
-        .set(result.botUserId);
-      // channelLinks is a page group and is automatically initialized
+  const getWorkspaceInfo = (code: string) => {
+    // Clear OAuth parameters from URL immediately to prevent reuse
+    const url = new URL(windowIso.location.href);
+    url.searchParams.delete('code');
+    url.searchParams.delete('state');
+    windowIso.history.replaceState({}, '', url.toString());
 
-      // Clear OAuth parameters from URL
-      const url = new URL(windowIso.location.href);
-      url.searchParams.delete('code');
-      url.searchParams.delete('state');
-      windowIso.history.replaceState({}, '', url.toString());
-    });
+    return ServerAdmin.get().dispatchAdmin()
+      .then(d => d.slackGetWorkspaceInfoAdmin({ code }))
+      .then(result => {
+        // Store workspace info in project config
+        const slackPage = props.editor.getPage(['slack']);
+        slackPage.set(true);
+        (props.editor.getProperty(['slack', 'teamId']) as ConfigEditor.StringProperty)
+          .set(result.teamId);
+        (props.editor.getProperty(['slack', 'teamName']) as ConfigEditor.StringProperty)
+          .set(result.teamName);
+        (props.editor.getProperty(['slack', 'accessToken']) as ConfigEditor.StringProperty)
+          .set(result.accessToken);
+        (props.editor.getProperty(['slack', 'botUserId']) as ConfigEditor.StringProperty)
+          .set(result.botUserId);
+
+        // Force re-render to show the workspace name
+        setSlack(props.editor.getConfig().slack);
+      })
+      .catch(err => {
+        console.error('Failed to get Slack workspace info:', err);
+        // Error will be shown by the API layer
+      });
+  };
 
   const oauthFlow = new OAuthFlow({
     accountType: 'slack-integration',
@@ -4086,8 +4618,12 @@ export const ProjectSettingsSlack = (props: {
             )}
             content={!!slack && (
               <>
-                <PropertyByPath server={props.server} editor={props.editor}
-                                path={['slack', 'channelLinks']} />
+                <SlackChannelLinksConfig
+                  server={props.server}
+                  editor={props.editor}
+                  projectId={props.project.projectId}
+                  slack={slack}
+                />
                 <p>
                   <Button
                     style={{ color: theme.palette.error.dark }}

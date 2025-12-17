@@ -36,6 +36,8 @@ CATALINA_OPTS="$CATALINA_OPTS
                -Djava.rmi.server.hostname=localhost
                -Dcom.sun.management.jmxremote.rmi.port=9051"
 EOF
+# Add Java module access flags to /etc/sysconfig/tomcat (systemd loads this file)
+echo 'CATALINA_OPTS="$CATALINA_OPTS --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/sun.reflect.generics.reflectiveObjects=ALL-UNNAMED --add-opens=java.base/java.security.cert=ALL-UNNAMED"' | sudo tee -a /etc/sysconfig/tomcat
 echo 'CLEARFLASK_ENVIRONMENT=PRODUCTION_AWS' | sudo tee -a /usr/share/tomcat/conf/tomcat.conf
 
 sudo mkdir -p /srv/clearflask-connect

@@ -60,7 +60,7 @@ const SlackProvider: OAuthProvider = {
     ? (getOAuthConfig().slackClientId || 'slack-client-id')
     : 'slack-client-id',
   authorizeUrl: 'https://slack.com/oauth/v2/authorize',
-  scope: 'channels:read channels:write.invites chat:write chat:write.public',
+  scope: 'channels:read channels:write.invites chat:write chat:write.public groups:read',
 };
 
 export type Unsubscribe = () => void;

@@ -161,6 +161,9 @@ public class SlackResource {
         String text = event.has("text") ? event.get("text").getAsString() : null;
         String teamId = event.has("team") ? event.get("team").getAsString() : null;
 
+        log.info("Slack message event received: project={}, channel={}, subtype={}, threadTs={}, messageTs={}",
+            project.getProjectId(), channelId, subtype, threadTs, messageTs);
+
         // Validate required fields
         if (Strings.isNullOrEmpty(channelId) || Strings.isNullOrEmpty(messageTs)) {
             log.warn("Missing required fields in Slack message event: channelId={}, messageTs={}", channelId, messageTs);

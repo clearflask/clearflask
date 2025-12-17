@@ -124,6 +124,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Inject
     private GitLabStore gitLabStore;
     @Inject
+    private JiraStore jiraStore;
+    @Inject
     private AccountStore accountStore;
     @Inject
     private UserStore userStore;
@@ -151,6 +153,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     private DateUtil dateUtil;
     @Inject
     private ElasticUtil elasticUtil;
+    @Inject
+    private SlackStore slackStore;
 
     @PermitAll
     @Limit(requiredPermits = 10)
@@ -322,6 +326,14 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 Optional.of(project.getVersionedConfigAdmin().getConfig()),
                 configAdmin);
         gitLabStore.setupConfigGitLabIntegration(
+                accountId,
+                Optional.of(project.getVersionedConfigAdmin().getConfig()),
+                configAdmin);
+        jiraStore.setupConfigJiraIntegration(
+                accountId,
+                Optional.of(project.getVersionedConfigAdmin().getConfig()),
+                configAdmin);
+        slackStore.setupConfigSlackIntegration(
                 accountId,
                 Optional.of(project.getVersionedConfigAdmin().getConfig()),
                 configAdmin);
@@ -902,6 +914,31 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         userStore.repopulateIndex(projectId, deleteExistingIndices, repopulateElasticSearch, repopulateMysql);
         ideaStore.repopulateIndex(projectId, deleteExistingIndices, repopulateElasticSearch, repopulateMysql);
         commentStore.repopulateIndex(projectId, deleteExistingIndices, repopulateElasticSearch, repopulateMysql);
+    }
+
+    @RolesAllowed({Role.PROJECT_ADMIN})
+    @Limit(requiredPermits = 5, challengeAfter = 10)
+    @Override
+    public SlackChannelsResponse slackGetChannelsAdmin(String projectId) {
+        Optional<Project> projectOpt = projectStore.getProject(projectId, false);
+        if (!projectOpt.isPresent()) {
+            throw new ApiException(Response.Status.NOT_FOUND, "Project not found");
+        }
+
+        List<SlackStore.SlackChannel> channels = slackStore.getAvailableChannels(projectId);
+
+        List<com.smotana.clearflask.api.model.SlackChannel2> apiChannels = channels.stream()
+                .map(ch -> com.smotana.clearflask.api.model.SlackChannel2.builder()
+                        .channelId(ch.getChannelId())
+                        .channelName(ch.getChannelName())
+                        .isPrivate(ch.isPrivate())
+                        .isMember(ch.isMember())
+                        .build())
+                .collect(Collectors.toList());
+
+        return SlackChannelsResponse.builder()
+                .channels(apiChannels)
+                .build();
     }
 
     public static Module module() {

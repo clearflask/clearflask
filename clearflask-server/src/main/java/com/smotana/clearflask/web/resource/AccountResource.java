@@ -45,6 +45,8 @@ import com.smotana.clearflask.api.model.AllPlansGetResponse;
 import com.smotana.clearflask.api.model.AvailableJiraProjects;
 import com.smotana.clearflask.api.model.AvailableRepos;
 import com.smotana.clearflask.api.model.CouponGenerateSuperAdmin;
+import com.smotana.clearflask.api.model.JiraIssueTypesResponse;
+import com.smotana.clearflask.api.model.JiraStatusesResponse;
 import com.smotana.clearflask.api.model.GitLabAvailableProjects;
 import com.smotana.clearflask.api.model.GitLabGetProjectsBody;
 import com.smotana.clearflask.api.model.InvitationResult;
@@ -868,6 +870,28 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
                 .get();
 
         return jiraStore.getProjectsForUser(accountId, code);
+    }
+
+    @RolesAllowed({Role.ADMINISTRATOR_ACTIVE})
+    @Limit(requiredPermits = 10, challengeAfter = 15)
+    @Override
+    public JiraIssueTypesResponse jiraGetIssueTypesAdmin(String cloudId, String projectKey) {
+        String accountId = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .get();
+
+        return jiraStore.getIssueTypesForProject(accountId, cloudId, projectKey);
+    }
+
+    @RolesAllowed({Role.ADMINISTRATOR_ACTIVE})
+    @Limit(requiredPermits = 10, challengeAfter = 15)
+    @Override
+    public JiraStatusesResponse jiraGetStatusesAdmin(String cloudId, String projectKey) {
+        String accountId = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .get();
+
+        return jiraStore.getStatusesForProject(accountId, cloudId, projectKey);
     }
 
     @RolesAllowed({Role.ADMINISTRATOR_ACTIVE})

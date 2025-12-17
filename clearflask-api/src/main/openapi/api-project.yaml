@@ -1012,7 +1012,7 @@ components:
                   type: boolean
             gitlab:
               x-clearflask-hide: true
-              x-clearflask-page: { order: 6, name: 'GitLab Connect', description: 'Synchronize GitLab issues with ClearFlask.' }
+              x-clearflask-page: { order: 5, name: 'GitLab Connect', description: 'Synchronize GitLab issues with ClearFlask.' }
               title: GitLab
               type: object
               required:
@@ -1080,7 +1080,7 @@ components:
                   x-clearflask-prop: { order: 95, name: 'Announcement notify', defaultValue: true, description: 'Mirrored ClearFlask Announcement from a GitLab Release should notify subscribers in ClearFlask.', falseAsUndefined: true }
                   type: boolean
             jira:
-              x-clearflask-page: { order: 6, name: 'Jira Connect', description: 'Synchronize Jira issues with ClearFlask.' }
+              x-clearflask-page: { order: 7, name: 'Jira Connect', description: 'Synchronize Jira issues with ClearFlask.' }
               title: Jira
               type: object
               required:
@@ -1115,45 +1115,27 @@ components:
                   items:
                     type: string
                 issueTypeId:
-                  x-clearflask-prop: { order: 45, name: 'Issue Type ID', description: 'Jira issue type to create when syncing from ClearFlask (Bug, Story, Task).' }
+                  x-clearflask-prop: { order: 45, name: 'Issue Type ID', description: 'Jira issue type to create when syncing from ClearFlask (Bug, Story, Task). Leave blank to use project default.' }
                   type: string
                 autoCreateIssue:
-                  x-clearflask-prop: { order: 47, name: 'Auto-create Jira issues', defaultValue: false, description: 'Automatically create a Jira issue when a ClearFlask post is created in the linked category.' }
+                  x-clearflask-prop: { order: 47, name: 'Auto-create Jira issues', defaultValue: true, description: 'Automatically create a Jira issue when a ClearFlask post is created in the linked category.' }
                   type: boolean
                 statusSync:
-                  x-clearflask-prop: { order: 50, name: 'Status sync', description: 'Map ClearFlask statuses to Jira transitions for bidirectional sync.', falseAsUndefined: true }
+                  x-clearflask-prop: { order: 50, name: 'Status sync', description: 'Map ClearFlask statuses to Jira statuses for bidirectional sync.', falseAsUndefined: true }
                   type: object
                   properties:
-                    statusMapping:
-                      x-clearflask-page-group: { order: 10, name: 'CF -> Jira Status Mapping', description: 'Map ClearFlask status IDs to Jira transition/status names.', tablePropertyNames: [ 'clearflaskStatusId', 'jiraStatusName' ] }
-                      type: array
-                      items:
-                        type: object
-                        required:
-                          - clearflaskStatusId
-                          - jiraStatusName
-                        properties:
-                          clearflaskStatusId:
-                            x-clearflask-prop: { order: 1, name: 'ClearFlask Status ID', description: 'Status ID from ClearFlask' }
-                            type: string
-                          jiraStatusName:
-                            x-clearflask-prop: { order: 2, name: 'Jira Status/Transition Name', description: 'Jira status or transition name' }
-                            type: string
-                    reverseStatusMapping:
-                      x-clearflask-page-group: { order: 20, name: 'Jira -> CF Status Mapping', description: 'Map Jira status names to ClearFlask status IDs.', tablePropertyNames: [ 'jiraStatusName', 'clearflaskStatusId' ] }
-                      type: array
-                      items:
-                        type: object
-                        required:
-                          - jiraStatusName
-                          - clearflaskStatusId
-                        properties:
-                          jiraStatusName:
-                            x-clearflask-prop: { order: 1, name: 'Jira Status Name', description: 'Jira status name' }
-                            type: string
-                          clearflaskStatusId:
-                            x-clearflask-prop: { order: 2, name: 'ClearFlask Status ID', description: 'Status ID from ClearFlask' }
-                            type: string
+                    statusMap:
+                      x-clearflask-prop: { order: 10, name: 'Status Map', description: 'Map ClearFlask status IDs to Jira status names (bidirectional)' }
+                      type: object
+                      additionalProperties:
+                        type: string
+                    defaultCfStatusId:
+                      x-clearflask-prop: { order: 20, name: 'Default ClearFlask Status', description: 'Fallback status for unmapped Jira statuses' }
+                      x-clearflask-prop-link: { idPropName: 'statusId', linkPath: [ 'content', 'categories', '<$>', 'workflow', 'statuses' ], displayPropName: 'name', colorPropName: 'color', filterPath: [ '..', 'createWithCategoryId' ], filterIdPropName: 'categoryId', filterShowAllIfNone: false }
+                      type: string
+                    defaultJiraStatusName:
+                      x-clearflask-prop: { order: 30, name: 'Default Jira Status', description: 'Fallback status for unmapped ClearFlask statuses' }
+                      type: string
                 responseSync:
                   x-clearflask-prop: { order: 60, name: 'Response sync', defaultValue: true, description: 'Create Jira comment when Response changes in ClearFlask.', falseAsUndefined: true }
                   type: boolean
@@ -1161,14 +1143,13 @@ components:
                   x-clearflask-prop: { order: 70, name: 'Comment sync', defaultValue: true, description: 'Mirror comments between Jira and ClearFlask.', falseAsUndefined: true }
                   type: boolean
             slack:
-              x-clearflask-page: { order: 6, name: 'Slack Connect', description: 'Synchronize ClearFlask posts with Slack channels. Get updates directly in Slack when posts are created, updated, or commented.' }
+              x-clearflask-page: { order: 8, name: 'Slack Connect', description: 'Synchronize ClearFlask posts with Slack channels. Get updates directly in Slack when posts are created, updated, or commented.' }
               title: Slack
               type: object
               required:
                 - teamId
                 - accessToken
                 - botUserId
-                - channelLinks
               properties:
                 teamId:
                   x-clearflask-prop: { order: 0, name: 'Team ID', description: 'Slack workspace ID. Set automatically during OAuth connection.' }
@@ -1426,6 +1407,7 @@ components:
         email:
           type: string
     SlackChannelLink:
+      x-clearflask-page: { name: 'Channel Link', nameFromProp: 'channelName' }
       type: object
       required:
         - channelId

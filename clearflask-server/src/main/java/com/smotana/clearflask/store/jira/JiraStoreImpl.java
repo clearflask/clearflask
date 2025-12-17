@@ -7,6 +7,8 @@ import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import java.util.Map;
+import java.util.stream.Collectors;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
@@ -28,9 +30,6 @@ import com.smotana.clearflask.api.model.CommentUpdate;
 import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.IdeaStatus;
 import com.smotana.clearflask.api.model.IdeaUpdate;
-import com.smotana.clearflask.api.model.JiraStatusSync;
-import com.smotana.clearflask.api.model.JiraStatusSyncStatusMapping;
-import com.smotana.clearflask.api.model.JiraStatusSyncReverseStatusMapping;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.core.push.NotificationService;
@@ -157,9 +156,14 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
             throw new ApiException(Response.Status.SERVICE_UNAVAILABLE, "Jira integration is disabled");
         }
 
+        log.info("Attempting to exchange Jira OAuth code for account {}", accountId);
+
         try {
             String redirectUri = "https://" + configApp.domain() + "/dashboard/settings/project/jira";
             OAuthTokens tokens = jiraClientProvider.exchangeAuthorizationCode(code, redirectUri);
+
+            log.info("Successfully exchanged Jira OAuth code for account {}: hasRefreshToken={}",
+                    accountId, tokens.getRefreshToken() != null);
 
             ImmutableList<JiraCloudInstance> instances = jiraClientProvider.getAccessibleResources(tokens.getAccessToken());
 
@@ -173,6 +177,8 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
                 JiraClient client = jiraClientProvider.getClient(instance.getId(), tokens.getAccessToken());
                 try {
                     ImmutableList<JiraProject> projects = client.getApiClient().getProjects();
+                    log.info("Fetched {} projects from Jira cloud instance {} ({})",
+                            projects.size(), instance.getId(), instance.getName());
                     for (JiraProject project : projects) {
                         availableProjectsBuilder.add(AvailableJiraProject.builder()
                                 .cloudId(instance.getId())
@@ -184,16 +190,91 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
                                 .build());
                     }
                 } catch (IOException e) {
-                    log.warn("Failed to fetch projects for Jira cloud instance {}", instance.getId(), e);
+                    log.error("Failed to fetch projects for Jira cloud instance {} ({}): {}",
+                            instance.getId(), instance.getName(), e.getMessage(), e);
                 }
             }
 
+            ImmutableList<AvailableJiraProject> allProjects = availableProjectsBuilder.build();
+            log.info("Successfully fetched {} total Jira projects for account {} across {} cloud instances",
+                    allProjects.size(), accountId, instances.size());
+
             return AvailableJiraProjects.builder()
-                    .projects(availableProjectsBuilder.build())
+                    .projects(allProjects)
                     .build();
         } catch (IOException e) {
-            log.warn("Failed to get Jira projects for user", e);
-            throw new ApiException(Response.Status.BAD_REQUEST, "Failed to authenticate with Jira", e);
+            log.error("IOException during Jira OAuth token exchange for account {}: {}", accountId, e.getMessage(), e);
+            throw new ApiException(Response.Status.BAD_REQUEST, "Failed to authenticate with Jira: " + e.getMessage(), e);
+        }
+    }
+
+    @Extern
+    @Override
+    public com.smotana.clearflask.api.model.JiraIssueTypesResponse getIssueTypesForProject(String accountId, String cloudId, String projectKey) {
+        if (!config.enabled()) {
+            log.debug("Jira integration not enabled, skipping");
+            throw new ApiException(Response.Status.SERVICE_UNAVAILABLE, "Jira integration is disabled");
+        }
+
+        Optional<JiraAuthorization> authOpt = getAuthorization(accountId, cloudId);
+        if (authOpt.isEmpty()) {
+            throw new ApiException(Response.Status.UNAUTHORIZED, "No Jira authorization found for this account");
+        }
+
+        try {
+            JiraClient client = jiraClientProvider.getClient(cloudId, authOpt.get().getAccessToken());
+            ImmutableList<JiraIssueType> issueTypes = client.getApiClient().getIssueTypes(projectKey);
+
+            java.util.List<com.smotana.clearflask.api.model.JiraIssueTypeInfo> issueTypeInfoList = issueTypes.stream()
+                    .map(it -> com.smotana.clearflask.api.model.JiraIssueTypeInfo.builder()
+                            .id(it.getId())
+                            .name(it.getName())
+                            .description(it.getDescription())
+                            .iconUrl(it.getIconUrl())
+                            .build())
+                    .collect(Collectors.toList());
+
+            return com.smotana.clearflask.api.model.JiraIssueTypesResponse.builder()
+                    .issueTypes(issueTypeInfoList)
+                    .build();
+        } catch (IOException e) {
+            log.error("Failed to fetch issue types for Jira project {}: {}", projectKey, e.getMessage(), e);
+            throw new ApiException(Response.Status.BAD_REQUEST, "Failed to fetch Jira issue types: " + e.getMessage(), e);
+        }
+    }
+
+    @Extern
+    @Override
+    public com.smotana.clearflask.api.model.JiraStatusesResponse getStatusesForProject(String accountId, String cloudId, String projectKey) {
+        if (!config.enabled()) {
+            log.debug("Jira integration not enabled, skipping");
+            throw new ApiException(Response.Status.SERVICE_UNAVAILABLE, "Jira integration is disabled");
+        }
+
+        Optional<JiraAuthorization> authOpt = getAuthorization(accountId, cloudId);
+        if (authOpt.isEmpty()) {
+            throw new ApiException(Response.Status.UNAUTHORIZED, "No Jira authorization found for this account");
+        }
+
+        try {
+            JiraClient client = jiraClientProvider.getClient(cloudId, authOpt.get().getAccessToken());
+            ImmutableList<JiraClientProvider.JiraStatus> statuses = client.getApiClient().getStatuses(projectKey);
+
+            java.util.List<com.smotana.clearflask.api.model.JiraStatusInfo> statusInfoList = statuses.stream()
+                    .map(st -> com.smotana.clearflask.api.model.JiraStatusInfo.builder()
+                            .id(st.getId())
+                            .name(st.getName())
+                            .description(st.getDescription())
+                            .statusCategory(st.getStatusCategory())
+                            .build())
+                    .collect(Collectors.toList());
+
+            return com.smotana.clearflask.api.model.JiraStatusesResponse.builder()
+                    .statuses(statusInfoList)
+                    .build();
+        } catch (IOException e) {
+            log.error("Failed to fetch statuses for Jira project {}: {}", projectKey, e.getMessage(), e);
+            throw new ApiException(Response.Status.BAD_REQUEST, "Failed to fetch Jira statuses: " + e.getMessage(), e);
         }
     }
 
@@ -387,7 +468,11 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
 
     @Override
     public Optional<IdeaAndIndexingFuture> jiraIssueEvent(Project project, JiraIssueEvent event) {
+        log.info("jiraIssueEvent received: {} for issue {} in project {}",
+            event.getWebhookEvent(), event.getIssueKey(), project.getProjectId());
+
         if (!config.enabled()) {
+            log.debug("Jira integration not enabled in config");
             return Optional.empty();
         }
 
@@ -398,6 +483,7 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
         }
 
         String ideaId = genDeterministicIdeaIdForJiraIssue(event.getIssueKey(), jiraConfig.getCloudId());
+        log.info("Processing Jira event {} for issue {} → CF idea {}", event.getWebhookEvent(), event.getIssueKey(), ideaId);
 
         switch (event.getWebhookEvent()) {
             case "jira:issue_created":
@@ -535,14 +621,28 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
             }
         }
 
-        // Update status if status sync is enabled and status mapping exists
-        if (jiraConfig.getStatusSync() != null
-                && jiraConfig.getStatusSync().getReverseStatusMapping() != null
-                && !Strings.isNullOrEmpty(event.getStatus())) {
-            String cfStatusId = getReverseStatusMappingValue(jiraConfig.getStatusSync(), event.getStatus());
-            if (cfStatusId != null && !cfStatusId.equals(idea.getStatusId())) {
-                builder.statusId(cfStatusId);
-                changed = true;
+        // Sync status from Jira to ClearFlask
+        if (!Strings.isNullOrEmpty(event.getStatus())) {
+            if (jiraConfig.getStatusSync() != null
+                    && jiraConfig.getStatusSync().getStatusMap() != null) {
+
+                // Create reverse map (Jira status name → CF status ID)
+                Map<String, String> reversedMap = jiraConfig.getStatusSync().getStatusMap().entrySet().stream()
+                        .collect(ImmutableMap.toImmutableMap(Map.Entry::getValue, Map.Entry::getKey, (v1, v2) -> v1));
+
+                String mappedCfStatusId = reversedMap.get(event.getStatus());
+
+                // Fall back to default if no mapping found
+                if (mappedCfStatusId == null && jiraConfig.getStatusSync().getDefaultCfStatusId() != null) {
+                    mappedCfStatusId = jiraConfig.getStatusSync().getDefaultCfStatusId();
+                }
+
+                if (mappedCfStatusId != null && !mappedCfStatusId.equals(idea.getStatusId())) {
+                    builder.statusId(mappedCfStatusId);
+                    changed = true;
+                    log.info("Synced Jira status '{}' to ClearFlask status '{}' for idea {}",
+                            event.getStatus(), mappedCfStatusId, ideaId);
+                }
             }
         }
 
@@ -688,24 +788,38 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
 
     @Override
     public ListenableFuture<Optional<JiraIssue>> cfPostCreatedAsync(Project project, IdeaModel idea, UserModel user) {
+        log.info("cfPostCreatedAsync called for idea {} in project {}", idea.getIdeaId(), project.getProjectId());
+
         if (!config.enabled()) {
+            log.debug("Jira integration not enabled in config");
             return Futures.immediateFuture(Optional.empty());
         }
 
         var jiraConfig = project.getVersionedConfigAdmin().getConfig().getJira();
-        if (jiraConfig == null || !Boolean.TRUE.equals(jiraConfig.getAutoCreateIssue())) {
+        if (jiraConfig == null) {
+            log.debug("No Jira config found for project {}", project.getProjectId());
+            return Futures.immediateFuture(Optional.empty());
+        }
+
+        if (!Boolean.TRUE.equals(jiraConfig.getAutoCreateIssue())) {
+            log.info("Auto-create Jira issues is disabled for project {}. Enable it in settings to sync CF→Jira.", project.getProjectId());
             return Futures.immediateFuture(Optional.empty());
         }
 
         // Don't sync ideas that came from Jira (avoid loop)
         if (idea.getIdeaId().startsWith("jira-")) {
+            log.debug("Skipping Jira sync for idea {} - it originated from Jira", idea.getIdeaId());
             return Futures.immediateFuture(Optional.empty());
         }
 
         // Only sync ideas in configured category
         if (!idea.getCategoryId().equals(jiraConfig.getCreateWithCategoryId())) {
+            log.debug("Idea {} category {} doesn't match configured category {}",
+                idea.getIdeaId(), idea.getCategoryId(), jiraConfig.getCreateWithCategoryId());
             return Futures.immediateFuture(Optional.empty());
         }
+
+        log.info("Syncing ClearFlask idea {} to Jira for project {}", idea.getIdeaId(), project.getProjectId());
 
         return executor.submit(() -> {
             try {
@@ -859,9 +973,11 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
             return Futures.immediateFuture(Optional.empty());
         }
 
+        // Check if status sync is enabled and has mappings configured
         boolean shouldSyncStatus = statusChanged
                 && jiraConfig.getStatusSync() != null
-                && jiraConfig.getStatusSync().getStatusMapping() != null;
+                && jiraConfig.getStatusSync().getStatusMap() != null
+                && !jiraConfig.getStatusSync().getStatusMap().isEmpty();
         boolean shouldSyncResponse = responseChanged && Boolean.TRUE.equals(jiraConfig.getResponseSync());
 
         if (!shouldSyncStatus && !shouldSyncResponse) {
@@ -891,20 +1007,40 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
                 JiraIssue issue = client.getApiClient().getIssue(issueKey);
                 JiraComment responseComment = null;
 
-                // Sync status via transition
+                // Sync status from ClearFlask to Jira via transition
                 if (shouldSyncStatus && idea.getStatusId() != null) {
-                    String jiraTransitionName = getStatusMappingValue(jiraConfig.getStatusSync(), idea.getStatusId());
-                    if (jiraTransitionName != null) {
-                        ImmutableList<JiraTransition> transitions = client.getApiClient().getTransitions(issueKey);
-                        Optional<JiraTransition> transitionOpt = transitions.stream()
-                                .filter(t -> t.getName().equalsIgnoreCase(jiraTransitionName)
-                                        || (t.getTo() != null && t.getTo().getName().equalsIgnoreCase(jiraTransitionName)))
-                                .findFirst();
+                    String mappedJiraStatusName = jiraConfig.getStatusSync().getStatusMap().get(idea.getStatusId());
 
-                        if (transitionOpt.isPresent()) {
-                            client.getApiClient().transitionIssue(issueKey, transitionOpt.get().getId());
-                            log.info("Transitioned Jira issue {} to {} for ClearFlask status change",
-                                    issueKey, jiraTransitionName);
+                    // Fall back to default if no mapping found
+                    if (mappedJiraStatusName == null && jiraConfig.getStatusSync().getDefaultJiraStatusName() != null) {
+                        mappedJiraStatusName = jiraConfig.getStatusSync().getDefaultJiraStatusName();
+                    }
+
+                    if (mappedJiraStatusName != null) {
+                        final String finalMappedJiraStatusName = mappedJiraStatusName;
+                        try {
+                            // Get available transitions for this issue
+                            ImmutableList<JiraTransition> transitions = client.getApiClient().getTransitions(issueKey);
+
+                            // Find transition that leads to the desired status (by name)
+                            Optional<JiraTransition> matchingTransition = transitions.stream()
+                                    .filter(t -> t.getTo() != null && finalMappedJiraStatusName.equalsIgnoreCase(t.getTo().getName()))
+                                    .findFirst();
+
+                            if (matchingTransition.isPresent()) {
+                                client.getApiClient().transitionIssue(issueKey, matchingTransition.get().getId());
+                                log.info("Transitioned Jira issue {} to status '{}' (transition ID: {}) for ClearFlask status '{}'",
+                                        issueKey, mappedJiraStatusName, matchingTransition.get().getId(), idea.getStatusId());
+
+                                // Refresh issue to get updated status
+                                issue = client.getApiClient().getIssue(issueKey);
+                            } else {
+                                log.warn("No transition found to status '{}' for Jira issue {}. Available transitions: {}",
+                                        mappedJiraStatusName, issueKey,
+                                        transitions.stream().map(JiraTransition::getName).collect(ImmutableList.toImmutableList()));
+                            }
+                        } catch (IOException e) {
+                            log.warn("Failed to transition Jira issue {} to status '{}'", issueKey, mappedJiraStatusName, e);
                         }
                     }
                 }
@@ -997,33 +1133,6 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
         String cloudId;
     }
 
-    /**
-     * Helper method to get status mapping value from CF status ID to Jira status/transition name
-     */
-    private String getStatusMappingValue(JiraStatusSync statusSync, String clearflaskStatusId) {
-        if (statusSync == null || statusSync.getStatusMapping() == null) {
-            return null;
-        }
-        return statusSync.getStatusMapping().stream()
-                .filter(mapping -> clearflaskStatusId.equals(mapping.getClearflaskStatusId()))
-                .map(JiraStatusSyncStatusMapping::getJiraStatusName)
-                .findFirst()
-                .orElse(null);
-    }
-
-    /**
-     * Helper method to get reverse status mapping value from Jira status name to CF status ID
-     */
-    private String getReverseStatusMappingValue(JiraStatusSync statusSync, String jiraStatusName) {
-        if (statusSync == null || statusSync.getReverseStatusMapping() == null) {
-            return null;
-        }
-        return statusSync.getReverseStatusMapping().stream()
-                .filter(mapping -> jiraStatusName.equals(mapping.getJiraStatusName()))
-                .map(JiraStatusSyncReverseStatusMapping::getClearflaskStatusId)
-                .findFirst()
-                .orElse(null);
-    }
 
     public static Module module() {
         return new AbstractModule() {

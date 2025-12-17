@@ -121,6 +121,8 @@ public class JiraClientProviderImpl implements JiraClientProvider {
 
     @Override
     public OAuthTokens exchangeAuthorizationCode(String code, String redirectUri) throws IOException {
+        log.info("Exchanging Jira OAuth authorization code for access token");
+
         HttpPost request = new HttpPost(JIRA_AUTH_URL);
         request.setHeader("Content-Type", "application/x-www-form-urlencoded");
         request.setEntity(new UrlEncodedFormEntity(ImmutableList.of(
@@ -136,22 +138,29 @@ public class JiraClientProviderImpl implements JiraClientProvider {
                 String responseBody = EntityUtils.toString(response.getEntity(), Charsets.UTF_8);
 
                 if (statusCode < 200 || statusCode >= 300) {
-                    log.warn("Jira OAuth token exchange failed, status {}: {}", statusCode, responseBody);
-                    throw new IOException("Failed to exchange authorization code: " + statusCode);
+                    log.error("Jira OAuth token exchange failed: HTTP {} - {}", statusCode, responseBody);
+                    throw new IOException("Failed to exchange authorization code: HTTP " + statusCode + " - " + responseBody);
                 }
 
                 JsonObject json = gson.fromJson(responseBody, JsonObject.class);
-                return OAuthTokens.builder()
+                OAuthTokens tokens = OAuthTokens.builder()
                         .accessToken(json.get("access_token").getAsString())
                         .refreshToken(json.has("refresh_token") ? json.get("refresh_token").getAsString() : null)
                         .expiresIn(json.has("expires_in") ? json.get("expires_in").getAsLong() : 3600)
                         .scope(json.has("scope") ? json.get("scope").getAsString() : null)
                         .build();
+
+                log.info("Successfully exchanged Jira OAuth code: hasRefreshToken={}, expiresIn={}",
+                        tokens.getRefreshToken() != null, tokens.getExpiresIn());
+
+                return tokens;
         }
     }
 
     @Override
     public OAuthTokens refreshAccessToken(String refreshToken) throws IOException {
+        log.info("Refreshing Jira OAuth access token");
+
         HttpPost request = new HttpPost(JIRA_AUTH_URL);
         request.setHeader("Content-Type", "application/x-www-form-urlencoded");
         request.setEntity(new UrlEncodedFormEntity(ImmutableList.of(
@@ -166,8 +175,8 @@ public class JiraClientProviderImpl implements JiraClientProvider {
                 String responseBody = EntityUtils.toString(response.getEntity(), Charsets.UTF_8);
 
                 if (statusCode < 200 || statusCode >= 300) {
-                    log.warn("Jira OAuth token refresh failed, status {}: {}", statusCode, responseBody);
-                    throw new IOException("Failed to refresh access token: " + statusCode);
+                    log.error("Jira OAuth token refresh failed: HTTP {} - {}", statusCode, responseBody);
+                    throw new IOException("Failed to refresh access token: HTTP " + statusCode + " - " + responseBody);
                 }
 
                 JsonObject json = gson.fromJson(responseBody, JsonObject.class);
@@ -182,6 +191,8 @@ public class JiraClientProviderImpl implements JiraClientProvider {
 
     @Override
     public ImmutableList<JiraCloudInstance> getAccessibleResources(String accessToken) throws IOException {
+        log.info("Fetching accessible Jira cloud instances");
+
         HttpGet request = new HttpGet(JIRA_ACCESSIBLE_RESOURCES_URL);
         request.setHeader("Authorization", "Bearer " + accessToken);
         request.setHeader("Accept", "application/json");
@@ -191,8 +202,8 @@ public class JiraClientProviderImpl implements JiraClientProvider {
                 String responseBody = EntityUtils.toString(response.getEntity(), Charsets.UTF_8);
 
                 if (statusCode < 200 || statusCode >= 300) {
-                    log.warn("Jira accessible resources failed, status {}: {}", statusCode, responseBody);
-                    throw new IOException("Failed to get accessible resources: " + statusCode);
+                    log.error("Jira accessible resources request failed: HTTP {} - {}", statusCode, responseBody);
+                    throw new IOException("Failed to get accessible resources: HTTP " + statusCode + " - " + responseBody);
                 }
 
                 JsonArray resourcesArray = gson.fromJson(responseBody, JsonArray.class);

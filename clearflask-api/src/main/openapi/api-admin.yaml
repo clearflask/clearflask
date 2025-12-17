@@ -64,8 +64,14 @@ paths:
     $ref: 'api-account.yaml#/~1admin~1account~1gitlab~1projects'
   /admin/account/jira/projects:
     $ref: 'api-account.yaml#/~1admin~1account~1jira~1projects'
+  /admin/account/jira/issue-types:
+    $ref: 'api-account.yaml#/~1admin~1account~1jira~1issue-types'
+  /admin/account/jira/statuses:
+    $ref: 'api-account.yaml#/~1admin~1account~1jira~1statuses'
   /admin/account/slack/workspace:
     $ref: 'api-account.yaml#/~1admin~1account~1slack~1workspace'
+  /admin/project/{projectId}/slack/channels:
+    $ref: 'api-account.yaml#/~1admin~1project~1{projectId}~1slack~1channels'
   /admin/account/delete:
     $ref: 'api-account.yaml#/~1admin~1account~1delete'
   /superadmin/account/delete:
