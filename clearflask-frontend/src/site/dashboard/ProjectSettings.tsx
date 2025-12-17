@@ -3842,8 +3842,7 @@ const JiraStatusSyncConfig = (props: {
   const autoSuggestMappings = React.useCallback((jiraStatusList: Array<{ id: string; name: string }>) => {
     if (!cfStatuses.length || !jiraStatusList.length) return;
 
-    const cfToJiraMap: { [key: string]: string } = {};
-    const jiraToCfMap: { [key: string]: string } = {};
+    const statusMap: { [key: string]: string } = {};
 
     // Simple name matching (case-insensitive, partial match)
     cfStatuses.forEach(cfStatus => {
@@ -3853,28 +3852,16 @@ const JiraStatusSyncConfig = (props: {
         cfNameLower.includes(jStatus.name.toLowerCase())
       );
       if (matchingJiraStatus) {
-        cfToJiraMap[cfStatus.statusId] = matchingJiraStatus.name;
+        statusMap[cfStatus.statusId] = matchingJiraStatus.name;
       }
     });
 
-    jiraStatusList.forEach(jiraStatus => {
-      const jiraNameLower = jiraStatus.name.toLowerCase();
-      const matchingCfStatus = cfStatuses.find(cfStatus =>
-        cfStatus.name.toLowerCase().includes(jiraNameLower) ||
-        jiraNameLower.includes(cfStatus.name.toLowerCase())
-      );
-      if (matchingCfStatus) {
-        jiraToCfMap[jiraStatus.name] = matchingCfStatus.statusId;
-      }
-    });
-
-    // Set the maps
+    // Set the map
     const statusSyncProp = props.editor.getProperty(['jira', 'statusSync']);
     if (!statusSyncProp.value) {
       statusSyncProp.set({});
     }
-    (props.editor.getProperty(['jira', 'statusSync', 'cfToJiraStatusMap']) as any).set(cfToJiraMap);
-    (props.editor.getProperty(['jira', 'statusSync', 'jiraToCfStatusMap']) as any).set(jiraToCfMap);
+    (props.editor.getProperty(['jira', 'statusSync', 'statusMap']) as any).set(statusMap);
   }, [cfStatuses, props.editor]);
 
   // Fetch Jira statuses when enabled
@@ -3893,9 +3880,9 @@ const JiraStatusSyncConfig = (props: {
         setJiraStatuses(result.statuses);
         setLoading(false);
 
-        // Auto-suggest mappings if maps are empty
+        // Auto-suggest mappings if map is empty
         const currentStatusSync = props.editor.getConfig().jira?.statusSync;
-        if (!currentStatusSync?.cfToJiraStatusMap || Object.keys(currentStatusSync.cfToJiraStatusMap).length === 0) {
+        if (!currentStatusSync?.statusMap || Object.keys(currentStatusSync.statusMap).length === 0) {
           autoSuggestMappings(result.statuses);
         }
       })
@@ -3915,16 +3902,15 @@ const JiraStatusSyncConfig = (props: {
     }
   };
 
-  const handleCfToJiraChange = (cfStatusId: string, jiraStatusName: string) => {
-    const currentMap = props.editor.getConfig().jira?.statusSync?.cfToJiraStatusMap || {};
-    const newMap = { ...currentMap, [cfStatusId]: jiraStatusName };
-    (props.editor.getProperty(['jira', 'statusSync', 'cfToJiraStatusMap']) as any).set(newMap);
-  };
-
-  const handleJiraToCfChange = (jiraStatusName: string, cfStatusId: string) => {
-    const currentMap = props.editor.getConfig().jira?.statusSync?.jiraToCfStatusMap || {};
-    const newMap = { ...currentMap, [jiraStatusName]: cfStatusId };
-    (props.editor.getProperty(['jira', 'statusSync', 'jiraToCfStatusMap']) as any).set(newMap);
+  const handleStatusMappingChange = (cfStatusId: string, jiraStatusName: string) => {
+    const currentMap = props.editor.getConfig().jira?.statusSync?.statusMap || {};
+    const newMap = { ...currentMap };
+    if (jiraStatusName) {
+      newMap[cfStatusId] = jiraStatusName;
+    } else {
+      delete newMap[cfStatusId];
+    }
+    (props.editor.getProperty(['jira', 'statusSync', 'statusMap']) as any).set(newMap);
   };
 
   const handleDefaultCfStatusChange = (cfStatusId: string) => {
@@ -3947,10 +3933,10 @@ const JiraStatusSyncConfig = (props: {
             color="primary"
           />
         }
-        label={<Typography><b>Status sync</b></Typography>}
+        label={<Typography>Status sync</Typography>}
       />
       <FormHelperText>
-        Map ClearFlask statuses to Jira transitions for bidirectional sync.
+        Map ClearFlask statuses to Jira statuses for bidirectional sync.
       </FormHelperText>
 
       <Collapse in={enabled}>
@@ -3959,9 +3945,9 @@ const JiraStatusSyncConfig = (props: {
 
         {!loading && !error && jiraStatuses && cfStatuses.length > 0 && (
           <div style={{ marginTop: 16 }}>
-            <Typography variant="subtitle2" gutterBottom>ClearFlask → Jira Status Mapping</Typography>
-            <Typography variant="caption" color="textSecondary" gutterBottom>
-              When a ClearFlask post status changes, transition the Jira issue to this status
+            <Typography variant="subtitle2" gutterBottom>Status Mapping</Typography>
+            <Typography variant="caption" color="textSecondary" gutterBottom display="block" style={{ marginBottom: 8 }}>
+              Map ClearFlask statuses to Jira statuses. Syncs bidirectionally.
             </Typography>
             {cfStatuses.map(cfStatus => (
               <div key={cfStatus.statusId} style={{ marginTop: 8, marginBottom: 8 }}>
@@ -3980,13 +3966,13 @@ const JiraStatusSyncConfig = (props: {
                     </Typography>
                   </Grid>
                   <Grid item xs={1}>
-                    <Typography align="center">→</Typography>
+                    <Typography align="center">↔</Typography>
                   </Grid>
                   <Grid item xs={7}>
                     <Select
                       fullWidth
-                      value={statusSync?.cfToJiraStatusMap?.[cfStatus.statusId] || ''}
-                      onChange={(e) => handleCfToJiraChange(cfStatus.statusId, e.target.value as string)}
+                      value={statusSync?.statusMap?.[cfStatus.statusId] || ''}
+                      onChange={(e) => handleStatusMappingChange(cfStatus.statusId, e.target.value as string)}
                       displayEmpty
                     >
                       <MenuItem value="">
@@ -4040,82 +4026,31 @@ const JiraStatusSyncConfig = (props: {
             </div>
 
             <div style={{ marginTop: 24, marginBottom: 16 }}>
-              <Typography variant="subtitle2" gutterBottom>Jira → ClearFlask Status Mapping</Typography>
+              <Typography variant="subtitle2" gutterBottom>Default Jira Status</Typography>
               <Typography variant="caption" color="textSecondary" gutterBottom>
-                When a Jira issue status changes, update the ClearFlask post to this status
+                Fallback status for unmapped ClearFlask statuses
               </Typography>
-              {jiraStatuses.map(jiraStatus => (
-                <div key={jiraStatus.id} style={{ marginTop: 8, marginBottom: 8 }}>
-                  <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={4}>
-                      <Typography>
-                        {jiraStatus.name}
-                        {jiraStatus.statusCategory && (
-                          <span style={{ marginLeft: 8, color: '#999', fontSize: '0.85em' }}>
-                            ({jiraStatus.statusCategory})
-                          </span>
-                        )}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={1}>
-                      <Typography align="center">→</Typography>
-                    </Grid>
-                    <Grid item xs={7}>
-                      <Select
-                        fullWidth
-                        value={statusSync?.jiraToCfStatusMap?.[jiraStatus.name] || ''}
-                        onChange={(e) => handleJiraToCfChange(jiraStatus.name, e.target.value as string)}
-                        displayEmpty
-                      >
-                        <MenuItem value="">
-                          <em>No mapping</em>
-                        </MenuItem>
-                        {cfStatuses.map(cfStatus => (
-                          <MenuItem key={cfStatus.statusId} value={cfStatus.statusId}>
-                            <span style={{
-                              display: 'inline-block',
-                              width: 12,
-                              height: 12,
-                              borderRadius: '50%',
-                              backgroundColor: cfStatus.color || '#ccc',
-                              marginRight: 8
-                            }} />
-                            {cfStatus.name}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </Grid>
-                  </Grid>
-                </div>
-              ))}
-
-              <div style={{ marginTop: 24, marginBottom: 16 }}>
-                <Typography variant="subtitle2" gutterBottom>Default Jira Status</Typography>
-                <Typography variant="caption" color="textSecondary" gutterBottom>
-                  Fallback status name for unmapped ClearFlask statuses
-                </Typography>
-                <Select
-                  fullWidth
-                  value={statusSync?.defaultJiraStatusName || ''}
-                  onChange={(e) => handleDefaultJiraStatusChange(e.target.value as string)}
-                  displayEmpty
-                  style={{ marginTop: 8 }}
-                >
-                  <MenuItem value="">
-                    <em>None</em>
+              <Select
+                fullWidth
+                value={statusSync?.defaultJiraStatusName || ''}
+                onChange={(e) => handleDefaultJiraStatusChange(e.target.value as string)}
+                displayEmpty
+                style={{ marginTop: 8 }}
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                {jiraStatuses.map(jiraStatus => (
+                  <MenuItem key={jiraStatus.id} value={jiraStatus.name}>
+                    {jiraStatus.name}
+                    {jiraStatus.statusCategory && (
+                      <span style={{ marginLeft: 8, color: '#999', fontSize: '0.85em' }}>
+                        ({jiraStatus.statusCategory})
+                      </span>
+                    )}
                   </MenuItem>
-                  {jiraStatuses.map(jiraStatus => (
-                    <MenuItem key={jiraStatus.id} value={jiraStatus.name}>
-                      {jiraStatus.name}
-                      {jiraStatus.statusCategory && (
-                        <span style={{ marginLeft: 8, color: '#999', fontSize: '0.85em' }}>
-                          ({jiraStatus.statusCategory})
-                        </span>
-                      )}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </div>
+                ))}
+              </Select>
             </div>
           </div>
         )}
