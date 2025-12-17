@@ -4364,12 +4364,6 @@ const SlackChannelLinksConfig = (props: {
   }, [props.slack, props.projectId]);
 
   const handleAddChannelLink = () => {
-    // Ensure channelLinks array exists before inserting
-    const channelLinksProp = props.editor.getProperty(['slack', 'channelLinks']);
-    if (!channelLinksProp.value) {
-      channelLinksProp.set([]);
-    }
-
     props.editor.getPageGroup(['slack', 'channelLinks'])
       .insert()
       .setRaw(Admin.SlackChannelLinkToJSON({
