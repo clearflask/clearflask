@@ -7,6 +7,7 @@ import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import java.util.Map;
 import java.util.stream.Collectors;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -618,9 +619,13 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
         // Sync status from Jira to ClearFlask
         if (!Strings.isNullOrEmpty(event.getStatus())) {
             if (jiraConfig.getStatusSync() != null
-                    && jiraConfig.getStatusSync().getJiraToCfStatusMap() != null) {
+                    && jiraConfig.getStatusSync().getStatusMap() != null) {
 
-                String mappedCfStatusId = jiraConfig.getStatusSync().getJiraToCfStatusMap().get(event.getStatus());
+                // Create reverse map (Jira status name → CF status ID)
+                Map<String, String> reversedMap = jiraConfig.getStatusSync().getStatusMap().entrySet().stream()
+                        .collect(ImmutableMap.toImmutableMap(Map.Entry::getValue, Map.Entry::getKey, (v1, v2) -> v1));
+
+                String mappedCfStatusId = reversedMap.get(event.getStatus());
 
                 // Fall back to default if no mapping found
                 if (mappedCfStatusId == null && jiraConfig.getStatusSync().getDefaultCfStatusId() != null) {
@@ -628,9 +633,9 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
                 }
 
                 if (mappedCfStatusId != null && !mappedCfStatusId.equals(idea.getStatusId())) {
-                    // Status updates are not supported via IdeaUpdate API
-                    // This would require using a different method (e.g., admin status update)
-                    log.warn("Jira status sync requested but status update not implemented. Would sync Jira status '{}' to ClearFlask status '{}' for idea {}",
+                    builder.statusId(mappedCfStatusId);
+                    changed = true;
+                    log.info("Synced Jira status '{}' to ClearFlask status '{}' for idea {}",
                             event.getStatus(), mappedCfStatusId, ideaId);
                 }
             }
@@ -952,8 +957,8 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
         // Check if status sync is enabled and has mappings configured
         boolean shouldSyncStatus = statusChanged
                 && jiraConfig.getStatusSync() != null
-                && jiraConfig.getStatusSync().getCfToJiraStatusMap() != null
-                && !jiraConfig.getStatusSync().getCfToJiraStatusMap().isEmpty();
+                && jiraConfig.getStatusSync().getStatusMap() != null
+                && !jiraConfig.getStatusSync().getStatusMap().isEmpty();
         boolean shouldSyncResponse = responseChanged && Boolean.TRUE.equals(jiraConfig.getResponseSync());
 
         if (!shouldSyncStatus && !shouldSyncResponse) {
@@ -985,7 +990,7 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
 
                 // Sync status from ClearFlask to Jira via transition
                 if (shouldSyncStatus && idea.getStatusId() != null) {
-                    String mappedJiraStatusName = jiraConfig.getStatusSync().getCfToJiraStatusMap().get(idea.getStatusId());
+                    String mappedJiraStatusName = jiraConfig.getStatusSync().getStatusMap().get(idea.getStatusId());
 
                     // Fall back to default if no mapping found
                     if (mappedJiraStatusName == null && jiraConfig.getStatusSync().getDefaultJiraStatusName() != null) {
