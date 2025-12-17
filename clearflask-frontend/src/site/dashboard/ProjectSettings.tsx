@@ -4312,6 +4312,188 @@ export const ProjectSettingsJira = (props: {
   );
 };
 
+const SlackChannelLinksConfig = (props: {
+  server: Server;
+  editor: ConfigEditor.Editor;
+  projectId: string;
+  slack: Admin.Slack | undefined;
+}) => {
+  const [channels, setChannels] = useState<Array<Admin.SlackChannel> | undefined>();
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | undefined>();
+
+  // Get ClearFlask categories
+  const categories = React.useMemo(() => {
+    return props.editor.getConfig().content.categories;
+  }, [props.editor]);
+
+  // Fetch Slack channels when component mounts
+  useEffect(() => {
+    if (!props.slack) return;
+
+    setLoading(true);
+    setError(undefined);
+
+    ServerAdmin.get().dispatchAdmin()
+      .then(d => d.slackGetChannelsAdmin({ projectId: props.projectId }))
+      .then(result => {
+        console.log('Fetched Slack channels:', result.channels);
+        setChannels(result.channels);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to fetch Slack channels:', err);
+        setError(err.message || 'Failed to fetch Slack channels');
+        setLoading(false);
+      });
+  }, [props.slack, props.projectId]);
+
+  const handleAddChannelLink = () => {
+    const channelLinks = props.editor.getProperty(['slack', 'channelLinks']);
+    const currentLinks = channelLinks.value || [];
+
+    // Add new empty channel link
+    channelLinks.set([...currentLinks, {
+      channelId: '',
+      channelName: '',
+      categoryId: categories.length > 0 ? categories[0].categoryId : '',
+      syncSlackToPosts: false,
+      syncPostsToSlack: true,
+      syncCommentsToReplies: true,
+      syncRepliesToComments: true,
+      syncStatusUpdates: true,
+      syncResponseUpdates: true
+    }]);
+  };
+
+  const handleRemoveChannelLink = (index: number) => {
+    const channelLinks = props.editor.getProperty(['slack', 'channelLinks']);
+    const currentLinks = channelLinks.value || [];
+    channelLinks.set(currentLinks.filter((_, i) => i !== index));
+  };
+
+  const handleChannelChange = (index: number, channelId: string) => {
+    const channel = channels?.find(c => c.channelId === channelId);
+    const linkProp = props.editor.getProperty(['slack', 'channelLinks', index.toString()]);
+
+    (linkProp as any).getProperty('channelId').set(channelId);
+    (linkProp as any).getProperty('channelName').set(channel?.channelName || '');
+  };
+
+  const channelLinks = props.editor.getConfig().slack?.channelLinks || [];
+
+  if (!props.slack) return null;
+
+  return (
+    <div style={{ marginTop: 16, marginBottom: 16 }}>
+      <Typography variant="subtitle1" gutterBottom>Channel Links</Typography>
+      <Typography variant="caption" color="textSecondary" gutterBottom display="block" style={{ marginBottom: 16 }}>
+        Link Slack channels to ClearFlask categories for two-way synchronization.
+      </Typography>
+
+      {loading && <Loading />}
+      {error && <Message message={error} severity="error" />}
+
+      {!loading && !error && channels && (
+        <>
+          {channelLinks.map((link, index) => (
+            <div key={index} style={{ marginTop: 16, marginBottom: 16, padding: 16, border: '1px solid #e0e0e0', borderRadius: 4 }}>
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={5}>
+                  <Typography variant="caption" color="textSecondary" gutterBottom display="block">
+                    Slack Channel
+                  </Typography>
+                  <Select
+                    fullWidth
+                    value={link.channelId || ''}
+                    onChange={(e) => handleChannelChange(index, e.target.value as string)}
+                    displayEmpty
+                  >
+                    <MenuItem value="">
+                      <em>Select a channel...</em>
+                    </MenuItem>
+                    {channels.map(channel => (
+                      <MenuItem key={channel.channelId} value={channel.channelId}>
+                        # {channel.channelName}
+                        {channel.isPrivate && ' 🔒'}
+                        {!channel.isMember && ' (not a member)'}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </Grid>
+                <Grid item xs={5}>
+                  <Typography variant="caption" color="textSecondary" gutterBottom display="block">
+                    ClearFlask Category
+                  </Typography>
+                  <Select
+                    fullWidth
+                    value={link.categoryId || ''}
+                    onChange={(e) => {
+                      const linkProp = props.editor.getProperty(['slack', 'channelLinks', index.toString()]);
+                      (linkProp as any).getProperty('categoryId').set(e.target.value as string);
+                    }}
+                    displayEmpty
+                  >
+                    <MenuItem value="">
+                      <em>Select a category...</em>
+                    </MenuItem>
+                    {categories.map(category => (
+                      <MenuItem key={category.categoryId} value={category.categoryId}>
+                        <span style={{
+                          display: 'inline-block',
+                          width: 12,
+                          height: 12,
+                          borderRadius: '50%',
+                          backgroundColor: category.color || '#ccc',
+                          marginRight: 8
+                        }} />
+                        {category.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </Grid>
+                <Grid item xs={2}>
+                  <Button
+                    color="secondary"
+                    onClick={() => handleRemoveChannelLink(index)}
+                    style={{ marginTop: 16 }}
+                  >
+                    Remove
+                  </Button>
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={link.syncSlackToPosts === true}
+                        onChange={(e) => {
+                          const linkProp = props.editor.getProperty(['slack', 'channelLinks', index.toString()]);
+                          (linkProp as any).getProperty('syncSlackToPosts').set(e.target.checked);
+                        }}
+                        color="primary"
+                      />
+                    }
+                    label={<Typography variant="body2">Slack → Posts (Create ClearFlask posts from Slack messages)</Typography>}
+                  />
+                </Grid>
+              </Grid>
+            </div>
+          ))}
+
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={handleAddChannelLink}
+            style={{ marginTop: 16 }}
+          >
+            + Add Channel Link
+          </Button>
+        </>
+      )}
+    </div>
+  );
+};
+
 export const ProjectSettingsSlack = (props: {
   project: AdminProject;
   server: Server;
@@ -4405,8 +4587,12 @@ export const ProjectSettingsSlack = (props: {
             )}
             content={!!slack && (
               <>
-                <PropertyByPath server={props.server} editor={props.editor}
-                                path={['slack', 'channelLinks']} />
+                <SlackChannelLinksConfig
+                  server={props.server}
+                  editor={props.editor}
+                  projectId={props.project.getProjectId()}
+                  slack={slack}
+                />
                 <p>
                   <Button
                     style={{ color: theme.palette.error.dark }}

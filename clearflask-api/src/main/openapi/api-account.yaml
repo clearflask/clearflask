@@ -549,7 +549,7 @@ components:
         channels:
           type: array
           items:
-            $ref: 'api-account.yaml#/components/schemas/SlackChannel'
+            $ref: '#/components/schemas/SlackChannel'
     SlackChannel:
       type: object
       required:
@@ -566,6 +566,15 @@ components:
           type: boolean
         isMember:
           type: boolean
+    SlackChannelsResponse:
+      type: object
+      required:
+        - channels
+      properties:
+        channels:
+          type: array
+          items:
+            $ref: '#/components/schemas/SlackChannel'
 
 /support/message:
   post:
@@ -1223,6 +1232,22 @@ components:
           application/json:
             schema:
               $ref: 'api-account.yaml#/components/schemas/SlackWorkspaceInfo'
+/admin/project/{projectId}/slack/channels:
+  get:
+    operationId: slackGetChannelsAdmin
+    tags: [ ProjectAdmin ]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SlackChannelsResponse'
 /admin/account/delete:
   delete:
     operationId: accountDeleteAdmin

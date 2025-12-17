@@ -151,6 +151,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     private DateUtil dateUtil;
     @Inject
     private ElasticUtil elasticUtil;
+    @Inject
+    private SlackStore slackStore;
 
     @PermitAll
     @Limit(requiredPermits = 10)
@@ -902,6 +904,29 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         userStore.repopulateIndex(projectId, deleteExistingIndices, repopulateElasticSearch, repopulateMysql);
         ideaStore.repopulateIndex(projectId, deleteExistingIndices, repopulateElasticSearch, repopulateMysql);
         commentStore.repopulateIndex(projectId, deleteExistingIndices, repopulateElasticSearch, repopulateMysql);
+    }
+
+    @RolesAllowed({Role.PROJECT_ADMIN})
+    @Limit(requiredPermits = 5, challengeAfter = 10)
+    @Override
+    public SlackChannelsResponse slackGetChannelsAdmin(String projectId) {
+        Optional<Project> projectOpt = projectStore.getProject(projectId, false);
+        if (!projectOpt.isPresent()) {
+            throw new ApiException(Response.Status.NOT_FOUND, "Project not found");
+        }
+
+        List<SlackStore.SlackChannel> channels = slackStore.getAvailableChannels(projectId);
+
+        return SlackChannelsResponse.builder()
+                .channels(channels.stream()
+                        .map(ch -> SlackChannel.builder()
+                                .channelId(ch.getChannelId())
+                                .channelName(ch.getChannelName())
+                                .isPrivate(ch.isPrivate())
+                                .isMember(ch.isMember())
+                                .build())
+                        .collect(Collectors.toList()))
+                .build();
     }
 
     public static Module module() {
