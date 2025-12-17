@@ -9,7 +9,12 @@ ENV CATALINA_OPTS="-Dcom.sun.management.jmxremote \
  -Dlog4j2.formatMsgNoLookups=true \
  -Dcom.sun.management.jmxremote.port=9950 \
  -Dcom.sun.management.jmxremote.rmi.port=9951 \
- -Djava.rmi.server.hostname=0.0.0.0"
+ -Djava.rmi.server.hostname=0.0.0.0 \
+ --add-opens java.base/java.lang=ALL-UNNAMED \
+ --add-opens java.base/java.util=ALL-UNNAMED \
+ --add-opens java.base/java.lang.reflect=ALL-UNNAMED \
+ --add-opens java.base/sun.reflect.generics.reflectiveObjects=ALL-UNNAMED \
+ --add-opens java.base/java.security.cert=ALL-UNNAMED"
 RUN apt-get update && \
     apt-get install -y procps iputils-ping telnet less curl vim mc
 HEALTHCHECK --start-period=30s --interval=5s --timeout=1m --retries=3 \

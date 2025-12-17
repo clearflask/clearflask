@@ -213,10 +213,20 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
             log.info("Attempting to fetch GitLab projects for account {} from instance {}", accountId, instanceUrl);
             try {
                 for (org.gitlab4j.api.models.Project project : gitLabApi.getProjectApi().getMemberProjects()) {
+                    if (project == null || project.getId() == null) {
+                        log.warn("Skipping null project or project with null ID for account {}", accountId);
+                        continue;
+                    }
+                    String projectPath = project.getPathWithNamespace();
+                    String projectName = project.getName();
+                    if (projectPath == null || projectName == null) {
+                        log.warn("Skipping GitLab project {} with null path or name for account {}", project.getId(), accountId);
+                        continue;
+                    }
                     projectsBuilder.add(new GitLabAvailableProject(
                             project.getId(),
-                            project.getPathWithNamespace(),
-                            project.getName()));
+                            projectPath,
+                            projectName));
                     projectIdsBuilder.put(project.getId(), instanceUrl);
                 }
 
