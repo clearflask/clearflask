@@ -919,7 +919,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
         return SlackChannelsResponse.builder()
                 .channels(channels.stream()
-                        .map(ch -> SlackChannel.builder()
+                        .map(ch -> com.smotana.clearflask.api.model.SlackChannel.builder()
                                 .channelId(ch.getChannelId())
                                 .channelName(ch.getChannelName())
                                 .isPrivate(ch.isPrivate())

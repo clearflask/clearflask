@@ -250,18 +250,21 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
                 log.info("Successfully fetched {} GitLab projects for account {}", projectsBuilder.build().size(), accountId);
                 return new GitLabAvailableProjects(projectsBuilder.build());
             } catch (GitLabApiException ex) {
-                log.error("GitLab API error when fetching projects: HTTP {} - {}", ex.getHttpStatus(), ex.getMessage(), ex);
+                int httpStatus = ex.getHttpStatus();
+                log.error("GitLab API error when fetching projects: HTTP {} - {}", httpStatus, ex.getMessage(), ex);
                 String errorMessage = "Failed to fetch GitLab projects";
-                Response.Status status = Response.Status.BAD_REQUEST;
+                Response.Status status;
 
-                if (ex.getHttpStatus() == 401) {
+                if (httpStatus == 401) {
                     errorMessage = "GitLab authorization failed. Please revoke access in GitLab settings and reconnect.";
                     status = Response.Status.UNAUTHORIZED;
-                } else if (ex.getHttpStatus() == 403) {
+                } else if (httpStatus == 403) {
                     errorMessage = "Insufficient GitLab permissions. Ensure the OAuth app has 'api' and 'read_user' scopes.";
                     status = Response.Status.FORBIDDEN;
+                } else {
+                    status = Response.Status.BAD_REQUEST;
                 }
-                throw new ApiException(status, errorMessage + " (HTTP " + ex.getHttpStatus() + ")", ex);
+                throw new ApiException(status, errorMessage + " (HTTP " + httpStatus + ")", ex);
             } catch (Exception ex) {
                 log.error("Unexpected error when fetching GitLab projects for account {}", accountId, ex);
                 throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Unexpected error: " + ex.getMessage(), ex);
