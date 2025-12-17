@@ -3877,13 +3877,21 @@ const JiraStatusSyncConfig = (props: {
         projectKey: props.jira!.projectKey
       }))
       .then(result => {
-        setJiraStatuses(result.statuses);
+        console.log('Fetched Jira statuses:', result.statuses);
+
+        // Deduplicate statuses by ID
+        const uniqueStatuses = result.statuses.filter((status, index, self) =>
+          index === self.findIndex((s) => s.id === status.id)
+        );
+
+        console.log('Unique Jira statuses:', uniqueStatuses);
+        setJiraStatuses(uniqueStatuses);
         setLoading(false);
 
         // Auto-suggest mappings if map is empty
         const currentStatusSync = props.editor.getConfig().jira?.statusSync;
         if (!currentStatusSync?.statusMap || Object.keys(currentStatusSync.statusMap).length === 0) {
-          autoSuggestMappings(result.statuses);
+          autoSuggestMappings(uniqueStatuses);
         }
       })
       .catch(err => {
@@ -3903,6 +3911,14 @@ const JiraStatusSyncConfig = (props: {
   };
 
   const handleStatusMappingChange = (cfStatusId: string, jiraStatusName: string) => {
+    console.log('handleStatusMappingChange called:', cfStatusId, jiraStatusName);
+
+    // Ensure statusSync object exists
+    const statusSyncProp = props.editor.getProperty(['jira', 'statusSync']);
+    if (!statusSyncProp.value) {
+      statusSyncProp.set({});
+    }
+
     const currentMap = props.editor.getConfig().jira?.statusSync?.statusMap || {};
     const newMap = { ...currentMap };
     if (jiraStatusName) {
@@ -3910,15 +3926,31 @@ const JiraStatusSyncConfig = (props: {
     } else {
       delete newMap[cfStatusId];
     }
-    (props.editor.getProperty(['jira', 'statusSync', 'statusMap']) as any).set(newMap);
+
+    try {
+      (props.editor.getProperty(['jira', 'statusSync', 'statusMap']) as any).set(newMap);
+      console.log('Status map updated:', newMap);
+    } catch (err) {
+      console.error('Failed to update status map:', err);
+    }
   };
 
   const handleDefaultCfStatusChange = (cfStatusId: string) => {
-    (props.editor.getProperty(['jira', 'statusSync', 'defaultCfStatusId']) as any).set(cfStatusId || undefined);
+    console.log('handleDefaultCfStatusChange called:', cfStatusId);
+    try {
+      (props.editor.getProperty(['jira', 'statusSync', 'defaultCfStatusId']) as any).set(cfStatusId || undefined);
+    } catch (err) {
+      console.error('Failed to update default CF status:', err);
+    }
   };
 
   const handleDefaultJiraStatusChange = (jiraStatusName: string) => {
-    (props.editor.getProperty(['jira', 'statusSync', 'defaultJiraStatusName']) as any).set(jiraStatusName || undefined);
+    console.log('handleDefaultJiraStatusChange called:', jiraStatusName);
+    try {
+      (props.editor.getProperty(['jira', 'statusSync', 'defaultJiraStatusName']) as any).set(jiraStatusName || undefined);
+    } catch (err) {
+      console.error('Failed to update default Jira status:', err);
+    }
   };
 
   const statusSync = props.editor.getConfig().jira?.statusSync;

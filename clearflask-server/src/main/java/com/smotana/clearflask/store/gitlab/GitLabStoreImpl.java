@@ -252,12 +252,16 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
             } catch (GitLabApiException ex) {
                 log.error("GitLab API error when fetching projects: HTTP {} - {}", ex.getHttpStatus(), ex.getMessage(), ex);
                 String errorMessage = "Failed to fetch GitLab projects";
+                Response.Status status = Response.Status.BAD_REQUEST;
+
                 if (ex.getHttpStatus() == 401) {
                     errorMessage = "GitLab authorization failed. Please revoke access in GitLab settings and reconnect.";
+                    status = Response.Status.UNAUTHORIZED;
                 } else if (ex.getHttpStatus() == 403) {
                     errorMessage = "Insufficient GitLab permissions. Ensure the OAuth app has 'api' and 'read_user' scopes.";
+                    status = Response.Status.FORBIDDEN;
                 }
-                throw new ApiException(Response.Status.BAD_REQUEST, errorMessage + " (HTTP " + ex.getHttpStatus() + ")", ex);
+                throw new ApiException(status, errorMessage + " (HTTP " + ex.getHttpStatus() + ")", ex);
             } catch (Exception ex) {
                 log.error("Unexpected error when fetching GitLab projects for account {}", accountId, ex);
                 throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Unexpected error: " + ex.getMessage(), ex);
