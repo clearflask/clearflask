@@ -213,12 +213,12 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
             log.info("Attempting to fetch GitLab projects for account {} from instance {}", accountId, instanceUrl);
             try {
                 for (org.gitlab4j.api.models.Project project : gitLabApi.getProjectApi().getMemberProjects()) {
-                projectsBuilder.add(new GitLabAvailableProject(
-                        project.getId(),
-                        project.getPathWithNamespace(),
-                        project.getName()));
-                projectIdsBuilder.put(project.getId(), instanceUrl);
-            }
+                    projectsBuilder.add(new GitLabAvailableProject(
+                            project.getId(),
+                            project.getPathWithNamespace(),
+                            project.getName()));
+                    projectIdsBuilder.put(project.getId(), instanceUrl);
+                }
 
                 // Store authorization for the fetched projects
                 authorizeAccountForProjects(accountId, instanceUrl, projectIdsBuilder.build(),
@@ -237,10 +237,16 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
                     errorMessage = "Insufficient GitLab permissions. Ensure the OAuth app has 'api' and 'read_user' scopes.";
                 }
                 throw new ApiException(Response.Status.BAD_REQUEST, errorMessage + " (HTTP " + ex.getHttpStatus() + ")", ex);
+            } catch (Exception ex) {
+                log.error("Unexpected error when fetching GitLab projects for account {}", accountId, ex);
+                throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Unexpected error: " + ex.getMessage(), ex);
             }
         } catch (IOException ex) {
             log.error("IO error when communicating with GitLab", ex);
             throw new ApiException(Response.Status.BAD_REQUEST, "Failed to communicate with GitLab: " + ex.getMessage(), ex);
+        } catch (Exception ex) {
+            log.error("Unexpected error in GitLab integration for account {}", accountId, ex);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Unexpected error: " + ex.getMessage(), ex);
         }
     }
 
