@@ -1115,7 +1115,7 @@ components:
                   items:
                     type: string
                 issueTypeId:
-                  x-clearflask-prop: { order: 45, name: 'Issue Type ID', description: 'Jira issue type to create when syncing from ClearFlask (Bug, Story, Task).' }
+                  x-clearflask-prop: { order: 45, name: 'Issue Type ID', description: 'Jira issue type to create when syncing from ClearFlask (Bug, Story, Task). Leave blank to use project default.' }
                   type: string
                 autoCreateIssue:
                   x-clearflask-prop: { order: 47, name: 'Auto-create Jira issues', defaultValue: true, description: 'Automatically create a Jira issue when a ClearFlask post is created in the linked category.' }
