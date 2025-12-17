@@ -4021,7 +4021,11 @@ const JiraStatusSyncConfig = (props: {
                   <Grid item xs={7}>
                     <Select
                       fullWidth
-                      value={statusSync?.statusMap?.[cfStatus.statusId] || ''}
+                      value={(() => {
+                        const val = statusSync?.statusMap?.[cfStatus.statusId] || '';
+                        console.log('Select value for', cfStatus.statusId, ':', val, 'statusMap:', statusSync?.statusMap);
+                        return val;
+                      })()}
                       onChange={(e) => handleStatusMappingChange(cfStatus.statusId, e.target.value as string)}
                       displayEmpty
                     >
