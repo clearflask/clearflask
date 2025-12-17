@@ -4406,10 +4406,10 @@ const SlackChannelLinksConfig = (props: {
 
   const handleChannelChange = (index: number, channelId: string) => {
     const channel = channels?.find(c => c.channelId === channelId);
-    const linkProp = props.editor.getProperty(['slack', 'channelLinks', index.toString()]);
 
-    (linkProp as any).getProperty('channelId').set(channelId);
-    (linkProp as any).getProperty('channelName').set(channel?.channelName || '');
+    // For PageGroup items, use getPage() instead of getProperty()
+    (props.editor.getPage(['slack', 'channelLinks', index]) as any).getProperty('channelId').set(channelId);
+    (props.editor.getPage(['slack', 'channelLinks', index]) as any).getProperty('channelName').set(channel?.channelName || '');
   };
 
   if (!props.slack) return null;
