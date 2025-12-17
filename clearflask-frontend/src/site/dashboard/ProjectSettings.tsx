@@ -4414,9 +4414,9 @@ const SlackChannelLinksConfig = (props: {
   const handleChannelChange = (index: number, channelId: string) => {
     const channel = channels?.find(c => c.channelId === channelId);
 
-    // For PageGroup items, use getProperty() with the full path including index
-    (props.editor.getProperty(['slack', 'channelLinks', index, 'channelId']) as ConfigEditor.StringProperty).set(channelId);
-    (props.editor.getProperty(['slack', 'channelLinks', index, 'channelName']) as ConfigEditor.StringProperty).set(channel?.channelName || '');
+    // For PageGroup items, use getProperty() with the full path including index as string
+    (props.editor.getProperty(['slack', 'channelLinks', index.toString(), 'channelId']) as ConfigEditor.StringProperty).set(channelId);
+    (props.editor.getProperty(['slack', 'channelLinks', index.toString(), 'channelName']) as ConfigEditor.StringProperty).set(channel?.channelName || '');
   };
 
   if (!props.slack) return null;
