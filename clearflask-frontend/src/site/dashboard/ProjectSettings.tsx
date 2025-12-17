@@ -3808,43 +3808,18 @@ const JiraStatusSyncConfig = (props: {
   const [error, setError] = useState<string | undefined>();
 
   // Get ClearFlask statuses from the linked category
-  const cfStatuses: Array<{ statusId: string; name: string; color?: string }> = [];
-  if (props.jira?.createWithCategoryId) {
-    const category = props.editor.getConfig().content.categories.find(c => c.categoryId === props.jira!.createWithCategoryId);
-    if (category?.workflow?.statuses) {
-      cfStatuses.push(...category.workflow.statuses);
+  const cfStatuses = React.useMemo(() => {
+    const statuses: Array<{ statusId: string; name: string; color?: string }> = [];
+    if (props.jira?.createWithCategoryId) {
+      const category = props.editor.getConfig().content.categories.find(c => c.categoryId === props.jira!.createWithCategoryId);
+      if (category?.workflow?.statuses) {
+        statuses.push(...category.workflow.statuses);
+      }
     }
-  }
+    return statuses;
+  }, [props.jira, props.editor]);
 
-  // Fetch Jira statuses when enabled
-  useEffect(() => {
-    if (!enabled || !props.jira?.cloudId || !props.jira?.projectKey || jiraStatuses) return;
-
-    setLoading(true);
-    setError(undefined);
-
-    ServerAdmin.get().dispatchAdmin()
-      .then(d => d.jiraGetStatusesAdmin({
-        cloudId: props.jira!.cloudId,
-        projectKey: props.jira!.projectKey
-      }))
-      .then(result => {
-        setJiraStatuses(result.statuses);
-        setLoading(false);
-
-        // Auto-suggest mappings if maps are empty
-        const currentStatusSync = props.editor.getConfig().jira?.statusSync;
-        if (!currentStatusSync?.cfToJiraStatusMap || Object.keys(currentStatusSync.cfToJiraStatusMap).length === 0) {
-          autoSuggestMappings(result.statuses);
-        }
-      })
-      .catch(err => {
-        setError(err.message || 'Failed to fetch Jira statuses');
-        setLoading(false);
-      });
-  }, [enabled, props.jira, jiraStatuses]);
-
-  const autoSuggestMappings = (jiraStatusList: Array<{ id: string; name: string }>) => {
+  const autoSuggestMappings = React.useCallback((jiraStatusList: Array<{ id: string; name: string }>) => {
     if (!cfStatuses.length || !jiraStatusList.length) return;
 
     const cfToJiraMap: { [key: string]: string } = {};
@@ -3880,7 +3855,35 @@ const JiraStatusSyncConfig = (props: {
     }
     (props.editor.getProperty(['jira', 'statusSync', 'cfToJiraStatusMap']) as any).set(cfToJiraMap);
     (props.editor.getProperty(['jira', 'statusSync', 'jiraToCfStatusMap']) as any).set(jiraToCfMap);
-  };
+  }, [cfStatuses, props.editor]);
+
+  // Fetch Jira statuses when enabled
+  useEffect(() => {
+    if (!enabled || !props.jira?.cloudId || !props.jira?.projectKey || jiraStatuses) return;
+
+    setLoading(true);
+    setError(undefined);
+
+    ServerAdmin.get().dispatchAdmin()
+      .then(d => d.jiraGetStatusesAdmin({
+        cloudId: props.jira!.cloudId,
+        projectKey: props.jira!.projectKey
+      }))
+      .then(result => {
+        setJiraStatuses(result.statuses);
+        setLoading(false);
+
+        // Auto-suggest mappings if maps are empty
+        const currentStatusSync = props.editor.getConfig().jira?.statusSync;
+        if (!currentStatusSync?.cfToJiraStatusMap || Object.keys(currentStatusSync.cfToJiraStatusMap).length === 0) {
+          autoSuggestMappings(result.statuses);
+        }
+      })
+      .catch(err => {
+        setError(err.message || 'Failed to fetch Jira statuses');
+        setLoading(false);
+      });
+  }, [enabled, props.jira, jiraStatuses, props.editor, autoSuggestMappings]);
 
   const handleToggle = (newEnabled: boolean) => {
     setEnabled(newEnabled);
