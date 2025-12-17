@@ -1657,7 +1657,7 @@ const OauthPrefilled: {
   Gitlab: {
     authorizeUrl: 'https://gitlab.com/oauth/authorize',
     tokenUrl: 'https://gitlab.com/oauth/token',
-    scope: 'read_user',
+    scope: 'api read_user',
     userProfileUrl: 'https://gitlab.com/api/v4/user',
     guidJsonPath: 'id',
     nameJsonPath: 'name',
