@@ -4364,9 +4364,9 @@ const SlackChannelLinksConfig = (props: {
   }, [props.slack, props.projectId]);
 
   const handleAddChannelLink = () => {
-    props.editor.getPageGroup(['slack', 'channelLinks'])
-      .insert()
-      .setRaw(Admin.SlackChannelLinkToJSON({
+    console.log('handleAddChannelLink called');
+    try {
+      const newLink = Admin.SlackChannelLinkToJSON({
         channelId: '',
         channelName: '',
         categoryId: categories.length > 0 ? categories[0].categoryId : '',
@@ -4376,7 +4376,20 @@ const SlackChannelLinksConfig = (props: {
         syncRepliesToComments: true,
         syncStatusUpdates: true,
         syncResponseUpdates: true
-      }));
+      });
+      console.log('Created new link object:', newLink);
+
+      const pageGroup = props.editor.getPageGroup(['slack', 'channelLinks']);
+      console.log('Got page group:', pageGroup);
+
+      const inserted = pageGroup.insert();
+      console.log('Called insert:', inserted);
+
+      inserted.setRaw(newLink);
+      console.log('Channel link added successfully');
+    } catch (err) {
+      console.error('Error adding channel link:', err);
+    }
   };
 
   const handleRemoveChannelLink = (index: number) => {
