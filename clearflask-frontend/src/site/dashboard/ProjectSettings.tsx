@@ -3930,6 +3930,8 @@ const JiraStatusSyncConfig = (props: {
     try {
       (props.editor.getProperty(['jira', 'statusSync', 'statusMap']) as any).set(newMap);
       console.log('Status map updated:', newMap);
+      // Force update
+      setStatusSync(props.editor.getConfig().jira?.statusSync);
     } catch (err) {
       console.error('Failed to update status map:', err);
     }
@@ -3939,6 +3941,8 @@ const JiraStatusSyncConfig = (props: {
     console.log('handleDefaultCfStatusChange called:', cfStatusId);
     try {
       (props.editor.getProperty(['jira', 'statusSync', 'defaultCfStatusId']) as any).set(cfStatusId || undefined);
+      // Force update
+      setStatusSync(props.editor.getConfig().jira?.statusSync);
     } catch (err) {
       console.error('Failed to update default CF status:', err);
     }
@@ -3948,6 +3952,8 @@ const JiraStatusSyncConfig = (props: {
     console.log('handleDefaultJiraStatusChange called:', jiraStatusName);
     try {
       (props.editor.getProperty(['jira', 'statusSync', 'defaultJiraStatusName']) as any).set(jiraStatusName || undefined);
+      // Force update
+      setStatusSync(props.editor.getConfig().jira?.statusSync);
     } catch (err) {
       console.error('Failed to update default Jira status:', err);
     }
@@ -4615,7 +4621,7 @@ export const ProjectSettingsSlack = (props: {
                 <SlackChannelLinksConfig
                   server={props.server}
                   editor={props.editor}
-                  projectId={props.project.getProjectId()}
+                  projectId={props.project.projectId}
                   slack={slack}
                 />
                 <p>
