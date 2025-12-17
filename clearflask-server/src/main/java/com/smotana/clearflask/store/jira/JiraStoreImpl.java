@@ -468,7 +468,11 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
 
     @Override
     public Optional<IdeaAndIndexingFuture> jiraIssueEvent(Project project, JiraIssueEvent event) {
+        log.info("jiraIssueEvent received: {} for issue {} in project {}",
+            event.getWebhookEvent(), event.getIssueKey(), project.getProjectId());
+
         if (!config.enabled()) {
+            log.debug("Jira integration not enabled in config");
             return Optional.empty();
         }
 
@@ -479,6 +483,7 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
         }
 
         String ideaId = genDeterministicIdeaIdForJiraIssue(event.getIssueKey(), jiraConfig.getCloudId());
+        log.info("Processing Jira event {} for issue {} → CF idea {}", event.getWebhookEvent(), event.getIssueKey(), ideaId);
 
         switch (event.getWebhookEvent()) {
             case "jira:issue_created":
@@ -783,24 +788,38 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
 
     @Override
     public ListenableFuture<Optional<JiraIssue>> cfPostCreatedAsync(Project project, IdeaModel idea, UserModel user) {
+        log.info("cfPostCreatedAsync called for idea {} in project {}", idea.getIdeaId(), project.getProjectId());
+
         if (!config.enabled()) {
+            log.debug("Jira integration not enabled in config");
             return Futures.immediateFuture(Optional.empty());
         }
 
         var jiraConfig = project.getVersionedConfigAdmin().getConfig().getJira();
-        if (jiraConfig == null || !Boolean.TRUE.equals(jiraConfig.getAutoCreateIssue())) {
+        if (jiraConfig == null) {
+            log.debug("No Jira config found for project {}", project.getProjectId());
+            return Futures.immediateFuture(Optional.empty());
+        }
+
+        if (!Boolean.TRUE.equals(jiraConfig.getAutoCreateIssue())) {
+            log.info("Auto-create Jira issues is disabled for project {}. Enable it in settings to sync CF→Jira.", project.getProjectId());
             return Futures.immediateFuture(Optional.empty());
         }
 
         // Don't sync ideas that came from Jira (avoid loop)
         if (idea.getIdeaId().startsWith("jira-")) {
+            log.debug("Skipping Jira sync for idea {} - it originated from Jira", idea.getIdeaId());
             return Futures.immediateFuture(Optional.empty());
         }
 
         // Only sync ideas in configured category
         if (!idea.getCategoryId().equals(jiraConfig.getCreateWithCategoryId())) {
+            log.debug("Idea {} category {} doesn't match configured category {}",
+                idea.getIdeaId(), idea.getCategoryId(), jiraConfig.getCreateWithCategoryId());
             return Futures.immediateFuture(Optional.empty());
         }
+
+        log.info("Syncing ClearFlask idea {} to Jira for project {}", idea.getIdeaId(), project.getProjectId());
 
         return executor.submit(() -> {
             try {
