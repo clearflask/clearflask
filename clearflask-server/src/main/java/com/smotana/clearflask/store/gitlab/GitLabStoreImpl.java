@@ -188,14 +188,17 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
 
             DynamoElasticUserStore.OAuthAuthorizationResponse oAuthResponse;
             try (CloseableHttpResponse res = client.execute(reqAuthorize)) {
+                String responseBody = "";
+                try {
+                    responseBody = res.getEntity() != null
+                            ? new String(res.getEntity().getContent().readAllBytes(), StandardCharsets.UTF_8)
+                            : "";
+                } catch (Exception e) {
+                    log.warn("Failed to read response body", e);
+                }
+
                 if (res.getStatusLine().getStatusCode() < 200
                         || res.getStatusLine().getStatusCode() > 299) {
-                    String responseBody = "";
-                    try {
-                        responseBody = new String(res.getEntity().getContent().readAllBytes(), StandardCharsets.UTF_8);
-                    } catch (Exception e) {
-                        log.warn("Failed to read error response body", e);
-                    }
                     log.warn("GitLab OAuth token exchange failed: HTTP {} - Response: {}",
                             res.getStatusLine().getStatusCode(), responseBody);
 
@@ -205,13 +208,19 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
                     }
                     throw new ApiException(Response.Status.FORBIDDEN, "Failed to authorize with GitLab");
                 }
+
+                log.info("GitLab OAuth token exchange successful for account {}: HTTP {} - Response length: {}",
+                        accountId, res.getStatusLine().getStatusCode(), responseBody.length());
+
                 try {
-                    oAuthResponse = gson.fromJson(
-                            new InputStreamReader(res.getEntity().getContent(), StandardCharsets.UTF_8),
-                            DynamoElasticUserStore.OAuthAuthorizationResponse.class);
+                    oAuthResponse = gson.fromJson(responseBody, DynamoElasticUserStore.OAuthAuthorizationResponse.class);
+                    log.info("Parsed OAuth response - has access_token: {}, has refresh_token: {}, expires_in: {}",
+                            !Strings.isNullOrEmpty(oAuthResponse.getAccessToken()),
+                            !Strings.isNullOrEmpty(oAuthResponse.getRefreshToken()),
+                            oAuthResponse.getExpiresIn());
                 } catch (JsonSyntaxException | JsonIOException ex) {
-                    log.warn("GitLab provider authorization response cannot parse, url {} response status {}",
-                            reqAuthorize.getURI(), res.getStatusLine().getStatusCode(), ex);
+                    log.warn("GitLab provider authorization response cannot parse, url {} response status {} body {}",
+                            reqAuthorize.getURI(), res.getStatusLine().getStatusCode(), responseBody, ex);
                     throw new ApiException(Response.Status.SERVICE_UNAVAILABLE, "Failed to parse GitLab response", ex);
                 }
             }
@@ -221,7 +230,8 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
             ImmutableMap.Builder<Long, String> projectIdsBuilder = ImmutableMap.builder();
 
             // Get projects the user has access to (maintainer or higher for webhook creation)
-            log.info("Attempting to fetch GitLab projects for account {} from instance {}", accountId, instanceUrl);
+            log.info("Attempting to fetch GitLab projects for account {} from instance {} with token starting with {}",
+                    accountId, instanceUrl, oAuthResponse.getAccessToken().substring(0, Math.min(10, oAuthResponse.getAccessToken().length())));
             try {
                 for (org.gitlab4j.api.models.Project project : gitLabApi.getProjectApi().getMemberProjects()) {
                     if (project == null || project.getId() == null) {
