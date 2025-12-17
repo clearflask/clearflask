@@ -1412,6 +1412,7 @@ components:
         email:
           type: string
     SlackChannelLink:
+      x-clearflask-page: { name: 'Channel Link', nameFromProp: 'channelName' }
       type: object
       required:
         - channelId
