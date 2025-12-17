@@ -265,6 +265,9 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
                     status = Response.Status.BAD_REQUEST;
                 }
                 throw new ApiException(status, errorMessage + " (HTTP " + httpStatus + ")", ex);
+            } catch (ApiException ex) {
+                // Re-throw ApiException without wrapping
+                throw ex;
             } catch (Exception ex) {
                 log.error("Unexpected error when fetching GitLab projects for account {}", accountId, ex);
                 throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Unexpected error: " + ex.getMessage(), ex);
