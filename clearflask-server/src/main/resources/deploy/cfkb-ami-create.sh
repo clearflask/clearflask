@@ -34,7 +34,12 @@ CATALINA_OPTS="$CATALINA_OPTS
                -Dcom.sun.management.jmxremote.authenticate=false
                -Dcom.sun.management.jmxremote.local.only=false
                -Djava.rmi.server.hostname=localhost
-               -Dcom.sun.management.jmxremote.rmi.port=9051"
+               -Dcom.sun.management.jmxremote.rmi.port=9051
+               --add-opens=java.base/java.lang=ALL-UNNAMED
+               --add-opens=java.base/java.util=ALL-UNNAMED
+               --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+               --add-opens=java.base/sun.reflect.generics.reflectiveObjects=ALL-UNNAMED
+               --add-opens=java.base/java.security.cert=ALL-UNNAMED"
 EOF
 echo 'CLEARFLASK_ENVIRONMENT=PRODUCTION_AWS' | sudo tee -a /usr/share/tomcat/conf/tomcat.conf
 
