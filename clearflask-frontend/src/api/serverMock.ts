@@ -506,6 +506,31 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     });
   }
 
+  slackGetChannelsAdmin(request: Admin.SlackGetChannelsAdminRequest): Promise<Admin.SlackChannelsResponse> {
+    return this.returnLater({
+      channels: [
+        { channelId: 'C01234567', channelName: 'general', isPrivate: false, isMember: true },
+        { channelId: 'C02345678', channelName: 'feedback', isPrivate: false, isMember: true },
+        { channelId: 'C03456789', channelName: 'feature-requests', isPrivate: false, isMember: true },
+        { channelId: 'C04567890', channelName: 'bug-reports', isPrivate: false, isMember: true },
+        { channelId: 'C05678901', channelName: 'private-team', isPrivate: true, isMember: true },
+        { channelId: 'C06789012', channelName: 'announcements', isPrivate: false, isMember: false },
+      ],
+    });
+  }
+
+  jiraGetStatusesAdmin(request: Admin.JiraGetStatusesAdminRequest): Promise<Admin.AvailableJiraStatuses> {
+    return this.returnLater({
+      statuses: [
+        { statusId: '1', statusName: 'To Do' },
+        { statusId: '2', statusName: 'In Progress' },
+        { statusId: '3', statusName: 'In Review' },
+        { statusId: '4', statusName: 'Done' },
+        { statusId: '5', statusName: 'Blocked' },
+      ],
+    });
+  }
+
   accountDeleteAdmin(): Promise<void> {
     if (!this.account) return this.throwLater(403, 'Not logged in');
     this.loggedIn = false;
