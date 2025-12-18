@@ -235,7 +235,7 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
             try {
                 // Use getProjects() with membership filter to get projects where the user is a member
                 // This works with OAuth tokens
-                for (org.gitlab4j.api.models.Project project : gitLabApi.getProjectApi().getProjects(Boolean.TRUE, null, null, null, null, Boolean.TRUE, null, null)) {
+                for (org.gitlab4j.api.models.Project project : gitLabApi.getProjectApi().getProjects(Boolean.TRUE, null, null, null, null, Boolean.TRUE, Boolean.FALSE, Boolean.FALSE, Boolean.FALSE, Boolean.FALSE)) {
                     if (project == null || project.getId() == null) {
                         log.warn("Skipping null project or project with null ID for account {}", accountId);
                         continue;
