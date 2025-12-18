@@ -4341,7 +4341,9 @@ const SlackChannelLinksConfig = (props: {
   // Subscribe to config changes to update channelLinks reactively
   useEffect(() => {
     return props.editor.subscribe(() => {
-      setChannelLinks(props.editor.getConfig().slack?.channelLinks || []);
+      const newChannelLinks = props.editor.getConfig().slack?.channelLinks || [];
+      console.log('Slack channelLinks subscription fired, count:', newChannelLinks.length);
+      setChannelLinks(newChannelLinks);
     });
   }, [props.editor]);
 
@@ -4401,7 +4403,10 @@ const SlackChannelLinksConfig = (props: {
   };
 
   const handleRemoveChannelLink = (index: number) => {
-    props.editor.getPageGroup(['slack', 'channelLinks']).remove(index);
+    console.log('handleRemoveChannelLink called with index:', index);
+    const pageGroup = props.editor.getPageGroup(['slack', 'channelLinks']);
+    pageGroup.remove(index);
+    console.log('Channel link removed, new count:', props.editor.getConfig().slack?.channelLinks?.length);
   };
 
   const handleChannelChange = (index: number, channelId: string) => {
