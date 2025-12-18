@@ -193,8 +193,6 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
                     .accessToken(accessToken)
                     .botUserId(botUserId)
                     .channels(channels)
-                    .selectedChannelId(selectedChannelId)
-                    .selectedChannelName(selectedChannelName)
                     .build();
 
         } catch (IOException e) {
