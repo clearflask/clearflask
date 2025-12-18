@@ -365,8 +365,14 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
             }
         }
 
-        // Set up new webhook
-        if (configAdmin.getJira() != null) {
+        // Set up new webhook only if Jira configuration is new or changed
+        boolean needsWebhookSetup = configAdmin.getJira() != null
+                && (configPrevious.isEmpty()
+                    || configPrevious.get().getJira() == null
+                    || !configPrevious.get().getJira().getCloudId().equals(configAdmin.getJira().getCloudId())
+                    || !configPrevious.get().getJira().getProjectKey().equals(configAdmin.getJira().getProjectKey()));
+
+        if (needsWebhookSetup) {
             Optional<JiraAuthorization> authOpt = getAuthorization(accountId, configAdmin.getJira().getCloudId());
             if (authOpt.isEmpty()) {
                 log.warn("No Jira authorization found for cloudId {}", configAdmin.getJira().getCloudId());
