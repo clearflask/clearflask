@@ -3915,12 +3915,6 @@ const JiraStatusSyncConfig = (props: {
   const handleStatusMappingChange = (cfStatusId: string, jiraStatusName: string) => {
     console.log('handleStatusMappingChange called:', cfStatusId, jiraStatusName);
 
-    // Ensure statusSync object exists
-    const statusSyncProp = props.editor.getProperty(['jira', 'statusSync']);
-    if (!statusSyncProp.value) {
-      statusSyncProp.set({});
-    }
-
     const currentMap = props.editor.getConfig().jira?.statusSync?.statusMap || {};
     const newMap = { ...currentMap };
     if (jiraStatusName) {
@@ -3930,7 +3924,15 @@ const JiraStatusSyncConfig = (props: {
     }
 
     try {
-      (props.editor.getProperty(['jira', 'statusSync', 'statusMap']) as any).set(newMap);
+      // Ensure statusSync object exists before setting statusMap
+      const statusSyncProp = props.editor.getProperty(['jira', 'statusSync']);
+      if (!statusSyncProp.value) {
+        // Initialize with the statusMap in one operation to avoid triggering subscription with empty object
+        statusSyncProp.set({ statusMap: newMap });
+      } else {
+        // Just update the statusMap
+        (props.editor.getProperty(['jira', 'statusSync', 'statusMap']) as any).set(newMap);
+      }
       console.log('Status map updated:', newMap);
     } catch (err) {
       console.error('Failed to update status map:', err);
@@ -4405,7 +4407,8 @@ const SlackChannelLinksConfig = (props: {
   const handleRemoveChannelLink = (index: number) => {
     console.log('handleRemoveChannelLink called with index:', index);
     const pageGroup = props.editor.getPageGroup(['slack', 'channelLinks']);
-    pageGroup.remove(index);
+    const page = pageGroup.get(index);
+    page.delete();
     console.log('Channel link removed, new count:', props.editor.getConfig().slack?.channelLinks?.length);
   };
 
