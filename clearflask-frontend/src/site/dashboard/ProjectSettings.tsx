@@ -4308,6 +4308,7 @@ const SlackChannelLinksConfig = (props: {
   editor: ConfigEditor.Editor;
   projectId: string;
   slack: Admin.Slack | undefined;
+  oauthFlow: OAuthFlow;
 }) => {
   const [channels, setChannels] = useState<Array<Admin.SlackChannel> | undefined>();
   const [loading, setLoading] = useState<boolean>(false);
@@ -4350,23 +4351,6 @@ const SlackChannelLinksConfig = (props: {
       });
   }, [props.slack, props.projectId]);
 
-  const handleAddChannelLink = () => {
-    const newLink = Admin.SlackChannelLinkToJSON({
-      channelId: '',
-      channelName: '',
-      categoryId: categories.length > 0 ? categories[0].categoryId : '',
-      syncSlackToPosts: true,
-      syncPostsToSlack: true,
-      syncCommentsToReplies: true,
-      syncRepliesToComments: true,
-      syncStatusUpdates: true,
-      syncResponseUpdates: true
-    });
-
-    const channelLinksPageGroup = props.editor.getPageGroup(['slack', 'channelLinks']);
-    channelLinksPageGroup.insert().setRaw(newLink);
-  };
-
   const handleRemoveChannelLink = (index: number) => {
     const channelLinksPageGroup = props.editor.getPageGroup(['slack', 'channelLinks']);
     channelLinksPageGroup.delete(index);
@@ -4394,6 +4378,19 @@ const SlackChannelLinksConfig = (props: {
 
       {!loading && !error && channels && (
         <>
+          <div style={{ marginBottom: 16 }}>
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={() => props.oauthFlow.openForSlack()}
+            >
+              Add More Channels
+            </Button>
+            <Typography variant="caption" color="textSecondary" display="block" style={{ marginTop: 8 }}>
+              Select additional channels in Slack to sync with ClearFlask.
+            </Typography>
+          </div>
+
           {channelLinks.map((link, index) => (
             <div key={index} style={{ marginTop: 16, marginBottom: 16, padding: 16, border: '1px solid #e0e0e0', borderRadius: 4 }}>
               <Grid container spacing={2} alignItems="center">
@@ -4495,15 +4492,6 @@ const SlackChannelLinksConfig = (props: {
               </Grid>
             </div>
           ))}
-
-          <Button
-            variant="outlined"
-            color="primary"
-            onClick={handleAddChannelLink}
-            style={{ marginTop: 16 }}
-          >
-            + Add Channel Link
-          </Button>
         </>
       )}
     </div>
@@ -4559,6 +4547,31 @@ export const ProjectSettingsSlack = (props: {
         (props.editor.getProperty(['slack', 'botUserId']) as ConfigEditor.StringProperty)
           .set(result.botUserId);
 
+        // Auto-create channel links for all channels the bot has access to
+        const categories = props.editor.getConfig().content.categories;
+        const firstCategory = categories.length > 0 ? categories[0].categoryId : '';
+        const existingLinks = props.editor.getConfig().slack?.channelLinks || [];
+        const existingChannelIds = new Set(existingLinks.map(link => link.channelId));
+
+        // Add channel links for any channels not already linked
+        const channelLinksPageGroup = props.editor.getPageGroup(['slack', 'channelLinks']);
+        result.channels.forEach(channel => {
+          if (!existingChannelIds.has(channel.channelId) && channel.isMember) {
+            const newLink = Admin.SlackChannelLinkToJSON({
+              channelId: channel.channelId,
+              channelName: channel.channelName,
+              categoryId: firstCategory,
+              syncSlackToPosts: true,
+              syncPostsToSlack: true,
+              syncCommentsToReplies: true,
+              syncRepliesToComments: true,
+              syncStatusUpdates: true,
+              syncResponseUpdates: true
+            });
+            channelLinksPageGroup.insert().setRaw(newLink);
+          }
+        });
+
         // Force re-render to show the workspace name
         setSlack(props.editor.getConfig().slack);
       })
@@ -4608,6 +4621,7 @@ export const ProjectSettingsSlack = (props: {
                   editor={props.editor}
                   projectId={props.project.projectId}
                   slack={slack}
+                  oauthFlow={oauthFlow}
                 />
                 <p>
                   <Button
