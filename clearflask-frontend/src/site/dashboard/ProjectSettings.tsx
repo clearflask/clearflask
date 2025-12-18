@@ -3858,12 +3858,9 @@ const JiraStatusSyncConfig = (props: {
       }
     });
 
-    // Set the map
+    // Set the map - initialize with statusMap directly to avoid empty object
     const statusSyncProp = props.editor.getProperty(['jira', 'statusSync']);
-    if (!statusSyncProp.value) {
-      statusSyncProp.set({});
-    }
-    (props.editor.getProperty(['jira', 'statusSync', 'statusMap']) as any).set(statusMap);
+    statusSyncProp.set({ statusMap });
   }, [cfStatuses, props.editor]);
 
   // Fetch Jira statuses when enabled
@@ -3879,14 +3876,11 @@ const JiraStatusSyncConfig = (props: {
         projectKey: props.jira!.projectKey
       }))
       .then(result => {
-        console.log('Fetched Jira statuses:', result.statuses);
-
         // Deduplicate statuses by ID
         const uniqueStatuses = result.statuses.filter((status, index, self) =>
           index === self.findIndex((s) => s.id === status.id)
         );
 
-        console.log('Unique Jira statuses:', uniqueStatuses);
         setJiraStatuses(uniqueStatuses);
         setLoading(false);
 
@@ -3906,16 +3900,16 @@ const JiraStatusSyncConfig = (props: {
     setEnabled(newEnabled);
     const statusSyncProp = props.editor.getProperty(['jira', 'statusSync']);
     if (newEnabled) {
-      statusSyncProp.set({});
+      // Initialize with empty statusMap object so it can be modified later
+      statusSyncProp.set({ statusMap: {} });
     } else {
       statusSyncProp.set(undefined);
     }
   };
 
   const handleStatusMappingChange = (cfStatusId: string, jiraStatusName: string) => {
-    console.log('handleStatusMappingChange called:', cfStatusId, jiraStatusName);
-
-    const currentMap = props.editor.getConfig().jira?.statusSync?.statusMap || {};
+    const currentStatusSync = props.editor.getConfig().jira?.statusSync;
+    const currentMap = currentStatusSync?.statusMap || {};
     const newMap = { ...currentMap };
     if (jiraStatusName) {
       newMap[cfStatusId] = jiraStatusName;
@@ -3923,50 +3917,30 @@ const JiraStatusSyncConfig = (props: {
       delete newMap[cfStatusId];
     }
 
-    try {
-      // Ensure statusSync object exists before setting statusMap
-      const statusSyncProp = props.editor.getProperty(['jira', 'statusSync']);
-      if (!statusSyncProp.value) {
-        // Initialize with the statusMap in one operation to avoid triggering subscription with empty object
-        statusSyncProp.set({ statusMap: newMap });
-      } else {
-        // Just update the statusMap
-        (props.editor.getProperty(['jira', 'statusSync', 'statusMap']) as any).set(newMap);
-      }
-      console.log('Status map updated:', newMap);
-    } catch (err) {
-      console.error('Failed to update status map:', err);
-    }
+    // Build new statusSync object with all current properties
+    const newStatusSync = Admin.JiraStatusSyncToJSON({
+      statusMap: newMap,
+      defaultCfStatusId: currentStatusSync?.defaultCfStatusId,
+      defaultJiraStatusName: currentStatusSync?.defaultJiraStatusName
+    });
+
+    const statusSyncProp = props.editor.getProperty(['jira', 'statusSync']);
+    (statusSyncProp as ConfigEditor.ObjectProperty).setRaw(newStatusSync);
   };
 
   const handleDefaultCfStatusChange = (cfStatusId: string) => {
-    console.log('handleDefaultCfStatusChange called:', cfStatusId);
-    try {
-      (props.editor.getProperty(['jira', 'statusSync', 'defaultCfStatusId']) as any).set(cfStatusId || undefined);
-    } catch (err) {
-      console.error('Failed to update default CF status:', err);
-    }
+    (props.editor.getProperty(['jira', 'statusSync', 'defaultCfStatusId']) as any).set(cfStatusId || undefined);
   };
 
   const handleDefaultJiraStatusChange = (jiraStatusName: string) => {
-    console.log('handleDefaultJiraStatusChange called:', jiraStatusName);
-    try {
-      (props.editor.getProperty(['jira', 'statusSync', 'defaultJiraStatusName']) as any).set(jiraStatusName || undefined);
-    } catch (err) {
-      console.error('Failed to update default Jira status:', err);
-    }
+    (props.editor.getProperty(['jira', 'statusSync', 'defaultJiraStatusName']) as any).set(jiraStatusName || undefined);
   };
 
-  // Use state to track statusSync so it updates reactively when changed
-  const [statusSync, setStatusSync] = useState<Admin.JiraStatusSync | undefined>(props.editor.getConfig().jira?.statusSync);
+  // Subscribe to editor changes to force re-render
   const [renderKey, setRenderKey] = useState(0);
 
   useEffect(() => {
     return props.editor.subscribe(() => {
-      const newStatusSync = props.editor.getConfig().jira?.statusSync;
-      console.log('Editor subscription fired, new statusSync:', newStatusSync);
-      setStatusSync(newStatusSync);
-      // Force re-render of Select components
       setRenderKey(k => k + 1);
     });
   }, [props.editor]);
@@ -4020,13 +3994,7 @@ const JiraStatusSyncConfig = (props: {
                     <Select
                       key={`${cfStatus.statusId}-${renderKey}`}
                       fullWidth
-                      value={(() => {
-                        // Read directly from config instead of state to avoid stale values
-                        const currentMap = props.editor.getConfig().jira?.statusSync?.statusMap || {};
-                        const val = currentMap[cfStatus.statusId] || '';
-                        console.log('Select value for', cfStatus.statusId, ':', val, 'currentMap:', currentMap);
-                        return val;
-                      })()}
+                      value={props.editor.getConfig().jira?.statusSync?.statusMap?.[cfStatus.statusId] || ''}
                       onChange={(e) => handleStatusMappingChange(cfStatus.statusId, e.target.value as string)}
                       displayEmpty
                     >
@@ -4056,7 +4024,7 @@ const JiraStatusSyncConfig = (props: {
               </Typography>
               <Select
                 fullWidth
-                value={statusSync?.defaultCfStatusId || ''}
+                value={props.editor.getConfig().jira?.statusSync?.defaultCfStatusId || ''}
                 onChange={(e) => handleDefaultCfStatusChange(e.target.value as string)}
                 displayEmpty
                 style={{ marginTop: 8 }}
@@ -4087,7 +4055,7 @@ const JiraStatusSyncConfig = (props: {
               </Typography>
               <Select
                 fullWidth
-                value={statusSync?.defaultJiraStatusName || ''}
+                value={props.editor.getConfig().jira?.statusSync?.defaultJiraStatusName || ''}
                 onChange={(e) => handleDefaultJiraStatusChange(e.target.value as string)}
                 displayEmpty
                 style={{ marginTop: 8 }}
@@ -4350,7 +4318,6 @@ const SlackChannelLinksConfig = (props: {
   useEffect(() => {
     return props.editor.subscribe(() => {
       const newChannelLinks = props.editor.getConfig().slack?.channelLinks || [];
-      console.log('Slack channelLinks subscription fired, count:', newChannelLinks.length);
       setChannelLinks(newChannelLinks);
     });
   }, [props.editor]);
@@ -4370,7 +4337,6 @@ const SlackChannelLinksConfig = (props: {
     ServerAdmin.get().dispatchAdmin()
       .then(d => d.slackGetChannelsAdmin({ projectId: props.projectId }))
       .then(result => {
-        console.log('Fetched Slack channels:', result.channels);
         setChannels(result.channels);
         setLoading(false);
       })
@@ -4382,40 +4348,26 @@ const SlackChannelLinksConfig = (props: {
   }, [props.slack, props.projectId]);
 
   const handleAddChannelLink = () => {
-    console.log('handleAddChannelLink called');
-    try {
-      const newLink = Admin.SlackChannelLinkToJSON({
-        channelId: '',
-        channelName: '',
-        categoryId: categories.length > 0 ? categories[0].categoryId : '',
-        syncSlackToPosts: true,
-        syncPostsToSlack: true,
-        syncCommentsToReplies: true,
-        syncRepliesToComments: true,
-        syncStatusUpdates: true,
-        syncResponseUpdates: true
-      });
-      console.log('Created new link object:', newLink);
+    const newLink = Admin.SlackChannelLinkToJSON({
+      channelId: '',
+      channelName: '',
+      categoryId: categories.length > 0 ? categories[0].categoryId : '',
+      syncSlackToPosts: true,
+      syncPostsToSlack: true,
+      syncCommentsToReplies: true,
+      syncRepliesToComments: true,
+      syncStatusUpdates: true,
+      syncResponseUpdates: true
+    });
 
-      const pageGroup = props.editor.getPageGroup(['slack', 'channelLinks']);
-      console.log('Got page group:', pageGroup);
-
-      const inserted = pageGroup.insert();
-      console.log('Called insert:', inserted);
-
-      inserted.setRaw(newLink);
-      console.log('Channel link added successfully');
-    } catch (err) {
-      console.error('Error adding channel link:', err);
-    }
+    const pageGroup = props.editor.getPageGroup(['slack', 'channelLinks']);
+    pageGroup.insert().setRaw(newLink);
   };
 
   const handleRemoveChannelLink = (index: number) => {
-    console.log('handleRemoveChannelLink called with index:', index);
     const pageGroup = props.editor.getPageGroup(['slack', 'channelLinks']);
     const page = pageGroup.get(index);
     page.delete();
-    console.log('Channel link removed, new count:', props.editor.getConfig().slack?.channelLinks?.length);
   };
 
   const handleChannelChange = (index: number, channelId: string) => {
@@ -4625,8 +4577,6 @@ export const ProjectSettingsSlack = (props: {
 
           const pageGroup = props.editor.getPageGroup(['slack', 'channelLinks']);
           pageGroup.insert().setRaw(newLink);
-
-          console.log('Auto-created channel link for selected channel:', result.selectedChannelName);
         }
 
         // Force re-render to show the workspace name
