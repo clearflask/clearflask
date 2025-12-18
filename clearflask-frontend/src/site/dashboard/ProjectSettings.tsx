@@ -3959,12 +3959,15 @@ const JiraStatusSyncConfig = (props: {
 
   // Use state to track statusSync so it updates reactively when changed
   const [statusSync, setStatusSync] = useState<Admin.JiraStatusSync | undefined>(props.editor.getConfig().jira?.statusSync);
+  const [renderKey, setRenderKey] = useState(0);
 
   useEffect(() => {
     return props.editor.subscribe(() => {
       const newStatusSync = props.editor.getConfig().jira?.statusSync;
       console.log('Editor subscription fired, new statusSync:', newStatusSync);
       setStatusSync(newStatusSync);
+      // Force re-render of Select components
+      setRenderKey(k => k + 1);
     });
   }, [props.editor]);
 
@@ -4015,10 +4018,13 @@ const JiraStatusSyncConfig = (props: {
                   </Grid>
                   <Grid item xs={7}>
                     <Select
+                      key={`${cfStatus.statusId}-${renderKey}`}
                       fullWidth
                       value={(() => {
-                        const val = statusSync?.statusMap?.[cfStatus.statusId] || '';
-                        console.log('Select value for', cfStatus.statusId, ':', val, 'statusMap:', statusSync?.statusMap);
+                        // Read directly from config instead of state to avoid stale values
+                        const currentMap = props.editor.getConfig().jira?.statusSync?.statusMap || {};
+                        const val = currentMap[cfStatus.statusId] || '';
+                        console.log('Select value for', cfStatus.statusId, ':', val, 'currentMap:', currentMap);
                         return val;
                       })()}
                       onChange={(e) => handleStatusMappingChange(cfStatus.statusId, e.target.value as string)}
