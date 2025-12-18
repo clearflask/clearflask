@@ -424,8 +424,9 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
                         configAdmin.getJira().getCloudId(),
                         configAdmin.getJira().getProjectKey(),
                         e.getMessage(), e);
-                throw new ApiException(Response.Status.BAD_REQUEST,
-                        "Failed to set up Jira integration: " + e.getMessage(), e);
+                // Don't fail the entire config save just because webhook setup failed
+                // The integration can still work for manual syncs
+                log.warn("Jira webhook setup failed but allowing config save to proceed - manual sync will still work");
             }
         }
     }
