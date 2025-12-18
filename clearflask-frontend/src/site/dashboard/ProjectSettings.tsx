@@ -4360,23 +4360,21 @@ const SlackChannelLinksConfig = (props: {
       syncResponseUpdates: true
     });
 
-    const pageGroup = props.editor.getPageGroup(['slack', 'channelLinks']);
-    pageGroup.insert().setRaw(newLink);
+    const channelLinksPageGroup = props.editor.getPageGroup(['slack', 'channelLinks']);
+    channelLinksPageGroup.insert().setRaw(newLink);
   };
 
   const handleRemoveChannelLink = (index: number) => {
-    const pageGroup = props.editor.getPageGroup(['slack', 'channelLinks']);
-    const page = pageGroup.get(index);
-    page.delete();
+    const channelLinksPageGroup = props.editor.getPageGroup(['slack', 'channelLinks']);
+    channelLinksPageGroup.delete(index);
   };
 
   const handleChannelChange = (index: number, channelId: string) => {
     const channel = channels?.find(c => c.channelId === channelId);
 
-    // For PageGroup items, use getPageGroup().get(index) to get the page, then getProperty on that page
-    const channelLinkPage = props.editor.getPageGroup(['slack', 'channelLinks']).get(index);
-    (channelLinkPage.getProperty('channelId') as ConfigEditor.StringProperty).set(channelId);
-    (channelLinkPage.getProperty('channelName') as ConfigEditor.StringProperty).set(channel?.channelName || '');
+    // Access properties via path array with index
+    (props.editor.getProperty(['slack', 'channelLinks', index, 'channelId']) as ConfigEditor.StringProperty).set(channelId);
+    (props.editor.getProperty(['slack', 'channelLinks', index, 'channelName']) as ConfigEditor.StringProperty).set(channel?.channelName || '');
   };
 
   if (!props.slack) return null;
@@ -4444,8 +4442,7 @@ const SlackChannelLinksConfig = (props: {
                     fullWidth
                     value={link.categoryId || ''}
                     onChange={(e) => {
-                      const channelLinkPage = props.editor.getPageGroup(['slack', 'channelLinks']).get(index);
-                      (channelLinkPage.getProperty('categoryId') as ConfigEditor.StringProperty).set(e.target.value as string);
+                      (props.editor.getProperty(['slack', 'channelLinks', index, 'categoryId']) as ConfigEditor.StringProperty).set(e.target.value as string);
                     }}
                     displayEmpty
                   >
@@ -4482,8 +4479,7 @@ const SlackChannelLinksConfig = (props: {
                       <Switch
                         checked={link.syncSlackToPosts === true}
                         onChange={(e) => {
-                          const channelLinkPage = props.editor.getPageGroup(['slack', 'channelLinks']).get(index);
-                          (channelLinkPage.getProperty('syncSlackToPosts') as ConfigEditor.BooleanProperty).set(e.target.checked);
+                          (props.editor.getProperty(['slack', 'channelLinks', index, 'syncSlackToPosts']) as ConfigEditor.BooleanProperty).set(e.target.checked);
                         }}
                         color="primary"
                       />
@@ -4575,8 +4571,8 @@ export const ProjectSettingsSlack = (props: {
             syncResponseUpdates: true
           });
 
-          const pageGroup = props.editor.getPageGroup(['slack', 'channelLinks']);
-          pageGroup.insert().setRaw(newLink);
+          const channelLinksPageGroup = props.editor.getPageGroup(['slack', 'channelLinks']);
+          channelLinksPageGroup.insert().setRaw(newLink);
         }
 
         // Force re-render to show the workspace name
