@@ -4313,12 +4313,15 @@ const SlackChannelLinksConfig = (props: {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | undefined>();
   const [channelLinks, setChannelLinks] = useState<Admin.SlackChannelLink[]>(props.editor.getConfig().slack?.channelLinks || []);
+  const [renderKey, setRenderKey] = useState(0);
 
   // Subscribe to config changes to update channelLinks reactively
   useEffect(() => {
     return props.editor.subscribe(() => {
       const newChannelLinks = props.editor.getConfig().slack?.channelLinks || [];
-      setChannelLinks(newChannelLinks);
+      // Create new array reference to ensure React detects the change
+      setChannelLinks([...newChannelLinks]);
+      setRenderKey(k => k + 1);
     });
   }, [props.editor]);
 
@@ -4399,6 +4402,7 @@ const SlackChannelLinksConfig = (props: {
                     Slack Channel
                   </Typography>
                   <Select
+                    key={`channel-${index}-${renderKey}`}
                     fullWidth
                     value={link.channelId || ''}
                     onChange={(e) => handleChannelChange(index, e.target.value as string)}
@@ -4439,6 +4443,7 @@ const SlackChannelLinksConfig = (props: {
                     ClearFlask Category
                   </Typography>
                   <Select
+                    key={`category-${index}-${renderKey}`}
                     fullWidth
                     value={link.categoryId || ''}
                     onChange={(e) => {
