@@ -84,6 +84,7 @@ public class SlackResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response webhookEvents(@Valid String payload) throws IOException {
+        log.info("Received Slack webhook request, payload length: {}", payload != null ? payload.length() : 0);
 
         // Verify signature
         String signature = request.getHeader(SLACK_SIGNATURE_HEADER);
@@ -104,6 +105,7 @@ public class SlackResource {
 
         // Handle URL verification challenge
         if ("url_verification".equals(type)) {
+            log.info("Received Slack URL verification challenge");
             String challenge = json.get("challenge").getAsString();
             JsonObject responseJson = new JsonObject();
             responseJson.addProperty("challenge", challenge);
@@ -112,6 +114,7 @@ public class SlackResource {
 
         // Handle event callbacks
         if ("event_callback".equals(type)) {
+            log.info("Received Slack event_callback");
             // Extract team_id to identify which project this event belongs to
             String teamId = json.has("team_id") ? json.get("team_id").getAsString() : null;
             if (Strings.isNullOrEmpty(teamId)) {
@@ -131,11 +134,12 @@ public class SlackResource {
             // Find project by Slack team ID
             Optional<Project> projectOpt = getProjectBySlackTeamId(teamId);
             if (projectOpt.isEmpty()) {
-                log.info("Received Slack event for unknown team ID: {}", teamId);
+                log.warn("Received Slack event for unknown team ID: {} - project not found", teamId);
                 return Response.ok().build();
             }
 
             Project project = projectOpt.get();
+            log.info("Found project {} for Slack team ID {}", project.getProjectId(), teamId);
 
             // Route to appropriate handler
             switch (Strings.nullToEmpty(eventType)) {
