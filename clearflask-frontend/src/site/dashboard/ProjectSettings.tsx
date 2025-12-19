@@ -4382,10 +4382,6 @@ const SlackChannelLinksConfig = (props: {
 
   if (!props.slack) return null;
 
-  const getChannelLinkIndex = (channelId: string) => {
-    return channelLinks.findIndex(link => link.channelId === channelId);
-  };
-
   return (
     <div style={{ marginTop: 16, marginBottom: 16 }}>
       <Typography variant="subtitle1" gutterBottom>Channel Links</Typography>
