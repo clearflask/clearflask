@@ -108,6 +108,13 @@ public interface SlackStore {
     ListenableFuture<Optional<SlackMessageResult>> cfCommentCreatedAsync(Project project, IdeaModel idea, CommentModel comment, UserModel author);
 
     /**
+     * Comment updated in ClearFlask → update Slack message or post new reply.
+     * If we have the mapping, updates the Slack message. Otherwise posts a new reply saying the comment was updated.
+     * Only updates if syncCommentsToReplies is enabled for the category's channel link.
+     */
+    ListenableFuture<Optional<SlackMessageResult>> cfCommentUpdatedAsync(Project project, IdeaModel idea, CommentModel comment, UserModel author);
+
+    /**
      * Post status changed → update Slack message.
      * Only updates if syncStatusUpdates is enabled for the category's channel link.
      */

@@ -216,8 +216,19 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     public Comment commentUpdate(String projectId, String ideaId, String commentId, CommentUpdate update) {
         sanitizer.content(update.getContent());
 
-        return commentStore.updateComment(projectId, ideaId, commentId, Instant.now(), update)
-                .getCommentModel().toComment(sanitizer);
+        CommentStore.CommentAndIndexingFuture<?> commentAndFuture = commentStore.updateComment(projectId, ideaId, commentId, Instant.now(), update);
+        CommentModel commentModel = commentAndFuture.getCommentModel();
+
+        // Propagate comment update to Slack
+        ProjectStore.Project project = projectStore.getProject(projectId, false)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project not found"));
+        IdeaStore.IdeaModel idea = ideaStore.getIdea(projectId, ideaId)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Post not found"));
+        UserStore.UserModel author = userStore.getUser(projectId, commentModel.getAuthorUserId())
+                .orElse(null);
+        slackStore.cfCommentUpdatedAsync(project, idea, commentModel, author);
+
+        return commentModel.toComment(sanitizer);
     }
 
     @RolesAllowed({Role.COMMENT_OWNER})

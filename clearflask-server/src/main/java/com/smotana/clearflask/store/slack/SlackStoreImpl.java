@@ -759,6 +759,111 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
     }
 
     @Override
+    public ListenableFuture<Optional<SlackMessageResult>> cfCommentUpdatedAsync(Project project, IdeaModel idea, CommentModel comment, UserModel author) {
+        if (!config.enabled()) {
+            return Futures.immediateFuture(Optional.empty());
+        }
+
+        com.smotana.clearflask.api.model.Slack slackConfig = project.getVersionedConfigAdmin().getConfig().getSlack();
+        if (slackConfig == null || slackConfig.getChannelLinks() == null) {
+            return Futures.immediateFuture(Optional.empty());
+        }
+
+        // Find channel link
+        Optional<SlackChannelLink> channelLinkOpt = slackConfig.getChannelLinks().stream()
+                .filter(link -> idea.getCategoryId().equals(link.getCategoryId()))
+                .findFirst();
+
+        if (channelLinkOpt.isEmpty()) {
+            return Futures.immediateFuture(Optional.empty());
+        }
+
+        SlackChannelLink link = channelLinkOpt.get();
+
+        // Check if syncCommentsToReplies is enabled
+        if (link.getSyncCommentsToReplies() == Boolean.FALSE) {
+            return Futures.immediateFuture(Optional.empty());
+        }
+
+        // Find the Slack message for this post
+        Optional<SlackMessageMapping> postMappingOpt = getMessageMappingByPostId(project.getProjectId(), idea.getIdeaId());
+        if (postMappingOpt.isEmpty()) {
+            return Futures.immediateFuture(Optional.empty());
+        }
+
+        // Check if we have a mapping for this comment
+        Optional<SlackCommentMapping> commentMappingOpt = getCommentMappingByCommentId(
+                project.getProjectId(), comment.getCommentId());
+
+        SlackMessageMapping postMapping = postMappingOpt.get();
+
+        return submit(() -> {
+            Optional<SlackClientProvider.SlackClientWithRateLimiter> clientOpt = slackClientProvider.getClient(project.getProjectId());
+            if (clientOpt.isEmpty()) {
+                return Optional.empty();
+            }
+
+            SlackClientProvider.SlackClientWithRateLimiter client = clientOpt.get();
+            if (!client.getRateLimiter().tryAcquire()) {
+                return Optional.empty();
+            }
+
+            String message = formatCommentForSlack(comment, author);
+
+            try {
+                // If we have the comment mapping, update the existing Slack message
+                if (commentMappingOpt.isPresent()) {
+                    SlackCommentMapping commentMapping = commentMappingOpt.get();
+
+                    ChatUpdateResponse updateResponse = client.getClient().chatUpdate(r -> r
+                            .channel(commentMapping.getChannelId())
+                            .ts(commentMapping.getMessageTs())
+                            .text(message));
+
+                    if (!updateResponse.isOk()) {
+                        log.warn("Failed to update Slack reply for project {} comment {}: {}",
+                                project.getProjectId(), comment.getCommentId(), updateResponse.getError());
+                        // Fall through to post new update message
+                    } else {
+                        return Optional.of(new SlackMessageResult(
+                                commentMapping.getChannelId(),
+                                commentMapping.getMessageTs(),
+                                commentMapping.getThreadTs()));
+                    }
+                }
+
+                // If we don't have mapping or update failed, post a new reply saying the comment was updated
+                String updateNotification = String.format("_%s updated their comment:_\n%s",
+                        author != null ? author.getName() : "User",
+                        message);
+
+                ChatPostMessageResponse postResponse = client.getClient().chatPostMessage(r -> r
+                        .channel(postMapping.getChannelId())
+                        .threadTs(postMapping.getMessageTs())
+                        .text(updateNotification)
+                        .unfurlLinks(false)
+                        .unfurlMedia(false));
+
+                if (!postResponse.isOk()) {
+                    log.warn("Failed to post comment update notification to Slack for project {} comment {}: {}",
+                            project.getProjectId(), comment.getCommentId(), postResponse.getError());
+                    return Optional.empty();
+                }
+
+                return Optional.of(new SlackMessageResult(
+                        postMapping.getChannelId(),
+                        postResponse.getTs(),
+                        postMapping.getMessageTs()));
+
+            } catch (IOException | SlackApiException e) {
+                log.warn("Error updating comment in Slack for project {} comment {}",
+                        project.getProjectId(), comment.getCommentId(), e);
+                return Optional.empty();
+            }
+        });
+    }
+
+    @Override
     public ListenableFuture<Optional<SlackMessageResult>> cfPostStatusChangedAsync(Project project, IdeaModel idea) {
         if (!config.enabled()) {
             return Futures.immediateFuture(Optional.empty());
