@@ -4382,6 +4382,10 @@ const SlackChannelLinksConfig = (props: {
 
   if (!props.slack) return null;
 
+  const getChannelLinkIndex = (channelId: string) => {
+    return channelLinks.findIndex(link => link.channelId === channelId);
+  };
+
   return (
     <div style={{ marginTop: 16, marginBottom: 16 }}>
       <Typography variant="subtitle1" gutterBottom>Channel Links</Typography>
@@ -4392,16 +4396,167 @@ const SlackChannelLinksConfig = (props: {
       {loading && <Loading />}
       {error && <Message message={error} severity="error" />}
 
-      <Collapse in={props.hasUnsavedChanges}>
-        <div style={{ marginBottom: 16 }}>
-          <Message
-            message="You must publish unsaved changes before you can add more channels"
-            severity="warning" />
-        </div>
-      </Collapse>
-
       <Collapse in={!loading && !error && !!channels}>
-        <div style={{ marginBottom: 16 }}>
+        {/* Show linked channels with full configuration */}
+        {channelLinks.map((link, index) => {
+          const channel = channels?.find(c => c.channelId === link.channelId);
+          return (
+            <div key={index} style={{ marginTop: 16, marginBottom: 16, padding: 16, border: '1px solid #e0e0e0', borderRadius: 4 }}>
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2">
+                    # {channel?.channelName || link.channelName}
+                    {channel?.isPrivate && ' 🔒'}
+                  </Typography>
+                  <Typography variant="caption" color="textSecondary">
+                    {link.channelId}
+                  </Typography>
+                </Grid>
+                <Grid item xs={10}>
+                  <Typography variant="caption" color="textSecondary" gutterBottom display="block">
+                    ClearFlask Category
+                  </Typography>
+                  <Select
+                    fullWidth
+                    value={link.categoryId || ''}
+                    onChange={(e) => {
+                      (props.editor.getProperty(['slack', 'channelLinks', index, 'categoryId']) as ConfigEditor.StringProperty).set(e.target.value as string);
+                    }}
+                    displayEmpty
+                  >
+                    <MenuItem value="">
+                      <em>Select a category...</em>
+                    </MenuItem>
+                    {categories.map(category => (
+                      <MenuItem key={category.categoryId} value={category.categoryId}>
+                        <span style={{
+                          display: 'inline-block',
+                          width: 12,
+                          height: 12,
+                          borderRadius: '50%',
+                          backgroundColor: category.color || '#ccc',
+                          marginRight: 8
+                        }} />
+                        {category.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </Grid>
+                <Grid item xs={2}>
+                  <Button
+                    color="secondary"
+                    onClick={() => handleUnlinkChannel(link.channelId)}
+                  >
+                    Unlink
+                  </Button>
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={link.syncSlackToPosts === true}
+                        onChange={(e) => {
+                          (props.editor.getProperty(['slack', 'channelLinks', index, 'syncSlackToPosts']) as ConfigEditor.BooleanProperty).set(e.target.checked);
+                        }}
+                        color="primary"
+                      />
+                    }
+                    label={<Typography variant="body2">Slack → Posts (Create ClearFlask posts from Slack messages)</Typography>}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={link.syncPostsToSlack === true}
+                        onChange={(e) => {
+                          (props.editor.getProperty(['slack', 'channelLinks', index, 'syncPostsToSlack']) as ConfigEditor.BooleanProperty).set(e.target.checked);
+                        }}
+                        color="primary"
+                      />
+                    }
+                    label={<Typography variant="body2">Posts → Slack (Send ClearFlask posts to Slack)</Typography>}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={link.syncCommentsToReplies === true}
+                        onChange={(e) => {
+                          (props.editor.getProperty(['slack', 'channelLinks', index, 'syncCommentsToReplies']) as ConfigEditor.BooleanProperty).set(e.target.checked);
+                        }}
+                        color="primary"
+                      />
+                    }
+                    label={<Typography variant="body2">Comments → Slack Replies</Typography>}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={link.syncRepliesToComments === true}
+                        onChange={(e) => {
+                          (props.editor.getProperty(['slack', 'channelLinks', index, 'syncRepliesToComments']) as ConfigEditor.BooleanProperty).set(e.target.checked);
+                        }}
+                        color="primary"
+                      />
+                    }
+                    label={<Typography variant="body2">Slack Replies → Comments</Typography>}
+                  />
+                </Grid>
+              </Grid>
+            </div>
+          );
+        })}
+
+        {/* Show unlinked channels in a table */}
+        {channels && channels.filter(ch => !isChannelLinked(ch.channelId)).length > 0 && (
+          <>
+            <Typography variant="subtitle2" style={{ marginTop: 24, marginBottom: 8 }}>
+              Available Channels
+            </Typography>
+            <Table className={props.classes.githubReposTable}>
+              <TableBody>
+                {channels.filter(ch => !isChannelLinked(ch.channelId)).map(channel => (
+                  <TableRow key={channel.channelId}>
+                    <TableCell>
+                      <Typography>
+                        # {channel.channelName}
+                        {channel.isPrivate && ' 🔒'}
+                      </Typography>
+                      <Typography variant="caption" color="textSecondary">
+                        {channel.channelId}
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="right">
+                      <Button
+                        variant="contained"
+                        disableElevation
+                        color="primary"
+                        onClick={() => handleLinkChannel(channel)}
+                      >
+                        Link
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </>
+        )}
+
+        {/* Add More Channels button at the bottom */}
+        <Collapse in={props.hasUnsavedChanges}>
+          <div style={{ marginTop: 24, marginBottom: 16 }}>
+            <Message
+              message="You must publish unsaved changes before you can add more channels"
+              severity="warning" />
+          </div>
+        </Collapse>
+
+        <div style={{ marginTop: 24 }}>
           <Button
             variant="outlined"
             color="primary"
@@ -4414,43 +4569,6 @@ const SlackChannelLinksConfig = (props: {
             Select additional channels in Slack to sync with ClearFlask.
           </Typography>
         </div>
-
-        <Table className={props.classes.githubReposTable}>
-          <TableBody>
-            {channels?.map(channel => {
-              const linked = isChannelLinked(channel.channelId);
-              return (
-                <TableRow key={channel.channelId}>
-                  <TableCell key="channel">
-                    <Typography>
-                      # {channel.channelName}
-                      {channel.isPrivate && ' 🔒'}
-                    </Typography>
-                    <Typography variant="caption" color="textSecondary">
-                      {channel.channelId}
-                    </Typography>
-                  </TableCell>
-                  <TableCell key="action">
-                    <Button
-                      variant="contained"
-                      disableElevation
-                      color={linked ? "default" : "primary"}
-                      onClick={() => {
-                        if (linked) {
-                          handleUnlinkChannel(channel.channelId);
-                        } else {
-                          handleLinkChannel(channel);
-                        }
-                      }}
-                    >
-                      {linked ? 'Unlink' : 'Link'}
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
       </Collapse>
     </div>
   );
