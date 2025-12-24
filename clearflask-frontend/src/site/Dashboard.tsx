@@ -385,7 +385,16 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
     }
   }
 
-  static getStripePromise(): Promise<Stripe | null> {
+  static getStripePromise(stripePublishableKeyOverride?: string): Promise<Stripe | null> {
+    // Check for stripe_test=1 query param or use account's publishable key
+    const forceTestMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('stripe_test') === '1';
+
+    // Determine which key to use
+    const stripeKey = stripePublishableKeyOverride
+      || (forceTestMode || !isProd()
+        ? 'pk_test_51Dfi5vAl0n0hFnHPXRnnJdMKRKF6MMOWLQBwLl1ifwPZysg1wJNtYcumjgO8oPHlqITK2dXWlbwLEsPYas6jpUkY00Ryy3AtGP'
+        : 'pk_live_6HJ7aPzGuVyPwTX5ngwAw0Gh');
+
     if (!Dashboard.stripePromise) {
       try {
         loadStripe.setLoadParameters({ advancedFraudSignals: false });
@@ -396,9 +405,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
         }
       }
       ;
-      Dashboard.stripePromise = loadStripe(isProd()
-        ? 'pk_live_6HJ7aPzGuVyPwTX5ngwAw0Gh'
-        : 'pk_test_51Dfi5vAl0n0hFnHPXRnnJdMKRKF6MMOWLQBwLl1ifwPZysg1wJNtYcumjgO8oPHlqITK2dXWlbwLEsPYas6jpUkY00Ryy3AtGP');
+      Dashboard.stripePromise = loadStripe(stripeKey);
     }
     return Dashboard.stripePromise;
   }
