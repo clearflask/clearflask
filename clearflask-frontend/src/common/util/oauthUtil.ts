@@ -50,7 +50,8 @@ const JiraProvider: OAuthProvider = {
     ? (getOAuthConfig().jiraClientId || 'jira-client-id')
     : 'jira-client-id',
   authorizeUrl: 'https://auth.atlassian.com/authorize',
-  scope: 'read:jira-work write:jira-work',
+  // manage:jira-webhook is required to register webhooks via REST API
+  scope: 'read:jira-work write:jira-work manage:jira-webhook',
 };
 
 // Slack OAuth provider
