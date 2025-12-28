@@ -226,18 +226,9 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
             }
 
             // Create GitLabApi instance using OAuth2 token
-            // IMPORTANT: Use GitLabApi.oauth2Login() for OAuth2 tokens, not the constructor
-            // The constructor treats tokens as personal access tokens which use different auth headers
-            GitLabApi gitLabApi;
-            try {
-                gitLabApi = GitLabApi.oauth2Login(instanceUrl, null, oAuthResponse.getAccessToken());
-                log.info("GitLab OAuth2 login successful for account {}", accountId);
-            } catch (GitLabApiException e) {
-                log.error("GitLab OAuth2 login failed for account {}: {} - {}",
-                        accountId, e.getHttpStatus(), e.getMessage(), e);
-                throw new ApiException(Response.Status.UNAUTHORIZED,
-                        "GitLab OAuth2 authentication failed. Please try reconnecting. (HTTP " + e.getHttpStatus() + ")", e);
-            }
+            // The constructor accepts OAuth2 tokens and treats them appropriately
+            GitLabApi gitLabApi = new GitLabApi(instanceUrl, oAuthResponse.getAccessToken());
+            log.info("GitLab API client created successfully for account {}", accountId);
             ImmutableList.Builder<GitLabAvailableProject> projectsBuilder = ImmutableList.builder();
             ImmutableMap.Builder<Long, String> projectIdsBuilder = ImmutableMap.builder();
 
