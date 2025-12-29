@@ -64,10 +64,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 @Slf4j
@@ -113,6 +115,7 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
     private IndexSchema<SlackMessageMapping> messageMappingByPostIdSchema;
     private TableSchema<SlackCommentMapping> commentMappingSchema;
     private IndexSchema<SlackCommentMapping> commentMappingByCommentIdSchema;
+    private TableSchema<SlackTeamMapping> teamMappingSchema;
     private ListeningExecutorService executor;
 
     @Override
@@ -121,6 +124,7 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
         messageMappingByPostIdSchema = singleTable.parseGlobalSecondaryIndexSchema(1, SlackMessageMapping.class);
         commentMappingSchema = singleTable.parseTableSchema(SlackCommentMapping.class);
         commentMappingByCommentIdSchema = singleTable.parseGlobalSecondaryIndexSchema(1, SlackCommentMapping.class);
+        teamMappingSchema = singleTable.parseTableSchema(SlackTeamMapping.class);
 
         executor = MoreExecutors.listeningDecorator(new ThreadPoolExecutor(
                 2, 100, 60L, TimeUnit.SECONDS, new SynchronousQueue<>(),
@@ -260,20 +264,93 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
     }
 
     @Override
+    public Optional<String> getProjectIdByTeamId(String teamId) {
+        return Optional.ofNullable(teamMappingSchema.fromItem(
+                        teamMappingSchema.table().getItem(teamMappingSchema.primaryKey(Map.of("teamId", teamId)))))
+                .map(SlackTeamMapping::getProjectId);
+    }
+
+    @Override
     public void setupConfigSlackIntegration(String accountId, Optional<ConfigAdmin> configPrevious, ConfigAdmin configAdmin) {
-        // If Slack config was removed, invalidate the client cache
+        // If Slack config was removed, invalidate the client cache and remove team mapping
         if (configPrevious.isPresent()
                 && configPrevious.get().getSlack() != null
                 && configAdmin.getSlack() == null) {
             if (slackClientProvider instanceof SlackClientProviderImpl) {
                 ((SlackClientProviderImpl) slackClientProvider).invalidateClient(configAdmin.getProjectId());
             }
+            // Remove teamId -> projectId mapping
+            String previousTeamId = configPrevious.get().getSlack().getTeamId();
+            if (previousTeamId != null) {
+                teamMappingSchema.table().deleteItem(teamMappingSchema.primaryKey(Map.of("teamId", previousTeamId)));
+                log.info("Removed Slack team mapping for teamId {} projectId {}", previousTeamId, configAdmin.getProjectId());
+            }
         }
 
-        // If Slack config was added or changed, invalidate and reload
+        // If Slack config was added or changed, invalidate and reload, and update team mapping
         if (configAdmin.getSlack() != null) {
             if (slackClientProvider instanceof SlackClientProviderImpl) {
                 ((SlackClientProviderImpl) slackClientProvider).invalidateClient(configAdmin.getProjectId());
+            }
+            // Create/update teamId -> projectId mapping
+            String teamId = configAdmin.getSlack().getTeamId();
+            if (teamId != null) {
+                SlackTeamMapping mapping = SlackTeamMapping.builder()
+                        .teamId(teamId)
+                        .accountId(accountId)
+                        .projectId(configAdmin.getProjectId())
+                        .updatedEpochMs(Instant.now().toEpochMilli())
+                        .build();
+                teamMappingSchema.table().putItem(teamMappingSchema.toItem(mapping));
+                log.info("Updated Slack team mapping for teamId {} -> projectId {} accountId {}", teamId, configAdmin.getProjectId(), accountId);
+            }
+
+            // Auto-join bot to newly linked channels so webhook events will be received
+            autoJoinNewChannels(configPrevious, configAdmin);
+        }
+    }
+
+    /**
+     * Automatically join the bot to newly linked Slack channels.
+     * This is required because Slack only sends webhook events for channels the bot is a member of.
+     */
+    private void autoJoinNewChannels(Optional<ConfigAdmin> configPrevious, ConfigAdmin configAdmin) {
+        if (configAdmin.getSlack() == null || configAdmin.getSlack().getChannelLinks() == null) {
+            return;
+        }
+
+        Set<String> previousChannels = configPrevious
+                .map(c -> c.getSlack())
+                .map(s -> s.getChannelLinks())
+                .map(links -> links.stream().map(com.smotana.clearflask.api.model.SlackChannelLink::getChannelId).collect(Collectors.toSet()))
+                .orElse(ImmutableSet.of());
+
+        Set<String> newChannels = configAdmin.getSlack().getChannelLinks().stream()
+                .map(com.smotana.clearflask.api.model.SlackChannelLink::getChannelId)
+                .filter(channelId -> !previousChannels.contains(channelId))
+                .collect(Collectors.toSet());
+
+        if (newChannels.isEmpty()) {
+            return;
+        }
+
+        Optional<SlackClientProvider.SlackClientWithRateLimiter> clientOpt = slackClientProvider.getClient(configAdmin.getProjectId());
+        if (clientOpt.isEmpty()) {
+            log.warn("Failed to get Slack client for auto-joining channels in project {}", configAdmin.getProjectId());
+            return;
+        }
+
+        SlackClientProvider.SlackClientWithRateLimiter slackClient = clientOpt.get();
+        for (String channelId : newChannels) {
+            try {
+                slackClient.getClient().conversationsJoin(com.slack.api.methods.request.conversations.ConversationsJoinRequest.builder()
+                        .channel(channelId)
+                        .build());
+                log.info("Auto-joined bot to Slack channel {} in project {}", channelId, configAdmin.getProjectId());
+            } catch (Exception e) {
+                log.warn("Failed to auto-join bot to Slack channel {} in project {}: {}",
+                        channelId, configAdmin.getProjectId(), e.getMessage());
+                // Don't fail the entire config save if joining fails - user can manually invite
             }
         }
     }
@@ -283,6 +360,15 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
         if (slackClientProvider instanceof SlackClientProviderImpl) {
             ((SlackClientProviderImpl) slackClientProvider).invalidateClient(projectId);
         }
+
+        // Remove teamId -> projectId mapping
+        projectStore.getProject(projectId, false).ifPresent(project -> {
+            com.smotana.clearflask.api.model.Slack slackConfig = project.getVersionedConfigAdmin().getConfig().getSlack();
+            if (slackConfig != null && slackConfig.getTeamId() != null) {
+                teamMappingSchema.table().deleteItem(teamMappingSchema.primaryKey(Map.of("teamId", slackConfig.getTeamId())));
+                log.info("Removed Slack team mapping for teamId {} projectId {}", slackConfig.getTeamId(), projectId);
+            }
+        });
 
         // TODO: Clean up message mappings for this project
     }

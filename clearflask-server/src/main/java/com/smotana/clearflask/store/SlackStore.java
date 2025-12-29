@@ -58,6 +58,15 @@ public interface SlackStore {
     List<SlackChannel> getAvailableChannels(String projectId);
 
     /**
+     * Get the project ID associated with a Slack team ID.
+     * Used by webhooks to route events to the correct project.
+     *
+     * @param teamId Slack team/workspace ID
+     * @return Optional projectId if mapping exists
+     */
+    Optional<String> getProjectIdByTeamId(String teamId);
+
+    /**
      * Setup Slack integration when project config is updated.
      */
     void setupConfigSlackIntegration(String accountId, Optional<ConfigAdmin> configPrevious, ConfigAdmin configAdmin);
@@ -233,5 +242,28 @@ public interface SlackStore {
 
         @NonNull
         Long createdEpochMs;
+    }
+
+    /**
+     * Mapping between Slack team ID and ClearFlask project.
+     * Used to quickly look up which project a webhook event belongs to without scanning all projects.
+     */
+    @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    @DynamoTable(type = Primary, partitionKeys = "teamId", rangePrefix = "slackTeam")
+    @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = "accountId", rangePrefix = "slackTeamByAccount", rangeKeys = "projectId")
+    class SlackTeamMapping {
+        @NonNull
+        String teamId;
+
+        @NonNull
+        String accountId;
+
+        @NonNull
+        String projectId;
+
+        @NonNull
+        Long updatedEpochMs;
     }
 }

@@ -134,8 +134,13 @@ public class SlackResource {
             // Find project by Slack team ID
             Optional<Project> projectOpt = getProjectBySlackTeamId(teamId);
             if (projectOpt.isEmpty()) {
-                log.warn("Received Slack event for unknown team ID: {} - project not found", teamId);
-                return Response.ok().build();
+                // Fallback: Migration for existing projects that don't have the mapping yet
+                // This is a one-time scan - once the mapping is created, subsequent webhooks will be fast
+                projectOpt = findAndCreateMappingForTeamId(teamId);
+                if (projectOpt.isEmpty()) {
+                    log.warn("Received Slack event for unknown team ID: {} - project not found even after fallback search", teamId);
+                    return Response.ok().build();
+                }
             }
 
             Project project = projectOpt.get();
@@ -222,21 +227,41 @@ public class SlackResource {
     }
 
     /**
-     * Find a project by its Slack team ID.
-     * This iterates through all projects to find one with matching teamId in Slack config.
+     * Find a project by its Slack team ID using the teamId -> projectId mapping table.
+     * This is efficient and scales to any number of projects.
      */
     private Optional<Project> getProjectBySlackTeamId(String teamId) {
-        // Note: This is not the most efficient approach for large numbers of projects.
-        // For production at scale, consider adding an index or cache mapping teamId -> projectId.
-        return projectStore.getProjects(ImmutableSet.of(), false).stream()
-                .filter(project -> {
-                    com.smotana.clearflask.api.model.Slack slackConfig =
-                            project.getVersionedConfigAdmin().getConfig().getSlack();
-                    return slackConfig != null
-                            && teamId.equals(slackConfig.getTeamId())
-                            && slackConfig.getAccessToken() != null;
-                })
-                .findFirst();
+        return slackStore.getProjectIdByTeamId(teamId)
+                .flatMap(projectId -> projectStore.getProject(projectId, false));
+    }
+
+    /**
+     * Fallback method to find project by scanning all projects and create the mapping.
+     * This is only called once for existing projects that don't have the mapping yet (migration).
+     */
+    private Optional<Project> findAndCreateMappingForTeamId(String teamId) {
+        log.info("Performing one-time fallback search for teamId {}, will create mapping if found", teamId);
+        final Project[] foundProject = new Project[1];
+        projectStore.listAllProjects(project -> {
+            if (foundProject[0] != null) {
+                return; // Already found
+            }
+            com.smotana.clearflask.api.model.Slack slackConfig =
+                    project.getVersionedConfigAdmin().getConfig().getSlack();
+            if (slackConfig != null
+                    && teamId.equals(slackConfig.getTeamId())
+                    && slackConfig.getAccessToken() != null) {
+                foundProject[0] = project;
+                // Create the mapping so we don't need to scan next time
+                slackStore.setupConfigSlackIntegration(
+                        project.getAccountId(),
+                        Optional.of(project.getVersionedConfigAdmin().getConfig()),
+                        project.getVersionedConfigAdmin().getConfig());
+                log.info("Created missing Slack team mapping during fallback for teamId {} -> projectId {}",
+                        teamId, project.getProjectId());
+            }
+        });
+        return Optional.ofNullable(foundProject[0]);
     }
 
     public static Module module() {
