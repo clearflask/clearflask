@@ -3534,6 +3534,7 @@ export const ProjectSettingsGitLab = (props: {
   const classes = useStyles();
   const theme = useTheme();
   const [projects, setProjects] = useState<Array<{ projectId: number; projectPath: string; name: string }> | undefined>();
+  const [isLoadingProjects, setIsLoadingProjects] = useState<boolean>(false);
   const [selfHostedUrl, setSelfHostedUrl] = useState<string>('');
   const [selfHostedClientId, setSelfHostedClientId] = useState<string>('');
   const [showSelfHosted, setShowSelfHosted] = useState<boolean>(false);
@@ -3565,13 +3566,16 @@ export const ProjectSettingsGitLab = (props: {
     url.searchParams.delete('state');
     windowIso.history.replaceState({}, '', url.toString());
 
+    setIsLoadingProjects(true);
     return ServerAdmin.get().dispatchAdmin()
       .then(d => d.gitLabGetProjectsAdmin({ gitLabGetProjectsBody: { code, gitlabInstanceUrl } }))
       .then(result => {
         setProjects(result.projects);
+        setIsLoadingProjects(false);
       })
       .catch(err => {
         console.error('Failed to get GitLab projects:', err);
+        setIsLoadingProjects(false);
         // Error will be shown by the API layer
       });
   };
@@ -3580,11 +3584,16 @@ export const ProjectSettingsGitLab = (props: {
     accountType: 'gitlab-integration',
     redirectPath: '/dashboard/settings/project/gitlab',
   });
-  const oauthResult = oauthFlow.checkResult();
-  if (oauthResult) {
-    // extraData contains the GitLab instance URL for self-hosted instances
-    getProjects(oauthResult.code, oauthResult.extraData);
-  }
+
+  // Handle OAuth callback once on mount
+  useEffect(() => {
+    const oauthResult = oauthFlow.checkResult();
+    if (oauthResult) {
+      // extraData contains the GitLab instance URL for self-hosted instances
+      getProjects(oauthResult.code, oauthResult.extraData);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
 
   return (
     <ProjectSettingsBase title="GitLab Integration"
@@ -3652,7 +3661,12 @@ export const ProjectSettingsGitLab = (props: {
                     severity="warning" />
                 </p>
               </Collapse>
-              <Collapse in={!projects && !hasUnsavedChanges}>
+              <Collapse in={isLoadingProjects}>
+                <p>
+                  <Loading />
+                </p>
+              </Collapse>
+              <Collapse in={!projects && !hasUnsavedChanges && !isLoadingProjects}>
                 <p>
                   <Button
                     variant="contained"
@@ -3827,6 +3841,15 @@ const JiraStatusSyncConfig = (props: {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | undefined>();
 
+  // Subscribe to editor changes to force re-render when config changes
+  const [renderKey, setRenderKey] = useState(0);
+
+  useEffect(() => {
+    return props.editor.subscribe(() => {
+      setRenderKey(k => k + 1);
+    });
+  }, [props.editor]);
+
   // Get ClearFlask statuses from the linked category
   const cfStatuses = React.useMemo(() => {
     const statuses: Array<{ statusId: string; name: string; color?: string }> = [];
@@ -3837,7 +3860,7 @@ const JiraStatusSyncConfig = (props: {
       }
     }
     return statuses;
-  }, [props.jira, props.editor]);
+  }, [props.jira?.createWithCategoryId, props.editor, renderKey]);
 
   const autoSuggestMappings = React.useCallback((jiraStatusList: Array<{ id: string; name: string }>) => {
     if (!cfStatuses.length || !jiraStatusList.length) return;
@@ -3935,15 +3958,6 @@ const JiraStatusSyncConfig = (props: {
   const handleDefaultJiraStatusChange = (jiraStatusName: string) => {
     (props.editor.getProperty(['jira', 'statusSync', 'defaultJiraStatusName']) as any).set(jiraStatusName || undefined);
   };
-
-  // Subscribe to editor changes to force re-render
-  const [renderKey, setRenderKey] = useState(0);
-
-  useEffect(() => {
-    return props.editor.subscribe(() => {
-      setRenderKey(k => k + 1);
-    });
-  }, [props.editor]);
 
   return (
     <div style={{ marginTop: 16, marginBottom: 16 }}>
