@@ -536,7 +536,9 @@ public class JiraClientProviderImpl implements JiraClientProvider {
             requestBody.addProperty("url", webhookRequest.getUrl());
             requestBody.add("webhooks", createWebhookArray(webhookRequest));
 
-            request.setEntity(new StringEntity(gson.toJson(requestBody), Charsets.UTF_8));
+            String requestBodyJson = gson.toJson(requestBody);
+            log.info("Registering Jira webhook with payload: {}", requestBodyJson);
+            request.setEntity(new StringEntity(requestBodyJson, Charsets.UTF_8));
 
             JsonObject response = executeRequest(request, JsonObject.class);
             JsonArray webhooks = response.getAsJsonArray("webhookRegistrationResult");
@@ -563,11 +565,10 @@ public class JiraClientProviderImpl implements JiraClientProvider {
             }
             webhook.add("events", events);
 
-            if (request.getFilters() != null && !request.getFilters().isEmpty()) {
-                JsonObject jqlFilter = new JsonObject();
-                jqlFilter.addProperty("expression", String.join(" AND ", request.getFilters()));
-                webhook.add("jqlFilter", jqlFilter);
-            }
+            // Jira Cloud REST API v3 webhook structure:
+            // The API expects only events array, no jqlFilter support in v3
+            // For project filtering, Jira recommends using the old webhooks/1.0 API
+            // or filtering in the webhook handler
 
             webhooks.add(webhook);
             return webhooks;
