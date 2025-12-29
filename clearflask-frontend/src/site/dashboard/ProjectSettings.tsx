@@ -4097,6 +4097,7 @@ export const ProjectSettingsJira = (props: {
   const classes = useStyles();
   const theme = useTheme();
   const [projects, setProjects] = useState<Array<{ cloudId: string; cloudName?: string; projectKey: string; projectName: string }> | undefined>();
+  const [isLoadingProjects, setIsLoadingProjects] = useState<boolean>(false);
 
   const accountBasePlanId = useSelector<ReduxStateAdmin, string | undefined>(state => state.account.account.account?.basePlanId, shallowEqual);
   const accountAddons = useSelector<ReduxStateAdmin, {
@@ -4125,13 +4126,16 @@ export const ProjectSettingsJira = (props: {
     url.searchParams.delete('state');
     windowIso.history.replaceState({}, '', url.toString());
 
+    setIsLoadingProjects(true);
     return ServerAdmin.get().dispatchAdmin()
       .then(d => d.jiraGetProjectsAdmin({ code }))
       .then(result => {
         setProjects(result.projects);
+        setIsLoadingProjects(false);
       })
       .catch(err => {
         console.error('Failed to get Jira projects:', err);
+        setIsLoadingProjects(false);
         // Error will be shown by the API layer
       });
   };
@@ -4140,10 +4144,15 @@ export const ProjectSettingsJira = (props: {
     accountType: 'jira-integration',
     redirectPath: '/dashboard/settings/project/jira',
   });
-  const oauthResult = oauthFlow.checkResult();
-  if (oauthResult) {
-    getProjects(oauthResult.code);
-  }
+
+  // Handle OAuth callback once on mount
+  useEffect(() => {
+    const oauthResult = oauthFlow.checkResult();
+    if (oauthResult) {
+      getProjects(oauthResult.code);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
 
   return (
     <ProjectSettingsBase title="Jira Integration"
@@ -4213,7 +4222,12 @@ export const ProjectSettingsJira = (props: {
                     severity="warning" />
                 </p>
               </Collapse>
-              <Collapse in={!projects && !hasUnsavedChanges}>
+              <Collapse in={isLoadingProjects}>
+                <p>
+                  <Loading />
+                </p>
+              </Collapse>
+              <Collapse in={!projects && !hasUnsavedChanges && !isLoadingProjects}>
                 <p>
                   <Button
                     variant="contained"
