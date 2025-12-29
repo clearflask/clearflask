@@ -25,6 +25,7 @@ import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
+import com.slack.api.Slack;
 import com.slack.api.methods.MethodsClient;
 import com.slack.api.methods.SlackApiException;
 import com.slack.api.methods.response.chat.ChatPostMessageResponse;
@@ -315,7 +316,9 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
      * This is required because Slack only sends webhook events for channels the bot is a member of.
      */
     private void autoJoinNewChannels(Optional<ConfigAdmin> configPrevious, ConfigAdmin configAdmin) {
-        if (configAdmin.getSlack() == null || configAdmin.getSlack().getChannelLinks() == null) {
+        if (configAdmin.getSlack() == null
+                || configAdmin.getSlack().getChannelLinks() == null
+                || configAdmin.getSlack().getAccessToken() == null) {
             return;
         }
 
@@ -334,24 +337,27 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
             return;
         }
 
-        Optional<SlackClientProvider.SlackClientWithRateLimiter> clientOpt = slackClientProvider.getClient(configAdmin.getProjectId());
-        if (clientOpt.isEmpty()) {
-            log.warn("Failed to get Slack client for auto-joining channels in project {}", configAdmin.getProjectId());
-            return;
-        }
+        // Create Slack client directly from access token instead of using getClient()
+        // which requires the config to be saved to database first
+        try {
+            Slack slack = Slack.getInstance();
+            MethodsClient client = slack.methods(configAdmin.getSlack().getAccessToken());
 
-        SlackClientProvider.SlackClientWithRateLimiter slackClient = clientOpt.get();
-        for (String channelId : newChannels) {
-            try {
-                slackClient.getClient().conversationsJoin(com.slack.api.methods.request.conversations.ConversationsJoinRequest.builder()
-                        .channel(channelId)
-                        .build());
-                log.info("Auto-joined bot to Slack channel {} in project {}", channelId, configAdmin.getProjectId());
-            } catch (Exception e) {
-                log.warn("Failed to auto-join bot to Slack channel {} in project {}: {}",
-                        channelId, configAdmin.getProjectId(), e.getMessage());
-                // Don't fail the entire config save if joining fails - user can manually invite
+            for (String channelId : newChannels) {
+                try {
+                    client.conversationsJoin(com.slack.api.methods.request.conversations.ConversationsJoinRequest.builder()
+                            .channel(channelId)
+                            .build());
+                    log.info("Auto-joined bot to Slack channel {} in project {}", channelId, configAdmin.getProjectId());
+                } catch (Exception e) {
+                    log.warn("Failed to auto-join bot to Slack channel {} in project {}: {}",
+                            channelId, configAdmin.getProjectId(), e.getMessage());
+                    // Don't fail the entire config save if joining fails - user can manually invite
+                }
             }
+        } catch (Exception e) {
+            log.warn("Failed to create Slack client for auto-joining channels in project {}: {}",
+                    configAdmin.getProjectId(), e.getMessage());
         }
     }
 
