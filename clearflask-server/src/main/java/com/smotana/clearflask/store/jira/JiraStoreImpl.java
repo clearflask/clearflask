@@ -216,7 +216,7 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
             throw new ApiException(Response.Status.SERVICE_UNAVAILABLE, "Jira integration is disabled");
         }
 
-        Optional<JiraAuthorization> authOpt = getAuthorization(accountId, cloudId);
+        Optional<JiraAuthorization> authOpt = getAuthorizationWithRefresh(accountId, cloudId);
         if (authOpt.isEmpty()) {
             throw new ApiException(Response.Status.UNAUTHORIZED, "No Jira authorization found for this account");
         }
@@ -251,7 +251,7 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
             throw new ApiException(Response.Status.SERVICE_UNAVAILABLE, "Jira integration is disabled");
         }
 
-        Optional<JiraAuthorization> authOpt = getAuthorization(accountId, cloudId);
+        Optional<JiraAuthorization> authOpt = getAuthorizationWithRefresh(accountId, cloudId);
         if (authOpt.isEmpty()) {
             throw new ApiException(Response.Status.UNAUTHORIZED, "No Jira authorization found for this account");
         }
