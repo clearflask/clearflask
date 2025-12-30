@@ -3860,7 +3860,8 @@ const JiraStatusSyncConfig = (props: {
       }
     }
     return statuses;
-  }, [props.jira, props.editor]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.jira, props.editor, renderKey]);
 
   const autoSuggestMappings = React.useCallback((jiraStatusList: Array<{ id: string; name: string }>) => {
     if (!cfStatuses.length || !jiraStatusList.length) return;
