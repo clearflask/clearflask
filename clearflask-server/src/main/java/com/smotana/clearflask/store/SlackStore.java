@@ -72,6 +72,12 @@ public interface SlackStore {
     void setupConfigSlackIntegration(String accountId, Optional<ConfigAdmin> configPrevious, ConfigAdmin configAdmin);
 
     /**
+     * Perform post-config-save actions for Slack integration.
+     * This is called AFTER the config is saved to the database, so webhook events can be properly handled.
+     */
+    void postConfigSaveActions(Optional<ConfigAdmin> configPrevious, ConfigAdmin configAdmin);
+
+    /**
      * Remove Slack integration from a project.
      */
     void removeIntegration(String projectId);

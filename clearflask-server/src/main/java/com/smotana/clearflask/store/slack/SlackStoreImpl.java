@@ -305,15 +305,22 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
                 teamMappingSchema.table().putItem(teamMappingSchema.toItem(mapping));
                 log.info("Updated Slack team mapping for teamId {} -> projectId {} accountId {}", teamId, configAdmin.getProjectId(), accountId);
             }
-
-            // Auto-join bot to newly linked channels so webhook events will be received
-            autoJoinNewChannels(configPrevious, configAdmin);
         }
+    }
+
+    @Override
+    public void postConfigSaveActions(Optional<ConfigAdmin> configPrevious, ConfigAdmin configAdmin) {
+        // Auto-join bot to newly linked channels AFTER config is saved
+        // This ensures webhook events can be properly handled with the saved config
+        autoJoinNewChannels(configPrevious, configAdmin);
     }
 
     /**
      * Automatically join the bot to newly linked Slack channels.
      * This is required because Slack only sends webhook events for channels the bot is a member of.
+     *
+     * IMPORTANT: This must be called AFTER the config is saved to the database, otherwise
+     * webhook events that arrive immediately after joining won't find the channel link configuration.
      */
     private void autoJoinNewChannels(Optional<ConfigAdmin> configPrevious, ConfigAdmin configAdmin) {
         if (configAdmin.getSlack() == null

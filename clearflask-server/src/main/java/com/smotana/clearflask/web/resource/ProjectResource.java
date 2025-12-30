@@ -345,6 +345,12 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 versionedConfigAdmin,
                 isSuperAdmin);
 
+        // IMPORTANT: Call post-config-save actions AFTER config is in the database
+        // so webhook events can find the saved configuration
+        slackStore.postConfigSaveActions(
+                Optional.of(project.getVersionedConfigAdmin().getConfig()),
+                configAdmin);
+
         return versionedConfigAdmin;
     }
 
