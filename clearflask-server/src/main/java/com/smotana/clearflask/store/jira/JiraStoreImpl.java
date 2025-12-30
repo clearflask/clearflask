@@ -950,7 +950,7 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
 
                 // Format comment with author attribution
                 String authorName = user.getName() != null ? user.getName() : "ClearFlask User";
-                String commentText = authorName + " wrote:\n\n" + adfQuillConverter.quillToPlainText(comment.getContentAsUnsafeHtml());
+                String commentText = authorName + " wrote:\n\n" + comment.getContentAsText(sanitizer);
                 String commentAdf = adfQuillConverter.plainTextToAdf(commentText);
 
                 JiraComment jiraComment = client.getApiClient().addComment(issueKey, commentAdf);
@@ -1062,7 +1062,7 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
                     String authorName = idea.getResponseAuthorName() != null
                             ? idea.getResponseAuthorName() : "ClearFlask Team";
                     String responseText = "Response from " + authorName + ":\n\n"
-                            + adfQuillConverter.quillToPlainText(idea.getResponseAsUnsafeHtml());
+                            + idea.getResponseAsText(sanitizer);
                     String responseAdf = adfQuillConverter.plainTextToAdf(responseText);
 
                     responseComment = client.getApiClient().addComment(issueKey, responseAdf);
