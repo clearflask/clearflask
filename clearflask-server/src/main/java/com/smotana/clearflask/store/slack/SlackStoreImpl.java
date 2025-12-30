@@ -52,6 +52,7 @@ import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.MarkdownAndQuillUtil;
+import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.Sanitizer;
 import io.dataspray.singletable.IndexSchema;
@@ -59,6 +60,7 @@ import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -250,7 +252,23 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
         if (!response.isOk()) {
             log.error("Failed to list Slack channels: error={}, warning={}, needed={}",
                     response.getError(), response.getWarning(), response.getNeeded());
-            return ImmutableList.of();
+
+            // Handle specific error cases with better messages
+            if ("account_inactive".equals(response.getError())) {
+                throw new ApiException(Response.Status.UNAUTHORIZED,
+                        "Slack app has been uninstalled or token revoked. Please re-authorize the Slack integration.");
+            } else if ("token_revoked".equals(response.getError()) || "token_expired".equals(response.getError())) {
+                throw new ApiException(Response.Status.UNAUTHORIZED,
+                        "Slack token is invalid. Please re-authorize the Slack integration.");
+            } else if ("missing_scope".equals(response.getError())) {
+                throw new ApiException(Response.Status.FORBIDDEN,
+                        "Missing required Slack permissions: " + response.getNeeded() +
+                        ". Please re-authorize the Slack app with updated permissions.");
+            }
+
+            // Generic error for other cases
+            throw new ApiException(Response.Status.SERVICE_UNAVAILABLE,
+                    "Failed to fetch Slack channels: " + response.getError());
         }
 
         List<SlackChannel> channels = new ArrayList<>();

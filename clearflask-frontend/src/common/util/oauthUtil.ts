@@ -63,7 +63,8 @@ const SlackProvider: OAuthProvider = {
   authorizeUrl: 'https://slack.com/oauth/v2/authorize',
   // incoming-webhook scope triggers channel picker during OAuth
   // History scopes (channels:history, groups:history) required to receive message events via Events API
-  scope: 'incoming-webhook channels:read channels:history channels:write.invites chat:write chat:write.public groups:read groups:history im:history mpim:history',
+  // channels:join required to automatically add bot to public channels
+  scope: 'incoming-webhook channels:read channels:history channels:join channels:write.invites chat:write chat:write.public groups:read groups:history im:history mpim:history',
 };
 
 export type Unsubscribe = () => void;
