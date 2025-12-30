@@ -18,6 +18,7 @@ import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Named;
+import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.AccountBillingPaymentActionRequired;
@@ -1488,6 +1489,20 @@ public class KillBilling extends ManagedService implements Billing {
             @Override
             protected void configure() {
                 bind(Billing.class).to(KillBilling.class).asEagerSingleton();
+                install(ConfigSystem.configModule(Config.class));
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(KillBilling.class).asEagerSingleton();
+            }
+        };
+    }
+
+    /**
+     * Module that binds KillBilling with a named annotation for use with BillingRouter.
+     */
+    public static Module moduleNamed() {
+        return new AbstractModule() {
+            @Override
+            protected void configure() {
+                bind(Billing.class).annotatedWith(Names.named("killbill")).to(KillBilling.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
                 Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(KillBilling.class).asEagerSingleton();
             }

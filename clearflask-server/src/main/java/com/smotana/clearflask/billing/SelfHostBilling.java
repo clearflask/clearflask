@@ -7,6 +7,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
+import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.AccountBillingPaymentActionRequired;
@@ -303,6 +304,19 @@ public class SelfHostBilling implements Billing {
             @Override
             protected void configure() {
                 bind(Billing.class).to(SelfHostBilling.class).asEagerSingleton();
+                install(ConfigSystem.configModule(Config.class));
+            }
+        };
+    }
+
+    /**
+     * Module that binds SelfHostBilling with a named annotation for use with BillingRouter.
+     */
+    public static Module moduleNamed() {
+        return new AbstractModule() {
+            @Override
+            protected void configure() {
+                bind(Billing.class).annotatedWith(Names.named("selfhost")).to(SelfHostBilling.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
             }
         };
