@@ -579,10 +579,14 @@ public class JiraClientProviderImpl implements JiraClientProvider {
             }
             webhook.add("events", events);
 
-            // Jira Cloud REST API v3 webhook structure:
-            // The API expects only events array, no jqlFilter support in v3
-            // For project filtering, Jira recommends using the old webhooks/1.0 API
-            // or filtering in the webhook handler
+            // Jira requires a jqlFilter - "Empty JQL search not supported"
+            // Use a filter that matches all issues in the project
+            if (request.getFilters() != null && !request.getFilters().isEmpty()) {
+                webhook.addProperty("jqlFilter", request.getFilters().get(0));
+            } else {
+                // Default to matching all issues (empty string is not allowed)
+                webhook.addProperty("jqlFilter", "project is not EMPTY");
+            }
 
             webhooks.add(webhook);
             return webhooks;
