@@ -345,10 +345,46 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
 
             for (String channelId : newChannels) {
                 try {
-                    client.conversationsJoin(com.slack.api.methods.request.conversations.ConversationsJoinRequest.builder()
-                            .channel(channelId)
-                            .build());
-                    log.info("Auto-joined bot to Slack channel {} in project {}", channelId, configAdmin.getProjectId());
+                    // Check if channel is private before attempting to join
+                    com.slack.api.methods.response.conversations.ConversationsInfoResponse infoResponse =
+                        client.conversationsInfo(r -> r.channel(channelId));
+
+                    if (!infoResponse.isOk()) {
+                        log.warn("Failed to get info for Slack channel {} in project {}: error={}",
+                                channelId, configAdmin.getProjectId(), infoResponse.getError());
+                        continue;
+                    }
+
+                    boolean isPrivate = infoResponse.getChannel().isPrivate();
+                    boolean isMember = infoResponse.getChannel().isMember();
+
+                    if (isMember) {
+                        log.info("Bot is already a member of Slack channel {} in project {}", channelId, configAdmin.getProjectId());
+                        continue;
+                    }
+
+                    if (isPrivate) {
+                        // conversationsJoin only works for public channels
+                        // For private channels, bot must be invited manually via /invite @bot
+                        // This is a Slack API limitation - bots can't join private channels programmatically
+                        log.info("Slack channel {} is private - bot must be manually invited via /invite @ClearFlask integration in project {}",
+                                channelId, configAdmin.getProjectId());
+                        continue;
+                    }
+
+                    // Try to join public channel
+                    com.slack.api.methods.response.conversations.ConversationsJoinResponse joinResponse =
+                        client.conversationsJoin(com.slack.api.methods.request.conversations.ConversationsJoinRequest.builder()
+                                .channel(channelId)
+                                .build());
+
+                    if (joinResponse.isOk()) {
+                        log.info("Auto-joined bot to Slack channel {} in project {}", channelId, configAdmin.getProjectId());
+                    } else {
+                        log.warn("Failed to auto-join bot to Slack channel {} in project {}: error={}, needed={}, warning={}",
+                                channelId, configAdmin.getProjectId(), joinResponse.getError(),
+                                joinResponse.getNeeded(), joinResponse.getWarning());
+                    }
                 } catch (Exception e) {
                     log.warn("Failed to auto-join bot to Slack channel {} in project {}: {}",
                             channelId, configAdmin.getProjectId(), e.getMessage());
