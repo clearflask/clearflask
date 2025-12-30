@@ -229,16 +229,27 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
             // IMPORTANT: Must specify TokenType.OAUTH2_ACCESS for OAuth tokens, not PRIVATE (PAT)
             GitLabApi gitLabApi = new GitLabApi(instanceUrl, org.gitlab4j.api.Constants.TokenType.OAUTH2_ACCESS, oAuthResponse.getAccessToken());
             log.info("GitLab API client created successfully for account {}", accountId);
+
+            // Test the token validity first with a simple API call
+            try {
+                org.gitlab4j.api.models.User currentUser = gitLabApi.getUserApi().getCurrentUser();
+                log.info("GitLab token validated successfully for user: {}", currentUser.getUsername());
+            } catch (org.gitlab4j.api.GitLabApiException e) {
+                log.error("GitLab token validation failed for account {}: {} - {}", accountId, e.getHttpStatus(), e.getMessage());
+                throw new ApiException(Response.Status.UNAUTHORIZED, "GitLab authentication failed: " + e.getMessage(), e);
+            }
+
             ImmutableList.Builder<GitLabAvailableProject> projectsBuilder = ImmutableList.builder();
             ImmutableMap.Builder<Long, String> projectIdsBuilder = ImmutableMap.builder();
 
             // Get projects the user has access to (maintainer or higher for webhook creation)
-            log.info("Attempting to fetch GitLab projects for account {} from instance {} with token starting with {}",
-                    accountId, instanceUrl, oAuthResponse.getAccessToken().substring(0, Math.min(10, oAuthResponse.getAccessToken().length())));
+            log.info("Attempting to fetch GitLab projects for account {} from instance {}", accountId, instanceUrl);
             try {
-                // Use getProjects() to fetch all projects accessible to the user
-                // Pass null for most parameters to use defaults
-                for (org.gitlab4j.api.models.Project project : gitLabApi.getProjectApi().getProjects()) {
+                // Use getMemberProjects() with Pager to avoid hanging on large datasets
+                // Filter to projects where user has at least maintainer access (for webhook creation)
+                org.gitlab4j.api.Pager<org.gitlab4j.api.models.Project> pager = gitLabApi.getProjectApi().getMemberProjects(30);
+                while (pager.hasNext()) {
+                    for (org.gitlab4j.api.models.Project project : pager.next()) {
                     if (project == null || project.getId() == null) {
                         log.warn("Skipping null project or project with null ID for account {}", accountId);
                         continue;
@@ -254,6 +265,7 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
                             projectPath,
                             projectName));
                     projectIdsBuilder.put(project.getId(), instanceUrl);
+                    }
                 }
 
                 // Store authorization for the fetched projects

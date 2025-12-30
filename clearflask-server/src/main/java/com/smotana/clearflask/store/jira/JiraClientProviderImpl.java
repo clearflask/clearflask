@@ -541,17 +541,31 @@ public class JiraClientProviderImpl implements JiraClientProvider {
             request.setEntity(new StringEntity(requestBodyJson, Charsets.UTF_8));
 
             JsonObject response = executeRequest(request, JsonObject.class);
+            log.info("Jira webhook registration response: {}", gson.toJson(response));
             JsonArray webhooks = response.getAsJsonArray("webhookRegistrationResult");
-            if (webhooks.size() > 0) {
+            if (webhooks != null && webhooks.size() > 0) {
                 JsonObject webhook = webhooks.get(0).getAsJsonObject();
+                log.info("First webhook in response: {}", gson.toJson(webhook));
+
+                // The field might be "createdWebhookId" or just "id" depending on API version
+                JsonElement webhookIdElement = webhook.get("createdWebhookId");
+                if (webhookIdElement == null) {
+                    webhookIdElement = webhook.get("id");
+                }
+                if (webhookIdElement == null) {
+                    log.error("Webhook response missing both 'createdWebhookId' and 'id' fields. Response: {}", gson.toJson(webhook));
+                    throw new IOException("Webhook response missing webhook ID field");
+                }
+
                 return JiraWebhookRegistration.builder()
-                        .id(webhook.get("createdWebhookId").getAsString())
+                        .id(webhookIdElement.getAsString())
                         .url(webhookRequest.getUrl())
                         .events(ImmutableList.copyOf(webhookRequest.getEvents()))
                         .name(webhookRequest.getName())
                         .enabled(true)
                         .build();
             }
+            log.error("Failed to register webhook - empty or null webhookRegistrationResult. Full response: {}", gson.toJson(response));
             throw new IOException("Failed to register webhook");
         }
 
