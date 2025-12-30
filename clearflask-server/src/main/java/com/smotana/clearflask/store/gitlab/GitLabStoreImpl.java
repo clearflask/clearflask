@@ -524,7 +524,20 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
     }
 
     private void linkProject(String projectId, GitLabAuthorization authorization) {
-        GitLabApi api = new GitLabApi(authorization.getGitlabInstanceUrl(), authorization.getAccessToken());
+        // Check if token is expired and refresh if needed
+        if (authorization.getExpiresAt() < Instant.now().getEpochSecond()) {
+            log.info("GitLab access token expired, attempting refresh for webhook creation in project {} gitlabProjectId {}",
+                    projectId, authorization.getProjectId());
+            try {
+                authorization = refreshAccessToken(authorization);
+            } catch (ApiException ex) {
+                log.warn("Failed to refresh expired GitLab token for webhook creation", ex);
+                throw new ApiException(Response.Status.UNAUTHORIZED,
+                        "GitLab authorization expired and cannot be refreshed. Please re-authorize.", ex);
+            }
+        }
+
+        GitLabApi api = new GitLabApi(authorization.getGitlabInstanceUrl(), org.gitlab4j.api.Constants.TokenType.OAUTH2_ACCESS, authorization.getAccessToken());
         try {
             URL webhookUrl = getWebhookUrl(projectId, authorization.getProjectId());
 
