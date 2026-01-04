@@ -233,12 +233,8 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
         Optional<com.smotana.clearflask.api.model.GitHub> integrationOpt = Optional.ofNullable(configAdmin.getGithub());
         Optional<com.smotana.clearflask.api.model.GitHub> integrationPreviousOpt = configPrevious.flatMap(c -> Optional.ofNullable(c.getGithub()));
 
-
-        if (integrationOpt.map(com.smotana.clearflask.api.model.GitHub::getInstallationId).equals(integrationPreviousOpt.map(com.smotana.clearflask.api.model.GitHub::getInstallationId))
-                && integrationOpt.map(com.smotana.clearflask.api.model.GitHub::getRepositoryId).equals(integrationPreviousOpt.map(com.smotana.clearflask.api.model.GitHub::getRepositoryId))
-                // Also update webhook if we enabled Releases since we need to update the webhook event list
-                && (integrationPreviousOpt.flatMap(i -> Optional.ofNullable(Strings.emptyToNull(i.getCreateReleaseWithCategoryId()))).isPresent()
-                || integrationOpt.flatMap(i -> Optional.ofNullable(Strings.emptyToNull(i.getCreateReleaseWithCategoryId()))).isEmpty())) {
+        // Skip if GitHub integration config hasn't changed
+        if (integrationOpt.equals(integrationPreviousOpt)) {
             return;
         }
 

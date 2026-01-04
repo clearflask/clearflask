@@ -416,10 +416,8 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
         Optional<GitLab> integrationOpt = Optional.ofNullable(configAdmin.getGitlab());
         Optional<GitLab> integrationPreviousOpt = configPrevious.flatMap(c -> Optional.ofNullable(c.getGitlab()));
 
-        if (integrationOpt.map(GitLab::getProjectId).equals(integrationPreviousOpt.map(GitLab::getProjectId))
-                && integrationOpt.map(GitLab::getGitlabInstanceUrl).equals(integrationPreviousOpt.map(GitLab::getGitlabInstanceUrl))
-                && (integrationPreviousOpt.flatMap(i -> Optional.ofNullable(Strings.emptyToNull(i.getCreateReleaseWithCategoryId()))).isPresent()
-                || integrationOpt.flatMap(i -> Optional.ofNullable(Strings.emptyToNull(i.getCreateReleaseWithCategoryId()))).isEmpty())) {
+        // Skip if GitLab integration config hasn't changed
+        if (integrationOpt.equals(integrationPreviousOpt)) {
             return;
         }
 
