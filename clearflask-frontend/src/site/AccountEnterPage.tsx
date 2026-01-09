@@ -784,6 +784,8 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
         try {
             const couponId = this.props.location.state?.[ADMIN_ENTER_COUPON_ID];
             const preSelectedPlanPrice = this.props.location.state?.[PRE_SELECTED_PLAN_PRICE];
+            // Check for stripe_test=1 query parameter for testing Stripe integration
+            const useStripeTestMode = new URLSearchParams(windowIso.location.search).get('stripe_test') === '1';
             await dispatchAdmin.accountSignupAdmin({
                 accountSignupAdmin: {
                     name: this.state.name!,
@@ -793,6 +795,7 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
                     requestedPrice: preSelectedPlanPrice || undefined,
                     invitationId: this.props.location.state?.[ADMIN_ENTER_INVITATION_ID],
                     couponId,
+                    useStripeTestMode: useStripeTestMode || undefined,
                 }
             });
             this.setState({

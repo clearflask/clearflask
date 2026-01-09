@@ -97,6 +97,18 @@ public class SelfHostPlanStore implements PlanStore {
         return planId;
     }
 
+    @Override
+    public Optional<String> getStripePriceId(String planId) {
+        // Self-hosted doesn't use Stripe
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<Long> getTrialDays(String planId) {
+        // Self-hosted doesn't have trial periods
+        return Optional.empty();
+    }
+
     public static Module module() {
         return new AbstractModule() {
             @Override
