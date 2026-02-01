@@ -1,4 +1,4 @@
-FROM tomcat:8.5-jdk11-openjdk-slim-bullseye
+FROM tomcat:8.5-jdk17-temurin-jammy
 EXPOSE 8080
 # JMX
 EXPOSE 9950
