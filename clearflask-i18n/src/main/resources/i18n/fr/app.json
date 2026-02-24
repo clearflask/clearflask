@@ -135,6 +135,7 @@
   "as-user": "En tant qu'utilisateur",
   "select-author": "Sélectionner l'auteur",
   "notify-all-subscribers": "Notifier tous les abonnés",
+  "private-visible-to-admins-only": "Privé (visible uniquement pour les administrateurs)",
   "notification-title": "Titre de la notification",
   "notification-body": "Corps de la notification",
   "link-to": "Lien vers",
@@ -142,5 +143,12 @@
   "reply": "Répondre",
   "edit": "Editer",
   "edited": "Modifié",
-  "comment-deleted": "Commentaire supprimé"
+  "comment-deleted": "Commentaire supprimé",
+  "vote-on-behalf": "Voter au nom",
+  "search-user": "Rechercher un utilisateur",
+  "add-vote": "Ajouter un vote",
+  "remove-vote": "Supprimer le vote",
+  "failed-to-add-vote": "Impossible d'ajouter le vote",
+  "failed-to-remove-vote": "Impossible de supprimer le vote",
+  "action": "Action"
 }
