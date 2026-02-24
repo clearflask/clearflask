@@ -222,5 +222,19 @@
   "free-forever": "永远免费的",
   "you-have-unsaved-changes": "您有未保存的更改",
   "empty": "空的",
-  "notifications": "通知"
+  "notifications": "通知",
+  "talk": "对话",
+  "forgot-password": "忘记密码？",
+  "email-sent": "电子邮件已发送！",
+  "password-reset-email-sent": "如果此电子邮件存在帐户，您将很快收到密码重置链接。",
+  "enter-email-for-password-reset": "输入您的电子邮件地址，我们会给您发送一个链接来重置您的密码。",
+  "send-reset-link": "发送重置链接",
+  "remember-password": "记住您的密码？",
+  "invalid-reset-link": "Invalid reset link",
+  "reset-link-invalid-or-expired": "此密码重置链接无效或已过期。",
+  "need-new-link": "需要一个新链接？",
+  "request-new-link": "请求新链接",
+  "reset-your-password": "重置您的密码",
+  "new-password": "新密码",
+  "reset-password": "重置密码"
 }
