@@ -222,5 +222,19 @@
   "free-forever": "Бесплатно навсегда",
   "you-have-unsaved-changes": "У вас есть несохраненные изменения",
   "empty": "Пусто",
-  "notifications": "Уведомления"
+  "notifications": "Уведомления",
+  "talk": "Говорить",
+  "forgot-password": "Забыли пароль?",
+  "email-sent": "Письмо отправлено!",
+  "password-reset-email-sent": "Если учетная запись существует с этим письмом, вы вскоре получите ссылку для сброса пароля.",
+  "enter-email-for-password-reset": "Введите свой адрес электронной почты, и мы вышлем вам ссылку для сброса пароля.",
+  "send-reset-link": "Отправить ссылку для сброса",
+  "remember-password": "Запомнить пароль?",
+  "invalid-reset-link": "Invalid reset link",
+  "reset-link-invalid-or-expired": "Ссылка для сброса пароля недействительна или истекла.",
+  "need-new-link": "Нужна новая ссылка?",
+  "request-new-link": "Запросить новую ссылку",
+  "reset-your-password": "Сброс пароля",
+  "new-password": "Новый пароль",
+  "reset-password": "Сброс пароля"
 }
