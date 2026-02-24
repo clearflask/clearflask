@@ -222,5 +222,19 @@
   "free-forever": "Gratis per sempre",
   "you-have-unsaved-changes": "Hai modifiche non salvate",
   "empty": "Vuoto",
-  "notifications": "Notifiche"
+  "notifications": "Notifiche",
+  "talk": "Parla",
+  "forgot-password": "Password dimenticata?",
+  "email-sent": "Email inviata!",
+  "password-reset-email-sent": "Se esiste un account con questa email, riceverai presto un link per reimpostare la password.",
+  "enter-email-for-password-reset": "Inserisci il tuo indirizzo email e ti invieremo un link per reimpostare la password.",
+  "send-reset-link": "Invia link di reset",
+  "remember-password": "Ricordare la password?",
+  "invalid-reset-link": "Invalid reset link",
+  "reset-link-invalid-or-expired": "Questo link di reset della password non è valido o è scaduto.",
+  "need-new-link": "Hai bisogno di un nuovo link?",
+  "request-new-link": "Richiedi nuovo link",
+  "reset-your-password": "Reimposta la tua password",
+  "new-password": "Nuova password",
+  "reset-password": "Reimposta password"
 }
