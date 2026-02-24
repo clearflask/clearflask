@@ -222,5 +222,19 @@
   "free-forever": "永久に無料",
   "you-have-unsaved-changes": "保存されていない変更があります",
   "empty": "なし",
-  "notifications": "通知"
+  "notifications": "通知",
+  "talk": "トーク",
+  "forgot-password": "パスワードを忘れましたか？",
+  "email-sent": "メールを送信しました！",
+  "password-reset-email-sent": "このメールアドレスのアカウントが存在する場合、まもなくパスワードリセットリンクが表示されます。",
+  "enter-email-for-password-reset": "メールアドレスを入力すると、パスワードをリセットするためのリンクが送信されます。",
+  "send-reset-link": "リセットリンクを送信",
+  "remember-password": "パスワードを記憶しますか？",
+  "invalid-reset-link": "Invalid reset link",
+  "reset-link-invalid-or-expired": "このパスワードリセットリンクは無効または期限切れです。",
+  "need-new-link": "新しいリンクが必要ですか？",
+  "request-new-link": "新しいリンクをリクエスト",
+  "reset-your-password": "パスワードをリセットする",
+  "new-password": "新しいパスワード",
+  "reset-password": "パスワードのリセット"
 }
