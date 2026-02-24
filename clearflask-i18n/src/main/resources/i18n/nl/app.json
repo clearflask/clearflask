@@ -136,6 +136,7 @@
   "as-user": "Als gebruiker",
   "select-author": "Selecteer auteur",
   "notify-all-subscribers": "Alle abonnees inlichten",
+  "private-visible-to-admins-only": "Privé (alleen zichtbaar voor admins)",
   "notification-title": "Notificatie titel",
   "notification-body": "Notificatie lichaam",
   "link-to": "Link naar",
@@ -143,5 +144,12 @@
   "reply": "Beantwoorden",
   "edit": "Bewerken",
   "edited": "Bewerkt",
-  "comment-deleted": "Reactie verwijderd"
+  "comment-deleted": "Reactie verwijderd",
+  "vote-on-behalf": "Stem namens",
+  "search-user": "Zoek gebruiker",
+  "add-vote": "Stem toevoegen",
+  "remove-vote": "Stem verwijderen",
+  "failed-to-add-vote": "Kon geen stem toevoegen",
+  "failed-to-remove-vote": "Kan de stem niet verwijderen",
+  "action": "actie"
 }
