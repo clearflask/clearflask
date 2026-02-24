@@ -222,5 +222,19 @@
   "free-forever": "مجاني إلى الأبد",
   "you-have-unsaved-changes": "لديك تغييرات غير محفوظة",
   "empty": "فارغ",
-  "notifications": "الإشعارات"
+  "notifications": "الإشعارات",
+  "talk": "تحدث",
+  "forgot-password": "نسيت كلمة المرور؟",
+  "email-sent": "تم إرسال البريد الإلكتروني!",
+  "password-reset-email-sent": "إذا كان هناك حساب بهذا البريد الإلكتروني، سوف تتلقى رابط إعادة تعيين كلمة المرور قريباً.",
+  "enter-email-for-password-reset": "أدخل عنوان بريدك الإلكتروني وسوف نرسل لك رابط لإعادة تعيين كلمة المرور الخاصة بك.",
+  "send-reset-link": "إرسال رابط إعادة تعيين",
+  "remember-password": "تذكر كلمة المرور الخاصة بك؟",
+  "invalid-reset-link": "Invalid reset link",
+  "reset-link-invalid-or-expired": "رابط إعادة تعيين كلمة المرور غير صالح أو انتهت صلاحيته.",
+  "need-new-link": "هل تحتاج إلى رابط جديد؟",
+  "request-new-link": "طلب رابط جديد",
+  "reset-your-password": "إعادة تعيين كلمة المرور",
+  "new-password": "كلمة مرور جديدة",
+  "reset-password": "إعادة تعيين كلمة المرور"
 }
