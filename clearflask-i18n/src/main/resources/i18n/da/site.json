@@ -222,5 +222,19 @@
   "free-forever": "Gratis for evigt",
   "you-have-unsaved-changes": "Du har ugemte ændringer",
   "empty": "Tom",
-  "notifications": "Notifikationer"
+  "notifications": "Notifikationer",
+  "talk": "Tale",
+  "forgot-password": "Glemt adgangskode?",
+  "email-sent": "E-mail sendt!",
+  "password-reset-email-sent": "Hvis en konto findes med denne e-mail, vil du om kort tid modtage et link til nulstilling af adgangskoden.",
+  "enter-email-for-password-reset": "Indtast din e-mailadresse, så sender vi dig et link til at nulstille din adgangskode.",
+  "send-reset-link": "Send link til nulstilling",
+  "remember-password": "Husk din adgangskode?",
+  "invalid-reset-link": "Invalid reset link",
+  "reset-link-invalid-or-expired": "Linket til nulstilling af adgangskode er ugyldigt eller er udløbet.",
+  "need-new-link": "Brug for et nyt link?",
+  "request-new-link": "Anmod om nyt link",
+  "reset-your-password": "Nulstil din adgangskode",
+  "new-password": "Ny adgangskode",
+  "reset-password": "Nulstil adgangskode"
 }
