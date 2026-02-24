@@ -222,5 +222,19 @@
   "free-forever": "Ελεύθερο για πάντα",
   "you-have-unsaved-changes": "Έχετε μη αποθηκευμένες αλλαγές",
   "empty": "Κενό",
-  "notifications": "Ειδοποιήσεις"
+  "notifications": "Ειδοποιήσεις",
+  "talk": "Ομιλία",
+  "forgot-password": "Ξεχάσατε τον κωδικό?",
+  "email-sent": "Το email στάλθηκε!",
+  "password-reset-email-sent": "Εάν υπάρχει λογαριασμός με αυτό το email, θα λάβετε σύντομα έναν σύνδεσμο επαναφοράς κωδικού πρόσβασης.",
+  "enter-email-for-password-reset": "Εισάγετε τη διεύθυνση email σας και θα σας στείλουμε ένα σύνδεσμο για να επαναφέρετε τον κωδικό πρόσβασής σας.",
+  "send-reset-link": "Αποστολή συνδέσμου επαναφοράς",
+  "remember-password": "Απομνημόνευση του κωδικού πρόσβασης?",
+  "invalid-reset-link": "Invalid reset link",
+  "reset-link-invalid-or-expired": "Αυτός ο σύνδεσμος επαναφοράς κωδικού πρόσβασης δεν είναι έγκυρος ή έχει λήξει.",
+  "need-new-link": "Χρειάζεστε ένα νέο σύνδεσμο?",
+  "request-new-link": "Αίτηση νέου συνδέσμου",
+  "reset-your-password": "Επαναφορά κωδικού πρόσβασης",
+  "new-password": "Νέος κωδικός πρόσβασης",
+  "reset-password": "Επαναφορά κωδικού πρόσβασης"
 }
