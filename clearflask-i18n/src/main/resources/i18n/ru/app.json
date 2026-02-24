@@ -136,6 +136,7 @@
   "as-user": "Как пользователь",
   "select-author": "Выбрать автора",
   "notify-all-subscribers": "Уведомить всех подписчиков",
+  "private-visible-to-admins-only": "Частный (виден только администраторам)",
   "notification-title": "Заголовок уведомления",
   "notification-body": "Тело уведомления",
   "link-to": "Ссылка на",
@@ -143,5 +144,12 @@
   "reply": "Ответ",
   "edit": "Редактирование",
   "edited": "Изменено",
-  "comment-deleted": "Комментарий удален"
+  "comment-deleted": "Комментарий удален",
+  "vote-on-behalf": "Голосовать от имени",
+  "search-user": "Поиск пользователя",
+  "add-vote": "Добавить голос",
+  "remove-vote": "Удалить голос",
+  "failed-to-add-vote": "Не удалось добавить голос",
+  "failed-to-remove-vote": "Не удалось удалить голос",
+  "action": "Действие"
 }
