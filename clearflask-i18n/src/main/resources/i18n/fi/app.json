@@ -134,6 +134,7 @@
   "as-user": "Käyttäjänä",
   "select-author": "Valitse tekijä",
   "notify-all-subscribers": "Ilmoita kaikille tilaajille",
+  "private-visible-to-admins-only": "Yksityinen (näkyy vain ylläpitäjille)",
   "notification-title": "Ilmoituksen otsikko",
   "notification-body": "Ilmoituksen laitos",
   "link-to": "Linkki kohteeseen",
@@ -141,5 +142,12 @@
   "reply": "Vastaa",
   "edit": "Muokkaa",
   "edited": "Muokattu",
-  "comment-deleted": "Kommentti poistettu"
+  "comment-deleted": "Kommentti poistettu",
+  "vote-on-behalf": "Äänestä puolesta",
+  "search-user": "Hae käyttäjää",
+  "add-vote": "Lisää äänestys",
+  "remove-vote": "Poista äänestys",
+  "failed-to-add-vote": "Äänen lisääminen epäonnistui",
+  "failed-to-remove-vote": "Äänen poistaminen epäonnistui",
+  "action": "Toiminto"
 }
