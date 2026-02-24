@@ -135,6 +135,7 @@
   "as-user": "كمستخدم",
   "select-author": "حدد المؤلف",
   "notify-all-subscribers": "إعلام جميع المشتركين",
+  "private-visible-to-admins-only": "خاص (مرئي للمشرفين فقط)",
   "notification-title": "عنوان الإشعار",
   "notification-body": "هيئة الإشعارات",
   "link-to": "رابط إلى",
@@ -142,5 +143,12 @@
   "reply": "الرد",
   "edit": "تحرير",
   "edited": "تعديل",
-  "comment-deleted": "تم حذف التعليق"
+  "comment-deleted": "تم حذف التعليق",
+  "vote-on-behalf": "التصويت بالنيابة",
+  "search-user": "البحث عن مستخدم",
+  "add-vote": "إضافة تصويت",
+  "remove-vote": "إزالة التصويت",
+  "failed-to-add-vote": "فشل في إضافة تصويت",
+  "failed-to-remove-vote": "فشل في إزالة التصويت",
+  "action": "اجراء"
 }
