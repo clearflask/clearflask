@@ -132,6 +132,7 @@
   "as-user": "作为用户",
   "select-author": "选择作者",
   "notify-all-subscribers": "通知所有订阅者",
+  "private-visible-to-admins-only": "私有(仅对管理员可见)",
   "notification-title": "通知标题",
   "notification-body": "通知内容",
   "link-to": "链接到",
@@ -139,5 +140,12 @@
   "reply": "答复",
   "edit": "编辑",
   "edited": "已编辑",
-  "comment-deleted": "评论已删除"
+  "comment-deleted": "评论已删除",
+  "vote-on-behalf": "代表投票",
+  "search-user": "搜索用户",
+  "add-vote": "添加投票",
+  "remove-vote": "删除投票",
+  "failed-to-add-vote": "添加投票失败",
+  "failed-to-remove-vote": "删除投票失败",
+  "action": "行 动"
 }
