@@ -222,5 +222,19 @@
   "free-forever": "Ilmainen ikuisesti",
   "you-have-unsaved-changes": "Sinulla on tallentamattomia muutoksia",
   "empty": "Tyhjä",
-  "notifications": "Ilmoitukset"
+  "notifications": "Ilmoitukset",
+  "talk": "Puhe",
+  "forgot-password": "Unohditko salasanasi?",
+  "email-sent": "Sähköposti lähetetty!",
+  "password-reset-email-sent": "Jos sinulla on tili tällä sähköpostilla, saat pian salasanan nollauslinkin.",
+  "enter-email-for-password-reset": "Syötä sähköpostiosoitteesi ja lähetämme sinulle linkin, jolla voit nollata salasanasi.",
+  "send-reset-link": "Lähetä palautuslinkki",
+  "remember-password": "Muistetaanko salasana?",
+  "invalid-reset-link": "Invalid reset link",
+  "reset-link-invalid-or-expired": "Tämä salasanan nollauslinkki on virheellinen tai vanhentunut.",
+  "need-new-link": "Tarvitsetko uuden linkin?",
+  "request-new-link": "Pyydä uutta linkkiä",
+  "reset-your-password": "Nollaa salasanasi",
+  "new-password": "Uusi salasana",
+  "reset-password": "Nollaa salasana"
 }
