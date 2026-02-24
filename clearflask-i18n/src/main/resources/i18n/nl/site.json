@@ -222,5 +222,19 @@
   "free-forever": "Altijd gratis",
   "you-have-unsaved-changes": "Je hebt niet-opgeslagen wijzigingen",
   "empty": "Leeg",
-  "notifications": "Notificaties"
+  "notifications": "Notificaties",
+  "talk": "Gesprek",
+  "forgot-password": "Wachtwoord vergeten?",
+  "email-sent": "E-mail verzonden!",
+  "password-reset-email-sent": "Als er een account met deze e-mail bestaat, ontvangt u binnenkort een link om het wachtwoord te resetten.",
+  "enter-email-for-password-reset": "Voer je e-mailadres in en wij sturen je een link om je wachtwoord te resetten.",
+  "send-reset-link": "Reset-link verzenden",
+  "remember-password": "Wachtwoord onthouden?",
+  "invalid-reset-link": "Invalid reset link",
+  "reset-link-invalid-or-expired": "Deze wachtwoord reset link is ongeldig of is verlopen.",
+  "need-new-link": "Een nieuwe link nodig?",
+  "request-new-link": "Vraag nieuwe link aan",
+  "reset-your-password": "Uw wachtwoord opnieuw instellen",
+  "new-password": "Nieuw wachtwoord",
+  "reset-password": "Wachtwoord opnieuw instellen"
 }
