@@ -136,6 +136,7 @@
   "as-user": "Ca utilizator",
   "select-author": "Selectați autorul",
   "notify-all-subscribers": "Notifică toți abonații",
+  "private-visible-to-admins-only": "Privat (vizibil doar administratorilor)",
   "notification-title": "Titlu notificare",
   "notification-body": "Corpul de notificare",
   "link-to": "Link către",
@@ -143,5 +144,12 @@
   "reply": "Răspuns",
   "edit": "Editare",
   "edited": "Editat",
-  "comment-deleted": "Comentariu șters"
+  "comment-deleted": "Comentariu șters",
+  "vote-on-behalf": "Votează în numele",
+  "search-user": "Caută utilizator",
+  "add-vote": "Adaugă vot",
+  "remove-vote": "Elimină votul",
+  "failed-to-add-vote": "Adăugarea votului a eșuat",
+  "failed-to-remove-vote": "Nu s-a putut elimina votul",
+  "action": "Acțiune"
 }
