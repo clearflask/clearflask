@@ -222,5 +222,19 @@
   "free-forever": "Vždy zdarma",
   "you-have-unsaved-changes": "Máte neuložené změny",
   "empty": "Prázdné",
-  "notifications": "Oznámení"
+  "notifications": "Oznámení",
+  "talk": "Mluvit",
+  "forgot-password": "Zapomněli jste heslo?",
+  "email-sent": "E-mail odeslán!",
+  "password-reset-email-sent": "Pokud účet existuje s tímto e-mailem, brzy obdržíte odkaz pro obnovení hesla.",
+  "enter-email-for-password-reset": "Zadejte svou e-mailovou adresu a my vám pošleme odkaz pro obnovení hesla.",
+  "send-reset-link": "Odeslat odkaz pro obnovení",
+  "remember-password": "Pamatovat si své heslo?",
+  "invalid-reset-link": "Invalid reset link",
+  "reset-link-invalid-or-expired": "Odkaz pro obnovení hesla je neplatný nebo vypršela jeho platnost.",
+  "need-new-link": "Potřebujete nový odkaz?",
+  "request-new-link": "Požádat o nový odkaz",
+  "reset-your-password": "Resetovat heslo",
+  "new-password": "Nové heslo",
+  "reset-password": "Obnovit heslo"
 }
