@@ -136,6 +136,7 @@
   "as-user": "Jako uživatel",
   "select-author": "Vyberte autora",
   "notify-all-subscribers": "Upozornit všechny odběratele",
+  "private-visible-to-admins-only": "Soukromé (pouze pro administrátory)",
   "notification-title": "Název oznámení",
   "notification-body": "Tělo oznámení",
   "link-to": "Odkaz na",
@@ -143,5 +144,12 @@
   "reply": "Odpověď",
   "edit": "Upravit",
   "edited": "Upraveno",
-  "comment-deleted": "Komentář odstraněn"
+  "comment-deleted": "Komentář odstraněn",
+  "vote-on-behalf": "Hlasujte jménem",
+  "search-user": "Hledat uživatele",
+  "add-vote": "Přidat hlas",
+  "remove-vote": "Odebrat hlas",
+  "failed-to-add-vote": "Přidání hlasování se nezdařilo",
+  "failed-to-remove-vote": "Odebrání hlasu se nezdařilo",
+  "action": "Akce"
 }
