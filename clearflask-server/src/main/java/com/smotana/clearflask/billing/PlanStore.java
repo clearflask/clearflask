@@ -69,7 +69,8 @@ public interface PlanStore {
             "cloud-free",
             "selfhost-monthly",
             "selfhost-yearly",
-            "selfhost-yearly2");
+            "selfhost-yearly2",
+            "selfhost-monthly2");
 
     PlansGetResponse getPublicPlans();
 

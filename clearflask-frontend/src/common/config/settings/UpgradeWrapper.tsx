@@ -22,6 +22,7 @@ export const SelfhostServicePlans: string[] = [
     'selfhost-monthly',
     'selfhost-yearly',
     'selfhost-yearly2',
+    'selfhost-monthly2',
 ];
 /** If changed, also change in KillBillPlanStore.java */
 const UnrestrictedProperties: Path[] = [];
@@ -103,13 +104,16 @@ const RestrictedPropertiesByPlan: { [basePlanId: string]: Path[] } = {
     'cloud-free': GrowthWithNoDomainRestrictedProperties,
     'cloud-starter-monthly': GrowthWithNoDomainRestrictedProperties,
     'cloud-monthly': CloudMonthlyRestrictedProperties,
+    'cloud-monthly2': UnrestrictedProperties,
     'cloud-yearly': UnrestrictedProperties,
     'cloud-90day-yearly': UnrestrictedProperties,
     'selfhost-monthly': GrowthWithNoDomainRestrictedProperties,
     'selfhost-yearly': GrowthWithNoDomainRestrictedProperties,
     'selfhost-yearly2': GrowthWithNoDomainRestrictedProperties,
+    'selfhost-monthly2': UnrestrictedProperties,
     'selfhost-licensed': UnrestrictedProperties,
-    "selfhost-free": GrowthRestrictedProperties
+    "selfhost-free": GrowthRestrictedProperties,
+    'self-host': GrowthRestrictedProperties,
 };
 /** If changed, also change in KillBillPlanStore.java */
 export const TeammatesMaxCount: { [basePlanId: string]: number } = {
@@ -141,6 +145,7 @@ export const ProjectMaxCount: { [basePlanId: string]: number } = {
 export const PostsMaxCount: { [basePlanId: string]: number } = {
     'starter-unlimited': 30,
     'selfhost-free': 100,
+    'self-host': 100,
     'cloud-free': 100,
     'cloud-starter-monthly': 100,
 };

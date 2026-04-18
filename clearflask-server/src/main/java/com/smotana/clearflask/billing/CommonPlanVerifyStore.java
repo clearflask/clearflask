@@ -101,7 +101,7 @@ public class CommonPlanVerifyStore implements PlanVerifyStore {
     @Override
     public void verifyAccountMeetsLimits(String planId, String accountId) throws ApiException {
         if (isAccountExceedsPostLimit(planId, accountId)) {
-            throw new RequiresUpgradeException("cloud-monthly", "Maximum number of posts reached, please delete old ones");
+            throw new RequiresUpgradeException("cloud-monthly2", "Maximum number of posts reached, please delete old ones");
         }
     }
 
@@ -146,9 +146,10 @@ public class CommonPlanVerifyStore implements PlanVerifyStore {
             case "cloud-starter-monthly":
             case "cloud-monthly":
             case "selfhost-free":
+            case "self-host":
                 switch (action) {
                     case API_KEY:
-                        throw new RequiresUpgradeException("cloud-yearly", "Not allowed to use API on your plan");
+                        throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to use API on your plan");
                 }
                 return;
             default:
@@ -174,7 +175,7 @@ public class CommonPlanVerifyStore implements PlanVerifyStore {
             case "cloud-starter-monthly":
                 // Restrict Custom domain
                 if (!Strings.isNullOrEmpty(config.getDomain())) {
-                    throw new RequiresUpgradeException("cloud-monthly", "Not allowed to use Custom Domain on your plan");
+                    throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to use Custom Domain on your plan");
                 }
                 // Rollover to next case
             case "starter-unlimited":
@@ -183,38 +184,39 @@ public class CommonPlanVerifyStore implements PlanVerifyStore {
             case "growth2-monthly":
             case "pro-lifetime":
             case "selfhost-free":
+            case "self-host":
                 // Restrict Whitelabel
                 if (!hasAddonWhitelabel && !Whitelabel.PoweredByEnum.SHOW.equals(config.getStyle().getWhitelabel().getPoweredBy())) {
                     throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to Whitelabel Powered By on your plan");
                 }
                 // Restrict OAuth
                 if (!config.getUsers().getOnboarding().getNotificationMethods().getOauth().isEmpty()) {
-                    throw new RequiresUpgradeException("cloud-monthly", "Not allowed to use OAuth on your plan");
+                    throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to use OAuth on your plan");
                 }
                 // Restrict Single Sign-On
                 if (config.getUsers().getOnboarding().getNotificationMethods().getSso() != null) {
-                    throw new RequiresUpgradeException("cloud-monthly", "Not allowed to use SSO on your plan");
+                    throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to use SSO on your plan");
                 }
                 // Restrict Private projects
                 if (!hasAddonPrivateProjects && config.getUsers().getOnboarding().getVisibility() == Onboarding.VisibilityEnum.PRIVATE) {
-                    throw new RequiresUpgradeException("cloud-monthly", "Not allowed to use Private visibility on your plan");
+                    throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to use Private visibility on your plan");
                 }
                 // Restrict Site template
                 if (config.getStyle().getTemplates() != null) {
-                    throw new RequiresUpgradeException("cloud-monthly", "Not allowed to use Templates on your plan");
+                    throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to use Templates on your plan");
                 }
                 // Restrict Integrations
                 if (config.getGithub() != null) {
-                    throw new RequiresUpgradeException("cloud-yearly", "Not allowed to use GitHub integration on your plan");
+                    throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to use GitHub integration on your plan");
                 }
                 if (config.getIntegrations().getGoogleAnalytics() != null) {
-                    throw new RequiresUpgradeException("cloud-yearly", "Not allowed to use Google Analytics integration on your plan");
+                    throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to use Google Analytics integration on your plan");
                 }
                 if (config.getIntegrations().getHotjar() != null) {
-                    throw new RequiresUpgradeException("cloud-yearly", "Not allowed to use HotJar integration on your plan");
+                    throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to use HotJar integration on your plan");
                 }
                 if (config.getIntegrations().getIntercom() != null) {
-                    throw new RequiresUpgradeException("cloud-yearly", "Not allowed to use Intercom integration on your plan");
+                    throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to use Intercom integration on your plan");
                 }
                 // Restrict No Index
                 if (config.getNoIndex() == Boolean.TRUE) {
@@ -225,39 +227,39 @@ public class CommonPlanVerifyStore implements PlanVerifyStore {
             case "pitchground-b-lifetime":
                 // Restrict OAuth
                 if (!config.getUsers().getOnboarding().getNotificationMethods().getOauth().isEmpty()) {
-                    throw new RequiresUpgradeException("cloud-monthly", "Not allowed to use OAuth on your plan");
+                    throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to use OAuth on your plan");
                 }
                 // Restrict Single Sign-On
                 if (config.getUsers().getOnboarding().getNotificationMethods().getSso() != null) {
-                    throw new RequiresUpgradeException("cloud-monthly", "Not allowed to use SSO on your plan");
+                    throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to use SSO on your plan");
                 }
                 // Restrict Private projects
                 if (!hasAddonPrivateProjects && config.getUsers().getOnboarding().getVisibility() == Onboarding.VisibilityEnum.PRIVATE) {
-                    throw new RequiresUpgradeException("cloud-monthly", "Not allowed to use Private visibility on your plan");
+                    throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to use Private visibility on your plan");
                 }
                 // Restrict Site template
                 if (config.getStyle().getTemplates() != null) {
-                    throw new RequiresUpgradeException("cloud-monthly", "Not allowed to use Templates on your plan");
+                    throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to use Templates on your plan");
                 }
                 // Restrict Integrations
                 if (config.getGithub() != null) {
-                    throw new RequiresUpgradeException("cloud-yearly", "Not allowed to use GitHub integration on your plan");
+                    throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to use GitHub integration on your plan");
                 }
                 if (config.getIntegrations().getGoogleAnalytics() != null) {
-                    throw new RequiresUpgradeException("cloud-yearly", "Not allowed to use Google Analytics integration on your plan");
+                    throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to use Google Analytics integration on your plan");
                 }
                 if (config.getIntegrations().getHotjar() != null) {
-                    throw new RequiresUpgradeException("cloud-yearly", "Not allowed to use HotJar integration on your plan");
+                    throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to use HotJar integration on your plan");
                 }
                 if (config.getIntegrations().getIntercom() != null) {
-                    throw new RequiresUpgradeException("cloud-yearly", "Not allowed to use Intercom integration on your plan");
+                    throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to use Intercom integration on your plan");
                 }
                 // rollover to next case
             case "pitchground-c-lifetime":
             case "pitchground-d-lifetime":
                 // Restrict Whitelabel
                 if (!hasAddonWhitelabel && !Whitelabel.PoweredByEnum.SHOW.equals(config.getStyle().getWhitelabel().getPoweredBy())) {
-                    throw new RequiresUpgradeException("cloud-yearly", "Not allowed to Whitelabel Powered By on your plan");
+                    throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to Whitelabel Powered By on your plan");
                 }
                 // rollover to next case
             case "pitchground-e-lifetime":
@@ -268,36 +270,36 @@ public class CommonPlanVerifyStore implements PlanVerifyStore {
             case "flat-yearly":
                 // Restrict Whitelabel
                 if (!hasAddonWhitelabel && !Whitelabel.PoweredByEnum.SHOW.equals(config.getStyle().getWhitelabel().getPoweredBy())) {
-                    throw new RequiresUpgradeException("cloud-yearly", "Not allowed to Whitelabel Powered By on your plan");
+                    throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to Whitelabel Powered By on your plan");
                 }
                 break;
             case "cloud-monthly":
                 // Restrict Whitelabel
                 if (!hasAddonWhitelabel && !Whitelabel.PoweredByEnum.SHOW.equals(config.getStyle().getWhitelabel().getPoweredBy())) {
-                    throw new RequiresUpgradeException("cloud-yearly", "Not allowed to Whitelabel Powered By on your plan");
+                    throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to Whitelabel Powered By on your plan");
                 }
                 // Restrict Integrations
                 if (config.getGithub() != null) {
-                    throw new RequiresUpgradeException("cloud-yearly", "Not allowed to use GitHub integration on your plan");
+                    throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to use GitHub integration on your plan");
                 }
                 if (config.getIntegrations().getGoogleAnalytics() != null) {
-                    throw new RequiresUpgradeException("cloud-yearly", "Not allowed to use Google Analytics integration on your plan");
+                    throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to use Google Analytics integration on your plan");
                 }
                 if (config.getIntegrations().getHotjar() != null) {
-                    throw new RequiresUpgradeException("cloud-yearly", "Not allowed to use HotJar integration on your plan");
+                    throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to use HotJar integration on your plan");
                 }
                 if (config.getIntegrations().getIntercom() != null) {
-                    throw new RequiresUpgradeException("cloud-yearly", "Not allowed to use Intercom integration on your plan");
+                    throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to use Intercom integration on your plan");
                 }
                 break;
             case "standard2-unlimited":
                 // Restrict Private projects
                 if (!hasAddonPrivateProjects && config.getUsers().getOnboarding().getVisibility() == Onboarding.VisibilityEnum.PRIVATE) {
-                    throw new RequiresUpgradeException("cloud-monthly", "Not allowed to use Private visibility on your plan");
+                    throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to use Private visibility on your plan");
                 }
                 // Restrict Whitelabel
                 if (!hasAddonWhitelabel && !Whitelabel.PoweredByEnum.SHOW.equals(config.getStyle().getWhitelabel().getPoweredBy())) {
-                    throw new RequiresUpgradeException("cloud-yearly", "Not allowed to Whitelabel Powered By on your plan");
+                    throw new RequiresUpgradeException("cloud-monthly2", "Not allowed to Whitelabel Powered By on your plan");
                 }
                 break;
             case "sponsor-monthly":
@@ -306,6 +308,7 @@ public class CommonPlanVerifyStore implements PlanVerifyStore {
             case "standard3-monthly":
             case "cloud-yearly":
             case "cloud-90day-yearly":
+            case "cloud-monthly2":
             case "selfhost-licensed":
                 break;
         }
@@ -328,7 +331,7 @@ public class CommonPlanVerifyStore implements PlanVerifyStore {
     @Override
     public void verifyTeammateInviteMeetsPlanRestrictions(String planId, String accountId, boolean addOne) throws ApiException {
         Optional<Long> teammateLimitOpt = Optional.empty();
-        String requiredPlanId = "cloud-monthly";
+        String requiredPlanId = "cloud-monthly2";
         switch (planStore.getBasePlanId(planId)) {
             case "selfhost-free":
                 teammateLimitOpt = Optional.of(3L);
@@ -378,6 +381,7 @@ public class CommonPlanVerifyStore implements PlanVerifyStore {
             case "cloud-monthly":
             case "cloud-yearly":
             case "cloud-90day-yearly":
+            case "cloud-monthly2":
                 break; // No limit
             default:
                 if (LogUtil.rateLimitAllowLog("killbillplanstore-teammates-unknown-limit")) {

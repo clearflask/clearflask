@@ -221,7 +221,9 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
               ] : []),
               { type: 'heading', text: this.props.t('account') } as MenuHeading,
               { type: 'item', slug: 'settings/account/profile', name: this.props.t('profile'), offset: 1 } as MenuItem,
-              { type: 'item', slug: 'settings/account/notifications', name: this.props.t('notifications'), offset: 1 } as MenuItem,
+              ...(!context.isSelfhostServiceOnly ? [
+                { type: 'item', slug: 'settings/account/notifications', name: this.props.t('notifications'), offset: 1 } as MenuItem,
+              ] : []),
               { type: 'item', slug: 'settings/account/billing', name: this.props.t('billing'), offset: 1 } as MenuItem,
               ...(!context.isSelfhostServiceOnly ? [
                 { type: 'item', slug: 'settings/account/api', name: 'API', offset: 1 } as MenuItem,

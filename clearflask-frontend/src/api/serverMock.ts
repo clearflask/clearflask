@@ -76,6 +76,24 @@ const adminPlanResult = {
     'title': 'Yearly',
     'pricing': { 'basePrice': 450, 'baseMau': 0, 'unitMau': 0, 'unitPrice': 0, 'period': 'Yearly' },
     'perks': [{ 'desc': 'No limits' }, { 'desc': '2-Month Discount' }],
+  }, {
+    'basePlanId': 'cloud-monthly2',
+    'title': 'Cloud',
+    'pricing': { 'basePrice': 29, 'baseMau': 0, 'unitMau': 0, 'unitPrice': 0, 'period': 'Monthly' },
+    'perks': [
+      { 'desc': 'All features' },
+      { 'desc': 'Unlimited teammates', 'terms': 'Amount of administrators, product managers or support team members you can have on each project including yourself.' },
+      { 'desc': 'Unlimited posts', 'terms': 'Delete older posts to keep your project tidy and stay within the limits.' },
+    ],
+  }, {
+    'basePlanId': 'selfhost-monthly2',
+    'title': 'Self-host License',
+    'pricing': { 'basePrice': 9, 'baseMau': 0, 'unitMau': 0, 'unitPrice': 0, 'period': 'Monthly' },
+    'perks': [
+      { 'desc': 'All features' },
+      { 'desc': 'Self-host license' },
+      { 'desc': 'Unlimited posts', 'terms': 'Delete older posts to keep your project tidy and stay within the limits.' },
+    ],
   }], 'featuresTable': {
     'plans': ['Starter', 'Growth', 'Pro'],
     'features': [{

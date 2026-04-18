@@ -35,6 +35,15 @@ export const EstimatedPercUsersBecomeTracked = 0.05;
 export const FlatYearlyStartingPrice = 1000;
 export const AllowUserChoosePricingForPlans = new Set(['sponsor-monthly']);
 
+/** Toggle Self-hosted/Cloud tabs. Set to true to restore the previous tabbed UI. */
+const ShowPricingTabs = false;
+/** Toggle the feature comparison table below the pricing cards. */
+const ShowFeaturesTable = true;
+/** Toggle the free open-source community plan card. */
+const ShowCommunityPlan = true;
+/** Toggle the "Talk to us" enterprise plan card. Set to true to restore. */
+const ShowEnterprisePlan = false;
+
 const Faq: Array<{ heading: string, body: string | React.ReactNode }> = [
   {
     heading: 'Are you really Open-Source?',
@@ -215,7 +224,6 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
       pricing: { basePrice: 0, baseMau: 0, unitPrice: 0, unitMau: 0, period: Admin.PlanPricingPeriodEnum.Monthly },
       perks: [
         { desc: 'Open-source Apache 2.0' },
-        { desc: 'All features' },
         { desc: 'Community support' },
       ],
     };
@@ -409,25 +417,38 @@ class PricingPage extends Component<Props & ConnectProps & WithTranslation<'site
           <br />
           <br />
           <Loader loaded={!!this.props.plans} skipFade>
-            <Tabs
-              centered
-              variant="standard"
-              scrollButtons="off"
-              value={this.state.tab}
-              onChange={(e, newTab) => this.setState({ tab: newTab as any })}
-            >
-              <Tab value="selfhost" label="Self-hosted" className={this.props.classes.tab} />
-              <Tab value="cloud" label="Cloud" className={this.props.classes.tab} />
-            </Tabs>
-            <div className={classNames(this.props.classes.section, this.props.classes.sectionPlans)}>
-              {this.state.tab === 'selfhost' && plansGroupedSelfhost}
-              {this.state.tab === 'cloud' && plansGroupedCloud}
-            </div>
+            {ShowPricingTabs ? (
+              <>
+                <Tabs
+                  centered
+                  variant="standard"
+                  scrollButtons="off"
+                  value={this.state.tab}
+                  onChange={(e, newTab) => this.setState({ tab: newTab as any })}
+                >
+                  <Tab value="selfhost" label="Self-hosted" className={this.props.classes.tab} />
+                  <Tab value="cloud" label="Cloud" className={this.props.classes.tab} />
+                </Tabs>
+                <div className={classNames(this.props.classes.section, this.props.classes.sectionPlans)}>
+                  {this.state.tab === 'selfhost' && plansGroupedSelfhost}
+                  {this.state.tab === 'cloud' && plansGroupedCloud}
+                </div>
+              </>
+            ) : (
+              <div className={classNames(this.props.classes.section, this.props.classes.sectionPlans)}>
+                {this.groupPlans([
+                  ...(ShowCommunityPlan ? [communityPlanCmpt] : []),
+                  ...plansSelfHost,
+                  ...plansCloud,
+                  ...(ShowEnterprisePlan ? [talkPlanCloudCmpt] : []),
+                ])}
+              </div>
+            )}
           </Loader>
           {/* <LandingCustomers /> */}
           <br />
           <br />
-          {featuresTable && (
+          {ShowFeaturesTable && featuresTable && (
             <div className={this.props.classes.section}>
               <FeatureList name="Features" planNames={featuresTable.plans}>
                 {featuresTable.features.map((feature, index) => (
