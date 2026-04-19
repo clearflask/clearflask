@@ -91,7 +91,7 @@ const adminPlanResult = {
     'pricing': { 'basePrice': 9, 'baseMau': 0, 'unitMau': 0, 'unitPrice': 0, 'period': 'Monthly' },
     'perks': [
       { 'desc': 'All features' },
-      { 'desc': 'Self-host license' },
+      { 'desc': 'Unlimited teammates', 'terms': 'Amount of administrators, product managers or support team members you can have on each project including yourself.' },
       { 'desc': 'Unlimited posts', 'terms': 'Delete older posts to keep your project tidy and stay within the limits.' },
     ],
   }], 'featuresTable': {

@@ -316,7 +316,7 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
             .put("selfhost-monthly2", pp -> new Plan("selfhost-monthly2", "Self-host License",
                     pp, ImmutableList.of(
                     new PlanPerk("All features", null),
-                    new PlanPerk("Self-host license", null),
+                    new PlanPerk("Unlimited teammates", TERMS_ADMINS),
                     new PlanPerk("Unlimited posts", TERMS_POSTS)),
                     null, null))
             .build();
