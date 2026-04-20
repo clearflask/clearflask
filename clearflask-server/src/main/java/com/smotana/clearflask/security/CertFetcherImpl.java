@@ -446,7 +446,7 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
         try {
             certStore.deleteDnsChallenge(challengeDomain, challenge.getDigest());
         } catch (Exception ex) {
-            log.warn("Failed to teardown challenge, but continuing certificate creation of host {} challenge {}",
+            log.info("Failed to teardown challenge, but continuing certificate creation of host {} challenge {}",
                     challengeDomain, challenge.getDigest(), ex);
         }
     }
