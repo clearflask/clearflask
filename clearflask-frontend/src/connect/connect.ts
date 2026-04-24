@@ -22,6 +22,7 @@ import connectConfig from './config';
 import httpx from './httpx';
 import reactRenderer, {replaceParentDomain} from './renderer';
 import ServerConnect from './serverConnect';
+import {isBanned, normalizeIp, recordStrike} from './banlist';
 
 Sentry.init({
   dsn: "https://600460a790e34b3e884ebe25ed26944d@o934836.ingest.sentry.io/5884409",
@@ -163,6 +164,20 @@ function addAcmeRoute(server) {
 function createApp(serverApi) {
   const serverApp = express();
   const reactRender = reactRenderer();
+
+  serverApp.use((req, res, next) => {
+    const ip = normalizeIp(req.socket.remoteAddress);
+    if (ip && isBanned(ip)) {
+      res.status(429).set('Retry-After', '3600').send('Too Many Requests');
+      return;
+    }
+    if (ip && req.hostname && req.hostname !== connectConfig.parentDomain) {
+      res.on('finish', () => {
+        if (res.statusCode === 404) recordStrike(ip);
+      });
+    }
+    next();
+  });
 
   serverApp.use(cookieParser());
   serverApp.use(compression({
