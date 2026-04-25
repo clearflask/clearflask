@@ -511,7 +511,6 @@ class ServerMock implements Client.ApiInterface, Admin.ApiInterface {
     return this.returnLater({
       teamId: 'T01234567',
       teamName: 'Mock Workspace',
-      accessToken: 'xoxb-mock-token-' + randomUuid(),
       botUserId: 'U01234567',
       channels: [
         { channelId: 'C01234567', channelName: 'general', isPrivate: false, isMember: true },

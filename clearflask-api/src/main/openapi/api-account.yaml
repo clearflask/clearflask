@@ -534,15 +534,12 @@ components:
       required:
         - teamId
         - teamName
-        - accessToken
         - botUserId
         - channels
       properties:
         teamId:
           type: string
         teamName:
-          type: string
-        accessToken:
           type: string
         botUserId:
           type: string
@@ -1227,6 +1224,11 @@ components:
     operationId: slackGetWorkspaceInfoAdmin
     tags: [ AccountAdmin ]
     parameters:
+      - name: projectId
+        in: query
+        required: true
+        schema:
+          type: string
       - name: code
         in: query
         required: true

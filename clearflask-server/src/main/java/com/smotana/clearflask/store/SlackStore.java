@@ -44,13 +44,23 @@ public interface SlackStore {
 
     /**
      * Exchange OAuth code for Slack workspace access.
-     * Stores the authorization and returns available workspace info and channels.
+     * Stores the authorization (including the access token) server-side keyed by projectId,
+     * and returns available workspace info and channels. The access token is intentionally
+     * NOT included in the returned info — it never leaves the backend.
      *
      * @param accountId The account ID connecting the workspace
+     * @param projectId The project the workspace will be associated with
      * @param code OAuth authorization code from Slack
      * @return Workspace information including teamId, teamName, and available channels
      */
-    SlackWorkspaceInfo getWorkspaceInfoForUser(String accountId, String code);
+    SlackWorkspaceInfo getWorkspaceInfoForUser(String accountId, String projectId, String code);
+
+    /**
+     * Get the server-side stored Slack access token for a project, if any.
+     * Falls back to the legacy {@code config.slack.accessToken} for projects that
+     * have not been migrated to the {@link SlackAuth} table yet.
+     */
+    Optional<String> getAccessTokenForProject(Project project);
 
     /**
      * Get available Slack channels that can be linked.
@@ -150,8 +160,6 @@ public interface SlackStore {
         String teamId;
         @NonNull
         String teamName;
-        @NonNull
-        String accessToken;
         @NonNull
         String botUserId;
         @NonNull
@@ -268,6 +276,38 @@ public interface SlackStore {
 
         @NonNull
         String projectId;
+
+        @NonNull
+        Long updatedEpochMs;
+    }
+
+    /**
+     * Server-side storage of the Slack OAuth access token.
+     * <p>
+     * The token is stored exclusively on the server (never returned to the client) and is
+     * keyed by projectId. Previously the token was stored in the user-editable
+     * {@code config.slack.accessToken} property, which round-tripped the bot token through
+     * the browser during OAuth setup; this table replaces that storage path.
+     */
+    @Value
+    @Builder(toBuilder = true)
+    @AllArgsConstructor
+    @DynamoTable(type = Primary, partitionKeys = "projectId", rangePrefix = "slackAuth")
+    class SlackAuth {
+        @NonNull
+        String projectId;
+
+        @NonNull
+        String accountId;
+
+        @NonNull
+        String teamId;
+
+        @NonNull
+        String accessToken;
+
+        @NonNull
+        String botUserId;
 
         @NonNull
         Long updatedEpochMs;

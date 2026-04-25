@@ -148,12 +148,17 @@ public class UserBindUtil {
             }
         }
 
-        // Auto login to auto-generated user tied to account holder
+        // Auto login to auto-generated user tied to account holder.
+        // Only do this when the account actually owns or is a teammate of the project,
+        // otherwise any account-authenticated request to a foreign project would silently
+        // promote the account holder to moderator on that project (e.g. via Login As).
         if (!userOpt.isPresent()) {
             Optional<AccountStore.Account> accountOpt = extendedPrincipalOpt
                     .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedAccountIdOpt)
                     .flatMap(accountId -> accountStore.getAccount(accountId, true));
-            if (accountOpt.isPresent()) {
+            if (accountOpt.isPresent()
+                    && (accountOpt.get().getProjectIds().contains(projectId)
+                        || accountOpt.get().getExternalProjectIds().contains(projectId))) {
                 userOpt = Optional.of(userStore.accountCreateOrGet(projectId, accountOpt.get()));
                 createSession = true;
             }

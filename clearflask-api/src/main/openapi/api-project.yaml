@@ -1148,7 +1148,6 @@ components:
               type: object
               required:
                 - teamId
-                - accessToken
                 - botUserId
               properties:
                 teamId:
@@ -1158,7 +1157,8 @@ components:
                   x-clearflask-prop: { order: 1, name: 'Workspace Name', description: 'Name of the connected Slack workspace. For information only.' }
                   type: string
                 accessToken:
-                  x-clearflask-prop: { order: 2, name: 'Access Token', description: 'OAuth access token. Set automatically during OAuth connection.' }
+                  x-clearflask-hide: true
+                  description: 'Legacy field. The OAuth access token is now stored server-side and never round-trips through the browser; this property is preserved only so existing project configs that still contain a token continue to deserialize.'
                   type: string
                 botUserId:
                   x-clearflask-prop: { order: 3, name: 'Bot User ID', description: 'Bot user ID for filtering self-messages. Set automatically during OAuth connection.' }

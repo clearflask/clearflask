@@ -250,7 +250,7 @@ public class SlackResource {
                     project.getVersionedConfigAdmin().getConfig().getSlack();
             if (slackConfig != null
                     && teamId.equals(slackConfig.getTeamId())
-                    && slackConfig.getAccessToken() != null) {
+                    && slackStore.getAccessTokenForProject(project).isPresent()) {
                 foundProject[0] = project;
                 // Create the mapping so we don't need to scan next time
                 slackStore.setupConfigSlackIntegration(

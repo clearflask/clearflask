@@ -887,18 +887,26 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
     @RolesAllowed({Role.ADMINISTRATOR_ACTIVE})
     @Limit(requiredPermits = 10, challengeAfter = 15)
     @Override
-    public com.smotana.clearflask.api.model.SlackWorkspaceInfo slackGetWorkspaceInfoAdmin(String code) {
+    public com.smotana.clearflask.api.model.SlackWorkspaceInfo slackGetWorkspaceInfoAdmin(String projectId, String code) {
         String accountId = getExtendedPrincipal()
                 .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
                 .get();
 
-        SlackStore.SlackWorkspaceInfo workspaceInfo = slackStore.getWorkspaceInfoForUser(accountId, code);
+        // Verify the caller owns the project the workspace will be associated with;
+        // the access token is persisted server-side keyed by projectId, so a missing
+        // check here would let one tenant overwrite another tenant's Slack credentials.
+        Account account = accountStore.getAccount(accountId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.UNAUTHORIZED, "Account not found"));
+        if (!account.getProjectIds().contains(projectId)) {
+            throw new ApiException(Response.Status.FORBIDDEN, "Project does not belong to this account");
+        }
+
+        SlackStore.SlackWorkspaceInfo workspaceInfo = slackStore.getWorkspaceInfoForUser(accountId, projectId, code);
 
         // Convert from store model to API model
         return com.smotana.clearflask.api.model.SlackWorkspaceInfo.builder()
                 .teamId(workspaceInfo.getTeamId())
                 .teamName(workspaceInfo.getTeamName())
-                .accessToken(workspaceInfo.getAccessToken())
                 .botUserId(workspaceInfo.getBotUserId())
                 .channels(workspaceInfo.getChannels().stream()
                         .map(ch -> com.smotana.clearflask.api.model.SlackChannel.builder()

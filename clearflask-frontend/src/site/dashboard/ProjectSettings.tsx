@@ -4635,17 +4635,17 @@ export const ProjectSettingsSlack = (props: {
     windowIso.history.replaceState({}, '', url.toString());
 
     return ServerAdmin.get().dispatchAdmin()
-      .then(d => d.slackGetWorkspaceInfoAdmin({ code }))
+      .then(d => d.slackGetWorkspaceInfoAdmin({ projectId: props.project.projectId, code }))
       .then(result => {
-        // Store workspace info in project config
+        // Store workspace info in project config. The OAuth access token is
+        // intentionally NOT received here — the backend persists it server-side
+        // keyed by projectId so it never enters the browser context.
         const slackPage = props.editor.getPage(['slack']);
         slackPage.set(true);
         (props.editor.getProperty(['slack', 'teamId']) as ConfigEditor.StringProperty)
           .set(result.teamId);
         (props.editor.getProperty(['slack', 'teamName']) as ConfigEditor.StringProperty)
           .set(result.teamName);
-        (props.editor.getProperty(['slack', 'accessToken']) as ConfigEditor.StringProperty)
-          .set(result.accessToken);
         (props.editor.getProperty(['slack', 'botUserId']) as ConfigEditor.StringProperty)
           .set(result.botUserId);
 
@@ -4768,8 +4768,6 @@ export const ProjectSettingsSlack = (props: {
                           .set('T01234567');
                         (props.editor.getProperty(['slack', 'teamName']) as ConfigEditor.StringProperty)
                           .set('Mock Workspace');
-                        (props.editor.getProperty(['slack', 'accessToken']) as ConfigEditor.StringProperty)
-                          .set('mock-token');
                         (props.editor.getProperty(['slack', 'botUserId']) as ConfigEditor.StringProperty)
                           .set('U01234567');
                         // channelLinks is a page group and is automatically initialized

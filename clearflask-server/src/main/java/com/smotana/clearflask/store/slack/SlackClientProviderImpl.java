@@ -8,6 +8,7 @@ import com.google.common.cache.LoadingCache;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
+import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
@@ -15,6 +16,7 @@ import com.slack.api.Slack;
 import com.slack.api.methods.MethodsClient;
 import com.smotana.clearflask.security.limiter.rate.RateLimiter;
 import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.store.SlackStore;
 import com.smotana.clearflask.util.LogUtil;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
@@ -74,6 +76,8 @@ public class SlackClientProviderImpl implements SlackClientProvider {
     private RateLimiter rateLimiter;
     @Inject
     private ProjectStore projectStore;
+    @Inject
+    private Provider<SlackStore> slackStoreProvider;
 
     private final Slack slack = Slack.getInstance();
 
@@ -93,11 +97,15 @@ public class SlackClientProviderImpl implements SlackClientProvider {
                         }
 
                         com.smotana.clearflask.api.model.Slack slackConfig = projectOpt.get().getVersionedConfigAdmin().getConfig().getSlack();
-                        if (slackConfig == null || slackConfig.getAccessToken() == null) {
+                        if (slackConfig == null) {
+                            return Optional.empty();
+                        }
+                        Optional<String> accessTokenOpt = slackStoreProvider.get().getAccessTokenForProject(projectOpt.get());
+                        if (accessTokenOpt.isEmpty()) {
                             return Optional.empty();
                         }
 
-                        MethodsClient client = slack.methods(slackConfig.getAccessToken());
+                        MethodsClient client = slack.methods(accessTokenOpt.get());
                         String teamId = slackConfig.getTeamId();
                         String botUserId = slackConfig.getBotUserId();
 

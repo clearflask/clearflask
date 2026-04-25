@@ -119,6 +119,7 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
     private TableSchema<SlackCommentMapping> commentMappingSchema;
     private IndexSchema<SlackCommentMapping> commentMappingByCommentIdSchema;
     private TableSchema<SlackTeamMapping> teamMappingSchema;
+    private TableSchema<SlackAuth> authSchema;
     private ListeningExecutorService executor;
 
     @Override
@@ -128,6 +129,7 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
         commentMappingSchema = singleTable.parseTableSchema(SlackCommentMapping.class);
         commentMappingByCommentIdSchema = singleTable.parseGlobalSecondaryIndexSchema(1, SlackCommentMapping.class);
         teamMappingSchema = singleTable.parseTableSchema(SlackTeamMapping.class);
+        authSchema = singleTable.parseTableSchema(SlackAuth.class);
 
         executor = MoreExecutors.listeningDecorator(new ThreadPoolExecutor(
                 2, 100, 60L, TimeUnit.SECONDS, new SynchronousQueue<>(),
@@ -145,13 +147,13 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
     // ===== Configuration =====
 
     @Override
-    public SlackWorkspaceInfo getWorkspaceInfoForUser(String accountId, String code) {
+    public SlackWorkspaceInfo getWorkspaceInfoForUser(String accountId, String projectId, String code) {
         if (!config.enabled()) {
             log.debug("Slack integration not enabled, skipping");
             throw new com.smotana.clearflask.web.ApiException(javax.ws.rs.core.Response.Status.SERVICE_UNAVAILABLE, "Slack integration is disabled");
         }
 
-        log.info("Attempting to exchange Slack OAuth code for account {}", accountId);
+        log.info("Attempting to exchange Slack OAuth code for account {} project {}", accountId, projectId);
 
         try {
             // Exchange authorization code for access token
@@ -187,17 +189,30 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
                         selectedChannelId, selectedChannelName);
             }
 
+            // Persist the access token server-side so it never leaves the backend.
+            authSchema.table().putItem(authSchema.toItem(SlackAuth.builder()
+                    .projectId(projectId)
+                    .accountId(accountId)
+                    .teamId(teamId)
+                    .accessToken(accessToken)
+                    .botUserId(botUserId)
+                    .updatedEpochMs(Instant.now().toEpochMilli())
+                    .build()));
+            // Drop any cached client built from a stale token.
+            if (slackClientProvider instanceof SlackClientProviderImpl) {
+                ((SlackClientProviderImpl) slackClientProvider).invalidateClient(projectId);
+            }
+
             // Get available channels using the access token
             MethodsClient client = slackClientProvider.getClientWithToken(accessToken);
             List<SlackChannel> channels = fetchChannels(client);
 
-            log.info("Successfully exchanged Slack OAuth code for account {}: teamId={}, teamName={}, channelCount={}, selectedChannel={}",
-                    accountId, teamId, teamName, channels.size(), selectedChannelId);
+            log.info("Successfully exchanged Slack OAuth code for account {} project {}: teamId={}, teamName={}, channelCount={}, selectedChannel={}",
+                    accountId, projectId, teamId, teamName, channels.size(), selectedChannelId);
 
             return SlackWorkspaceInfo.builder()
                     .teamId(teamId)
                     .teamName(teamName)
-                    .accessToken(accessToken)
                     .botUserId(botUserId)
                     .channels(channels)
                     .build();
@@ -283,6 +298,26 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
     }
 
     @Override
+    public Optional<String> getAccessTokenForProject(Project project) {
+        Optional<String> token = Optional.ofNullable(authSchema.fromItem(
+                        authSchema.table().getItem(authSchema.primaryKey(Map.of("projectId", project.getProjectId())))))
+                .map(SlackAuth::getAccessToken)
+                .filter(t -> !Strings.isNullOrEmpty(t));
+        if (token.isPresent()) {
+            return token;
+        }
+        // Legacy fallback: tokens that were stored in the user-editable project config
+        // before they were migrated to the server-side SlackAuth table.
+        com.smotana.clearflask.api.model.Slack slackConfig =
+                project.getVersionedConfigAdmin().getConfig().getSlack();
+        if (slackConfig == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(slackConfig.getAccessToken())
+                .filter(t -> !Strings.isNullOrEmpty(t));
+    }
+
+    @Override
     public Optional<String> getProjectIdByTeamId(String teamId) {
         return Optional.ofNullable(teamMappingSchema.fromItem(
                         teamMappingSchema.table().getItem(teamMappingSchema.primaryKey(Map.of("teamId", teamId)))))
@@ -342,8 +377,13 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
      */
     private void autoJoinNewChannels(Optional<ConfigAdmin> configPrevious, ConfigAdmin configAdmin) {
         if (configAdmin.getSlack() == null
-                || configAdmin.getSlack().getChannelLinks() == null
-                || configAdmin.getSlack().getAccessToken() == null) {
+                || configAdmin.getSlack().getChannelLinks() == null) {
+            return;
+        }
+
+        Optional<String> accessTokenOpt = projectStore.getProject(configAdmin.getProjectId(), false)
+                .flatMap(this::getAccessTokenForProject);
+        if (accessTokenOpt.isEmpty()) {
             return;
         }
 
@@ -366,7 +406,7 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
         // which requires the config to be saved to database first
         try {
             Slack slack = Slack.getInstance();
-            MethodsClient client = slack.methods(configAdmin.getSlack().getAccessToken());
+            MethodsClient client = slack.methods(accessTokenOpt.get());
 
             for (String channelId : newChannels) {
                 try {
@@ -427,6 +467,9 @@ public class SlackStoreImpl extends ManagedService implements SlackStore {
         if (slackClientProvider instanceof SlackClientProviderImpl) {
             ((SlackClientProviderImpl) slackClientProvider).invalidateClient(projectId);
         }
+
+        // Remove server-side stored access token
+        authSchema.table().deleteItem(authSchema.primaryKey(Map.of("projectId", projectId)));
 
         // Remove teamId -> projectId mapping
         projectStore.getProject(projectId, false).ifPresent(project -> {
