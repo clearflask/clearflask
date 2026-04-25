@@ -171,7 +171,11 @@ function createApp(serverApi) {
       res.status(429).set('Retry-After', '3600').send('Too Many Requests');
       return;
     }
-    if (ip && req.hostname && req.hostname !== connectConfig.parentDomain) {
+    // Only count strikes on top-level page navigations (Accept: text/html),
+    // not on /api/ requests, embedded assets, or favicon hits — otherwise an
+    // attacker could ban innocent visitors by embedding <img src="https://x.clearflask.com/y.png">.
+    const acceptsHtml = (req.headers.accept || '').includes('text/html');
+    if (ip && req.hostname && req.hostname !== connectConfig.parentDomain && !req.path.startsWith('/api/') && acceptsHtml) {
       res.on('finish', () => {
         if (res.statusCode === 404) recordStrike(ip);
       });
