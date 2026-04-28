@@ -222,5 +222,19 @@
   "free-forever": "Frei für immer",
   "you-have-unsaved-changes": "Sie haben ungespeicherte Änderungen",
   "empty": "Leer",
-  "notifications": "Mitteilungen"
+  "notifications": "Mitteilungen",
+  "talk": "Sprechen",
+  "forgot-password": "Passwort vergessen?",
+  "email-sent": "E-Mail gesendet!",
+  "password-reset-email-sent": "Wenn ein Konto mit dieser E-Mail existiert, erhalten Sie in Kürze einen Link zum Zurücksetzen des Passworts.",
+  "enter-email-for-password-reset": "Geben Sie Ihre E-Mail-Adresse ein und wir senden Ihnen einen Link zum Zurücksetzen Ihres Passworts.",
+  "send-reset-link": "Link zum Zurücksetzen senden",
+  "remember-password": "Passwort vergessen?",
+  "invalid-reset-link": "Invalid reset link",
+  "reset-link-invalid-or-expired": "Der Link zum Zurücksetzen des Passworts ist ungültig oder abgelaufen.",
+  "need-new-link": "Benötigen Sie einen neuen Link?",
+  "request-new-link": "Neuen Link anfordern",
+  "reset-your-password": "Passwort zurücksetzen",
+  "new-password": "Neues Passwort",
+  "reset-password": "Passwort zurücksetzen"
 }

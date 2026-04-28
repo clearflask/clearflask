@@ -222,5 +222,19 @@
   "free-forever": "Gratis for alltid",
   "you-have-unsaved-changes": "Du har ulagrede endringer",
   "empty": "Tom",
-  "notifications": "Varsler"
+  "notifications": "Varsler",
+  "talk": "Snakk",
+  "forgot-password": "Glemt passord?",
+  "email-sent": "E-post er sendt!",
+  "password-reset-email-sent": "Hvis en konto eksisterer med denne e-posten, mottar du en kort tid en lenke for tilbakestilling av passord.",
+  "enter-email-for-password-reset": "Skriv inn din epostadresse og vi sender deg en link for å tilbakestille passordet ditt.",
+  "send-reset-link": "Send nullstillingslenke",
+  "remember-password": "Husker du passordet ditt?",
+  "invalid-reset-link": "Invalid reset link",
+  "reset-link-invalid-or-expired": "Denne lenken for å tilbakestille passordet er ugyldig eller utløpt.",
+  "need-new-link": "Trenger du en ny lenke?",
+  "request-new-link": "Be om ny lenke",
+  "reset-your-password": "Tilbakestill passordet ditt",
+  "new-password": "Nytt passord",
+  "reset-password": "Tilbakestill passord"
 }

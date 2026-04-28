@@ -222,5 +222,19 @@
   "free-forever": "Gratis para siempre",
   "you-have-unsaved-changes": "Tiene cambios sin guardar",
   "empty": "Vaciar",
-  "notifications": "Notificaciones"
+  "notifications": "Notificaciones",
+  "talk": "Habla",
+  "forgot-password": "¿Olvidaste la contraseña?",
+  "email-sent": "Correo enviado!",
+  "password-reset-email-sent": "Si existe una cuenta con este correo electrónico, recibirá un enlace para restablecer la contraseña en breve.",
+  "enter-email-for-password-reset": "Introduce tu dirección de correo electrónico y te enviaremos un enlace para restablecer tu contraseña.",
+  "send-reset-link": "Enviar enlace de reinicio",
+  "remember-password": "¿Recuerdas tu contraseña?",
+  "invalid-reset-link": "Invalid reset link",
+  "reset-link-invalid-or-expired": "Este enlace de restablecimiento de contraseña no es válido o ha caducado.",
+  "need-new-link": "¿Necesitas un nuevo enlace?",
+  "request-new-link": "Solicitar nuevo enlace",
+  "reset-your-password": "Restablecer su contraseña",
+  "new-password": "Nueva contraseña",
+  "reset-password": "Restablecer contraseña"
 }

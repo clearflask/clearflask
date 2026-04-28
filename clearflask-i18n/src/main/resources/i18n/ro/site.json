@@ -222,5 +222,19 @@
   "free-forever": "Gratuit pentru totdeauna",
   "you-have-unsaved-changes": "Aveți modificări nesalvate",
   "empty": "Golire",
-  "notifications": "Notificări"
+  "notifications": "Notificări",
+  "talk": "Vorbeste",
+  "forgot-password": "Ai uitat parola?",
+  "email-sent": "E-mail trimis!",
+  "password-reset-email-sent": "Dacă există un cont cu acest e-mail, veți primi în scurt timp un link de resetare a parolei.",
+  "enter-email-for-password-reset": "Introdu adresa ta de e-mail și îți vom trimite un link pentru resetarea parolei.",
+  "send-reset-link": "Trimite link-ul de resetare",
+  "remember-password": "Îți amintești parola?",
+  "invalid-reset-link": "Invalid reset link",
+  "reset-link-invalid-or-expired": "Acest link de resetare a parolei nu este valid sau a expirat.",
+  "need-new-link": "Ai nevoie de un nou link?",
+  "request-new-link": "Cere link nou",
+  "reset-your-password": "Resetează-ți parola",
+  "new-password": "Parola nouă",
+  "reset-password": "Resetare parolă"
 }
