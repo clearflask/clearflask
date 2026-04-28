@@ -41,17 +41,22 @@ public class OnTeammateInvite {
 
         String projectName = emailTemplates.sanitize(invitation.getProjectNameNonNull());
         subject = subject.replace("__project_name__", projectName);
-        content = content.replace("__project_name__", projectName);
 
         String inviteeName = emailTemplates.sanitize(invitation.getInviteeName());
         subject = subject.replace("__invitee_name__", inviteeName);
-        content = content.replace("__invitee_name__", inviteeName);
+
+        String contentHtml = content
+                .replace("__project_name__", emailTemplates.escapeHtml(projectName))
+                .replace("__invitee_name__", emailTemplates.escapeHtml(inviteeName));
+        String contentText = content
+                .replace("__project_name__", projectName)
+                .replace("__invitee_name__", inviteeName);
 
         String templateHtml = emailTemplates.getNotificationNoUnsubTemplateHtml();
         String templateText = emailTemplates.getNotificationNoUnsubTemplateText();
 
-        templateHtml = templateHtml.replace("__CONTENT__", content);
-        templateText = templateText.replace("__CONTENT__", content);
+        templateHtml = templateHtml.replace("__CONTENT__", contentHtml);
+        templateText = templateText.replace("__CONTENT__", contentText);
 
         String buttonText = "View invitation";
         templateHtml = templateHtml.replace("__BUTTON_TEXT__", buttonText);

@@ -61,8 +61,8 @@ public class OnAccountSignup {
         String nameSanitized = emailTemplates.sanitize(account.getName());
         String planName = planStore.prettifyPlanName(account.getPlanid());
         subject = subject.replace("__NAME__", nameSanitized);
-        contentHtml = contentHtml.replace("__NAME__", nameSanitized)
-                .replace("__PLAN_NAME__", planName);
+        contentHtml = contentHtml.replace("__NAME__", emailTemplates.escapeHtml(nameSanitized))
+                .replace("__PLAN_NAME__", emailTemplates.escapeHtml(planName));
         contentText = contentText.replace("__NAME__", nameSanitized)
                 .replace("__PLAN_NAME__", planName);
 

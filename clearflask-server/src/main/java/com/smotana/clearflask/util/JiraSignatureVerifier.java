@@ -8,8 +8,11 @@ import lombok.extern.slf4j.Slf4j;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.ws.rs.BadRequestException;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Locale;
 
 /**
  * Verifies Jira webhook signatures.
@@ -55,16 +58,18 @@ public class JiraSignatureVerifier {
             }
             String actual = new String(raw);
 
-            // Jira may send signature with or without prefix
+            // Jira may send signature with or without prefix, in either case
             String expected = signature;
-            if (signature.startsWith("sha256=")) {
-                expected = signature.substring(7);
+            if (expected.startsWith("sha256=")) {
+                expected = expected.substring(7);
             }
+            expected = expected.toLowerCase(Locale.ROOT);
 
-            if (!expected.equalsIgnoreCase(actual)) {
+            byte[] expectedBytes = expected.getBytes(StandardCharsets.UTF_8);
+            byte[] actualBytes = actual.getBytes(StandardCharsets.UTF_8);
+            if (!MessageDigest.isEqual(expectedBytes, actualBytes)) {
                 if (LogUtil.rateLimitAllowLog("jira-signature-verifier-mismatch")) {
-                    log.warn("Jira signature failed, expected {} actual {} webhookId {}",
-                            expected, actual, webhookId);
+                    log.warn("Jira signature failed webhookId {}", webhookId);
                 }
                 throw new BadRequestException("Signature verification failed");
             }

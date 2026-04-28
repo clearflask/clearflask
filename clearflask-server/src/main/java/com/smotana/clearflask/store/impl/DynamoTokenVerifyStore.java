@@ -6,6 +6,7 @@ import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.hash.Hashing;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -18,16 +19,23 @@ import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
 import lombok.extern.slf4j.Slf4j;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Base64;
 
 @Slf4j
 @Singleton
 public class DynamoTokenVerifyStore implements TokenVerifyStore {
 
     public interface Config {
-        @DefaultValue("6")
-        long tokenSize();
+        /**
+         * Plaintext token entropy in bytes. 16 bytes = 128 bits → ~22 base64url chars.
+         */
+        @DefaultValue("16")
+        int tokenEntropyBytes();
 
         @DefaultValue("PT15M")
         Duration tokenExpiry();
@@ -37,6 +45,8 @@ public class DynamoTokenVerifyStore implements TokenVerifyStore {
     private Config config;
     @Inject
     private SingleTable singleTable;
+
+    private final SecureRandom secureRandom = new SecureRandom();
 
     private TableSchema<Token> tokenSchema;
 
@@ -49,32 +59,51 @@ public class DynamoTokenVerifyStore implements TokenVerifyStore {
     @Override
     public Token createToken(String... targetIdParts) {
         String targetId = String.join("-", targetIdParts);
-        Token token = new Token(
-                targetId,
-                genTokenId(config.tokenSize()),
-                Instant.now().plus(config.tokenExpiry()).getEpochSecond());
+        String plaintextToken = genTokenPlaintext();
+        long expiry = Instant.now().plus(config.tokenExpiry()).getEpochSecond();
 
+        Token stored = new Token(targetId, hashToken(plaintextToken), expiry);
         tokenSchema.table().putItem(new PutItemSpec()
-                .withItem(tokenSchema.toItem(token)));
+                .withItem(tokenSchema.toItem(stored)));
 
-        return token;
+        return new Token(targetId, plaintextToken, expiry);
     }
 
     @Extern
     @Override
     public boolean useToken(String tokenStr, String... targetIdParts) {
+        if (tokenStr == null || tokenStr.isEmpty()) {
+            return false;
+        }
         String targetId = String.join("-", targetIdParts);
+        String hashed = hashToken(tokenStr);
         Token deletedToken = tokenSchema.fromItem(tokenSchema.table().deleteItem(new DeleteItemSpec()
                         .withPrimaryKey(tokenSchema.primaryKey(ImmutableMap.of(
                                 "targetId", targetId,
-                                "token", tokenStr)))
+                                "token", hashed)))
                         .withReturnValues(ReturnValue.ALL_OLD))
                 .getItem());
 
-        return deletedToken != null
+        if (deletedToken == null) {
+            return false;
+        }
+        byte[] expected = hashed.getBytes(StandardCharsets.UTF_8);
+        byte[] actual = deletedToken.getToken().getBytes(StandardCharsets.UTF_8);
+        return MessageDigest.isEqual(expected, actual)
                 && targetId.equals(deletedToken.getTargetId())
-                && tokenStr.equals(deletedToken.getToken())
                 && deletedToken.getTtlInEpochSec() >= Instant.now().getEpochSecond();
+    }
+
+    private String genTokenPlaintext() {
+        byte[] bytes = new byte[config.tokenEntropyBytes()];
+        secureRandom.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    private static String hashToken(String plaintext) {
+        return Hashing.sha256()
+                .hashString(plaintext, StandardCharsets.UTF_8)
+                .toString();
     }
 
     public static Module module() {

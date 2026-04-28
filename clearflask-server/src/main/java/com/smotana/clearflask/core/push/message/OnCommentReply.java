@@ -78,16 +78,15 @@ public class OnCommentReply {
         String title = StringUtils.abbreviate(emailTemplates.sanitize(idea.getTitle()), 50);
         templateHtml = templateHtml.replace("__title__",
                 "<span style=\"font-weight: bold\">" +
-                        title +
+                        emailTemplates.escapeHtml(title) +
                         "</span>");
         templateText = templateText.replace("__title__", title);
-        title = StringUtils.abbreviate(title, 20);
-        subject = subject.replace("__title__", title);
+        subject = subject.replace("__title__", StringUtils.abbreviate(title, 20));
 
         String reply = StringUtils.abbreviate(emailTemplates.sanitize(comment.getContentAsText(sanitizer)), 50);
         templateHtml = templateHtml.replace("__reply__",
                 "<span style=\"font-weight: bold\">" +
-                        reply +
+                        emailTemplates.escapeHtml(reply) +
                         "</span>");
         templateText = templateText.replace("__reply__", reply);
 
@@ -99,7 +98,7 @@ public class OnCommentReply {
         templateText = templateText.replace("__sender__", senderName);
         templateHtml = templateHtml.replace("__sender__",
                 "<span style=\"font-weight: bold\">" +
-                        senderName +
+                        emailTemplates.escapeHtml(senderName) +
                         "</span>");
 
         templateHtml = templateHtml.replace("__BUTTON_TEXT__", "VIEW REPLY");

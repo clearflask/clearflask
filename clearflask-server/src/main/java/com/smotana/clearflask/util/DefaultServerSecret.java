@@ -4,6 +4,7 @@ package com.smotana.clearflask.util;
 
 import com.google.common.base.Charsets;
 import com.google.inject.AbstractModule;
+import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -11,6 +12,7 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.NoDefaultValue;
+import com.smotana.clearflask.core.ServiceInjector;
 import com.smotana.clearflask.proto.EncryptedData;
 import lombok.extern.slf4j.Slf4j;
 
@@ -45,10 +47,27 @@ public final class DefaultServerSecret implements ServerSecret {
     @InjectNamed
     private Config config;
 
+    @Inject
+    private ServiceInjector.Environment env;
+
     private final SecureRandom random = new SecureRandom();
+
+    /** Base64 placeholder shipped in config-local.cfg for the {@code cursor}-named secret. */
+    private static final String SHARED_KEY_PLACEHOLDER_CURSOR = "jwlfX7yN6SJXzVXjNCqq+A==";
 
     protected DefaultServerSecret() {
         super();
+    }
+
+    @Inject
+    private void validateNotPlaceholder() {
+        if (env != null && env.isProduction()
+                && SHARED_KEY_PLACEHOLDER_CURSOR.equals(config.sharedKey())) {
+            throw new IllegalStateException(
+                    "Refusing to start in production with default secret: DefaultServerSecret sharedKey "
+                            + "is set to the published placeholder from config-local.cfg. Generate a fresh "
+                            + "256-bit AES key and override before deploying.");
+        }
     }
 
     @Override

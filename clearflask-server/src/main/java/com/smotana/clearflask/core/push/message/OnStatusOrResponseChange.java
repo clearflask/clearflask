@@ -104,11 +104,10 @@ public class OnStatusOrResponseChange {
         String title = StringUtils.abbreviate(emailTemplates.sanitize(idea.getTitle()), 50);
         templateHtml = templateHtml.replace("__title__",
                 "<span style=\"font-weight: bold\">" +
-                        title +
+                        emailTemplates.escapeHtml(title) +
                         "</span>");
         templateText = templateText.replace("__title__", title);
-        title = StringUtils.abbreviate(title, 20);
-        subject = subject.replace("__title__", title);
+        subject = subject.replace("__title__", StringUtils.abbreviate(title, 20));
 
         if (changedStatus.isPresent()) {
             String statusName = StringUtils.abbreviate(emailTemplates.sanitize(changedStatus.get().getName()), 50);
@@ -116,19 +115,18 @@ public class OnStatusOrResponseChange {
                 statusName = "unknown";
             }
             templateHtml = templateHtml.replace("__status__",
-                    "<span style=\"color: " + changedStatus.get().getColor() + ";font-weight: bold\">" +
-                            statusName +
+                    "<span style=\"color: " + emailTemplates.escapeHtml(changedStatus.get().getColor()) + ";font-weight: bold\">" +
+                            emailTemplates.escapeHtml(statusName) +
                             "</span>");
             templateText = templateText.replace("__status__", statusName);
-            statusName = StringUtils.abbreviate(statusName, 15);
-            subject = subject.replace("__status__", statusName);
+            subject = subject.replace("__status__", StringUtils.abbreviate(statusName, 15));
         }
 
         if (changedResponse.isPresent()) {
             String response = StringUtils.abbreviate(emailTemplates.sanitize(changedResponse.get()), 50);
             templateHtml = templateHtml.replace("__response__",
                     "<span style=\"font-weight: bold\">" +
-                            response +
+                            emailTemplates.escapeHtml(response) +
                             "</span>");
             templateText = templateText.replace("__response__", response);
         }

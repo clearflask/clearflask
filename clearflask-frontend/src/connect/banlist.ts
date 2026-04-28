@@ -19,10 +19,47 @@ export function normalizeIp(raw: string | undefined): string | undefined {
 
 // Key bans/strikes by /24 for IPv4 so botnets cycling within a subnet
 // (e.g. 93.123.109.163, .180, .214) all contribute to the same counter.
-// IPv6 falls back to per-address since /24 doesn't apply.
+// For IPv6, bucket by /64 — the standard residential allocation — so a single
+// subscriber can't burn through 2^64 addresses to evade the per-address limit.
 function toKey(ip: string): string {
-  const m = /^(\d{1,3}\.\d{1,3}\.\d{1,3})\.\d{1,3}$/.exec(ip);
-  return m ? `${m[1]}.0/24` : ip;
+  const v4 = /^(\d{1,3}\.\d{1,3}\.\d{1,3})\.\d{1,3}$/.exec(ip);
+  if (v4) return `${v4[1]}.0/24`;
+  const prefix = ipv6Prefix64(ip);
+  if (prefix) return `${prefix}::/64`;
+  return ip;
+}
+
+// Returns the first 4 hextets of an IPv6 address (the /64 prefix), normalized to
+// lowercase with leading zeros stripped. Returns undefined if the input is not an
+// IPv6 address we can parse.
+function ipv6Prefix64(raw: string): string | undefined {
+  if (!raw || raw.indexOf(':') === -1) return undefined;
+  // Strip a zone id (e.g. fe80::1%eth0) before parsing.
+  const ip = raw.split('%')[0].toLowerCase();
+  // Reject embedded IPv4 (e.g. ::ffff:1.2.3.4) — normalizeIp already strips the
+  // common ::ffff: prefix; anything else with a dot we treat as unknown.
+  if (ip.indexOf('.') !== -1) return undefined;
+
+  const doubleColonIdx = ip.indexOf('::');
+  let parts: string[];
+  if (doubleColonIdx === -1) {
+    parts = ip.split(':');
+    if (parts.length !== 8) return undefined;
+  } else {
+    const head = ip.slice(0, doubleColonIdx);
+    const tail = ip.slice(doubleColonIdx + 2);
+    const headParts = head.length ? head.split(':') : [];
+    const tailParts = tail.length ? tail.split(':') : [];
+    const missing = 8 - headParts.length - tailParts.length;
+    if (missing < 0) return undefined;
+    parts = [...headParts, ...new Array(missing).fill('0'), ...tailParts];
+  }
+
+  const prefix = parts.slice(0, 4);
+  for (const hextet of prefix) {
+    if (!/^[0-9a-f]{1,4}$/.test(hextet)) return undefined;
+  }
+  return prefix.map(h => h.replace(/^0+(?=.)/, '')).join(':');
 }
 
 export function isBanned(ip: string): boolean {

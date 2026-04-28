@@ -51,13 +51,14 @@ public class OnModInvite {
 
         String projectName = emailTemplates.sanitize(projectUtil.getProjectName(configAdmin));
         subject = subject.replace("__project_name__", projectName);
-        content = content.replace("__project_name__", projectName);
+        String contentHtml = content.replace("__project_name__", emailTemplates.escapeHtml(projectName));
+        String contentText = content.replace("__project_name__", projectName);
 
         String templateHtml = emailTemplates.getNotificationNoUnsubTemplateHtml();
         String templateText = emailTemplates.getNotificationNoUnsubTemplateText();
 
-        templateHtml = templateHtml.replace("__CONTENT__", content);
-        templateText = templateText.replace("__CONTENT__", content);
+        templateHtml = templateHtml.replace("__CONTENT__", contentHtml);
+        templateText = templateText.replace("__CONTENT__", contentText);
 
         String buttonText = "Account settings";
         templateHtml = templateHtml.replace("__BUTTON_TEXT__", buttonText);

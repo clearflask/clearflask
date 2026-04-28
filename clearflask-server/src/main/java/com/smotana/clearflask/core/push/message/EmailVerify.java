@@ -45,13 +45,14 @@ public class EmailVerify {
         String content = config.contentTemplate();
 
         String projectName = emailTemplates.sanitize(projectUtil.getProjectName(configAdmin));
-        content = content.replace("__project_name__", projectName);
+        String contentHtml = content.replace("__project_name__", emailTemplates.escapeHtml(projectName));
+        String contentText = content.replace("__project_name__", projectName);
 
         String templateHtml = emailTemplates.getVerificationTemplateHtml();
         String templateText = emailTemplates.getVerificationTemplateText();
 
-        templateHtml = templateHtml.replace("__CONTENT__", content);
-        templateText = templateText.replace("__CONTENT__", content);
+        templateHtml = templateHtml.replace("__CONTENT__", contentHtml);
+        templateText = templateText.replace("__CONTENT__", contentText);
 
         templateHtml = templateHtml.replace("__TOKEN__", token);
         templateText = templateText.replace("__TOKEN__", token);

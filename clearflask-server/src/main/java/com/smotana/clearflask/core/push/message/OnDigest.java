@@ -66,26 +66,29 @@ public class OnDigest {
                 StringBuilder itemsHtml = new StringBuilder();
                 StringBuilder itemsText = new StringBuilder();
                 for (DigestItem digestItem : digestSection.getItems()) {
+                    String itemTextSanitized = emailTemplates.sanitize(digestItem.getText());
                     itemsHtml.append(emailTemplates.getDigestProjectSectionItemTemplateHtml()
-                            .replace("__ITEM_TEXT__", emailTemplates.sanitize(digestItem.getText()))
+                            .replace("__ITEM_TEXT__", emailTemplates.escapeHtml(itemTextSanitized))
                             .replace("__ITEM_LINK__", digestItem.getLink() + "?" + AUTH_TOKEN_PARAM_NAME + "=" + authToken));
                     itemsText.append(emailTemplates.getDigestProjectSectionItemTemplateText()
-                            .replace("__ITEM_TEXT__", emailTemplates.sanitize(digestItem.getText()))
+                            .replace("__ITEM_TEXT__", itemTextSanitized)
                             .replace("__ITEM_LINK__", digestItem.getLink() + "?" + AUTH_TOKEN_PARAM_NAME + "=" + authToken));
                 }
+                String sectionNameSanitized = emailTemplates.sanitize(digestSection.getSectionName());
                 sectionsHtml.append(emailTemplates.getDigestProjectSectionTemplateHtml()
-                        .replace("__SECTION_NAME__", emailTemplates.sanitize(digestSection.getSectionName()))
+                        .replace("__SECTION_NAME__", emailTemplates.escapeHtml(sectionNameSanitized))
                         .replace("__ITEMS__", itemsHtml.toString()));
                 sectionsText.append(emailTemplates.getDigestProjectSectionTemplateText()
-                        .replace("__SECTION_NAME__", emailTemplates.sanitize(digestSection.getSectionName()))
+                        .replace("__SECTION_NAME__", sectionNameSanitized)
                         .replace("__ITEMS__", itemsText.toString()));
             }
+            String projectNameSanitized = emailTemplates.sanitize(digestProject.getName());
             projectsHtml.append(emailTemplates.getDigestProjectTemplateHtml()
-                    .replace("__PROJECT_NAME__", emailTemplates.sanitize(digestProject.getName()))
+                    .replace("__PROJECT_NAME__", emailTemplates.escapeHtml(projectNameSanitized))
                     .replace("__PROJECT_LINK__", digestProject.getLink())
                     .replace("__SECTIONS__", sectionsHtml.toString()));
             projectsText.append(emailTemplates.getDigestProjectTemplateText()
-                    .replace("__PROJECT_NAME__", emailTemplates.sanitize(digestProject.getName()))
+                    .replace("__PROJECT_NAME__", projectNameSanitized)
                     .replace("__PROJECT_LINK__", digestProject.getLink())
                     .replace("__SECTIONS__", sectionsText.toString()));
         }

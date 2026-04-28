@@ -8,20 +8,19 @@ import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
 
-import java.util.concurrent.ThreadLocalRandom;
-
 import static io.dataspray.singletable.TableType.Primary;
 
 public interface TokenVerifyStore {
-
-    default String genTokenId(long tokenSize) {
-        return String.format("%0" + tokenSize + "d", ThreadLocalRandom.current().nextLong((long) Math.pow(10, tokenSize)));
-    }
 
     Token createToken(String... targetIdParts);
 
     boolean useToken(String tokenStr, String... targetIdParts);
 
+    /**
+     * Persisted form of a verification token. The {@link #token} stored on disk is the
+     * server-side hash; the plaintext value is only ever returned to the caller of
+     * {@link #createToken} (so it can be emailed to the user) and is never written to the table.
+     */
     @Value
     @Builder(toBuilder = true)
     @AllArgsConstructor

@@ -36,7 +36,7 @@ public class OnPostCreated {
         String templateHtml = emailTemplates.getNotificationTemplateHtml();
         String templateText = emailTemplates.getNotificationTemplateText();
 
-        templateHtml = templateHtml.replace("__CONTENT__", content);
+        templateHtml = templateHtml.replace("__CONTENT__", emailTemplates.escapeHtml(content));
         templateText = templateText.replace("__CONTENT__", content);
 
         templateHtml = templateHtml.replace("__BUTTON_TEXT__", "VIEW");

@@ -76,11 +76,11 @@ public class OnTrialEnded {
                 : config.contentTemplateTrialEndedText();
 
         String nameSanitized = emailTemplates.sanitize(account.getName());
-        contentHtml = contentHtml.replace("__NAME__", nameSanitized);
+        contentHtml = contentHtml.replace("__NAME__", emailTemplates.escapeHtml(nameSanitized));
         contentText = contentText.replace("__NAME__", nameSanitized);
 
         String planName = planStore.prettifyPlanName(account.getPlanid());
-        contentHtml = contentHtml.replace("__PLAN_NAME__", planName);
+        contentHtml = contentHtml.replace("__PLAN_NAME__", emailTemplates.escapeHtml(planName));
         contentText = contentText.replace("__PLAN_NAME__", planName);
 
         String templateHtml = emailTemplates.getNotificationNoUnsubLargeTemplateHtml();

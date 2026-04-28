@@ -41,26 +41,35 @@ public class OnCreditChange {
     @Inject
     private EmailTemplates emailTemplates;
 
+    private String renderContent(String template, ConfigAdmin configAdmin, TransactionModel transaction, boolean forHtml) {
+        String result = template
+                .replace("__action_type__", transaction.getAmount() >= 0 ? "credited" : "debited");
+        String amountFormatted = emailTemplates.sanitize(CreditViewUtil.creditView(transaction.getAmount(), configAdmin.getUsers().getCredits()));
+        String summarySanitized = emailTemplates.sanitize(transaction.getSummary());
+        if (forHtml) {
+            amountFormatted = emailTemplates.escapeHtml(amountFormatted);
+            summarySanitized = emailTemplates.escapeHtml(summarySanitized);
+        }
+        return result
+                .replace("__amount__", amountFormatted)
+                .replace("__summary__", summarySanitized);
+    }
+
     public Email email(ConfigAdmin configAdmin, UserModel user, TransactionModel transaction, String link, String authToken) {
         checkArgument(!Strings.isNullOrEmpty(user.getEmail()));
 
-        String subject = config.subjectTemplate();
-        String content = config.template();
+        String subject = config.subjectTemplate()
+                .replace("__action_type__", transaction.getAmount() >= 0 ? "credited" : "debited")
+                .replace("__amount__", emailTemplates.sanitize(CreditViewUtil.creditView(transaction.getAmount(), configAdmin.getUsers().getCredits())));
 
-        subject = subject.replace("__action_type__", transaction.getAmount() >= 0 ? "credited" : "debited");
-        content = content.replace("__action_type__", transaction.getAmount() >= 0 ? "credited" : "debited");
-
-        String amountFormatted = emailTemplates.sanitize(CreditViewUtil.creditView(transaction.getAmount(), configAdmin.getUsers().getCredits()));
-        subject = subject.replace("__amount__", amountFormatted);
-        content = content.replace("__amount__", amountFormatted);
-
-        content = content.replace("__summary__", emailTemplates.sanitize(transaction.getSummary()));
+        String contentHtml = renderContent(config.template(), configAdmin, transaction, true);
+        String contentText = renderContent(config.template(), configAdmin, transaction, false);
 
         String templateHtml = emailTemplates.getNotificationTemplateHtml();
         String templateText = emailTemplates.getNotificationTemplateText();
 
-        templateHtml = templateHtml.replace("__CONTENT__", content);
-        templateText = templateText.replace("__CONTENT__", content);
+        templateHtml = templateHtml.replace("__CONTENT__", contentHtml);
+        templateText = templateText.replace("__CONTENT__", contentText);
 
         templateHtml = templateHtml.replace("__BUTTON_TEXT__", "VIEW BALANCE");
         templateText = templateText.replace("__BUTTON_TEXT__", "VIEW BALANCE");

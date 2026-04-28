@@ -71,6 +71,35 @@ public class EmailTemplates {
         return Strings.nullToEmpty(input).replaceAll(config.sanitizeRegex(), "");
     }
 
+    /**
+     * HTML-escape a string so it is safe to interpolate into HTML element/attribute content.
+     * Use this (or {@link #sanitizeAndEscapeHtml(String)}) for any user/admin-supplied text
+     * substituted into an HTML email template.
+     */
+    public String escapeHtml(String input) {
+        if (input == null || input.isEmpty()) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder(input.length() + 16);
+        for (int i = 0; i < input.length(); i++) {
+            char c = input.charAt(i);
+            switch (c) {
+                case '&': sb.append("&amp;"); break;
+                case '<': sb.append("&lt;"); break;
+                case '>': sb.append("&gt;"); break;
+                case '"': sb.append("&quot;"); break;
+                case '\'': sb.append("&#x27;"); break;
+                case '/': sb.append("&#x2F;"); break;
+                default: sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
+
+    public String sanitizeAndEscapeHtml(String input) {
+        return escapeHtml(sanitize(input));
+    }
+
     public static Module module() {
         return new AbstractModule() {
             @Override

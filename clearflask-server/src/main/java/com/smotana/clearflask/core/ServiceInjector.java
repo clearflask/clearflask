@@ -141,6 +141,7 @@ import com.smotana.clearflask.web.resource.VoteResource;
 import com.smotana.clearflask.web.security.AuthCookieImpl;
 import com.smotana.clearflask.web.security.AuthenticationFilter;
 import com.smotana.clearflask.web.security.Sanitizer;
+import com.smotana.clearflask.web.security.SecretsGuard;
 import com.smotana.clearflask.web.security.SuperAdminPredicate;
 import com.smotana.clearflask.web.security.UserBindUtil;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
@@ -303,6 +304,7 @@ public enum ServiceInjector {
                 install(CaptchaChallenger.module());
                 install(UserBindUtil.module());
                 install(CertFetcherImpl.module());
+                install(SecretsGuard.module());
                 if (env == Environment.PRODUCTION_AWS) {
                     install(CheckMailOrgEmailValidator.module());
                 } else {

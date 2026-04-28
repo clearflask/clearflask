@@ -52,7 +52,7 @@ public class OnProjectDeletionImminent {
         String contentText = config.contentText();
 
         String nameSanitized = emailTemplates.sanitize(account.getName());
-        contentHtml = contentHtml.replace("__NAME__", nameSanitized);
+        contentHtml = contentHtml.replace("__NAME__", emailTemplates.escapeHtml(nameSanitized));
         contentText = contentText.replace("__NAME__", nameSanitized);
 
         String templateHtml = emailTemplates.getNotificationNoUnsubLargeTemplateHtml();
