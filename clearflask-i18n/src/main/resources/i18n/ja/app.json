@@ -136,6 +136,7 @@
   "as-user": "ユーザーとして",
   "select-author": "著者を選択",
   "notify-all-subscribers": "すべての購読者に通知",
+  "private-visible-to-admins-only": "プライベート (管理者のみに表示)",
   "notification-title": "通知のタイトル",
   "notification-body": "通知本文",
   "link-to": "リンク先：",
@@ -143,5 +144,12 @@
   "reply": "返信",
   "edit": "編集",
   "edited": "編集済み",
-  "comment-deleted": "コメントが削除されました"
+  "comment-deleted": "コメントが削除されました",
+  "vote-on-behalf": "代わりに投票する",
+  "search-user": "ユーザーを検索",
+  "add-vote": "投票を追加",
+  "remove-vote": "投票を削除",
+  "failed-to-add-vote": "投票の追加に失敗しました",
+  "failed-to-remove-vote": "投票の削除に失敗しました",
+  "action": "アクション"
 }

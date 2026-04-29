@@ -136,6 +136,7 @@
   "as-user": "Som användare",
   "select-author": "Välj författare",
   "notify-all-subscribers": "Meddela alla prenumeranter",
+  "private-visible-to-admins-only": "Privat (endast synlig för administratörer)",
   "notification-title": "Titel på aviseringar",
   "notification-body": "Aviseringens kropp",
   "link-to": "Länk till",
@@ -143,5 +144,12 @@
   "reply": "Svara",
   "edit": "Redigera",
   "edited": "Redigerad",
-  "comment-deleted": "Kommentar raderad"
+  "comment-deleted": "Kommentar raderad",
+  "vote-on-behalf": "Rösta på uppdrag",
+  "search-user": "Sök användare",
+  "add-vote": "Lägg till röst",
+  "remove-vote": "Ta bort röst",
+  "failed-to-add-vote": "Det gick inte att lägga till röst",
+  "failed-to-remove-vote": "Det gick inte att ta bort omröstningen",
+  "action": "Åtgärd"
 }

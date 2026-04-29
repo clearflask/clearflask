@@ -61,7 +61,7 @@ export const supportedLanguages: Array<SupportedLanguage>
    */
   = [
     { code: 'ar', img: FlagAr, label: 'جزائري', perc: 1 },
-    { code: 'zh', img: FlagCn, label: '中文', perc: 1 },
+    { code: 'zh-CN', img: FlagCn, label: '中文 (简体)', perc: 1 },
     { code: 'cy', img: FlagCy, label: 'Cymraeg', perc: 1 },
     { code: 'cs', img: FlagCz, label: 'Čeština', perc: 1 },
     { code: 'da', img: FlagDk, label: 'Dansk', perc: 1 },

@@ -136,6 +136,7 @@
   "as-user": "Як користувач",
   "select-author": "Виберіть автора",
   "notify-all-subscribers": "Повідомити усіх підписників",
+  "private-visible-to-admins-only": "Приватний (видимий лише для адміністраторів)",
   "notification-title": "Заголовок повідомлення",
   "notification-body": "Тіло сповіщень",
   "link-to": "Посилання на",
@@ -143,5 +144,12 @@
   "reply": "Відповідь",
   "edit": "Редагувати",
   "edited": "Відредаговано",
-  "comment-deleted": "Коментар видалено"
+  "comment-deleted": "Коментар видалено",
+  "vote-on-behalf": "Голосування від імені",
+  "search-user": "Знайти користувача",
+  "add-vote": "Додати голос",
+  "remove-vote": "Зняти голос",
+  "failed-to-add-vote": "Не вдалося додати голос",
+  "failed-to-remove-vote": "Не вдалося видалити голос",
+  "action": "Дія"
 }

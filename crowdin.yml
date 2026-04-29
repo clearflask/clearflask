@@ -1,5 +1,11 @@
 ## SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
 ## SPDX-License-Identifier: Apache-2.0
+
+## Don't overwrite an existing in-repo translation file with an empty export.
+## A 0%-translated language (e.g. when a Crowdin language code stops mapping
+## to %two_letters_code%) would otherwise wipe the on-disk file to {}.
+skip_untranslated_files: true
+
 files:
   - source: /clearflask-i18n/src/main/resources/i18n/en
     translation: /clearflask-i18n/src/main/resources/i18n/%two_letters_code%/%file_name%.%file_extension%

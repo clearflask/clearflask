@@ -136,6 +136,7 @@
   "as-user": "Som bruger",
   "select-author": "Vælg forfatter",
   "notify-all-subscribers": "Underret alle abonnenter",
+  "private-visible-to-admins-only": "Privat (kun synlig for administratorer)",
   "notification-title": "Notifikations titel",
   "notification-body": "Anmeldelsesorgan",
   "link-to": "Link til",
@@ -143,5 +144,12 @@
   "reply": "Svar",
   "edit": "Rediger",
   "edited": "Redigeret",
-  "comment-deleted": "Kommentar slettet"
+  "comment-deleted": "Kommentar slettet",
+  "vote-on-behalf": "Afstemning på vegne",
+  "search-user": "Søg bruger",
+  "add-vote": "Tilføj stemme",
+  "remove-vote": "Fjern stemme",
+  "failed-to-add-vote": "Kunne ikke tilføje stemme",
+  "failed-to-remove-vote": "Kunne ikke fjerne stemme",
+  "action": "Handling"
 }

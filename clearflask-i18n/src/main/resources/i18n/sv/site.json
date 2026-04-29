@@ -222,5 +222,19 @@
   "free-forever": "Gratis för alltid",
   "you-have-unsaved-changes": "Du har osparade ändringar",
   "empty": "Tom",
-  "notifications": "Aviseringar"
+  "notifications": "Aviseringar",
+  "talk": "Prata",
+  "forgot-password": "Glömt lösenordet?",
+  "email-sent": "E-post skickat!",
+  "password-reset-email-sent": "Om ett konto finns med detta e-postmeddelande kommer du att få en återställningslänk för lösenordet inom kort.",
+  "enter-email-for-password-reset": "Ange din e-postadress så skickar vi en länk till dig för att återställa ditt lösenord.",
+  "send-reset-link": "Skicka återställningslänk",
+  "remember-password": "Kom ihåg ditt lösenord?",
+  "invalid-reset-link": "Invalid reset link",
+  "reset-link-invalid-or-expired": "Denna återställningslänk för lösenord är ogiltig eller har löpt ut.",
+  "need-new-link": "Behöver du en ny länk?",
+  "request-new-link": "Begär ny länk",
+  "reset-your-password": "Återställ ditt lösenord",
+  "new-password": "Nytt lösenord",
+  "reset-password": "Återställ lösenord"
 }

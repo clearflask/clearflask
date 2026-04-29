@@ -9,8 +9,10 @@ export const getI18n = () => {
   languageDetector.addDetector({
     name: 'detection-via-header',
     lookup: (req, res, options) => {
-      // Selected language preferece from cookie
-      const cookieLanguage = req.cookies?.[LANGUAGE_SELECTION_COOKIE_NAME];
+      // Selected language preferece from cookie. Legacy "zh" cookies (set when
+      // there was a single Chinese locale) map to Chinese Simplified.
+      let cookieLanguage = req.cookies?.[LANGUAGE_SELECTION_COOKIE_NAME];
+      if (cookieLanguage === 'zh') cookieLanguage = 'zh-CN';
       if (cookieLanguage && supportedLanguagesSet.has(cookieLanguage)) {
         setLangIsUserSelected();
         return cookieLanguage;

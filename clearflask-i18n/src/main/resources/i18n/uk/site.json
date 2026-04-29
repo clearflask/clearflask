@@ -222,5 +222,19 @@
   "free-forever": "Безплатно назавжди",
   "you-have-unsaved-changes": "Є незбережені зміни",
   "empty": "Порожньо",
-  "notifications": "Сповіщення"
+  "notifications": "Сповіщення",
+  "talk": "Розмови",
+  "forgot-password": "Забули пароль?",
+  "email-sent": "Повідомлення відправлено!",
+  "password-reset-email-sent": "Якщо обліковий запис існує з цією адресою електронної пошти, ви незабаром отримаєте посилання для скидання пароля.",
+  "enter-email-for-password-reset": "Введіть адресу вашої електронної пошти, і ми надішлемо вам посилання для відновлення пароля.",
+  "send-reset-link": "Скинути пароль",
+  "remember-password": "Запам’ятати Ваш пароль?",
+  "invalid-reset-link": "Invalid reset link",
+  "reset-link-invalid-or-expired": "Це посилання для зміни пароля недійсне або його термін дії.",
+  "need-new-link": "Потрібне нове посилання?",
+  "request-new-link": "Запит нового посилання",
+  "reset-your-password": "Відновити ваш пароль",
+  "new-password": "Новий пароль",
+  "reset-password": "Скинути пароль"
 }

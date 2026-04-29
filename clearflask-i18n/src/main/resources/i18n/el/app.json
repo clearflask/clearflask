@@ -134,6 +134,7 @@
   "as-user": "Ως χρήστης",
   "select-author": "Επιλογή συγγραφέα",
   "notify-all-subscribers": "Ειδοποίηση όλων των συνδρομητών",
+  "private-visible-to-admins-only": "Ιδιωτικό (ορατό μόνο στους διαχειριστές)",
   "notification-title": "Τίτλος ειδοποίησης",
   "notification-body": "Οργανισμός ειδοποιήσεων",
   "link-to": "Σύνδεση με",
@@ -141,5 +142,12 @@
   "reply": "Απάντηση",
   "edit": "Επεξεργασία",
   "edited": "Επεξεργάστηκε",
-  "comment-deleted": "Σχόλιο διαγράφηκε"
+  "comment-deleted": "Σχόλιο διαγράφηκε",
+  "vote-on-behalf": "Ψηφοφορία για λογαριασμό",
+  "search-user": "Αναζήτηση χρήστη",
+  "add-vote": "Προσθήκη ψήφου",
+  "remove-vote": "Αφαίρεση ψήφου",
+  "failed-to-add-vote": "Αποτυχία προσθήκης ψηφοφορίας",
+  "failed-to-remove-vote": "Αποτυχία κατάργησης της ψηφοφορίας",
+  "action": "Ενέργεια"
 }
