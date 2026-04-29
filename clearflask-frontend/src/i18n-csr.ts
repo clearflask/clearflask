@@ -52,5 +52,9 @@ export const rememberUserSelection = (language?: string): void => {
   }
 };
 export const getUserSelection = (): string | undefined => {
-  return Cookies.getInstance().get(LANGUAGE_SELECTION_COOKIE_NAME);
+  const stored = Cookies.getInstance().get(LANGUAGE_SELECTION_COOKIE_NAME);
+  // Legacy "zh" cookies were set when there was a single Chinese locale.
+  // Map them to Chinese Simplified so returning users keep their language.
+  if (stored === 'zh') return 'zh-CN';
+  return stored;
 };
