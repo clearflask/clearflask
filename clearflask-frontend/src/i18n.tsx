@@ -30,6 +30,7 @@ import FlagRu from '../public/img/flag/ru.svg';
 import FlagSe from '../public/img/flag/se.svg';
 import FlagSk from '../public/img/flag/sk.svg';
 import FlagTr from '../public/img/flag/tr.svg';
+import FlagTw from '../public/img/flag/tw.svg';
 import FlagUa from '../public/img/flag/ua.svg';
 import FlagEn from '../public/img/flag/us.svg';
 import { ReduxState } from './api/server';
@@ -62,6 +63,9 @@ export const supportedLanguages: Array<SupportedLanguage>
   = [
     { code: 'ar', img: FlagAr, label: 'جزائري', perc: 1 },
     { code: 'zh-CN', img: FlagCn, label: '中文 (简体)', perc: 1 },
+    // Traditional translations are still being filled in on Crowdin; until they
+    // arrive, missing keys fall back to zh-CN via fallbackLng below.
+    { code: 'zh-TW', img: FlagTw, label: '中文 (繁體)', perc: 0 },
     { code: 'cy', img: FlagCy, label: 'Cymraeg', perc: 1 },
     { code: 'cs', img: FlagCz, label: 'Čeština', perc: 1 },
     { code: 'da', img: FlagDk, label: 'Dansk', perc: 1 },
@@ -108,7 +112,14 @@ export const getI18n = (
       .catch((error) => callback(error, null))
   })).init({ // Docs: https://www.i18next.com/overview/configuration-options
     initImmediate: false,
-    fallbackLng: defaultLanguage,
+    // zh-TW currently ships as empty {} placeholders (Crowdin's Traditional
+    // workspace is being translated). Until it has content, fall back to
+    // zh-CN so Traditional Chinese visitors see Simplified rather than
+    // English.
+    fallbackLng: {
+      'zh-TW': ['zh-CN', defaultLanguage],
+      'default': [defaultLanguage],
+    },
     supportedLngs: [...supportedLanguagesSet],
     debug: !isProd(),
     missingKeyNoValueFallbackToKey: false,
