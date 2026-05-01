@@ -128,6 +128,11 @@ export const CrowdInInlineEditing = () => {
     const [contributeSelected, setContributeSelected] = useState<boolean>();
     const {i18n} = useTranslation();
     useEffect(() => {
+        // Initialise from the current language, not just from future
+        // languageChanged events. Without this, refreshing a page that's
+        // already in contribute mode (lol) skips the dialog and jipt.js
+        // never loads, so the user just sees raw crwdns###:0 markers.
+        setContributeSelected(!!supportedLanguages.find(l => l.code === i18n.language)?.isContribute);
         i18n.on('languageChanged', lng => {
             setContributeSelected(!!supportedLanguages.find(l => l.code === lng)?.isContribute);
         });

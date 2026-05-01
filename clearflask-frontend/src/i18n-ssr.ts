@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import CountryLocaleMap from 'country-locale-map';
 import i18nMiddleware from 'i18next-http-middleware';
-import { defaultLanguage, getI18n as getI18nGeneric, LANGUAGE_SELECTION_COOKIE_NAME, setLangIsUserSelected, supportedLanguagesSet } from './i18n';
+import { defaultLanguage, getI18n as getI18nGeneric, LANGUAGE_SELECTION_COOKIE_NAME, setLangIsUserSelected, supportedLanguages, supportedLanguagesSet } from './i18n';
+
+const contributeOnlyCodes = new Set(supportedLanguages.filter(l => l.isContribute).map(l => l.code));
 
 export const getI18n = () => {
   var languageDetector = new i18nMiddleware.LanguageDetector();
@@ -13,6 +15,10 @@ export const getI18n = () => {
       // there was a single Chinese locale) map to Chinese Simplified.
       let cookieLanguage = req.cookies?.[LANGUAGE_SELECTION_COOKIE_NAME];
       if (cookieLanguage === 'zh') cookieLanguage = 'zh-CN';
+      // Drop stale cookies pointing at a contribute-only locale (e.g. "lol",
+      // the in-context-editor slot, which renders the entire app as
+      // crwdns###:0crwdne###:0 markers). The CSR layer also clears it.
+      if (cookieLanguage && contributeOnlyCodes.has(cookieLanguage)) cookieLanguage = undefined;
       if (cookieLanguage && supportedLanguagesSet.has(cookieLanguage)) {
         setLangIsUserSelected();
         return cookieLanguage;
