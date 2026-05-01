@@ -28,12 +28,12 @@ export const getI18n = () => {
         }
       }
 
-      // For custom domains, there is no cloudfront, determine language ourselves
-      if (req.header('accept-language')) {
-        const acceptLanguage = req.header('accept-language')?.substr(0, 2).toUpperCase();
-        if (acceptLanguage && supportedLanguagesSet.has(acceptLanguage)) {
-          return acceptLanguage;
-        }
+      // For custom domains (and currently the apex too — clearflask.com is no
+      // longer behind CloudFront) determine language from Accept-Language.
+      const acceptLanguageHeader = req.header('accept-language');
+      if (acceptLanguageHeader) {
+        const matched = matchAcceptLanguage(acceptLanguageHeader);
+        if (matched) return matched;
       }
 
       return defaultLanguage;
@@ -47,6 +47,34 @@ export const getI18n = () => {
     i18n => i18n.use(languageDetector),
     {
       preload: [...supportedLanguagesSet],
+      // Without an explicit order, i18next-http-middleware falls back to its
+      // default detector chain (path/session/querystring/cookie/header) and
+      // never invokes our custom 'detection-via-header'.
+      detection: {
+        order: ['detection-via-header'],
+        caches: false,
+      },
     },
   );
+};
+
+// Pick the highest-quality Accept-Language tag that we support. Tries exact
+// match first (covers "zh-CN"), then the primary subtag (covers "zh"). Legacy
+// "zh" is treated as Chinese Simplified.
+const matchAcceptLanguage = (header: string): string | undefined => {
+  const tags = header.split(',')
+    .map(part => part.split(';')[0].trim())
+    .filter(Boolean);
+  const lowerSupported = new Map<string, string>();
+  for (const lng of supportedLanguagesSet) {
+    lowerSupported.set(lng.toLowerCase(), lng);
+  }
+  for (const tag of tags) {
+    const lower = tag.toLowerCase();
+    if (lowerSupported.has(lower)) return lowerSupported.get(lower);
+    const primary = lower.split('-')[0];
+    if (primary === 'zh') return 'zh-CN';
+    if (lowerSupported.has(primary)) return lowerSupported.get(primary);
+  }
+  return undefined;
 };
