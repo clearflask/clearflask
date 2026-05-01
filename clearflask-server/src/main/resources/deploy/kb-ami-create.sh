@@ -286,7 +286,7 @@ sudo tee /usr/share/tomcat/webapps/killbill/ROOT/WEB-INF/classes/logback.xml <<"
             <evaluator>
                 <matcher>
                     <Name>regex</Name>
-                    <regex>.*(falling back to SQLDialect|The scratchDir you specified|Unable to find the JRuby bundle|Timed out while shutting down [\w-]+(-service)?(:[\w-]+)?(-events)? queue|doesn't have a default payment method).*</regex>
+                    <regex>.*(falling back to SQLDialect|The scratchDir you specified|Unable to find the JRuby bundle|Timed out while shutting down [\w-]+(-service)?(:[\w-]+)?(-events)? queue|doesn't have a default payment method|Failed to validate connection .* (Connection\.setNetworkTimeout cannot be called on a closed connection|Possibly consider using a shorter maxLifetime value)).*</regex>
                 </matcher>
                 <expression>regex.matches(formattedMessage)</expression>
             </evaluator>
