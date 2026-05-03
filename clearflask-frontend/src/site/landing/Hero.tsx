@@ -43,6 +43,8 @@ const styles = (theme: Theme) => createStyles({
   },
   buttonsContainer: {
     display: 'flex',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
     alignSelf: 'flex-end',
     margin: theme.spacing(4, 8),
     [theme.breakpoints.down('xs')]: {
@@ -66,6 +68,8 @@ const styles = (theme: Theme) => createStyles({
   buttonMain: {
     position: 'relative', // For remark
     fontWeight: 900,
+    flexShrink: 0,
+    whiteSpace: 'nowrap',
   },
   buttonOauth: {
     minWidth: 0,
@@ -74,6 +78,8 @@ const styles = (theme: Theme) => createStyles({
   },
   button2: {
     marginRight: theme.spacing(2),
+    flexShrink: 0,
+    whiteSpace: 'nowrap',
   },
   remark: {
     position: 'absolute',
