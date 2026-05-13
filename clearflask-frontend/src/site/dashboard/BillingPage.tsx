@@ -12,6 +12,8 @@ import {
   FormControlLabel,
   FormHelperText,
   Link as MuiLink,
+  MenuItem,
+  Select,
   Switch,
   Table,
   TableBody,
@@ -73,6 +75,12 @@ export const AddonPrivateProjects = 'private-projects';
 export const AddonExtraProject = 'extra-project';
 export const AddonExtraTeammate = 'extra-teammate';
 export const AddonAi = 'extra-ai';
+
+/** Mirrors PlanStore.AVAILABLE_PLAN_NAMES on the backend -- the publicly-sellable plans. */
+const PUBLIC_PLAN_IDS: ReadonlyArray<string> = [
+  'cloud-monthly2',
+  'selfhost-monthly2',
+];
 
 export const BillingPaymentActionRedirectPath = 'billing-redirect';
 
@@ -198,6 +206,9 @@ interface State {
   showCreditAdjustment?: boolean;
   creditAmount?: number;
   creditDescription?: string;
+  showResetTrial?: boolean;
+  resetTrialPlanId?: string;
+  resetTrialError?: string;
   showLicenseDialog?: boolean;
   license?: string;
 }
@@ -215,8 +226,45 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     props.callOnMount?.();
   }
 
+  componentDidMount() {
+    // Stripe Checkout return-URL handler. After the user completes payment on
+    // Stripe-hosted Checkout, they're redirected back here with ?checkout_session_id=...
+    // The webhook also calls finalizeCheckoutSession defensively; this client call gives
+    // immediate feedback without waiting for webhook delivery.
+    if (windowIso.isSsr) return;
+    try {
+      const params = new URLSearchParams(windowIso.location.search);
+      const sessionId = params.get('checkout_session_id');
+      if (sessionId) {
+        ServerAdmin.get().dispatchAdmin().then(d =>
+          d.accountBillingCheckoutCompleteAdmin({sessionId})
+            .catch(e => console.warn('Stripe Checkout finalize failed', e))
+            .finally(() => {
+              // Clear the query param and refresh billing.
+              windowIso.history?.replaceState?.({}, '', windowIso.location.pathname);
+              ServerAdmin.get().dispatchAdmin().then(da =>
+                da.accountBillingAdmin({}).catch(() => {}));
+            }));
+      }
+    } catch (e) {
+      // tolerate URL parsing edge cases
+    }
+  }
+
   componentWillUnmount() {
     this.paymentActionMessageListener && !windowIso.isSsr && windowIso.removeEventListener('message', this.paymentActionMessageListener);
+  }
+
+  async openStripePortal() {
+    try {
+      const d = await ServerAdmin.get().dispatchAdmin();
+      const result = await d.accountBillingPortalSessionAdmin();
+      if (result?.url) {
+        windowIso.location.href = result.url;
+      }
+    } catch (e) {
+      console.warn('Stripe Customer Portal session creation failed', e);
+    }
   }
 
   render() {
@@ -1055,11 +1103,78 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                     >Change</SubmitButton>
                   </DialogActions>
                 </Dialog>
+                <Dialog
+                  open={!!this.state.showResetTrial}
+                  onClose={() => this.setState({ showResetTrial: undefined, resetTrialError: undefined })}
+                  scroll="body"
+                  maxWidth="md"
+                >
+                  <DialogTitle>Reset to Stripe trial</DialogTitle>
+                  <DialogContent className={this.props.classes.addonsContainer}>
+                    <DialogContentText>
+                      Cancel this account's existing subscription (Stripe and/or KillBill,
+                      best-effort) and start it on a fresh Stripe-billed plan with a new
+                      14-day trial &mdash; as if the user just signed up. Use this to
+                      reactivate accounts that became disabled when their original
+                      subscription was cancelled.
+                    </DialogContentText>
+                    <br />
+                    <Select
+                      displayEmpty
+                      variant="outlined"
+                      value={this.state.resetTrialPlanId || ''}
+                      onChange={e => this.setState({ resetTrialPlanId: e.target.value as string })}
+                    >
+                      <MenuItem value="" disabled>Select a plan</MenuItem>
+                      {PUBLIC_PLAN_IDS.map(planId => (
+                        <MenuItem key={planId} value={planId}>{planId}</MenuItem>
+                      ))}
+                    </Select>
+                    {this.state.resetTrialError && (
+                      <FormHelperText error>{this.state.resetTrialError}</FormHelperText>
+                    )}
+                  </DialogContent>
+                  <DialogActions>
+                    <Button onClick={() => this.setState({ showResetTrial: undefined, resetTrialError: undefined })}
+                    >Cancel</Button>
+                    <SubmitButton
+                      isSubmitting={this.state.isSubmitting}
+                      disabled={!this.props.account || !this.state.resetTrialPlanId}
+                      color="primary"
+                      onClick={() => {
+                        if (!this.props.account || !this.state.resetTrialPlanId) return;
+                        this.setState({ isSubmitting: true, resetTrialError: undefined });
+                        ServerAdmin.get().dispatchAdmin().then(d => d.accountResetToStripeTrialSuperAdmin({
+                          accountResetToStripeTrialSuperAdmin: {
+                            accountId: this.props.account!.accountId,
+                            planId: this.state.resetTrialPlanId!,
+                          },
+                        }).then(() => d.accountBillingAdmin({})))
+                          .then(() => this.setState({
+                            isSubmitting: false,
+                            showResetTrial: undefined,
+                            resetTrialPlanId: undefined,
+                            resetTrialError: undefined,
+                          }))
+                          .catch(async er => {
+                            const msg = (er?.json && (await er.json().catch(() => ({})))?.userFacingMessage)
+                              || er?.message
+                              || 'Reset failed';
+                            this.setState({ isSubmitting: false, resetTrialError: msg });
+                          });
+                      }}
+                    >Reset</SubmitButton>
+                  </DialogActions>
+                </Dialog>
                 <div className={this.props.classes.sectionButtons}>
                   <Button
                     disabled={this.state.isSubmitting}
                     onClick={() => this.setState({ showCreditAdjustment: true })}
                   >Credit</Button>
+                  <Button
+                    disabled={this.state.isSubmitting}
+                    onClick={() => this.setState({ showResetTrial: true })}
+                  >Reset to Stripe trial</Button>
                 </div>
               </>
             )}
@@ -1170,6 +1285,12 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                             }),
                           );
                         });
+                        // Stripe-billed accounts go to Customer Portal instead of the inline
+                        // KillBill credit-card dialog. Same button label, different action.
+                        if (this.props.accountBilling?.isStripeBilled) {
+                          this.openStripePortal();
+                          return;
+                        }
                         this.setState({ showAddPayment: true });
                         next();
                       }}
@@ -1350,7 +1471,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                       key="desc"><Typography>{invoiceItem.description}</Typography></TableCell>
                     <TableCell key="invoiceLink">
                       <Button
-                        onClick={() => this.onInvoiceClick(invoiceItem.invoiceId)}>View</Button>
+                        onClick={() => this.onInvoiceClick(invoiceItem.invoiceId, invoiceItem.hostedUrl)}>View</Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -1386,8 +1507,12 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     );
   }
 
-  onInvoiceClick(invoiceId: string) {
-    !windowIso.isSsr && windowIso.open(`${windowIso.location.origin}/invoice/${invoiceId}`, '_blank');
+  onInvoiceClick(invoiceId: string, hostedUrl?: string) {
+    if (windowIso.isSsr) return;
+    // Stripe-billed invoices come with a Stripe-hosted URL -- open it directly. Falls
+    // back to the legacy /invoice/{id} route for KillBill invoices (UUID-based).
+    const url = hostedUrl || `${windowIso.location.origin}/invoice/${invoiceId}`;
+    windowIso.open(url, '_blank');
   }
 
   async onPaymentSubmit(elements: StripeElements, stripe: Stripe): Promise<boolean> {

@@ -319,7 +319,7 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
         }
 
         const selectedPlanId = this.props.location.state?.[PRE_SELECTED_BASE_PLAN_ID]
-            || (this.props.plans ? this.props.plans[0].basePlanId : undefined);
+            || (this.props.plans && this.props.plans.length > 0 ? this.props.plans[0].basePlanId : undefined);
 
         if (this.props.type === 'signup') {
             if (!selectedPlanId && !this.props.plans) {

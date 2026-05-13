@@ -72,6 +72,32 @@ public interface PlanStore {
             "selfhost-yearly2",
             "selfhost-monthly2");
 
+    /**
+     * Self-host plan IDs that require a license / external billing. Used to detect
+     * when the current account is on a self-host plan, for purposes of switch-plan
+     * options.
+     */
+    ImmutableSet<String> SELFHOST_SERVICE_PLANS = ImmutableSet.of(
+            "selfhost-yearly",
+            "selfhost-yearly2",
+            "selfhost-monthly2");
+
+    /**
+     * Self-host plan IDs that are publicly sellable today. Subset of {@link #SELFHOST_SERVICE_PLANS}.
+     */
+    ImmutableSet<String> AVAILABLE_SELFHOST_SERVICE_PLANS = ImmutableSet.of(
+            "selfhost-monthly2");
+
+    /**
+     * Plan IDs that are publicly sellable today. Drives both the public pricing page
+     * (getPublicPlans) and the in-app switch-plan options (getAccountChangePlanOptions).
+     * Single source of truth across {@link KillBillPlanStore} and {@link StripePlanStore}.
+     */
+    ImmutableSet<String> AVAILABLE_PLAN_NAMES = ImmutableSet.<String>builder()
+            .addAll(AVAILABLE_SELFHOST_SERVICE_PLANS)
+            .add("cloud-monthly2")
+            .build();
+
     PlansGetResponse getPublicPlans();
 
     AllPlansGetResponse getAllPlans();

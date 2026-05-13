@@ -398,6 +398,9 @@ components:
         # In Selfhost env, the license key that you set in your instance
         appliedLicenseKey:
           type: string
+        isStripeBilled:
+          type: boolean
+          description: True if this account is managed by direct Stripe billing (account.stripeCustomerId is set). Frontend uses this to decide whether to show the Customer Portal button.
     Invoices:
       title: InvoicesSearchAdminResponse
       type: object
@@ -429,6 +432,12 @@ components:
                 type: string
               invoiceId:
                 type: string
+              hostedUrl:
+                type: string
+                description: Direct URL to a hosted invoice page (Stripe-hosted in Stripe billing mode). When present, the frontend should open this URL instead of the local /invoice/{invoiceId} fallback.
+              pdfUrl:
+                type: string
+                description: Direct URL to download the invoice as a PDF (Stripe-hosted).
     CouponGenerateSuperAdmin:
       type: object
       required:
@@ -457,6 +466,18 @@ components:
           format: int64
         description:
           type: string
+    AccountResetToStripeTrialSuperAdmin:
+      type: object
+      required:
+        - accountId
+        - planId
+      properties:
+        accountId:
+          type: string
+          description: Target account to reset.
+        planId:
+          type: string
+          description: Stripe-billed plan id to put the account on (must be in PlanStore.AVAILABLE_PLAN_NAMES).
     AccountDeleteSuperAdmin:
       type: object
       required:
@@ -1038,6 +1059,54 @@ components:
               properties:
                 invoiceHtml:
                   type: string
+/admin/account/billing/checkout-session:
+  post:
+    operationId: accountBillingCheckoutSessionAdmin
+    tags: [ AccountAdmin ]
+    description: Create a Stripe Checkout Session for the current account's plan and return its URL. Frontend redirects to it for signup payment.
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: CheckoutSessionResponse
+              type: object
+              required:
+                - url
+              properties:
+                url:
+                  type: string
+/admin/account/billing/portal-session:
+  post:
+    operationId: accountBillingPortalSessionAdmin
+    tags: [ AccountAdmin ]
+    description: Create a Stripe Customer Portal Session for managing the current account's billing and return its URL. Requires the account to already be Stripe-billed (has stripeCustomerId set).
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: PortalSessionResponse
+              type: object
+              required:
+                - url
+              properties:
+                url:
+                  type: string
+/admin/account/billing/checkout-complete:
+  post:
+    operationId: accountBillingCheckoutCompleteAdmin
+    tags: [ AccountAdmin ]
+    description: Called after the user returns from Stripe Checkout. Verifies the session and persists stripeCustomerId on the local account. Idempotent; the corresponding webhook also calls finalize.
+    parameters:
+      - name: sessionId
+        in: query
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        $ref: 'api-client.yaml#/components/responses/Ok'
 /superadmin/account/billing/credit:
   post:
     operationId: accountCreditAdjustmentSuperAdmin
@@ -1051,6 +1120,27 @@ components:
     responses:
       '200':
         $ref: 'api-client.yaml#/components/responses/Ok'
+/superadmin/account/reset-to-stripe-trial:
+  post:
+    operationId: accountResetToStripeTrialSuperAdmin
+    tags: [ AccountSuperAdmin ]
+    description: |-
+      Cancel the target account's existing subscription (Stripe and/or KillBill, best-effort)
+      and start it on a fresh Stripe-billed plan with a new 14-day trial -- as if the user
+      just signed up. Used by ops to reactivate accounts that became disabled when their
+      original KillBill subscription was cancelled.
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: 'api-account.yaml#/components/schemas/AccountResetToStripeTrialSuperAdmin'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-account.yaml#/components/schemas/AccountAdmin'
 /admin/account/github/repos:
   post:
     operationId: gitHubGetReposAdmin

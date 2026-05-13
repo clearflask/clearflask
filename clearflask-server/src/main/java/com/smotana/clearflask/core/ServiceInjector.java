@@ -22,15 +22,26 @@ import com.kik.config.ice.naming.SimpleConfigNamingStrategy;
 import com.kik.config.ice.source.FileDynamicConfigSource;
 import com.kik.config.ice.source.JmxDynamicConfigSource;
 import com.smotana.clearflask.antispam.CastleAntiSpam;
+import com.smotana.clearflask.billing.BillingRouter;
 import com.smotana.clearflask.billing.CommonPlanVerifyStore;
 import com.smotana.clearflask.billing.DynamoCouponStore;
 import com.smotana.clearflask.billing.KillBillClientProvider;
 import com.smotana.clearflask.billing.KillBillPlanStore;
 import com.smotana.clearflask.billing.KillBillSync;
 import com.smotana.clearflask.billing.KillBilling;
+import com.smotana.clearflask.billing.NoOpBilling;
+import com.smotana.clearflask.billing.OneShotStripeMigrator;
+import com.smotana.clearflask.billing.PlanStoreRouter;
 import com.smotana.clearflask.billing.SelfHostBilling;
 import com.smotana.clearflask.billing.SelfHostPlanStore;
+import com.smotana.clearflask.billing.StripeBilling;
 import com.smotana.clearflask.billing.StripeClientSetup;
+import com.smotana.clearflask.billing.StripeOverdueEscalationService;
+import com.smotana.clearflask.billing.StripePlanStore;
+import com.smotana.clearflask.billing.StripeProvisioner;
+import com.smotana.clearflask.billing.StripeSyncService;
+import com.smotana.clearflask.store.ServiceSecretStore;
+import com.smotana.clearflask.web.resource.StripeWebhookResource;
 import com.smotana.clearflask.core.email.AmazonSimpleEmailServiceProvider;
 import com.smotana.clearflask.core.email.ProjectDeletionService;
 import com.smotana.clearflask.core.email.TrialEndingReminderService;
@@ -357,11 +368,25 @@ public enum ServiceInjector {
                     install(SelfHostBilling.module());
                     install(SelfHostPlanStore.module());
                 } else {
+                    // Cloud env: BillingRouter and PlanStoreRouter delegate per-account
+                    // between KillBilling, StripeBilling, and NoOpBilling. Routing key is
+                    // account.stripeCustomerId / planid plus the useStripeForNewSignups flag.
                     install(KillBillClientProvider.module());
                     install(KillBilling.module());
                     install(KillBillSync.module());
-                    install(StripeClientSetup.module());
                     install(KillBillPlanStore.module());
+                    install(StripeClientSetup.module());
+                    install(StripeBilling.module());
+                    install(StripePlanStore.module());
+                    install(StripeProvisioner.module());
+                    install(StripeSyncService.module());
+                    install(StripeOverdueEscalationService.module());
+                    install(OneShotStripeMigrator.module());
+                    install(NoOpBilling.module());
+                    install(BillingRouter.module());
+                    install(PlanStoreRouter.module());
+                    install(ServiceSecretStore.module());
+                    install(StripeWebhookResource.module());
                 }
 
                 // Other

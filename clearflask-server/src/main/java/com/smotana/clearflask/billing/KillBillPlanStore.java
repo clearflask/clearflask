@@ -98,18 +98,15 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     private static final String TERMS_INSTALLATION_GUIDANCE = "Expert guidance on installation of self-hosted instance.";
     private static final String TERMS_SUPPORT_ALLOCATION = "The plan provides up to 10 support hours each month, offering you consistent access to expert assistance.";
     private static final String TERMS_NON_URGENT_SLA = "This SLA ensures that any non-critical support requests or planned interventions are addressed within 72 hours. It is designed for situations where immediate action is not necessary. This timeframe helps manage client expectations by providing a clear response window, reducing uncertainty and ensuring that non-urgent issues are handled efficiently.";
-    public static final ImmutableSet<String> SELFHOST_SERVICE_PLANS = ImmutableSet.<String>builder()
-            .add("selfhost-yearly")
-            .add("selfhost-yearly2")
-            .add("selfhost-monthly2")
-            .build();
-    public static final ImmutableSet<String> AVAILABLE_SELFHOST_SERVICE_PLANS = ImmutableSet.<String>builder()
-            .add("selfhost-monthly2")
-            .build();
-    public static final ImmutableSet<String> AVAILABLE_PLAN_NAMES = ImmutableSet.<String>builder()
-            .addAll(AVAILABLE_SELFHOST_SERVICE_PLANS)
-            .add("cloud-monthly2")
-            .build();
+    /** @deprecated reference {@link PlanStore#SELFHOST_SERVICE_PLANS} -- kept for source-compat with existing callers. */
+    @Deprecated
+    public static final ImmutableSet<String> SELFHOST_SERVICE_PLANS = PlanStore.SELFHOST_SERVICE_PLANS;
+    /** @deprecated reference {@link PlanStore#AVAILABLE_SELFHOST_SERVICE_PLANS}. */
+    @Deprecated
+    public static final ImmutableSet<String> AVAILABLE_SELFHOST_SERVICE_PLANS = PlanStore.AVAILABLE_SELFHOST_SERVICE_PLANS;
+    /** @deprecated reference {@link PlanStore#AVAILABLE_PLAN_NAMES}. */
+    @Deprecated
+    public static final ImmutableSet<String> AVAILABLE_PLAN_NAMES = PlanStore.AVAILABLE_PLAN_NAMES;
     private static final ImmutableMap<String, Function<PlanPricing, Plan>> PLANS_BUILDER = ImmutableMap.<String, Function<PlanPricing, Plan>>builder()
             // Deprecated plan with unlimited trial up to 10 MAU
             .put("growth-monthly", pp -> new Plan("growth-monthly", "Growth",
@@ -762,7 +759,8 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(PlanStore.class).to(KillBillPlanStore.class).asEagerSingleton();
+                bind(KillBillPlanStore.class).asEagerSingleton();
+                bind(PlanStore.class).annotatedWith(com.google.inject.name.Names.named("killbill")).to(KillBillPlanStore.class);
                 Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(KillBillPlanStore.class).asEagerSingleton();
             }
         };

@@ -45,6 +45,8 @@ public interface AccountStore {
 
     Optional<Account> getAccountByOauthGuid(String oauthGuid);
 
+    Optional<Account> getAccountByStripeCustomerId(String stripeCustomerId);
+
     Optional<Account> getAccountByEmail(String email);
 
     void repopulateIndex(boolean deleteExistingIndex, boolean repopulateElasticSearch, boolean repopulateMysql) throws Exception;
@@ -78,6 +80,8 @@ public interface AccountStore {
     Account removeExternalProject(String accountId, String projectId);
 
     Account updateOauthGuid(String accountId, Optional<String> oauthGuidOpt);
+
+    Account setStripeCustomerId(String accountId, Optional<String> stripeCustomerIdOpt);
 
     AccountAndIndexingFuture updateName(String accountId, String name);
 
@@ -168,6 +172,7 @@ public interface AccountStore {
     @DynamoTable(type = Primary, partitionKeys = "accountId", rangePrefix = "account")
     @DynamoTable(type = Gsi, indexNumber = 1, partitionKeys = {"apiKey"}, rangePrefix = "accountByApiKey")
     @DynamoTable(type = Gsi, indexNumber = 2, partitionKeys = {"oauthGuid"}, rangePrefix = "accountByOauthGuid")
+    @DynamoTable(type = Gsi, indexNumber = 3, partitionKeys = {"stripeCustomerId"}, rangePrefix = "accountByStripeCustomerId")
     class Account {
         @NonNull
         String accountId;
@@ -220,6 +225,24 @@ public interface AccountStore {
         Boolean trialEndingReminderSent;
 
         Instant projectDeletionReminderSent;
+
+        /**
+         * Stripe Customer ID (cus_...). Set when this account is managed by direct Stripe Billing.
+         * Null for accounts on KillBill, NoOpBilling (grandfathered $0 plans), or SelfHostBilling.
+         * Once set, BillingRouter routes all billing operations for this account through StripeBilling.
+         */
+        String stripeCustomerId;
+
+        /**
+         * Timestamp of the last status change. Updated atomically with `status` by
+         * {@link #updateStatus} (writes are no-op when the new status equals the current one,
+         * so idempotent reconciles do NOT reset this clock).
+         *
+         * <p>Used by StripeOverdueEscalationService to measure how long an account has been in
+         * NOPAYMENTMETHOD before promoting it to BLOCKED, matching the KillBill 90-day overdue
+         * cancellation semantics. Nullable for legacy rows; callers fall back to {@code created}.
+         */
+        Instant statusChangedAt;
 
         /**
          * Workaround for Self-Hosted ClearFlask to get the status of the subscription on-deman

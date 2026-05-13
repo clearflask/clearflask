@@ -17,6 +17,7 @@ import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
+import com.google.inject.name.Names;
 import com.google.inject.name.Named;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
@@ -1013,7 +1014,9 @@ public class KillBilling extends ManagedService implements Billing {
                                 status,
                                 i.getAmount().doubleValue(),
                                 description,
-                                i.getInvoiceId().toString());
+                                i.getInvoiceId().toString(),
+                                null,
+                                null);
                     })
                     .collect(ImmutableList.toImmutableList());
 
@@ -1487,7 +1490,8 @@ public class KillBilling extends ManagedService implements Billing {
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(Billing.class).to(KillBilling.class).asEagerSingleton();
+                bind(KillBilling.class).asEagerSingleton();
+                bind(Billing.class).annotatedWith(Names.named("killbill")).to(KillBilling.class);
                 install(ConfigSystem.configModule(Config.class));
                 Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(KillBilling.class).asEagerSingleton();
             }
