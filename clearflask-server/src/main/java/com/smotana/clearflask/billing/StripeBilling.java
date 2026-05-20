@@ -15,7 +15,6 @@ import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
-import com.kik.config.ice.annotations.NoDefaultValue;
 import com.smotana.clearflask.api.model.AccountBillingPaymentActionRequired;
 import com.smotana.clearflask.api.model.InvoiceItem;
 import com.smotana.clearflask.api.model.Invoices;
@@ -127,23 +126,23 @@ public class StripeBilling extends ManagedService implements Billing {
          */
         @DefaultValue("100")
         long listPageSize();
-
-        /**
-         * Public-facing URL the frontend uses (e.g. https://clearflask.com). Used to build
-         * Checkout / Portal return URLs.
-         */
-        @NoDefaultValue
-        String publicUrl();
     }
 
     @Inject
     private Config config;
+    @Inject
+    private com.smotana.clearflask.web.Application.Config configApp;
     @Inject
     private AccountStore accountStore;
     @Inject
     private com.smotana.clearflask.core.push.NotificationService notificationService;
     @Inject
     private PlanVerifyStore planVerifyStore;
+
+    /** Public-facing app URL derived from {@code Application.Config.domain}. */
+    private String publicUrl() {
+        return "https://" + configApp.domain();
+    }
 
     private Cache<String, String> planIdToPriceId;
     /**
@@ -223,8 +222,8 @@ public class StripeBilling extends ManagedService implements Billing {
                             .setPrice(priceId)
                             .setQuantity(1L)
                             .build())
-                    .setSuccessUrl(config.publicUrl() + "/dashboard/billing?checkout_session_id={CHECKOUT_SESSION_ID}")
-                    .setCancelUrl(config.publicUrl() + "/dashboard/billing?checkout=cancelled")
+                    .setSuccessUrl(publicUrl() + "/dashboard/billing?checkout_session_id={CHECKOUT_SESSION_ID}")
+                    .setCancelUrl(publicUrl() + "/dashboard/billing?checkout=cancelled")
                     .setSubscriptionData(subData.build())
                     .setAllowPromotionCodes(true)
                     .putMetadata(META_CLEARFLASK_ACCOUNT_ID, accountInDyn.getAccountId())
@@ -251,7 +250,7 @@ public class StripeBilling extends ManagedService implements Billing {
         try {
             com.stripe.param.billingportal.SessionCreateParams params = com.stripe.param.billingportal.SessionCreateParams.builder()
                     .setCustomer(a.getStripeCustomerId())
-                    .setReturnUrl(config.publicUrl() + "/dashboard/billing")
+                    .setReturnUrl(publicUrl() + "/dashboard/billing")
                     .build();
             com.stripe.model.billingportal.Session session = com.stripe.model.billingportal.Session.create(params);
             return session.getUrl();

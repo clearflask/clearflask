@@ -54,21 +54,26 @@ import java.util.Set;
  */
 @Slf4j
 @Singleton
-public class StripeProvisioner {
+public class StripeProvisioner extends com.smotana.clearflask.core.ManagedService {
 
     public interface Config {
-        /**
-         * Public-facing app URL. Used to build the webhook endpoint URL.
-         */
-        @DefaultValue("")
-        String publicUrl();
-
         /**
          * Disable webhook auto-registration if you prefer manual setup. Default true so
          * the typical operator path works out of the box.
          */
         @DefaultValue("true")
         boolean autoRegisterWebhook();
+
+        /**
+         * Run {@link #upsertAll()} automatically when the server starts. Default true so
+         * a fresh deploy doesn't require a manual JMX call to bring up Stripe Products,
+         * Prices, Features, and the WebhookEndpoint. Idempotent: re-running on every
+         * boot is safe and acts as a sync. Failure is logged but does not block startup
+         * -- a misconfigured Stripe key shouldn't prevent the rest of the app from coming
+         * up. Set false in test / local environments where Stripe isn't configured.
+         */
+        @DefaultValue("true")
+        boolean provisionOnStartup();
     }
 
     @Value
@@ -126,7 +131,43 @@ public class StripeProvisioner {
     @Inject
     private Config config;
     @Inject
+    private com.smotana.clearflask.web.Application.Config configApp;
+    @Inject
     private ServiceSecretStore serviceSecretStore;
+    @Inject
+    private StripeClientSetup.Config stripeClientConfig;
+
+    /** Public-facing app URL derived from {@code Application.Config.domain}. */
+    private String publicUrl() {
+        return "https://" + configApp.domain();
+    }
+
+    @Override
+    protected void serviceStart() {
+        if (!config.provisionOnStartup()) {
+            log.info("StripeProvisioner: provisionOnStartup disabled, skipping");
+            return;
+        }
+        // Skip silently if Stripe isn't even wired in this environment (e.g. test runs that
+        // disable the Stripe module). Without a key the SDK throws on first call.
+        try {
+            if (com.google.common.base.Strings.isNullOrEmpty(stripeClientConfig.stripeApiKey())) {
+                log.info("StripeProvisioner: stripeApiKey absent, skipping startup provision");
+                return;
+            }
+        } catch (Exception ex) {
+            log.info("StripeProvisioner: stripeApiKey not configured, skipping startup provision");
+            return;
+        }
+        try {
+            log.info("StripeProvisioner: running upsertAll on startup");
+            upsertAll();
+        } catch (Exception ex) {
+            // Idempotent retry happens on next boot. Don't fail the JVM start over a
+            // transient Stripe outage or misconfig.
+            log.warn("StripeProvisioner: startup upsertAll failed (continuing)", ex);
+        }
+    }
 
     @Extern
     public String upsertAll() throws StripeException {
@@ -285,11 +326,11 @@ public class StripeProvisioner {
     }
 
     private void upsertWebhook(StringBuilder report) throws StripeException {
-        if (Strings.isNullOrEmpty(config.publicUrl())) {
+        if (Strings.isNullOrEmpty(publicUrl())) {
             report.append("Webhook NOT registered: publicUrl is not configured.\n");
             return;
         }
-        String url = config.publicUrl().replaceAll("/+$", "")
+        String url = publicUrl().replaceAll("/+$", "")
                 + "/api/v1/webhook/stripe";
         WebhookEndpoint existing = null;
         WebhookEndpointListParams listParams = WebhookEndpointListParams.builder()
@@ -337,6 +378,8 @@ public class StripeProvisioner {
             protected void configure() {
                 bind(StripeProvisioner.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
+                com.google.inject.multibindings.Multibinder.newSetBinder(binder(), com.smotana.clearflask.core.ManagedService.class)
+                        .addBinding().to(StripeProvisioner.class).asEagerSingleton();
             }
         };
     }

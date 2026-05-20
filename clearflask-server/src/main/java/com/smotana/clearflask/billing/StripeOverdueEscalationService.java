@@ -106,9 +106,12 @@ public class StripeOverdueEscalationService extends ManagedService {
 
         /**
          * Optional ISO-8601 Instant. If set, {@code since = max(statusChangedAt|created,
-         * firstRunCutoff)}. Use this at first deployment to give existing aged-NOPAYMENTMETHOD
-         * accounts a fresh 90-day clock from rollout (so they aren't all nuked in one run).
-         * Empty string means "no cutoff".
+         * firstRunCutoff)} -- existing aged-NOPAYMENTMETHOD accounts get a fresh 90-day
+         * clock starting from this cutoff. When the value is empty (the default), we use
+         * the JVM service-start time, which on a fresh deploy gives every aged account a
+         * 90-day grace from deploy day. Operator can override with an explicit Instant to
+         * reach further back (e.g. "I want accounts NOPAYMENTMETHOD since Jan 1 2025 to
+         * count toward the 90 days") -- but the safe default is always "now at deploy".
          */
         @DefaultValue("")
         String firstRunCutoff();
@@ -126,9 +129,17 @@ public class StripeOverdueEscalationService extends ManagedService {
     private StripeBilling stripeBilling;
 
     private ListeningScheduledExecutorService executor;
+    /**
+     * The effective firstRunCutoff. Set once at serviceStart from
+     * config.firstRunCutoff(), or to {@code Instant.now()} when the config is empty so
+     * a fresh deploy gives every aged-NOPAYMENTMETHOD account a 90-day grace from
+     * deploy day rather than nuking them all in the first daily run.
+     */
+    private Instant effectiveFirstRunCutoff;
 
     @Override
     protected void serviceStart() throws Exception {
+        effectiveFirstRunCutoff = parseConfigCutoff().orElseGet(Instant::now);
         if (!config.enabled()) {
             log.info("StripeOverdueEscalationService disabled by config");
             return;
@@ -137,8 +148,8 @@ public class StripeOverdueEscalationService extends ManagedService {
                 new ThreadFactoryBuilder().setNameFormat("StripeOverdueEscalation-%d").build()));
         Duration nextRuntime = WeeklyDigestService.getNextRuntime(
                 ZonedDateTime.now(ZoneId.of(configApp.zoneId())), config.sendAtTime(), config.jitterSeconds());
-        log.info("StripeOverdueEscalationService next runtime {} (overdueDays={}, cancelEnabled={})",
-                nextRuntime, config.overdueDays(), config.cancelEnabled());
+        log.info("StripeOverdueEscalationService next runtime {} (overdueDays={}, cancelEnabled={}, firstRunCutoff={})",
+                nextRuntime, config.overdueDays(), config.cancelEnabled(), effectiveFirstRunCutoff);
         executor.scheduleAtFixedRate(this::processAllSafely, nextRuntime, Duration.ofDays(1));
     }
 
@@ -163,7 +174,11 @@ public class StripeOverdueEscalationService extends ManagedService {
         if (!config.enabled()) {
             return "disabled";
         }
-        Instant cutoff = parseCutoff();
+        // Effective cutoff is set in serviceStart so the same value is used across all
+        // runs of this JVM. JMX-invoked runs before serviceStart fall back to a fresh
+        // Instant.now() to stay safe.
+        Instant cutoff = effectiveFirstRunCutoff != null ? effectiveFirstRunCutoff
+                : parseConfigCutoff().orElseGet(Instant::now);
         long scanned = 0;
         long eligible = 0;
         long escalated = 0;
@@ -254,16 +269,16 @@ public class StripeOverdueEscalationService extends ManagedService {
         return Result.ESCALATED;
     }
 
-    private Instant parseCutoff() {
+    private Optional<Instant> parseConfigCutoff() {
         String raw = config.firstRunCutoff();
         if (Strings.isNullOrEmpty(raw)) {
-            return null;
+            return Optional.empty();
         }
         try {
-            return Instant.parse(raw);
+            return Optional.of(Instant.parse(raw));
         } catch (Exception ex) {
-            log.warn("StripeOverdueEscalation: failed to parse firstRunCutoff '{}' (ignoring)", raw);
-            return null;
+            log.warn("StripeOverdueEscalation: failed to parse firstRunCutoff '{}' (falling back to service-start time)", raw);
+            return Optional.empty();
         }
     }
 
