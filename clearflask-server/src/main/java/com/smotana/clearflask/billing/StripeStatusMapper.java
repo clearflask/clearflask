@@ -80,6 +80,16 @@ public final class StripeStatusMapper {
         }
         switch (status) {
             case "trialing":
+                // Migrated-from-KillBill subs use trial_end as a deferred-billing mechanism
+                // (the customer has already pre-paid via KB through that date). They are NOT
+                // in a trial -- surface as ACTIVE so the UI doesn't claim trial state.
+                if (stripeSub.getMetadata() != null
+                        && "true".equals(stripeSub.getMetadata().get(StripeBilling.META_MIGRATED_FROM_KILLBILL))) {
+                    if (willCancel) {
+                        return isLimited.getAsBoolean() ? LIMITED : ACTIVENORENEWAL;
+                    }
+                    return isLimited.getAsBoolean() ? LIMITED : ACTIVE;
+                }
                 // User cancelled mid-trial (sub is still trialing but won't renew). Surface
                 // the cancellation in the UI rather than the misleading "automatic payment is
                 // active" copy that ACTIVETRIAL drives.

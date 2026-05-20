@@ -98,8 +98,13 @@ public interface Billing {
     /**
      * Stripe-only: create a Stripe Checkout Session for the given account's plan and return
      * the redirect URL. Other billing backends throw a clear error.
+     *
+     * <p>{@code targetPlanIdOpt} overrides {@code account.planid} for the session's Stripe
+     * Price lookup. Used by the grandfathered-to-paid upgrade path so the local planid is
+     * only written when Checkout completes (via the webhook/finalize), not eagerly on plan
+     * selection. Empty/absent uses {@code account.planid}.
      */
-    default String createCheckoutSession(AccountStore.Account account) {
+    default String createCheckoutSession(AccountStore.Account account, Optional<String> targetPlanIdOpt) {
         throw new com.smotana.clearflask.web.ApiException(
                 javax.ws.rs.core.Response.Status.BAD_REQUEST,
                 "Stripe Checkout is not available in this billing mode");

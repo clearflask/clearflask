@@ -1063,7 +1063,17 @@ components:
   post:
     operationId: accountBillingCheckoutSessionAdmin
     tags: [ AccountAdmin ]
-    description: Create a Stripe Checkout Session for the current account's plan and return its URL. Frontend redirects to it for signup payment.
+    description: |
+      Create a Stripe Checkout Session for the current account's plan and return its URL.
+      Frontend redirects to it for signup payment. The optional `planId` query param overrides
+      the account's current planid -- used for the grandfathered-to-paid upgrade path so the
+      local planid is only written on Checkout completion (not eagerly on plan selection).
+    parameters:
+      - name: planId
+        in: query
+        required: false
+        schema:
+          type: string
     responses:
       '200':
         content:

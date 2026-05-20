@@ -3,8 +3,6 @@
 package com.smotana.clearflask.web.resource;
 
 import com.google.common.base.Strings;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.multibindings.Multibinder;
@@ -13,11 +11,11 @@ import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.billing.StripeBilling;
+import com.smotana.clearflask.billing.StripeStatusMapper;
 import com.smotana.clearflask.core.ClearFlaskCreditSync;
-import com.smotana.clearflask.core.ManagedService;
 import com.smotana.clearflask.core.push.NotificationService;
-import com.smotana.clearflask.security.limiter.Limit;
 import com.smotana.clearflask.store.AccountStore;
+import com.smotana.clearflask.store.WebhookEventDedupStore;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.Application;
 import com.stripe.exception.SignatureVerificationException;
@@ -38,9 +36,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.time.Duration;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 /**
@@ -62,7 +60,7 @@ import java.util.Optional;
 @Slf4j
 @Singleton
 @Path(Application.RESOURCE_VERSION)
-public class StripeWebhookResource extends ManagedService {
+public class StripeWebhookResource {
 
     public static final String WEBHOOK_PATH = "/webhook/stripe";
 
@@ -80,22 +78,16 @@ public class StripeWebhookResource extends ManagedService {
     private NotificationService notificationService;
     @Inject
     private ClearFlaskCreditSync clearFlaskCreditSync;
-
-    private Cache<String, Boolean> processedEventIds;
-
-    @Override
-    protected void serviceStart() {
-        processedEventIds = CacheBuilder.newBuilder()
-                .expireAfterWrite(Duration.ofHours(24))
-                .maximumSize(10_000)
-                .build();
-    }
+    @Inject
+    private WebhookEventDedupStore dedupStore;
 
     @POST
     @Path(WEBHOOK_PATH)
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Limit(requiredPermits = 1, challengeAfter = 100)
+    // No @Limit: Stripe's webhook delivery IP cannot solve CAPTCHA challenges, and event
+    // bursts (dunning runs, mass plan migrations) routinely exceed any per-endpoint cap.
+    // Authenticity is enforced by the HMAC signature check on every request below.
     public Response webhook(@Context HttpServletRequest req) throws IOException {
         String body = readBody(req);
         String signature = req.getHeader("Stripe-Signature");
@@ -113,7 +105,13 @@ public class StripeWebhookResource extends ManagedService {
             }
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
-        if (event.getId() != null && processedEventIds.getIfPresent(event.getId()) != null) {
+        // Atomic claim BEFORE processing so retries from Stripe (or fan-out from a
+        // load-balanced multi-instance deployment) never re-run the handler. The
+        // trade-off is that a crash between claim and handler completion drops the
+        // event; the daily StripeSyncService reconcile + per-page syncActions catch
+        // any resulting status drift.
+        if (!dedupStore.tryClaim(event.getId())) {
+            log.debug("Stripe webhook: event {} already processed, skipping", event.getId());
             return Response.ok().build();
         }
         try {
@@ -122,9 +120,6 @@ public class StripeWebhookResource extends ManagedService {
             log.warn("Stripe webhook handler failed for event {} type {}",
                     event.getId(), event.getType(), ex);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-        }
-        if (event.getId() != null) {
-            processedEventIds.put(event.getId(), Boolean.TRUE);
         }
         return Response.ok().build();
     }
@@ -186,17 +181,35 @@ public class StripeWebhookResource extends ManagedService {
                 accountStore.setPlan(account.getAccountId(), planFromMeta, Optional.empty());
             }
         }
+        // The webhook means Stripe state just changed -- drop the per-account snapshot
+        // cache so the upcoming getSubscription / updateAndGetEntitlementStatus calls
+        // read fresh from Stripe rather than returning the 5s-stale snapshot.
+        stripeBilling.invalidateSnapshot(account.getAccountId());
         SubscriptionStatus before = account.getStatus();
         org.killbill.billing.client.model.gen.Account synthAccount = billing.getAccount(account.getAccountId());
-        org.killbill.billing.client.model.gen.Subscription synthSub;
+        // Try the live re-fetch first (always returns the current state, immune to
+        // out-of-order webhook delivery). If it throws because no active sub remains --
+        // the common case for customer.subscription.deleted on the last sub -- map the
+        // event payload directly so we still flip local status to CANCELLED/BLOCKED.
+        // Otherwise the local row would stay in its prior state until the next reconcile
+        // or BillingPage load, and the metadata-aware mapper would lose the
+        // META_OVERDUE_CANCELLED signal carried on the deleted sub.
         try {
-            synthSub = billing.getSubscription(account.getAccountId());
-        } catch (Exception ex) {
-            log.debug("getSubscription failed (account may have no active sub): {}", ex.getMessage());
+            org.killbill.billing.client.model.gen.Subscription synthSub = billing.getSubscription(account.getAccountId());
+            billing.updateAndGetEntitlementStatus(before, synthAccount, synthSub,
+                    "Stripe webhook " + event.getType());
             return;
+        } catch (Exception ex) {
+            log.debug("Stripe webhook: getSubscription failed for {} -- falling back to event payload: {}",
+                    account.getAccountId(), ex.getMessage());
         }
-        billing.updateAndGetEntitlementStatus(before, synthAccount, synthSub,
-                "Stripe webhook " + event.getType());
+        boolean hasPm = billing.getDefaultPaymentMethodDetails(account.getAccountId()).isPresent();
+        SubscriptionStatus mapped = StripeStatusMapper.map(sub, hasPm, () -> false);
+        if (!mapped.equals(before)) {
+            log.info("Stripe webhook ({}): status {} -> {} for account {} via event payload",
+                    event.getType(), before, mapped, account.getAccountId());
+            accountStore.updateStatus(account.getAccountId(), mapped);
+        }
     }
 
     private void onTrialWillEnd(Event event) {
@@ -270,12 +283,14 @@ public class StripeWebhookResource extends ManagedService {
     }
 
     private static String readBody(HttpServletRequest req) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        try (BufferedReader r = req.getReader()) {
-            String line;
-            while ((line = r.readLine()) != null) sb.append(line).append('\n');
+        // Read the raw bytes of the request body. We MUST NOT use req.getReader() +
+        // readLine() here -- it strips line terminators, and Stripe's HMAC is computed
+        // over the exact bytes of the payload. Stripe sends compact single-line JSON;
+        // appending a synthetic '\n' would corrupt the signed payload, and
+        // Webhook.constructEvent would reject every event with SignatureVerificationException.
+        try (InputStream in = req.getInputStream()) {
+            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
         }
-        return sb.toString();
     }
 
     public static Module module() {
@@ -283,8 +298,6 @@ public class StripeWebhookResource extends ManagedService {
             @Override
             protected void configure() {
                 bind(StripeWebhookResource.class);
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding()
-                        .to(StripeWebhookResource.class);
                 Multibinder.newSetBinder(binder(), Object.class, Names.named(Application.RESOURCE_NAME)).addBinding()
                         .to(StripeWebhookResource.class);
             }

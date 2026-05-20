@@ -102,18 +102,27 @@ public class OneShotStripeMigrator {
             report.append("  default payment method: ").append(defaultPmId).append("\n");
         }
 
-        // 4. Compute billing_cycle_anchor from KB chargedThroughDate
-        Long anchorEpoch = null;
+        // 4. Compute trial_end from KB chargedThroughDate. Using trial_end (not
+        // billing_cycle_anchor) because the customer has effectively pre-paid through
+        // chargedThroughDate via KillBill, so we must DEFER the first Stripe charge
+        // until that date. billing_cycle_anchor in Stripe can only move the cycle
+        // earlier than the natural billing date and is rejected when later; trial_end
+        // is the documented migration pattern for "don't charge until X".
+        //
+        // Side effect: Stripe sub.status will be "trialing" until trial_end. The mapper
+        // recognizes the META_MIGRATED_FROM_KILLBILL marker and surfaces this as ACTIVE
+        // (not ACTIVETRIAL) so the UI doesn't claim the paying customer is in a trial.
+        Long trialEndEpoch = null;
         try {
             org.killbill.billing.client.model.gen.Subscription kbSub = killBilling.getSubscription(accountId);
             if (kbSub != null && kbSub.getChargedThroughDate() != null) {
-                anchorEpoch = kbSub.getChargedThroughDate().toDateTimeAtStartOfDay().getMillis() / 1000;
+                trialEndEpoch = kbSub.getChargedThroughDate().toDateTimeAtStartOfDay().getMillis() / 1000;
                 report.append("  KB chargedThroughDate=").append(kbSub.getChargedThroughDate())
-                        .append(" -> anchor epoch=").append(anchorEpoch).append("\n");
+                        .append(" -> Stripe trial_end epoch=").append(trialEndEpoch).append("\n");
             }
         } catch (Exception ex) {
             report.append("  WARNING: could not read KB subscription (").append(ex.getMessage())
-                    .append("); proceeding without anchor (charges may be immediate).\n");
+                    .append("); proceeding without trial_end (Stripe will charge immediately).\n");
         }
 
         // 5. Create Stripe subscription
@@ -129,8 +138,15 @@ public class OneShotStripeMigrator {
                 .putMetadata(StripeBilling.META_CLEARFLASK_ACCOUNT_ID, accountId)
                 .putMetadata(StripeBilling.META_CLEARFLASK_PLAN_ID, a.getPlanid())
                 .putMetadata(StripeBilling.META_MIGRATED_FROM_KILLBILL, "true");
-        if (anchorEpoch != null) {
-            subParams.setBillingCycleAnchor(anchorEpoch);
+        if (trialEndEpoch != null) {
+            subParams.setTrialEnd(trialEndEpoch);
+            // Don't surface a "trial ended" email at the actual end of this synthetic trial;
+            // this is a migration handoff, not a real trial.
+            subParams.setTrialSettings(SubscriptionCreateParams.TrialSettings.builder()
+                    .setEndBehavior(SubscriptionCreateParams.TrialSettings.EndBehavior.builder()
+                            .setMissingPaymentMethod(SubscriptionCreateParams.TrialSettings.EndBehavior.MissingPaymentMethod.CANCEL)
+                            .build())
+                    .build());
         }
 
         if (dryRun) {

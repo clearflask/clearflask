@@ -714,7 +714,7 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
         }
         if (accountUpdateAdmin.getCancelEndOfTerm() == Boolean.TRUE) {
             Subscription subscription = billing.cancelSubscription(account.getAccountId());
-            SubscriptionStatus newStatus = billing.updateAndGetEntitlementStatus(
+            billing.updateAndGetEntitlementStatus(
                     account.getStatus(),
                     billing.getAccount(account.getAccountId()),
                     subscription,
@@ -722,7 +722,7 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
         }
         if (accountUpdateAdmin.getResume() == Boolean.TRUE || alsoResume) {
             Subscription subscription = billing.resumeSubscription(account.getAccountId());
-            SubscriptionStatus newStatus = billing.updateAndGetEntitlementStatus(
+            billing.updateAndGetEntitlementStatus(
                     account.getStatus(),
                     billing.getAccount(account.getAccountId()),
                     subscription,
@@ -1059,12 +1059,18 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
     @RolesAllowed({Role.ADMINISTRATOR})
     @Limit(requiredPermits = 5, challengeAfter = 5)
     @Override
-    public com.smotana.clearflask.api.model.ContentUploadResponse accountBillingCheckoutSessionAdmin() {
+    public com.smotana.clearflask.api.model.ContentUploadResponse accountBillingCheckoutSessionAdmin(String planId) {
         Account account = getExtendedPrincipal()
                 .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
                 .flatMap(accountId -> accountStore.getAccount(accountId, false))
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Account not found"));
-        return new com.smotana.clearflask.api.model.ContentUploadResponse(billing.createCheckoutSession(account));
+        // Optional planId query param overrides account.planid for the Checkout session's
+        // Stripe Price lookup. Used by the grandfathered->paid upgrade flow: the local
+        // planid stays at the previous (free) plan until Checkout actually completes, so
+        // an abandoned Checkout leaves the account on its original plan rather than in
+        // a paid-but-unpaid limbo.
+        Optional<String> targetPlanIdOpt = Strings.isNullOrEmpty(planId) ? Optional.empty() : Optional.of(planId);
+        return new com.smotana.clearflask.api.model.ContentUploadResponse(billing.createCheckoutSession(account, targetPlanIdOpt));
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})

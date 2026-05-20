@@ -594,8 +594,12 @@ public class KillBilling extends ManagedService implements Billing {
             log.info("Subscription status change {} -> {}, reason: {}, for {}",
                     currentStatus, newStatus, reason, account.getExternalKey());
             accountStore.updateStatus(account.getExternalKey(), newStatus);
-            if (ACTIVETRIAL.equals(currentStatus)) {
-                // Trial ends email notification
+            // Trial-ended email: skip when the new status is ACTIVENORENEWAL, which
+            // means "trial still running but cancel scheduled at period end" -- the
+            // trial is not actually over yet. Firing here would also lock out the
+            // real trial-end notification later (shouldSendTrialEndedNotification is
+            // one-shot per plan id).
+            if (ACTIVETRIAL.equals(currentStatus) && !ACTIVENORENEWAL.equals(newStatus)) {
                 if (accountStore.shouldSendTrialEndedNotification(account.getExternalKey(), subscription.getPlanName())) {
                     Optional<PaymentMethodDetails> paymentOpt = getDefaultPaymentMethodDetails(account.getAccountId());
                     AccountStore.Account accountInDyn = accountStore.getAccount(account.getExternalKey(), false).get();

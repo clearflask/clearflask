@@ -142,15 +142,39 @@ public class StripeBilling extends ManagedService implements Billing {
     private AccountStore accountStore;
     @Inject
     private com.smotana.clearflask.core.push.NotificationService notificationService;
+    @Inject
+    private PlanVerifyStore planVerifyStore;
 
     private Cache<String, String> planIdToPriceId;
+    /**
+     * Short-TTL per-account cache of the live Stripe Subscription + payment-method state.
+     * Inside a single billing-page render we typically call findActiveSubscription /
+     * customerHasPaymentMethod 3-6 times across getSubscription -> getEntitlementStatus
+     * -> updateAndGetEntitlementStatus etc. A 5-second cache collapses all of those into
+     * one Stripe round-trip while still being fresh enough that the next request reflects
+     * any portal-side change. Webhook handlers explicitly invalidate via invalidateSubCache.
+     */
+    private Cache<String, SubSnapshot> subSnapshotCache;
     private java.util.concurrent.ExecutorService asyncExecutor;
+
+    private static final class SubSnapshot {
+        final Subscription sub; // may be null
+        final boolean hasPaymentMethod;
+        SubSnapshot(Subscription sub, boolean hasPaymentMethod) {
+            this.sub = sub;
+            this.hasPaymentMethod = hasPaymentMethod;
+        }
+    }
 
     @Override
     protected void serviceStart() {
         planIdToPriceId = CacheBuilder.newBuilder()
                 .expireAfterWrite(Duration.ofMinutes(10))
                 .maximumSize(64)
+                .build();
+        subSnapshotCache = CacheBuilder.newBuilder()
+                .expireAfterWrite(Duration.ofSeconds(5))
+                .maximumSize(4096)
                 .build();
         asyncExecutor = java.util.concurrent.Executors.newSingleThreadExecutor(
                 new com.google.common.util.concurrent.ThreadFactoryBuilder()
@@ -170,17 +194,25 @@ public class StripeBilling extends ManagedService implements Billing {
     /**
      * Create a Stripe Checkout Session for the given account's signup. Returns the URL
      * the frontend should redirect to.
+     *
+     * <p>{@code targetPlanIdOpt} overrides {@code account.planid}. Use this for the
+     * grandfathered-to-paid upgrade path so the local planid stays untouched until the
+     * customer actually pays (the subscription.created webhook will sync planid from the
+     * Stripe sub metadata). Falls back to {@code account.planid} when absent -- the normal
+     * fresh-signup path.
      */
-    public String createCheckoutSession(AccountStore.Account accountInDyn) {
+    @Override
+    public String createCheckoutSession(AccountStore.Account accountInDyn, Optional<String> targetPlanIdOpt) {
+        String planId = targetPlanIdOpt.filter(s -> !Strings.isNullOrEmpty(s)).orElse(accountInDyn.getPlanid());
         try {
-            String priceId = resolvePriceId(accountInDyn.getPlanid())
+            String priceId = resolvePriceId(planId)
                     .orElseThrow(() -> new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
-                            "Plan " + accountInDyn.getPlanid() + " is not configured in Stripe"));
+                            "Plan " + planId + " is not configured in Stripe"));
 
             SessionCreateParams.SubscriptionData.Builder subData = SessionCreateParams.SubscriptionData.builder()
                     .putMetadata(META_CLEARFLASK_ACCOUNT_ID, accountInDyn.getAccountId())
-                    .putMetadata(META_CLEARFLASK_PLAN_ID, accountInDyn.getPlanid());
-            if (!PlanStore.PLANS_WITHOUT_TRIAL.contains(accountInDyn.getPlanid())) {
+                    .putMetadata(META_CLEARFLASK_PLAN_ID, planId);
+            if (!PlanStore.PLANS_WITHOUT_TRIAL.contains(planId)) {
                 subData.setTrialPeriodDays(config.defaultTrialDays());
             }
 
@@ -196,11 +228,11 @@ public class StripeBilling extends ManagedService implements Billing {
                     .setSubscriptionData(subData.build())
                     .setAllowPromotionCodes(true)
                     .putMetadata(META_CLEARFLASK_ACCOUNT_ID, accountInDyn.getAccountId())
-                    .putMetadata(META_CLEARFLASK_PLAN_ID, accountInDyn.getPlanid())
+                    .putMetadata(META_CLEARFLASK_PLAN_ID, planId)
                     .build();
 
             Session session = Session.create(params, idempotency(accountInDyn.getAccountId(),
-                    "checkoutSession:" + accountInDyn.getPlanid()));
+                    "checkoutSession:" + planId));
             return session.getUrl();
         } catch (StripeException ex) {
             throw stripeError("createCheckoutSession", accountInDyn.getAccountId(), ex);
@@ -348,6 +380,7 @@ public class StripeBilling extends ManagedService implements Billing {
         }
         Subscription sub = Subscription.create(subParams.build(),
                 idempotency(accountInDyn.getAccountId(), "createSubscription" + idempotencySuffix));
+        invalidateSubCache(accountInDyn.getAccountId());
         log.info("Stripe: created customer={} subscription={} for account={} (suffix={})",
                 customer.getId(), sub.getId(), accountInDyn.getAccountId(), idempotencySuffix);
     }
@@ -385,6 +418,7 @@ public class StripeBilling extends ManagedService implements Billing {
                             sub.getId(), accountId, ex);
                 }
             }
+            invalidateSubCache(accountId);
         } catch (StripeException ex) {
             log.warn("Stripe: cancelAllSubscriptionsImmediately failed for {} (continuing)", accountId, ex);
         }
@@ -430,6 +464,7 @@ public class StripeBilling extends ManagedService implements Billing {
                                 .setProrate(false)
                                 .build(),
                         idempotency(a.getAccountId(), "overdueCancel:" + sub.getId()));
+                invalidateSubCache(a.getAccountId());
                 log.info("Stripe: overdue-cancelled subscription {} for account {}",
                         sub.getId(), a.getAccountId());
             } catch (StripeException ex) {
@@ -464,10 +499,22 @@ public class StripeBilling extends ManagedService implements Billing {
     public org.killbill.billing.client.model.gen.Subscription getSubscription(String accountId) {
         AccountStore.Account a = requireAccount(accountId);
         try {
-            Subscription stripeSub = findActiveSubscription(a)
-                    .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND,
-                            "No subscription on this account"));
-            return synthSubscription(a, stripeSub);
+            Optional<Subscription> stripeSubOpt = findActiveSubscription(a);
+            if (stripeSubOpt.isPresent()) {
+                return synthSubscription(a, stripeSubOpt.get());
+            }
+            // No live Stripe sub. Two cases:
+            //  (a) Brand-new signup whose async createCustomerAndSubscription hasn't
+            //      finished yet -- account.stripeCustomerId may even still be empty.
+            //      Returning a synthetic "pending" sub keeps accountBillingAdmin /
+            //      BillingPage rendering instead of 404ing during the signup race window.
+            //  (b) Existing Stripe-billed account whose sub was deleted (e.g. canceled).
+            //      Same synthetic sub is safe -- callers detect the missing planName
+            //      events or the empty currentPeriodEnd as "no live billing".
+            // For Stripe-routed accounts the synthetic sub carries the local planid so
+            // the UI can render the plan card. Mapper will see a null Stripe sub via
+            // findActiveSubscription returning empty and surface the correct status.
+            return synthSubscription(a, null);
         } catch (StripeException ex) {
             throw stripeError("getSubscription", accountId, ex);
         }
@@ -483,12 +530,30 @@ public class StripeBilling extends ManagedService implements Billing {
     public SubscriptionStatus getEntitlementStatus(Account account, org.killbill.billing.client.model.gen.Subscription subscription) {
         AccountStore.Account a = requireAccount(account.getExternalKey());
         try {
-            Subscription stripeSub = findActiveSubscription(a).orElse(null);
-            boolean hasPm = customerHasPaymentMethod(a.getStripeCustomerId());
-            return StripeStatusMapper.map(stripeSub, hasPm, () -> false);
+            SubSnapshot snap = loadSubSnapshot(a);
+            Subscription stripeSub = snap.sub;
+            boolean hasPm = snap.hasPaymentMethod;
+            String planId = subscription == null ? a.getPlanid() : subscription.getPlanName();
+            // Memoize: the mapper only invokes isLimited.getAsBoolean() in the branches that
+            // can produce LIMITED, so we avoid the plan-verify call entirely for terminal /
+            // payment-issue states. Mirrors KillBilling.getEntitlementStatus.
+            com.google.common.base.Supplier<Boolean> isLimited = com.google.common.base.Suppliers.memoize(() -> isAccountLimited(a.getAccountId(), planId));
+            return StripeStatusMapper.map(stripeSub, hasPm, isLimited::get);
         } catch (StripeException ex) {
             throw stripeError("getEntitlementStatus", a.getAccountId(), ex);
         }
+    }
+
+    private boolean isAccountLimited(String accountId, String planId) {
+        if (Strings.isNullOrEmpty(planId)) {
+            return false;
+        }
+        try {
+            planVerifyStore.verifyAccountMeetsLimits(planId, accountId);
+        } catch (ApiException ex) {
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -498,9 +563,14 @@ public class StripeBilling extends ManagedService implements Billing {
             log.info("Stripe subscription status change {} -> {}, reason: {}, for {}",
                     currentStatus, newStatus, reason, account.getExternalKey());
             accountStore.updateStatus(account.getExternalKey(), newStatus);
-            // Trial-ended email. Mirrors KillBilling.updateAndGetEntitlementStatus lines 596-604:
-            // when the account leaves ACTIVETRIAL, fire the "your trial is over" notification.
+            // Trial-ended email. Fires only when leaving ACTIVETRIAL for a status that
+            // means the trial is actually over -- not ACTIVENORENEWAL, which is the
+            // "trial still running but cancel scheduled at period end" state. Otherwise
+            // a mid-trial cancellation would send the "your trial is over" email while
+            // the user is still in the trial AND suppress the real one later (because
+            // shouldSendTrialEndedNotification is one-shot per plan id).
             if (SubscriptionStatus.ACTIVETRIAL.equals(currentStatus)
+                    && !SubscriptionStatus.ACTIVENORENEWAL.equals(newStatus)
                     && accountStore.shouldSendTrialEndedNotification(account.getExternalKey(), subscription.getPlanName())) {
                 Optional<PaymentMethodDetails> pmOpt = getDefaultPaymentMethodDetails(account.getExternalKey());
                 accountStore.getAccount(account.getExternalKey(), false).ifPresent(accountInDyn ->
@@ -567,6 +637,7 @@ public class StripeBilling extends ManagedService implements Billing {
             Subscription updated = sub.update(
                     SubscriptionUpdateParams.builder().setCancelAtPeriodEnd(true).build(),
                     idempotency(accountId, "cancelSubscription:" + sub.getId()));
+            invalidateSubCache(accountId);
             return synthSubscription(a, updated);
         } catch (StripeException ex) {
             throw stripeError("cancelSubscription", accountId, ex);
@@ -582,6 +653,7 @@ public class StripeBilling extends ManagedService implements Billing {
             Subscription updated = sub.update(
                     SubscriptionUpdateParams.builder().setCancelAtPeriodEnd(false).build(),
                     idempotency(accountId, "resumeSubscription:" + sub.getId()));
+            invalidateSubCache(accountId);
             return synthSubscription(a, updated);
         } catch (StripeException ex) {
             throw stripeError("resumeSubscription", accountId, ex);
@@ -592,13 +664,18 @@ public class StripeBilling extends ManagedService implements Billing {
     public org.killbill.billing.client.model.gen.Subscription changePlan(String accountId, String planId, Optional<Long> recurringPriceOpt) {
         AccountStore.Account a = requireAccount(accountId);
         try {
-            // Grandfathered $0 -> paid Stripe upgrade: account has no Stripe customer yet.
-            // BillingRouter intercepts and routes here from NoOpBilling. Returning a
-            // synthetic subscription is fine; the real subscription gets created when the
-            // user completes Checkout. Caller (AccountResource) follows up with createCheckoutSession.
+            // Grandfathered $0 -> paid Stripe upgrade: account has no Stripe customer yet,
+            // so we cannot validate or charge anything here. The real promotion happens
+            // when the user completes Stripe Checkout. Do NOT write account.planid yet --
+            // doing so leaves the account locally-paid but Stripe-unpaid if the user
+            // abandons Checkout. The subscription.created webhook syncs planid from
+            // sub metadata when payment is actually authorized.
+            //
+            // Frontend flow: catch this 409 and call accountBillingCheckoutSessionAdmin
+            // with planId=<targetPlanId> to redirect the user to Checkout.
             if (Strings.isNullOrEmpty(a.getStripeCustomerId())) {
-                accountStore.setPlan(accountId, planId, Optional.empty());
-                return synthSubscription(a.toBuilder().planid(planId).build(), null);
+                throw new ApiException(Response.Status.CONFLICT,
+                        "Upgrade requires Stripe Checkout. Initiate checkout for plan " + planId + ".");
             }
 
             Optional<String> priceIdOpt;
@@ -627,6 +704,7 @@ public class StripeBilling extends ManagedService implements Billing {
             Subscription updated = sub.update(params,
                     idempotency(accountId, "changePlan:" + sub.getId() + ":" + planId));
             accountStore.setPlan(accountId, planId, Optional.empty());
+            invalidateSubCache(accountId);
             return synthSubscription(a, updated);
         } catch (StripeException ex) {
             throw stripeError("changePlan", accountId, ex);
@@ -668,6 +746,7 @@ public class StripeBilling extends ManagedService implements Billing {
             Subscription updated = sub.update(params,
                     idempotency(accountId, "changePlanToFlatYearly:" + yearlyPrice));
             accountStore.setPlan(accountId, "flat-yearly", Optional.empty());
+            invalidateSubCache(accountId);
             return synthSubscription(a, updated);
         } catch (StripeException ex) {
             throw stripeError("changePlanToFlatYearly", accountId, ex);
@@ -816,17 +895,14 @@ public class StripeBilling extends ManagedService implements Billing {
             return;
         }
         try {
-            Optional<Subscription> subOpt = findActiveSubscription(a);
-            if (subOpt.isPresent()) {
-                subOpt.get().cancel(SubscriptionCancelParams.builder()
-                                .setInvoiceNow(false)
-                                .setProrate(false)
-                                .build(),
-                        idempotency(accountId, "closeAccount:cancelSub"));
-            }
-            Customer.retrieve(a.getStripeCustomerId()).delete(
-                    idempotency(accountId, "closeAccount:deleteCustomer"));
-        } catch (StripeException ex) {
+            // Cancel any non-terminal subscriptions, but do NOT delete the Stripe Customer.
+            // Customer deletion is irreversible and destroys invoice/tax history that we
+            // may need for reporting, compliance, refunds, or chargebacks. Compare with
+            // KillBill.closeAccount which leaves the customer record intact. If a real
+            // erasure (e.g. GDPR right-to-be-forgotten) is needed, do it explicitly via a
+            // dedicated super-admin path -- not as a side effect of account deletion.
+            cancelAllSubscriptionsImmediately(accountId);
+        } catch (Exception ex) {
             log.warn("Stripe: closeAccount failed for {} (continuing)", accountId, ex);
         }
     }
@@ -901,35 +977,84 @@ public class StripeBilling extends ManagedService implements Billing {
     }
 
     private Optional<Subscription> findActiveSubscription(AccountStore.Account a) throws StripeException {
-        if (Strings.isNullOrEmpty(a.getStripeCustomerId())) {
-            return Optional.empty();
+        return Optional.ofNullable(loadSubSnapshot(a).sub);
+    }
+
+    private boolean customerHasPaymentMethod(AccountStore.Account a) throws StripeException {
+        return loadSubSnapshot(a).hasPaymentMethod;
+    }
+
+    /**
+     * Single Stripe round-trip that produces the live subscription + has-payment-method
+     * pair. Cached for 5s per accountId so the common multi-call path
+     * (getSubscription -> getEntitlementStatus -> updateAndGetEntitlementStatus) doesn't
+     * fan out to 6+ Stripe API calls per BillingPage load.
+     *
+     * <p>Subscription priority: {@code active}/{@code trialing}/{@code past_due} rank above
+     * {@code paused}/{@code unpaid}/{@code incomplete}, so a fresh signup whose previous
+     * {@code incomplete} sub hasn't expired yet still resolves to the live trialing one.
+     */
+    private SubSnapshot loadSubSnapshot(AccountStore.Account a) throws StripeException {
+        if (a == null || Strings.isNullOrEmpty(a.getStripeCustomerId())) {
+            return new SubSnapshot(null, false);
+        }
+        SubSnapshot cached = subSnapshotCache.getIfPresent(a.getAccountId());
+        if (cached != null) {
+            return cached;
         }
         SubscriptionListParams params = SubscriptionListParams.builder()
                 .setCustomer(a.getStripeCustomerId())
                 .setStatus(SubscriptionListParams.Status.ALL)
                 .setLimit(config.listPageSize())
                 .build();
-        Iterator<Subscription> it = Subscription.list(params).autoPagingIterable().iterator();
-        Subscription latest = null;
-        while (it.hasNext()) {
-            Subscription s = it.next();
-            if ("canceled".equals(s.getStatus()) || "incomplete_expired".equals(s.getStatus())) {
-                continue;
-            }
-            if (latest == null || (s.getCreated() != null && s.getCreated() > latest.getCreated())) {
-                latest = s;
+        Subscription best = null;
+        int bestRank = Integer.MAX_VALUE;
+        for (Subscription s : Subscription.list(params).autoPagingIterable()) {
+            int rank = statusRank(s.getStatus());
+            if (rank == Integer.MAX_VALUE) continue; // canceled / incomplete_expired
+            if (rank < bestRank
+                    || (rank == bestRank && best != null && s.getCreated() != null
+                            && best.getCreated() != null && s.getCreated() > best.getCreated())) {
+                best = s;
+                bestRank = rank;
             }
         }
-        return Optional.ofNullable(latest);
+        Customer customer = Customer.retrieve(a.getStripeCustomerId());
+        boolean hasPm = customer.getInvoiceSettings() != null
+                && !Strings.isNullOrEmpty(customer.getInvoiceSettings().getDefaultPaymentMethod());
+        SubSnapshot snap = new SubSnapshot(best, hasPm);
+        subSnapshotCache.put(a.getAccountId(), snap);
+        return snap;
     }
 
-    private boolean customerHasPaymentMethod(String stripeCustomerId) throws StripeException {
-        if (Strings.isNullOrEmpty(stripeCustomerId)) {
-            return false;
+    /** Lower rank wins. {@code Integer.MAX_VALUE} means terminal / not a candidate. */
+    private static int statusRank(String status) {
+        if (status == null) return 100;
+        switch (status) {
+            case "trialing":            return 0;
+            case "active":              return 1;
+            case "past_due":            return 2;
+            case "paused":              return 3;
+            case "unpaid":              return 4;
+            case "incomplete":          return 5;
+            case "canceled":
+            case "incomplete_expired":  return Integer.MAX_VALUE;
+            default:                    return 50;
         }
-        Customer customer = Customer.retrieve(stripeCustomerId);
-        return customer.getInvoiceSettings() != null
-                && !Strings.isNullOrEmpty(customer.getInvoiceSettings().getDefaultPaymentMethod());
+    }
+
+    private void invalidateSubCache(String accountId) {
+        if (subSnapshotCache != null && !Strings.isNullOrEmpty(accountId)) {
+            subSnapshotCache.invalidate(accountId);
+        }
+    }
+
+    /**
+     * Public entry point for webhook handlers (or any external trigger) to invalidate the
+     * cached subscription snapshot for an account so the next call hits Stripe fresh.
+     */
+    public void invalidateSnapshot(String accountId) {
+        invalidateSubCache(accountId);
     }
 
     private Account synthAccount(AccountStore.Account a, Customer customer) {

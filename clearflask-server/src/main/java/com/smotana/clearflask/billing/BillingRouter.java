@@ -207,6 +207,18 @@ public class BillingRouter implements Billing {
                     current.getPlanid(), planId, accountId);
             return stripe.changePlan(accountId, planId, recurringPriceOpt);
         }
+        // Downgrade path: a Stripe-billed account switching to a free/grandfathered plan.
+        // StripeBilling.changePlan would 500 because free plans have no Stripe Price. Cancel
+        // the active Stripe sub instead (immediate, no proration), then route through NoOp
+        // for the local planid write. We deliberately keep stripeCustomerId on the account
+        // -- if they re-upgrade later we reuse their Stripe Customer and saved card.
+        boolean accountIsStripe = !Strings.isNullOrEmpty(current.getStripeCustomerId());
+        if (accountIsStripe && targetIsNoOp) {
+            log.info("Downgrade from Stripe-billed plan {} to grandfathered/free {} for account {} -- cancelling Stripe sub, routing through NoOpBilling",
+                    current.getPlanid(), planId, accountId);
+            stripe.cancelAllSubscriptionsImmediately(accountId);
+            return noOp.changePlan(accountId, planId, recurringPriceOpt);
+        }
         return pick(current).changePlan(accountId, planId, recurringPriceOpt);
     }
 
@@ -287,9 +299,9 @@ public class BillingRouter implements Billing {
     }
 
     @Override
-    public String createCheckoutSession(AccountStore.Account account) {
+    public String createCheckoutSession(AccountStore.Account account, Optional<String> targetPlanIdOpt) {
         // Checkout is Stripe-only.
-        return stripe.createCheckoutSession(account);
+        return stripe.createCheckoutSession(account, targetPlanIdOpt);
     }
 
     @Override

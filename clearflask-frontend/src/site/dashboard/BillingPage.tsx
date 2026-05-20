@@ -374,8 +374,9 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
           cardState = 'active';
           showSetPayment = true;
           setPaymentTitle = 'Update payment method';
-          planTitle = 'Your plan is active';
-          planDesc = `You have full access to your ${this.props.accountBilling.plan.title} plan.`;
+          showCancelSubscription = true;
+          planTitle = 'Your trial is active';
+          planDesc = `You have full access to your ${this.props.accountBilling.plan.title} plan during your trial period.`;
           if (hasAvailablePlansToSwitch) {
             planDesc += ' If you switch plans now, your first payment at the end of your trial will reflect your new plan.';
             showPlanChange = true;
@@ -501,6 +502,15 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
     if (this.props.accountBilling?.endOfTermChangeToPlan) {
       endOfTermChangeToPlanTitle = `Pending plan change to ${this.props.accountBilling.endOfTermChangeToPlan.title}`;
       endOfTermChangeToPlanDesc = `Your requested change of plans to ${this.props.accountBilling.endOfTermChangeToPlan.title} plan will take effect at the end of the term.`;
+    }
+    // Stripe-billed accounts with a payment method on file get a single "Manage
+    // subscription" CTA that opens the Customer Portal. The portal is the entry
+    // point for updating cards, downloading invoices, and cancelling -- so the
+    // narrow "Update payment method" label was hiding everything else.
+    if (this.props.accountBilling?.isStripeBilled
+        && this.props.accountBilling?.payment
+        && setPaymentTitle === 'Update payment method') {
+      setPaymentTitle = 'Manage subscription';
     }
     switch (cardState) {
       case 'active':
@@ -1193,13 +1203,30 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                 });
 
                 this.setState({ isSubmitting: true });
-                ServerAdmin.get().dispatchAdmin().then(d => d.accountUpdateAdmin({
-                  accountUpdateAdmin: {
-                    basePlanId,
-                  },
-                }).then(() => d.accountBillingAdmin({})))
-                  .then(() => this.setState({ isSubmitting: false, showPlanChange: undefined }))
-                  .catch(er => this.setState({ isSubmitting: false }));
+                ServerAdmin.get().dispatchAdmin().then(async d => {
+                  try {
+                    await d.accountUpdateAdmin({ accountUpdateAdmin: { basePlanId } });
+                    await d.accountBillingAdmin({});
+                    this.setState({ isSubmitting: false, showPlanChange: undefined });
+                  } catch (err: any) {
+                    // 409 CONFLICT signals the grandfathered->paid upgrade path: server refuses
+                    // to write planid eagerly because Checkout hasn't happened yet. Redirect to
+                    // Stripe Checkout with the target plan; on completion, the session's metadata
+                    // syncs planid via the subscription.created webhook + finalizeCheckoutSession.
+                    if (err?.response?.status === 409) {
+                      try {
+                        const session = await d.accountBillingCheckoutSessionAdmin({ planId: basePlanId });
+                        if (session?.url) {
+                          windowIso.location.href = session.url;
+                          return;
+                        }
+                      } catch (checkoutErr) {
+                        console.warn('Stripe Checkout session creation failed after 409', checkoutErr);
+                      }
+                    }
+                    this.setState({ isSubmitting: false });
+                  }
+                });
               }}
               isSubmitting={!!this.state.isSubmitting}
             />

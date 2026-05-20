@@ -41,6 +41,7 @@ import com.smotana.clearflask.billing.StripePlanStore;
 import com.smotana.clearflask.billing.StripeProvisioner;
 import com.smotana.clearflask.billing.StripeSyncService;
 import com.smotana.clearflask.store.ServiceSecretStore;
+import com.smotana.clearflask.store.WebhookEventDedupStore;
 import com.smotana.clearflask.web.resource.StripeWebhookResource;
 import com.smotana.clearflask.core.email.AmazonSimpleEmailServiceProvider;
 import com.smotana.clearflask.core.email.ProjectDeletionService;
@@ -386,6 +387,7 @@ public enum ServiceInjector {
                     install(BillingRouter.module());
                     install(PlanStoreRouter.module());
                     install(ServiceSecretStore.module());
+                    install(WebhookEventDedupStore.module());
                     install(StripeWebhookResource.module());
                 }
 
