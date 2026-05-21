@@ -40,7 +40,14 @@ import java.util.concurrent.TimeUnit;
 public class StripeSyncService extends ManagedService {
 
     public interface Config {
-        @DefaultValue("true")
+        /**
+         * Default false so a fresh KillBill-primary deploy makes zero Stripe API calls.
+         * Operator flips to true alongside {@code BillingRouter.useStripeForNewSignups} or
+         * just before migrating an existing paying customer. Without this, the daily
+         * reconcile would list all Stripe subs every 24h (harmless but wasted calls when
+         * no account has stripeCustomerId yet).
+         */
+        @DefaultValue("false")
         boolean enabled();
 
         @DefaultValue("PT24H")

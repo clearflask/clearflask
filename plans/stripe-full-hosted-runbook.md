@@ -2,25 +2,61 @@
 
 Reference for setting up, switching modes, rolling back, and removing KillBill once Stripe is fully cut over.
 
-## One-time Stripe setup
+## Deploy → Setup → Switchover
 
-### 1. Stripe API keys
+The flow is intentionally three discrete steps so a fresh deploy of this code makes
+zero Stripe API calls. Setup happens via super-admin JMX *after* the binary is running;
+switchover is a config flip + restart.
 
-In the Stripe dashboard, create both **test mode** and **live mode** secret API keys at https://dashboard.stripe.com/apikeys (test) and https://dashboard.stripe.com/apikeys (live). Set them in clearflask config:
+### Step 1 — Deploy with KillBill primary (default)
+
+Out of the box this branch ships with:
+
+- `BillingRouter$Config.useStripeForNewSignups = false`
+- `BillingRouter$Config.routeGrandfatheredToNoOp = false`
+- `StripeSyncService$Config.enabled = false`
+- `StripeOverdueEscalationService$Config.enabled = false`
+- `StripeProvisioner` is JMX-only (no startup behavior)
+
+Only thing the prod config needs is the Stripe API key:
 
 ```
-com.smotana.clearflask.billing.StripeClientSetup$Config.stripeApiKey=<sk_test_... or sk_live_...>
-com.smotana.clearflask.billing.StripeBilling$Config.publicUrl=https://yourdomain.com
-com.smotana.clearflask.billing.StripeProvisioner$Config.publicUrl=https://yourdomain.com
+com.smotana.clearflask.billing.StripeClientSetup$Config.stripeApiKey=<sk_live_... or rk_live_...>
 ```
 
-### 2. Run the provisioner
+The Checkout/Portal/webhook URLs derive from `Application$Config.domain` (already set to
+`clearflask.com` in prod). After deploy: KillBill keeps serving every account exactly as
+before. No Stripe API calls happen.
 
-`StripeProvisioner.upsertAll()` is `@Extern`-exposed for super-admin invocation. It creates Stripe Products, Prices, Entitlement Features, and the WebhookEndpoint. Idempotent — re-running is safe and acts as `sync`.
+### Step 2 — Run the provisioner via JMX
 
-Run **once per environment** (test, then live). The webhook signing secret is persisted to the `serviceSecret` DynamoDB table on first creation; subsequent app restarts pick it up automatically.
+`StripeProvisioner.upsertAll()` is `@Extern`-exposed at the MBean
+`com.smotana.clearflask.billing:name=StripeProvisionerOpsMBean`. It creates Stripe
+Products, Prices, Entitlement Features, attaches features to products, and registers the
+WebhookEndpoint (when `autoRegisterWebhook=true`). Idempotent — re-running is a no-op
+sync. The webhook signing secret is persisted to the `serviceSecret` DynamoDB table so
+subsequent restarts pick it up automatically.
 
-If `autoRegisterWebhook=false` (local dev), use Stripe CLI instead:
+Run **once per environment** (test mode, then live). Example via `jshell` against the
+server's JMX port:
+
+```java
+import javax.management.*;
+import javax.management.remote.*;
+JMXConnector c = JMXConnectorFactory.connect(new JMXServiceURL(
+    "service:jmx:rmi:///jndi/rmi://localhost:9950/jmxrmi"), null);
+Object result = c.getMBeanServerConnection().invoke(
+    new ObjectName("com.smotana.clearflask.billing:name=StripeProvisionerOpsMBean"),
+    "upsertAll", new Object[]{}, new String[]{});
+System.out.println(result);
+```
+
+The report lists every Product/Price/Feature/Webhook it touched (`CREATED` or `OK`).
+After this completes successfully, live Stripe has the resources clearflask needs.
+
+**Local dev**: `autoRegisterWebhook=false` ships in `config-local-template.cfg` because
+Stripe can't reach `localhost`. Use stripe-cli instead and paste the secret into
+`webhookSecretOverride`:
 
 ```
 stripe listen --forward-to https://localhost:8080/api/v1/webhook/stripe
@@ -28,49 +64,58 @@ stripe listen --forward-to https://localhost:8080/api/v1/webhook/stripe
 com.smotana.clearflask.billing.StripeBilling$Config.webhookSecretOverride=wh_sec_...
 ```
 
-### 3. Stripe dashboard config (one-time, for both test and live)
+### Step 2b — Stripe dashboard config (one-time, manual UI work)
 
-- **Subscriptions and emails → Manage failed payments**: configure Smart Retry schedule (default 4 retries over ~3 weeks). Set "After all retries fail" to either Mark uncollectible or Cancel — recommend Cancel since clearflask can re-prompt the user via Customer Portal.
+- **Subscriptions and emails → Manage failed payments**: configure Smart Retry schedule
+  (default 4 retries over ~3 weeks). Set "After all retries fail" to either Mark
+  uncollectible or Cancel — recommend Cancel since clearflask can re-prompt the user via
+  Customer Portal.
 - **Customer emails → Receipts**: enable "Successful payments" so Stripe sends receipts.
-- **Customer Portal**: confirm the configuration written by the provisioner (logo, colors, allowed actions). Switch on "Customers can view their billing history" and "Customers can update payment methods".
+- **Customer Portal**: confirm the configuration (allowed actions). Switch on "Customers
+  can view their billing history" and "Customers can update payment methods".
 
-### 4. Frontend config
+Stripe publishable keys are hardcoded in `Dashboard.tsx` (`pk_test_...` and `pk_live_...`).
+Update them when rotating Stripe keys.
 
-Stripe publishable keys are still hardcoded in `Dashboard.tsx` (`pk_test_...` and `pk_live_...`). Update them when rotating Stripe keys.
+### Step 3 — Switchover: flip flags + restart
 
-## Switching modes
-
-The two governing flags both live in `BillingRouter$Config`:
-
-- `useStripeForNewSignups` — new signups get a Stripe Checkout Session URL instead of being created on KillBill. Default `false`.
-- `routeGrandfatheredToNoOp` — grandfathered $0 plans (lifetime, pitchground, starter-unlimited, cloud-free, teammate-unlimited) bypass both KillBill and Stripe; live as DynamoDB-only records served by `NoOpBilling`. Default `false`.
-
-### Phase A (current default): KillBill primary, Stripe scaffolding present
+Edit prod config:
 
 ```
-useStripeForNewSignups=false
-routeGrandfatheredToNoOp=false
+com.smotana.clearflask.billing.BillingRouter$Config.useStripeForNewSignups=true
+com.smotana.clearflask.billing.BillingRouter$Config.routeGrandfatheredToNoOp=true
+com.smotana.clearflask.billing.StripeSyncService$Config.enabled=true
+com.smotana.clearflask.billing.StripeOverdueEscalationService$Config.enabled=true
 ```
 
-Live traffic is unchanged. New signups go to KillBill. Grandfathered customers continue on KillBill.
+Restart the server. Now:
 
-### Phase B: Stripe primary for new signups
+- New signups receive a Stripe Checkout Session (no card collected during signup; 14-day
+  Stripe-side trial; user adds card later via "Manage subscription" → Customer Portal).
+- Grandfathered $0 accounts (lifetime, pitchground, starter-unlimited, cloud-free,
+  teammate-unlimited) now route to `NoOpBilling`. Their KillBill subscriptions become
+  orphans (no charges since $0); bulk-cancel them via super-admin once you're confident.
+- Daily Stripe reconciliation runs (`StripeSyncService`) catches webhook-delivery drift.
+- 90-day NOPAYMENTMETHOD escalation runs (`StripeOverdueEscalationService`); its
+  `firstRunCutoff` auto-defaults to the JVM start time so aged accounts get a fresh
+  90-day grace from this deploy.
 
-```
-useStripeForNewSignups=true
-routeGrandfatheredToNoOp=true
-```
+Existing customers (anyone whose `account.stripeCustomerId` is still null after this
+flip) continue on KillBill — the router checks the field per call, not per startup.
 
-New signups receive a Stripe Checkout URL from `POST /admin/account/billing/checkout-session`. Customer pays on Stripe, returns to `success_url=/dashboard/billing?checkout_session_id=...`. The frontend posts to `POST /admin/account/billing/checkout-complete?sessionId=...` which sets `account.stripeCustomerId`. The webhook also calls finalize as a defensive layer.
+### Step 4 — Migrate the one paying customer (Phase C)
 
-Grandfathered $0 accounts now route to `NoOpBilling`. Their KillBill subscriptions become orphaned (no charges since $0); a follow-up bulk-cancel script can tidy them once Phase C completes.
-
-### Phase C: Migrate the one paying customer + remove KillBill
-
-1. Run `OneShotStripeMigrator.migrate(<accountId>, dryRun=true)` and eyeball the report.
-2. If clean, run `OneShotStripeMigrator.migrate(<accountId>, dryRun=false)`.
+1. Run `OneShotStripeMigrator.migrate(<accountId>, dryRun=true)` via JMX
+   (`com.smotana.clearflask.billing:name=OneShotStripeMigratorOpsMBean`) and eyeball the
+   report.
+2. If clean, run `migrate(<accountId>, dryRun=false)`. The migrator reuses the customer's
+   existing Stripe Customer + saved card (created by KillBill's Stripe plugin), creates
+   a Stripe Subscription with `trial_end=<KB.chargedThroughDate>` so the first Stripe
+   charge lands when KillBill would have billed (no double-charge), sets local
+   `stripeCustomerId`, and cancels the KillBill subscription end-of-term.
 3. Wait one renewal cycle. Verify Stripe charged and KillBill didn't.
-4. Bulk-cancel grandfathered KillBill subs (one-line script via super-admin endpoint; not yet automated — track separately).
+4. Bulk-cancel orphaned grandfathered KillBill subs (one-liner via super-admin; not yet
+   automated — track separately).
 5. Deploy the KillBill removal commit (see "Removing KillBill" below).
 
 ## Rollback

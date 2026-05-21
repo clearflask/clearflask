@@ -74,7 +74,14 @@ import java.util.concurrent.TimeUnit;
 public class StripeOverdueEscalationService extends ManagedService {
 
     public interface Config {
-        @DefaultValue("true")
+        /**
+         * Default false so a fresh KillBill-primary deploy makes zero Stripe API calls.
+         * Operator flips to true alongside {@code BillingRouter.useStripeForNewSignups}
+         * when Stripe is the active billing backend. Without any Stripe-routed account
+         * the service would still do a daily DDB scan for NOPAYMENTMETHOD accounts and
+         * Stripe-recheck each one -- wasteful when none are eligible.
+         */
+        @DefaultValue("false")
         boolean enabled();
 
         /**
