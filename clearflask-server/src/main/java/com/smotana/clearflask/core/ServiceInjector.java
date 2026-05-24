@@ -98,11 +98,11 @@ import com.smotana.clearflask.store.impl.DynamoTokenVerifyStore;
 import com.smotana.clearflask.store.impl.DynamoVoteStore;
 import com.smotana.clearflask.store.impl.LangChainLlmAgentStore;
 import com.smotana.clearflask.store.impl.LangChainLlmToolingStore;
+import com.smotana.clearflask.store.impl.PorkbunDnsStore;
 import com.smotana.clearflask.store.impl.ResourceLegalStore;
 import com.smotana.clearflask.store.impl.S3ContentStore;
 import com.smotana.clearflask.store.mysql.DefaultMysqlProvider;
 import com.smotana.clearflask.store.mysql.MysqlUtil;
-import com.smotana.clearflask.store.route53.DefaultRoute53Provider;
 import com.smotana.clearflask.store.s3.DefaultS3ClientProvider;
 import com.smotana.clearflask.util.AutoCreateKikConfigFile;
 import com.smotana.clearflask.util.BeanUtil;
@@ -239,7 +239,7 @@ public enum ServiceInjector {
                 install(DynamoRemoteLicenseStore.module());
                 install(CloudLocalLicenseStore.module());
                 if (env != Environment.PRODUCTION_SELF_HOST) {
-                    install(DefaultRoute53Provider.module());
+                    install(PorkbunDnsStore.module());
                 }
                 install(GitHubClientProviderImpl.module());
                 install(GitHubStoreImpl.module());

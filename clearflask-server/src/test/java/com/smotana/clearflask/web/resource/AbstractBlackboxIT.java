@@ -6,7 +6,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
-import com.amazonaws.services.route53.AmazonRoute53;
 import com.amazonaws.services.s3.AmazonS3;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -207,7 +206,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
         ControllableSleepingStopwatch controllableSleepingStopwatch = new ControllableSleepingStopwatch();
         install(GuavaRateLimiters.testModule(controllableSleepingStopwatch));
         bind(ControllableSleepingStopwatch.class).toInstance(controllableSleepingStopwatch);
-        bindMock(AmazonRoute53.class);
+        bindMock(com.smotana.clearflask.store.DnsStore.class);
         bindMock(com.smotana.clearflask.store.JiraStore.class);
         bindMock(com.smotana.clearflask.store.SlackStore.class);
         bindMock(com.smotana.clearflask.store.GitLabStore.class);

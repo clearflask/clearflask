@@ -6,9 +6,6 @@ import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
-import com.amazonaws.services.route53.AmazonRoute53;
-import com.amazonaws.services.route53.model.*;
-import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Module;
@@ -17,6 +14,7 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.store.CertStore;
 import com.smotana.clearflask.store.CertStore.KeypairModel.KeypairType;
+import com.smotana.clearflask.store.DnsStore;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.web.ApiException;
 import io.dataspray.singletable.Expression;
@@ -39,9 +37,6 @@ import java.util.regex.Pattern;
 public class DynamoCertStore implements CertStore {
 
     public interface Config {
-        @DefaultValue("")
-        String hostedZoneId();
-
         @DefaultValue("^_acme-challenge\\.clearflask\\.com$")
         String allowedDnsHostRegex();
 
@@ -53,7 +48,7 @@ public class DynamoCertStore implements CertStore {
     @Inject
     private SingleTable singleTable;
     @Inject(optional = true)
-    private AmazonRoute53 route53;
+    private DnsStore dnsStore;
 
     private TableSchema<KeypairModel> keypairSchema;
     private TableSchema<ChallengeModel> challengeSchema;
@@ -121,55 +116,35 @@ public class DynamoCertStore implements CertStore {
 
     @Override
     public Optional<String> getDnsChallenge(String host) {
-        if (route53 == null) {
+        if (dnsStore == null) {
             throw new ApiException(Response.Status.NOT_IMPLEMENTED);
         }
         if (!allowedHostPredicate.test(host)) {
             throw new BadRequestException("Host not allowed for DNS challenge: " + host);
         }
-        ListResourceRecordSetsResult result = route53.listResourceRecordSets(new ListResourceRecordSetsRequest(config.hostedZoneId())
-                .withStartRecordType(RRType.TXT)
-                .withStartRecordName(host));
-        return result.getResourceRecordSets().stream()
-                .flatMap(recordSet -> recordSet.getResourceRecords().stream())
-                .map(ResourceRecord::getValue)
-                .findAny();
+        return dnsStore.getTxtRecord(host);
     }
 
     @Override
     public void setDnsChallenge(String host, String value) {
-        if (route53 == null) {
+        if (dnsStore == null) {
             throw new ApiException(Response.Status.NOT_IMPLEMENTED);
         }
         if (!allowedHostPredicate.test(host)) {
             throw new BadRequestException("Host not allowed for DNS challenge: " + host);
         }
-        route53.changeResourceRecordSets(new ChangeResourceRecordSetsRequest(
-                config.hostedZoneId(),
-                new ChangeBatch(ImmutableList.of(new Change(
-                        ChangeAction.UPSERT, new ResourceRecordSet(
-                        host,
-                        RRType.TXT)
-                        .withResourceRecords(new ResourceRecord("\"" + value + "\""))
-                        .withTTL(300L))))));
+        dnsStore.upsertTxtRecord(host, value);
     }
 
     @Override
     public void deleteDnsChallenge(String host, String value) {
-        if (route53 == null) {
+        if (dnsStore == null) {
             throw new ApiException(Response.Status.NOT_IMPLEMENTED);
         }
         if (!allowedHostPredicate.test(host)) {
             throw new BadRequestException("Host not allowed for DNS challenge: " + host);
         }
-        route53.changeResourceRecordSets(new ChangeResourceRecordSetsRequest(
-                config.hostedZoneId(),
-                new ChangeBatch(ImmutableList.of(new Change(
-                        ChangeAction.DELETE, new ResourceRecordSet(
-                        host,
-                        RRType.TXT)
-                        .withResourceRecords(new ResourceRecord("\"" + value + "\""))
-                        .withTTL(10L))))));
+        dnsStore.deleteTxtRecord(host, value);
     }
 
     @Extern
