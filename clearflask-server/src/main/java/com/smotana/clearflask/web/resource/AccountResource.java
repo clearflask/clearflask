@@ -31,6 +31,7 @@ import com.smotana.clearflask.api.model.AccountBillingPaymentActionRequired;
 import com.smotana.clearflask.api.model.AccountBindAdmin;
 import com.smotana.clearflask.api.model.AccountBindAdminResponse;
 import com.smotana.clearflask.api.model.AccountCreditAdjustment;
+import com.smotana.clearflask.api.model.AccountResetToStripeTrialSuperAdmin;
 import com.smotana.clearflask.api.model.AccountDeleteSuperAdmin;
 import com.smotana.clearflask.api.model.AccountForgotPassword;
 import com.smotana.clearflask.api.model.AccountLogin;
@@ -90,6 +91,7 @@ import com.smotana.clearflask.store.RemoteLicenseStore;
 import com.smotana.clearflask.store.TokenVerifyStore;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.util.ChatwootUtil;
+import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.IpUtil;
 import com.smotana.clearflask.util.LogUtil;
@@ -621,7 +623,9 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
                 preferredPriceOpt.orElse(null),
                 ImmutableSet.of(),
                 null,
-                null);
+                null,
+                null,
+                Instant.now());
         account = accountStore.createAccount(account).getAccount();
 
         // Create customer in KillBill asynchronously because:
@@ -710,7 +714,7 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
         }
         if (accountUpdateAdmin.getCancelEndOfTerm() == Boolean.TRUE) {
             Subscription subscription = billing.cancelSubscription(account.getAccountId());
-            SubscriptionStatus newStatus = billing.updateAndGetEntitlementStatus(
+            billing.updateAndGetEntitlementStatus(
                     account.getStatus(),
                     billing.getAccount(account.getAccountId()),
                     subscription,
@@ -718,7 +722,7 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
         }
         if (accountUpdateAdmin.getResume() == Boolean.TRUE || alsoResume) {
             Subscription subscription = billing.resumeSubscription(account.getAccountId());
-            SubscriptionStatus newStatus = billing.updateAndGetEntitlementStatus(
+            billing.updateAndGetEntitlementStatus(
                     account.getStatus(),
                     billing.getAccount(account.getAccountId()),
                     subscription,
@@ -1048,6 +1052,47 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
                 Optional.ofNullable(Strings.emptyToNull(cursor)));
     }
 
+    // ADMINISTRATOR (not _ACTIVE): billing endpoints must be reachable when the account is in
+    // a recovery state (NOPAYMENTMETHOD, BLOCKED, CANCELLED). The whole point of "Manage on
+    // Stripe" / "Add payment method" / Checkout return is to let the user recover from a
+    // non-active state. Gating on _ACTIVE would 403 the user out of the recovery path.
+    @RolesAllowed({Role.ADMINISTRATOR})
+    @Limit(requiredPermits = 5, challengeAfter = 5)
+    @Override
+    public com.smotana.clearflask.api.model.ContentUploadResponse accountBillingCheckoutSessionAdmin(String planId) {
+        Account account = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .flatMap(accountId -> accountStore.getAccount(accountId, false))
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Account not found"));
+        // Optional planId query param overrides account.planid for the Checkout session's
+        // Stripe Price lookup. Used by the grandfathered->paid upgrade flow: the local
+        // planid stays at the previous (free) plan until Checkout actually completes, so
+        // an abandoned Checkout leaves the account on its original plan rather than in
+        // a paid-but-unpaid limbo.
+        Optional<String> targetPlanIdOpt = Strings.isNullOrEmpty(planId) ? Optional.empty() : Optional.of(planId);
+        return new com.smotana.clearflask.api.model.ContentUploadResponse(billing.createCheckoutSession(account, targetPlanIdOpt));
+    }
+
+    @RolesAllowed({Role.ADMINISTRATOR})
+    @Limit(requiredPermits = 5, challengeAfter = 5)
+    @Override
+    public com.smotana.clearflask.api.model.ContentUploadResponse accountBillingPortalSessionAdmin() {
+        Account account = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .flatMap(accountId -> accountStore.getAccount(accountId, false))
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Account not found"));
+        return new com.smotana.clearflask.api.model.ContentUploadResponse(billing.createPortalSession(account.getAccountId()));
+    }
+
+    @RolesAllowed({Role.ADMINISTRATOR})
+    @Limit(requiredPermits = 5, challengeAfter = 5)
+    @Override
+    public void accountBillingCheckoutCompleteAdmin(String sessionId) {
+        // The webhook also calls finalize, but doing it here on the success-URL callback
+        // gives the user immediate feedback without waiting for webhook delivery.
+        billing.finalizeCheckoutSession(sessionId);
+    }
+
     @RolesAllowed({Role.ADMINISTRATOR})
     @Limit(requiredPermits = 10, challengeAfter = 1)
     @Override
@@ -1140,8 +1185,16 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
                 .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
                 .get();
 
-        if (refreshPayments == Boolean.TRUE) {
+        // Reconcile with the upstream billing provider on every billing-page load so that
+        // any state change (plan switch, payment update, cancel, status drift) made
+        // outside our app -- e.g. via Stripe Customer Portal, or via a webhook that
+        // failed to deliver -- gets reflected the next time the user opens this page.
+        // refreshPayments=true was the explicit-refresh-button path; we now always
+        // reconcile whether or not the flag is set.
+        try {
             billing.syncActions(accountId);
+        } catch (Exception ex) {
+            log.warn("Billing reconcile on accountBillingAdmin failed for {} (continuing)", accountId, ex);
         }
 
         Account account = accountStore.getAccount(accountId, false).get();
@@ -1271,7 +1324,8 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
                 endOfTermChangeToPlan.orElse(null),
                 actions.orElse(null),
                 purchasedLicenseKey,
-                appliedLicenseKey);
+                appliedLicenseKey,
+                !com.google.common.base.Strings.isNullOrEmpty(account.getStripeCustomerId()));
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})
@@ -1288,6 +1342,79 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Account not found"));
 
         billing.creditAdjustment(account.getAccountId(), accountCreditAdjustment.getAmount(), accountCreditAdjustment.getDescription());
+    }
+
+    @RolesAllowed({Role.SUPER_ADMIN})
+    @Extern
+    @Override
+    public AccountAdmin accountResetToStripeTrialSuperAdmin(AccountResetToStripeTrialSuperAdmin req) {
+        return resetToStripeTrial(req.getAccountId(), req.getPlanId());
+    }
+
+    /**
+     * Implementation of the super-admin "reset to Stripe trial" action. Exposed both as a
+     * REST endpoint (above) and via the {@link Extern} JMX MBean for ops use. Returns the
+     * updated AccountAdmin so callers can re-render UI immediately.
+     */
+    @Extern
+    public AccountAdmin resetToStripeTrial(String accountId, String planId) {
+        if (Strings.isNullOrEmpty(accountId)) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "accountId is required");
+        }
+        if (Strings.isNullOrEmpty(planId) || !PlanStore.AVAILABLE_PLAN_NAMES.contains(planId)) {
+            throw new ApiException(Response.Status.BAD_REQUEST,
+                    "planId must be one of " + PlanStore.AVAILABLE_PLAN_NAMES);
+        }
+        Account account = accountStore.getAccount(accountId, false)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Account not found"));
+
+        // Block only when the account is actually on Stripe with a live subscription (the
+        // "real paying customer" case). Local status alone is not sufficient -- an account
+        // can be locally ACTIVETRIAL while never having made it onto Stripe at all (e.g.
+        // signup-time Stripe customer creation failed for some reason). The reset is the
+        // recovery path for exactly that case.
+        if (billing.hasActiveStripeSubscription(account)) {
+            throw new ApiException(Response.Status.BAD_REQUEST,
+                    "Account already has an active Stripe subscription -- cancel it first if you really want to reset.");
+        }
+
+        // Best-effort: cancel any existing KillBill subscription. In cloud env this routes
+        // through BillingRouter -> KillBilling for accounts whose stripeCustomerId is null.
+        try {
+            billing.cancelSubscription(accountId);
+        } catch (Exception ex) {
+            log.info("Reset: KB cancelSubscription failed for {} (continuing): {}",
+                    accountId, ex.getMessage());
+        }
+
+        // Best-effort: cancel any existing Stripe subscription on the customer (if linked).
+        try {
+            billing.cancelAllSubscriptionsImmediately(accountId);
+        } catch (Exception ex) {
+            log.info("Reset: cancelAllSubscriptionsImmediately failed for {} (continuing): {}",
+                    accountId, ex.getMessage());
+        }
+
+        // Align local plan id with the chosen target before creating the Stripe sub --
+        // resetToStripeTrial reads account.getPlanid() to pick the Stripe Price.
+        accountStore.setPlan(accountId, planId, Optional.empty());
+
+        // Create the new Stripe Customer + Subscription with a 14-day trial. Idempotency
+        // suffix is per-call so it doesn't collide with the original signup's keys.
+        Account refreshed = accountStore.getAccount(accountId, false)
+                .orElseThrow(() -> new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Account vanished mid-reset"));
+        String suffix = ":reset:" + Instant.now().toEpochMilli();
+        billing.resetToStripeTrial(refreshed, suffix);
+
+        // Set local status to ACTIVETRIAL (or ACTIVE for plans without trial). The next
+        // accountBillingAdmin reconcile will re-derive from Stripe sub state.
+        SubscriptionStatus newStatus = PlanStore.PLANS_WITHOUT_TRIAL.contains(planId)
+                ? SubscriptionStatus.ACTIVE
+                : SubscriptionStatus.ACTIVETRIAL;
+        accountStore.updateStatus(accountId, newStatus);
+
+        Account out = accountStore.getAccount(accountId, false).orElse(refreshed);
+        return out.toAccountAdmin(intercomUtil, chatwootUtil, planStore, cfSso, superAdminPredicate);
     }
 
     @RolesAllowed({Role.SUPER_ADMIN})

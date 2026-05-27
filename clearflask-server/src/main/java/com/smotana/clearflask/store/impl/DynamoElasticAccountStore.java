@@ -142,6 +142,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     private TableSchema<Account> accountSchema;
     private IndexSchema<Account> accountByApiKeySchema;
     private IndexSchema<Account> accountByOauthGuidSchema;
+    private IndexSchema<Account> accountByStripeCustomerIdSchema;
     private TableSchema<AccountEmail> accountIdByEmailSchema;
     private IndexSchema<AccountEmail> accountIdShardedSchema;
     private TableSchema<AccountSession> sessionBySessionIdSchema;
@@ -162,6 +163,7 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         accountSchema = singleTable.parseTableSchema(Account.class);
         accountByApiKeySchema = singleTable.parseGlobalSecondaryIndexSchema(1, Account.class);
         accountByOauthGuidSchema = singleTable.parseGlobalSecondaryIndexSchema(2, Account.class);
+        accountByStripeCustomerIdSchema = singleTable.parseGlobalSecondaryIndexSchema(3, Account.class);
         accountIdByEmailSchema = singleTable.parseTableSchema(AccountEmail.class);
         accountIdShardedSchema = singleTable.parseGlobalSecondaryIndexSchema(2, AccountEmail.class);
         sessionBySessionIdSchema = singleTable.parseTableSchema(AccountSession.class);
@@ -330,6 +332,32 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
             throw new ApiException(Response.Status.UNAUTHORIZED, "Your API key is misconfigured");
         } else if (accountsByApiKey.size() == 1) {
             return Optional.of(accountsByApiKey.get(0));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public Optional<Account> getAccountByStripeCustomerId(String stripeCustomerId) {
+        ImmutableList<Account> accounts = StreamSupport.stream(accountByStripeCustomerIdSchema.index().query(new QuerySpec()
+                                .withHashKey(accountByStripeCustomerIdSchema.partitionKey(Map.of(
+                                        "stripeCustomerId", stripeCustomerId)))
+                                .withRangeKeyCondition(new RangeKeyCondition(accountByStripeCustomerIdSchema.rangeKeyName())
+                                        .beginsWith(accountByStripeCustomerIdSchema.rangeValuePartial(Map.of()))))
+                        .pages()
+                        .spliterator(), false)
+                .flatMap(p -> StreamSupport.stream(p.spliterator(), false))
+                .map(accountByStripeCustomerIdSchema::fromItem)
+                .collect(ImmutableList.toImmutableList());
+        accounts.forEach(account -> accountCache.put(account.getAccountId(), Optional.of(account)));
+        if (accounts.size() > 1) {
+            if (LogUtil.rateLimitAllowLog("accountStore-multiple-accounts-same-stripeCustomerId")) {
+                log.error("Multiple accounts found for same stripeCustomerId, account emails {}",
+                        accounts.stream().map(Account::getEmail).collect(Collectors.toList()));
+            }
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Multiple accounts share a Stripe customer id");
+        } else if (accounts.size() == 1) {
+            return Optional.of(accounts.get(0));
         } else {
             return Optional.empty();
         }
@@ -813,6 +841,33 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
 
     @Extern
     @Override
+    public Account setStripeCustomerId(String accountId, Optional<String> stripeCustomerIdOpt) {
+        ExpressionBuilder expressionBuilder = accountSchema.expressionBuilder()
+                .conditionExists();
+        if (stripeCustomerIdOpt.isPresent()) {
+            expressionBuilder.set("stripeCustomerId", stripeCustomerIdOpt.get())
+                    .set(accountByStripeCustomerIdSchema.partitionKeyName(), accountByStripeCustomerIdSchema.partitionKey(Map.of("stripeCustomerId", stripeCustomerIdOpt.get())).getValue())
+                    .set(accountByStripeCustomerIdSchema.rangeKeyName(), accountByStripeCustomerIdSchema.rangeKey(Map.of()).getValue());
+        } else {
+            expressionBuilder.remove("stripeCustomerId")
+                    .remove(accountByStripeCustomerIdSchema.partitionKeyName())
+                    .remove(accountByStripeCustomerIdSchema.rangeKeyName());
+        }
+        Expression expression = expressionBuilder.build();
+        Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+                        .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
+                        .withConditionExpression(expression.conditionExpression().orElse(null))
+                        .withUpdateExpression(expression.updateExpression().orElse(null))
+                        .withNameMap(expression.nameMap().orElse(null))
+                        .withValueMap(expression.valMap().orElse(null))
+                        .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem());
+        accountCache.put(accountId, Optional.of(account));
+        return account;
+    }
+
+    @Extern
+    @Override
     public AccountAndIndexingFuture updateName(String accountId, String name) {
         Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
                         .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
@@ -960,16 +1015,35 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
 
     @Override
     public AccountAndIndexingFuture updateStatus(String accountId, SubscriptionStatus status) {
-        Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
-                        .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
-                        .withConditionExpression("attribute_exists(#partitionKey)")
-                        .withUpdateExpression("SET #status = :status")
-                        .withNameMap(new NameMap()
-                                .with("#status", "status")
-                                .with("#partitionKey", accountSchema.partitionKeyName()))
-                        .withValueMap(new ValueMap().with(":status", accountSchema.toDynamoValue("status", status)))
-                        .withReturnValues(ReturnValue.ALL_NEW))
-                .getItem());
+        // Atomic-with-no-op-on-unchanged: we want #statusChangedAt to bump ONLY when #status
+        // actually changes value. Otherwise StripeSyncService's nightly reconcile (which
+        // re-writes the same status) would reset the timer every day and break the 90-day
+        // overdue clock used by StripeOverdueEscalationService.
+        Account account;
+        try {
+            account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+                            .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
+                            .withConditionExpression("attribute_exists(#partitionKey) AND (attribute_not_exists(#status) OR #status <> :status)")
+                            .withUpdateExpression("SET #status = :status, #statusChangedAt = :now")
+                            .withNameMap(new NameMap()
+                                    .with("#status", "status")
+                                    .with("#statusChangedAt", "statusChangedAt")
+                                    .with("#partitionKey", accountSchema.partitionKeyName()))
+                            .withValueMap(new ValueMap()
+                                    .with(":status", accountSchema.toDynamoValue("status", status))
+                                    .with(":now", accountSchema.toDynamoValue("statusChangedAt", Instant.now())))
+                            .withReturnValues(ReturnValue.ALL_NEW))
+                    .getItem());
+        } catch (com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException ex) {
+            // Either account doesn't exist, or status was already the requested value. The
+            // common case is the latter (nightly reconciles); fetch + return current state
+            // so callers see a stable AccountAndIndexingFuture.
+            Optional<Account> existing = getAccount(accountId, false);
+            if (existing.isEmpty()) {
+                throw new ApiException(Response.Status.NOT_FOUND, "Account not found", ex);
+            }
+            return new AccountAndIndexingFuture(existing.get(), Futures.immediateFuture(null));
+        }
         accountCache.put(accountId, Optional.of(account));
 
         SettableFuture<Void> indexingFuture = SettableFuture.create();

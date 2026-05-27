@@ -95,6 +95,77 @@ public interface Billing {
 
     void closeAccount(String accountId);
 
+    /**
+     * Stripe-only: create a Stripe Checkout Session for the given account's plan and return
+     * the redirect URL. Other billing backends throw a clear error.
+     *
+     * <p>{@code targetPlanIdOpt} overrides {@code account.planid} for the session's Stripe
+     * Price lookup. Used by the grandfathered-to-paid upgrade path so the local planid is
+     * only written when Checkout completes (via the webhook/finalize), not eagerly on plan
+     * selection. Empty/absent uses {@code account.planid}.
+     */
+    default String createCheckoutSession(AccountStore.Account account, Optional<String> targetPlanIdOpt) {
+        throw new com.smotana.clearflask.web.ApiException(
+                javax.ws.rs.core.Response.Status.BAD_REQUEST,
+                "Stripe Checkout is not available in this billing mode");
+    }
+
+    /**
+     * Stripe-only: create a Stripe Customer Portal session for the given account and return
+     * the redirect URL.
+     */
+    default String createPortalSession(String accountId) {
+        throw new com.smotana.clearflask.web.ApiException(
+                javax.ws.rs.core.Response.Status.BAD_REQUEST,
+                "Stripe Customer Portal is not available in this billing mode");
+    }
+
+    /**
+     * Stripe-only: finalize a completed Checkout Session by setting account.stripeCustomerId
+     * from the resulting Stripe Customer. Idempotent.
+     */
+    default void finalizeCheckoutSession(String sessionId) {
+        // No-op for non-Stripe backends; the success-URL callback may be hit even if Stripe
+        // isn't the routing target for that account.
+    }
+
+    /**
+     * Stripe-only: cancel any existing (non-terminal) Stripe Subscription on this account
+     * immediately, no proration, no final invoice. Best-effort: never throws -- caller
+     * proceeds even if cancellation fails.
+     */
+    default void cancelAllSubscriptionsImmediately(String accountId) {
+        // No-op for non-Stripe backends.
+    }
+
+    /**
+     * Stripe-only: put the account on a fresh Stripe-billed plan with a new 14-day trial,
+     * as if the user just signed up. Reuses {@code account.stripeCustomerId} if already
+     * set; otherwise creates a new Stripe Customer. Caller is responsible for cancelling
+     * any prior subscription first.
+     *
+     * <p>Throws on non-Stripe backends (the action only makes sense in cloud / Stripe mode).
+     *
+     * @param idempotencySuffix appended to per-account Stripe idempotency keys so that
+     *                          re-running the reset on the same account creates a fresh
+     *                          Subscription rather than returning the prior cancelled one.
+     */
+    default void resetToStripeTrial(AccountStore.Account account, String idempotencySuffix) {
+        throw new com.smotana.clearflask.web.ApiException(
+                javax.ws.rs.core.Response.Status.BAD_REQUEST,
+                "Stripe-trial reset is not available in this billing mode");
+    }
+
+    /**
+     * Returns true if the account currently has a live Stripe Subscription (trialing,
+     * active, past_due, or unpaid). Used by the reset endpoint to gate against
+     * accidentally wiping an actually-paying customer. Returns false on non-Stripe
+     * backends or when the account has no Stripe customer at all.
+     */
+    default boolean hasActiveStripeSubscription(AccountStore.Account account) {
+        return false;
+    }
+
     @Value
     class AccountWithSubscription {
         Account account;

@@ -46,6 +46,8 @@ public class MockModelUtil {
                 null,
                 ImmutableSet.of(),
                 null,
+                null,
+                null,
                 null);
     }
 

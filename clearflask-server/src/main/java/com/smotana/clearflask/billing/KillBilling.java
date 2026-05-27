@@ -17,6 +17,7 @@ import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
+import com.google.inject.name.Names;
 import com.google.inject.name.Named;
 import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.DefaultValue;
@@ -593,8 +594,12 @@ public class KillBilling extends ManagedService implements Billing {
             log.info("Subscription status change {} -> {}, reason: {}, for {}",
                     currentStatus, newStatus, reason, account.getExternalKey());
             accountStore.updateStatus(account.getExternalKey(), newStatus);
-            if (ACTIVETRIAL.equals(currentStatus)) {
-                // Trial ends email notification
+            // Trial-ended email: skip when the new status is ACTIVENORENEWAL, which
+            // means "trial still running but cancel scheduled at period end" -- the
+            // trial is not actually over yet. Firing here would also lock out the
+            // real trial-end notification later (shouldSendTrialEndedNotification is
+            // one-shot per plan id).
+            if (ACTIVETRIAL.equals(currentStatus) && !ACTIVENORENEWAL.equals(newStatus)) {
                 if (accountStore.shouldSendTrialEndedNotification(account.getExternalKey(), subscription.getPlanName())) {
                     Optional<PaymentMethodDetails> paymentOpt = getDefaultPaymentMethodDetails(account.getAccountId());
                     AccountStore.Account accountInDyn = accountStore.getAccount(account.getExternalKey(), false).get();
@@ -1013,7 +1018,9 @@ public class KillBilling extends ManagedService implements Billing {
                                 status,
                                 i.getAmount().doubleValue(),
                                 description,
-                                i.getInvoiceId().toString());
+                                i.getInvoiceId().toString(),
+                                null,
+                                null);
                     })
                     .collect(ImmutableList.toImmutableList());
 
@@ -1487,7 +1494,8 @@ public class KillBilling extends ManagedService implements Billing {
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(Billing.class).to(KillBilling.class).asEagerSingleton();
+                bind(KillBilling.class).asEagerSingleton();
+                bind(Billing.class).annotatedWith(Names.named("killbill")).to(KillBilling.class);
                 install(ConfigSystem.configModule(Config.class));
                 Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(KillBilling.class).asEagerSingleton();
             }
