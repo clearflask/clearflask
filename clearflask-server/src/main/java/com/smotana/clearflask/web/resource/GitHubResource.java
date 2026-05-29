@@ -116,7 +116,9 @@ public class GitHubResource {
                     // 1. We actually don't have permission to (https://github.community/t/delete-a-webhook-from-unwanted-repository/14124/3)
                     // 2. We don't know which project(s) are affected since we can't check the webhooks.
                     // What will happen is the next event from ClearFlask will fail due to acces denied, and that call will remove the link.
-                    log.info("Detected installation removed, installationId {}", event.getInstallation().getId());
+                    // github_app_authorization payloads do not include an installation object, so guard against null.
+                    log.info("Detected installation removed, installationId {}",
+                            event.getInstallation() == null ? null : event.getInstallation().getId());
                 }
                 break;
         }
