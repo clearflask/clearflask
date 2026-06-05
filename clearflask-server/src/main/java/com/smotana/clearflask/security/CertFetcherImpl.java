@@ -42,6 +42,7 @@ import org.shredzone.acme4j.exception.AcmeRateLimitedException;
 import org.shredzone.acme4j.toolbox.AcmeUtils;
 import org.shredzone.acme4j.util.CSRBuilder;
 import org.shredzone.acme4j.util.KeyPairUtils;
+import org.xbill.DNS.ARecord;
 import org.xbill.DNS.Cache;
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.TXTRecord;
@@ -82,6 +83,16 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
 
         @DefaultValue("")
         String staticCert();
+
+        /**
+         * Before attempting an ACME HTTP-01 challenge for a customer's custom domain, verify the
+         * domain's DNS actually resolves to us (the same A record(s) this target resolves to). This
+         * avoids hammering Let's Encrypt and spamming error logs for domains that were set up once
+         * but later re-pointed elsewhere. Should match {@code Sanitizer.Config.sniDomain()}, the
+         * CNAME target customers are instructed to use. Leave empty to disable the check.
+         */
+        @DefaultValue("sni.clearflask.com")
+        String customDomainExpectedCnameTarget();
     }
 
     @Inject
@@ -146,31 +157,51 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
         // Dynamic cert handling
         try {
             String domainToRequest;
+            // Custom domains (a customer's own domain pointed at us) use the ACME HTTP-01 challenge,
+            // which only succeeds if their DNS resolves to us. Our own (sub)domains use a wildcard
+            // cert via the DNS-01 challenge and never need this check.
+            boolean isCustomDomain;
             if (configApp.domain().equals(domain)
                     || domain.endsWith("." + configApp.domain())) {
                 domainToRequest = "*." + configApp.domain();
+                isCustomDomain = false;
             } else if (!projectStore.getProjectBySlug(domain, true).isPresent()) {
                 return Optional.empty();
             } else {
                 domainToRequest = domain;
+                isCustomDomain = true;
             }
 
             Optional<CertModel> certModelOpt = certStore.getCert(domainToRequest, false);
             if (certModelOpt.isPresent()
                     && Instant.now().isAfter(certModelOpt.get().getExpiresAt().minus(renewWithExpiry))
                     && (certModelOpt.get().getRetryAfter() == null || Instant.now().isAfter(certModelOpt.get().getRetryAfter()))) {
-                executor.submit(() -> {
-                    try {
-                        createCert(domainToRequest);
-                    } catch (AcmeRateLimitedException ex) {
-                        log.warn("Acme rate limit for domain {}", domain, ex);
-                        ex.getRetryAfter().ifPresent(retryAfter -> certStore.setCertRetryAfter(domainToRequest, retryAfter));
-                    } catch (Exception ex) {
-                        log.warn("Failed to renew cert for domain {}", domain, ex);
+                if (isCustomDomain && !isCustomDomainPointingToUs(domain)) {
+                    if (LogUtil.rateLimitAllowLog("CertFetcher-custom-domain-dns-mismatch-" + domain)) {
+                        log.info("Skipping cert renewal for custom domain {}, its DNS no longer resolves to us (expected to match {}); serving existing cert until it does",
+                                domain, config.customDomainExpectedCnameTarget());
                     }
-                });
+                } else {
+                    executor.submit(() -> {
+                        try {
+                            createCert(domainToRequest);
+                        } catch (AcmeRateLimitedException ex) {
+                            log.warn("Acme rate limit for domain {}", domain, ex);
+                            ex.getRetryAfter().ifPresent(retryAfter -> certStore.setCertRetryAfter(domainToRequest, retryAfter));
+                        } catch (Exception ex) {
+                            log.warn("Failed to renew cert for domain {}", domain, ex);
+                        }
+                    });
+                }
             }
             if (certModelOpt.isEmpty()) {
+                if (isCustomDomain && !isCustomDomainPointingToUs(domain)) {
+                    if (LogUtil.rateLimitAllowLog("CertFetcher-custom-domain-dns-mismatch-" + domain)) {
+                        log.info("Skipping cert creation for custom domain {}, its DNS does not resolve to us (expected to match {})",
+                                domain, config.customDomainExpectedCnameTarget());
+                    }
+                    return Optional.empty();
+                }
                 synchronized (this) {
                     certModelOpt = certStore.getCert(domainToRequest, true);
                     if (certModelOpt.isEmpty()) {
@@ -202,6 +233,59 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
             }
             return Optional.empty();
         }
+    }
+
+    /**
+     * Returns whether the custom domain currently resolves to us, i.e. shares at least one A record
+     * with our expected CNAME target. This predicts whether an ACME HTTP-01 challenge can succeed
+     * before we bother attempting it. Fails open (returns true) if our own target can't be resolved,
+     * so a transient resolver hiccup never blocks legitimate renewals.
+     */
+    private boolean isCustomDomainPointingToUs(String domain) {
+        String target = config.customDomainExpectedCnameTarget();
+        if (Strings.isNullOrEmpty(target)) {
+            // Check disabled
+            return true;
+        }
+
+        ImmutableSet<String> ourIps;
+        try {
+            ourIps = resolveARecords(target);
+        } catch (Exception ex) {
+            log.warn("Custom domain DNS pre-check: failed to resolve our own target {}, proceeding without check", target, ex);
+            return true;
+        }
+        if (ourIps.isEmpty()) {
+            log.warn("Custom domain DNS pre-check: our own target {} resolved to no A records, proceeding without check", target);
+            return true;
+        }
+
+        ImmutableSet<String> domainIps;
+        try {
+            domainIps = resolveARecords(domain);
+        } catch (Exception ex) {
+            // Domain doesn't resolve at all; it cannot pass an HTTP-01 challenge, so treat as not pointing to us
+            return false;
+        }
+        return domainIps.stream().anyMatch(ourIps::contains);
+    }
+
+    private ImmutableSet<String> resolveARecords(String host) throws Exception {
+        // Use a fresh, cache-less lookup so DNS changes are picked up immediately (mirrors dnsChallengeSetup)
+        Cache cache = new Cache();
+        cache.setMaxCache(0);
+        cache.setMaxNCache(0);
+        cache.setMaxEntries(0);
+        Lookup lookup = new Lookup(host, Type.A);
+        lookup.setCache(cache);
+        org.xbill.DNS.Record[] records = lookup.run();
+        if (records == null) {
+            return ImmutableSet.of();
+        }
+        return Arrays.stream(records)
+                .filter(r -> r instanceof ARecord)
+                .map(r -> ((ARecord) r).getAddress().getHostAddress())
+                .collect(ImmutableSet.toImmutableSet());
     }
 
     @SneakyThrows

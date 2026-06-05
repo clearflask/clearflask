@@ -10,7 +10,11 @@ import com.smotana.clearflask.api.model.Cert;
 import com.smotana.clearflask.api.model.CertGetOrCreateResponse;
 import com.smotana.clearflask.api.model.Keypair;
 import com.smotana.clearflask.store.CertStore;
+import com.smotana.clearflask.store.CertStore.CertModel;
+import com.smotana.clearflask.store.CertStore.KeypairModel;
+import com.smotana.clearflask.store.CertStore.KeypairModel.KeypairType;
 import com.smotana.clearflask.store.ProjectStore;
+import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.testutil.AbstractTest;
 import io.dataspray.singletable.SingleTable;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +26,15 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @Slf4j
 public class CertFetcherImplTest extends AbstractTest {
@@ -187,6 +200,10 @@ public class CertFetcherImplTest extends AbstractTest {
     CertFetcher certFetcher;
     @Inject
     Gson gson;
+    @Inject
+    CertStore certStore;
+    @Inject
+    ProjectStore projectStore;
 
     @Override
     protected void configure() {
@@ -233,5 +250,94 @@ public class CertFetcherImplTest extends AbstractTest {
         configSource.set(configSource.id(CertFetcherImpl.Config.class).staticCert())
                 .toValue("invalid json");
         certFetcher.getOrCreateCertAndKeypair("clearflask.com");
+    }
+
+    /**
+     * The pre-flight DNS check (the new code) is exercised end-to-end through the real
+     * {@link CertFetcher#getOrCreateCertAndKeypair} entry point with a faked project, against live
+     * DNS. These are not mere "does the DNS record exist" assertions: they drive the actual cert
+     * decision and assert whether the ACME cert path was entered or short-circuited.
+     *
+     * Custom domains used (chosen because they are stable and outside clearflask.com):
+     * - sandbox.smotana.com  -> CNAME sni.clearflask.com -> our IP   (correctly points to us)
+     * - example.com          -> IANA IPs, never ours                 (does not point to us)
+     */
+
+    /**
+     * A custom domain whose DNS correctly resolves to us must NOT be skipped: the code must proceed
+     * past the gate into the cert path. We park a cert on the strongly-consistent read so it returns
+     * without ever contacting Let's Encrypt, and verify that strong read happened (proof the gate
+     * let it through rather than short-circuiting).
+     */
+    @Test(timeout = 30_000L)
+    public void testCustomDomainPointingToUsProceedsToCertPath() throws Exception {
+        String domain = "sandbox.smotana.com";
+        when(projectStore.getProjectBySlug(anyString(), anyBoolean())).thenReturn(Optional.of(mock(Project.class)));
+        when(certStore.getCert(eq(domain), eq(false))).thenReturn(Optional.empty());
+        when(certStore.getCert(eq(domain), eq(true))).thenReturn(Optional.of(sampleCertModel(domain)));
+        when(certStore.getKeypair(eq(KeypairType.CERT), eq(domain))).thenReturn(Optional.of(sampleKeypairModel(domain)));
+
+        Optional<CertGetOrCreateResponse> result = certFetcher.getOrCreateCertAndKeypair(domain);
+
+        assertTrue("Expected the existing cert to be served for a correctly-pointed custom domain", result.isPresent());
+        // Reaching the strongly-consistent read proves the DNS gate did NOT skip this domain
+        verify(certStore).getCert(domain, true);
+    }
+
+    /**
+     * A custom domain whose DNS does NOT resolve to us must be skipped before any ACME attempt:
+     * the method returns empty, never reaches the cert-creation path (the strong read), and never
+     * persists a cert.
+     */
+    @Test(timeout = 30_000L)
+    public void testCustomDomainNotPointingToUsSkipsCertPath() throws Exception {
+        String domain = "example.com";
+        when(projectStore.getProjectBySlug(anyString(), anyBoolean())).thenReturn(Optional.of(mock(Project.class)));
+        when(certStore.getCert(eq(domain), eq(false))).thenReturn(Optional.empty());
+
+        Optional<CertGetOrCreateResponse> result = certFetcher.getOrCreateCertAndKeypair(domain);
+
+        assertEquals(Optional.empty(), result);
+        // Must short-circuit before the cert-creation path and never touch Let's Encrypt / persist anything
+        verify(certStore, never()).getCert(eq(domain), eq(true));
+        verify(certStore, never()).setCert(any());
+    }
+
+    /**
+     * With the check disabled (empty target), even a domain that does not point to us proceeds past
+     * the gate into the cert path, confirming the switch genuinely gates the new behavior.
+     */
+    @Test(timeout = 30_000L)
+    public void testCustomDomainCheckDisabledProceedsToCertPath() throws Exception {
+        configSource.set(configSource.id(CertFetcherImpl.Config.class).customDomainExpectedCnameTarget())
+                .toValue("");
+        String domain = "example.com";
+        when(projectStore.getProjectBySlug(anyString(), anyBoolean())).thenReturn(Optional.of(mock(Project.class)));
+        when(certStore.getCert(eq(domain), eq(false))).thenReturn(Optional.empty());
+        when(certStore.getCert(eq(domain), eq(true))).thenReturn(Optional.of(sampleCertModel(domain)));
+        when(certStore.getKeypair(eq(KeypairType.CERT), eq(domain))).thenReturn(Optional.of(sampleKeypairModel(domain)));
+
+        Optional<CertGetOrCreateResponse> result = certFetcher.getOrCreateCertAndKeypair(domain);
+
+        assertTrue(result.isPresent());
+        verify(certStore).getCert(domain, true);
+    }
+
+    private static CertModel sampleCertModel(String domain) {
+        Instant now = Instant.now();
+        return CertModel.builder()
+                .domain(domain)
+                .cert("-----BEGIN CERTIFICATE-----\nsample\n-----END CERTIFICATE-----")
+                .chain("-----BEGIN CERTIFICATE-----\nchain\n-----END CERTIFICATE-----")
+                .altnames(List.of(domain))
+                .issuedAt(now.minus(Duration.ofDays(1)))
+                .expiresAt(now.plus(Duration.ofDays(60)))
+                .ttlInEpochSec(now.plus(Duration.ofDays(60)).getEpochSecond())
+                .build();
+    }
+
+    private static KeypairModel sampleKeypairModel(String domain) {
+        // toApiKeypair() just wraps the PEM string, so the contents need not be a real key here
+        return new KeypairModel(domain, KeypairType.CERT, SAMPLE_CERT.getKeypair().getPrivateKeyPem());
     }
 }
