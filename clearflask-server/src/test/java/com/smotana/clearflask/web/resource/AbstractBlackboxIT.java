@@ -306,6 +306,14 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
         ).with(new AbstractModule() {
             @Override
             protected void configure() {
+                // In prod the unannotated Billing / PlanStore are provided by BillingRouter
+                // / PlanStoreRouter, which in turn fan out to KillBilling/StripeBilling/NoOpBilling
+                // (and their PlanStore counterparts). This IT exercises the resource layer and
+                // doesn't care about the routing, so bind the unannotated keys directly to the
+                // KillBill impls -- avoids pulling in StripeBilling and its ServiceSecretStore
+                // dep, which would expand test wiring without exercising anything we test here.
+                bind(com.smotana.clearflask.billing.Billing.class).to(KillBilling.class);
+                bind(com.smotana.clearflask.billing.PlanStore.class).to(KillBillPlanStore.class);
                 install(ConfigSystem.overrideModule(KillBilling.Config.class, om -> {
                     om.override(om.id().reuseDraftInvoices()).withValue(false);
                 }));
