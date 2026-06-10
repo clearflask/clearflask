@@ -959,6 +959,13 @@ public class DynamoProjectStore implements ProjectStore {
         }
 
         @Override
+        public ImmutableSet<WebhookListener> getAllWebhookListeners() {
+            return webhookEventToListeners.values().stream()
+                    .flatMap(ImmutableSet::stream)
+                    .collect(ImmutableSet.toImmutableSet());
+        }
+
+        @Override
         public String getHostnameFromSubdomain() {
             return versionedConfigAdmin.getConfig().getSlug() + "." + configApp.domain();
         }

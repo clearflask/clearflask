@@ -137,6 +137,8 @@ public interface ProjectStore {
 
         ImmutableSet<WebhookListener> getWebhookListenerUrls(WebhookListener.ResourceType resourceType, String eventType);
 
+        ImmutableSet<WebhookListener> getAllWebhookListeners();
+
         String getHostnameFromSubdomain();
 
         Optional<String> getHostnameFromDomain();
