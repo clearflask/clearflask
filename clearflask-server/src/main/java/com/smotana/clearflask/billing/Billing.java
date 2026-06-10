@@ -130,6 +130,17 @@ public interface Billing {
     }
 
     /**
+     * Cancel a subscription as part of an internal migration (e.g. KillBill -> Stripe handoff).
+     * Bypasses the user-facing guards that {@link #cancelSubscription} enforces — specifically,
+     * KillBilling refuses to cancel a TRIAL-phase subscription via the normal path
+     * ("delete account instead"), which blocks a migration where the user is mid-trial.
+     * Implementations should cancel best-effort.
+     */
+    default Subscription cancelSubscriptionForMigration(String accountId) {
+        return cancelSubscription(accountId);
+    }
+
+    /**
      * Stripe-only: cancel any existing (non-terminal) Stripe Subscription on this account
      * immediately, no proration, no final invoice. Best-effort: never throws -- caller
      * proceeds even if cancellation fails.

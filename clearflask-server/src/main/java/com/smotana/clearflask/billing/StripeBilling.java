@@ -30,6 +30,7 @@ import com.stripe.model.Subscription;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.RequestOptions;
 import com.stripe.param.CustomerCreateParams;
+import com.stripe.param.CustomerUpdateParams;
 import com.stripe.param.PriceCreateParams;
 import com.stripe.param.PriceListParams;
 import com.stripe.param.SubscriptionCancelParams;
@@ -138,6 +139,15 @@ public class StripeBilling extends ManagedService implements Billing {
     private com.smotana.clearflask.core.push.NotificationService notificationService;
     @Inject
     private PlanVerifyStore planVerifyStore;
+    /**
+     * KillBilling backend, used during Checkout-driven migration of a KB-routed account to
+     * Stripe. We need to (1) honor the KB charged-through-date as the Stripe trial_end so
+     * the customer isn't double-billed, and (2) cancel the KB sub end-of-term after Checkout
+     * completes. Injected via the same @Named binding as BillingRouter.
+     */
+    @Inject
+    @com.google.inject.name.Named("killbill")
+    private Billing killBilling;
 
     /** Public-facing app URL derived from {@code Application.Config.domain}. */
     private String publicUrl() {
@@ -211,7 +221,36 @@ public class StripeBilling extends ManagedService implements Billing {
             SessionCreateParams.SubscriptionData.Builder subData = SessionCreateParams.SubscriptionData.builder()
                     .putMetadata(META_CLEARFLASK_ACCOUNT_ID, accountInDyn.getAccountId())
                     .putMetadata(META_CLEARFLASK_PLAN_ID, planId);
-            if (!PlanStore.PLANS_WITHOUT_TRIAL.contains(planId)) {
+            // If the account is currently KB-billed with a chargedThroughDate in the future,
+            // the customer has effectively pre-paid through that date and must NOT be
+            // double-billed by Stripe. Pass it as trial_end so the first Stripe charge lands
+            // exactly when KB would have billed. Falls back to the default 14-day trial for
+            // fresh signups and free-to-paid upgrades. Marks the resulting sub as migrated
+            // so the entitlement mapper surfaces it as ACTIVE (not ACTIVETRIAL).
+            Long migrationTrialEndEpoch = null;
+            if (!Strings.isNullOrEmpty(accountInDyn.getStripeCustomerId())) {
+                // Already Stripe-billed; no KB sub to harmonize with.
+            } else {
+                try {
+                    org.killbill.billing.client.model.gen.Subscription kbSub =
+                            killBilling.getSubscription(accountInDyn.getAccountId());
+                    if (kbSub != null && kbSub.getChargedThroughDate() != null) {
+                        long epoch = kbSub.getChargedThroughDate()
+                                .toDateTimeAtStartOfDay().getMillis() / 1000;
+                        // Only use it if it's in the future; otherwise stale and Stripe rejects.
+                        if (epoch > java.time.Instant.now().getEpochSecond() + 60) {
+                            migrationTrialEndEpoch = epoch;
+                        }
+                    }
+                } catch (Exception ex) {
+                    log.info("createCheckoutSession: no usable KB chargedThroughDate for account {} ({}); using default trial",
+                            accountInDyn.getAccountId(), ex.getMessage());
+                }
+            }
+            if (migrationTrialEndEpoch != null) {
+                subData.setTrialEnd(migrationTrialEndEpoch);
+                subData.putMetadata(META_MIGRATED_FROM_KILLBILL, "true");
+            } else if (!PlanStore.PLANS_WITHOUT_TRIAL.contains(planId)) {
                 subData.setTrialPeriodDays(config.defaultTrialDays());
             }
 
@@ -222,8 +261,12 @@ public class StripeBilling extends ManagedService implements Billing {
                             .setPrice(priceId)
                             .setQuantity(1L)
                             .build())
-                    .setSuccessUrl(publicUrl() + "/dashboard/billing?checkout_session_id={CHECKOUT_SESSION_ID}")
-                    .setCancelUrl(publicUrl() + "/dashboard/billing?checkout=cancelled")
+                    // /dashboard/billing is a RedirectIso shortcut that does not preserve
+                    // query params -- it bounces straight to /dashboard/settings/account/billing
+                    // and strips ?checkout_session_id, so the BillingPage success-URL handler
+                    // never sees it. Send Stripe directly to the canonical billing path.
+                    .setSuccessUrl(publicUrl() + "/dashboard/settings/account/billing?checkout_session_id={CHECKOUT_SESSION_ID}")
+                    .setCancelUrl(publicUrl() + "/dashboard/settings/account/billing?checkout=cancelled")
                     .setSubscriptionData(subData.build())
                     .setAllowPromotionCodes(true)
                     .putMetadata(META_CLEARFLASK_ACCOUNT_ID, accountInDyn.getAccountId())
@@ -232,6 +275,21 @@ public class StripeBilling extends ManagedService implements Billing {
 
             Session session = Session.create(params, idempotency(accountInDyn.getAccountId(),
                     "checkoutSession:" + planId));
+            // Recovery for the idempotency-key dead-end: if the user already completed this
+            // Checkout in a prior visit and is clicking "Add card" again, Stripe returns the
+            // SAME (now complete) session. Its hosted page renders "You're all done here"
+            // with no recovery path. Detect it, finalize defensively (in case the
+            // success-URL/webhook path missed), and redirect back to the local billing page
+            // with the session_id so the dashboard refreshes onto its post-migration state.
+            if ("complete".equals(session.getStatus())) {
+                try {
+                    finalizeCheckoutSession(session.getId());
+                } catch (Exception ex) {
+                    log.warn("createCheckoutSession: defensive finalize of complete session {} failed ({}); continuing",
+                            session.getId(), ex.getMessage());
+                }
+                return publicUrl() + "/dashboard/settings/account/billing?checkout_session_id=" + session.getId();
+            }
             return session.getUrl();
         } catch (StripeException ex) {
             throw stripeError("createCheckoutSession", accountInDyn.getAccountId(), ex);
@@ -295,6 +353,44 @@ public class StripeBilling extends ManagedService implements Billing {
             accountStore.setStripeCustomerId(accountId, Optional.of(customerId));
             log.info("Finalized Checkout session {} -> account {} -> stripeCustomerId {}",
                     sessionId, accountId, customerId);
+            // Stripe Checkout attaches the entered card as the *subscription's*
+            // default_payment_method but does NOT set it on customer.invoice_settings.
+            // Our BillingPage reads customer.invoice_settings.default_payment_method via
+            // getDefaultPaymentMethodDetails -- without this propagation the UI shows
+            // "no payment method on file" after a successful Checkout. Mirror the sub's
+            // PM onto the customer so future invoices + the UI both see it.
+            try {
+                String subId = session.getSubscription();
+                if (!Strings.isNullOrEmpty(subId)) {
+                    Subscription createdSub = Subscription.retrieve(subId);
+                    String subPmId = createdSub.getDefaultPaymentMethod();
+                    if (!Strings.isNullOrEmpty(subPmId)) {
+                        Customer.retrieve(customerId).update(CustomerUpdateParams.builder()
+                                .setInvoiceSettings(CustomerUpdateParams.InvoiceSettings.builder()
+                                        .setDefaultPaymentMethod(subPmId)
+                                        .build())
+                                .build());
+                        log.info("Finalized Checkout session {}: propagated PM {} -> customer {}.invoice_settings",
+                                sessionId, subPmId, customerId);
+                    }
+                }
+            } catch (Exception ex) {
+                log.warn("Finalized Checkout session {}: failed to propagate default_payment_method to customer ({})",
+                        sessionId, ex.getMessage());
+            }
+            // Account just transitioned from KB-routed (or NoOp-routed) to Stripe-routed.
+            // Cancel the live KB subscription so it doesn't keep generating invoices alongside
+            // the new Stripe sub. cancelSubscriptionForMigration bypasses the user-facing
+            // trial-phase guard. Best-effort: a stale KB sub is operator-fixable, but a failed
+            // cancel must not undo the Checkout completion.
+            try {
+                killBilling.cancelSubscriptionForMigration(accountId);
+                log.info("Finalized Checkout session {}: cancelled KB subscription for account {}",
+                        sessionId, accountId);
+            } catch (Exception ex) {
+                log.warn("Finalized Checkout session {}: failed to cancel KB sub for account {} ({}); cancel manually in KB Kaui",
+                        sessionId, accountId, ex.getMessage());
+            }
         } catch (StripeException ex) {
             throw stripeError("finalizeCheckoutSession", sessionId, ex);
         }

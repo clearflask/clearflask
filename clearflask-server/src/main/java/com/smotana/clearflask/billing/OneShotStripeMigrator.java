@@ -75,11 +75,20 @@ public class OneShotStripeMigrator {
         // 2. Find or create Stripe Customer
         Customer customer = findOrCreateCustomer(a, dryRun, report);
 
-        // 3. Default payment method
+        // 3. Detect a usable payment method on the Stripe Customer. Modern PaymentMethods
+        // (pm_*) are preferred — but for customers carried over from the KillBill-Stripe
+        // plugin, the saved card is a legacy Card/Source attached as
+        // customer.default_source (card_* / src_* ID). Both work for charging a
+        // Subscription: Stripe applies customer.invoice_settings.default_payment_method
+        // first, then falls back to customer.default_source. We must NOT force the
+        // customer to re-enter their card.
         String defaultPmId = customer.getInvoiceSettings() == null
                 ? null : customer.getInvoiceSettings().getDefaultPaymentMethod();
-        if (Strings.isNullOrEmpty(defaultPmId)) {
-            // Look for any payment method on this Customer.
+        String defaultSourceId = null;
+        if (!Strings.isNullOrEmpty(defaultPmId)) {
+            report.append("  default PaymentMethod (pm_): ").append(defaultPmId).append("\n");
+        } else {
+            // No modern PM set as default — look for any attached pm_*.
             com.stripe.model.PaymentMethodCollection pms = com.stripe.model.PaymentMethod.list(
                     com.stripe.param.PaymentMethodListParams.builder()
                             .setCustomer(customer.getId())
@@ -87,7 +96,7 @@ public class OneShotStripeMigrator {
                             .build());
             if (!pms.getData().isEmpty()) {
                 defaultPmId = pms.getData().get(0).getId();
-                report.append("  found existing payment method: ").append(defaultPmId).append("\n");
+                report.append("  found attached PaymentMethod (pm_): ").append(defaultPmId).append("\n");
                 if (!dryRun) {
                     customer.update(CustomerUpdateParams.builder()
                             .setInvoiceSettings(CustomerUpdateParams.InvoiceSettings.builder()
@@ -95,11 +104,18 @@ public class OneShotStripeMigrator {
                                     .build())
                             .build());
                 }
+            } else if (!Strings.isNullOrEmpty(customer.getDefaultSource())) {
+                // Legacy Card/Source — what the KillBill-Stripe plugin attaches.
+                // Stripe still charges this when there is no default_payment_method.
+                // Pass it explicitly via subscription.default_source so the binding is
+                // unambiguous even if customer.default_source changes later.
+                defaultSourceId = customer.getDefaultSource();
+                report.append("  found legacy Card on customer.default_source: ").append(defaultSourceId)
+                        .append(" (Stripe will charge this; customer does NOT need to re-enter card)\n");
             } else {
-                report.append("  WARNING: no payment method on Stripe customer; subscription will be created in 'incomplete' state and the customer will need to add a card.\n");
+                report.append("  WARNING: no PaymentMethod (pm_*) and no default_source (card_*/src_*) on Stripe customer; "
+                        + "subscription will be created in 'incomplete' state and the customer will need to add a card.\n");
             }
-        } else {
-            report.append("  default payment method: ").append(defaultPmId).append("\n");
         }
 
         // 4. Compute trial_end from KB chargedThroughDate. Using trial_end (not
@@ -138,6 +154,11 @@ public class OneShotStripeMigrator {
                 .putMetadata(StripeBilling.META_CLEARFLASK_ACCOUNT_ID, accountId)
                 .putMetadata(StripeBilling.META_CLEARFLASK_PLAN_ID, a.getPlanid())
                 .putMetadata(StripeBilling.META_MIGRATED_FROM_KILLBILL, "true");
+        if (defaultSourceId != null) {
+            // Bind the legacy Card explicitly so the subscription doesn't depend on
+            // customer.default_source remaining unchanged through the trial_end handoff.
+            subParams.setDefaultSource(defaultSourceId);
+        }
         if (trialEndEpoch != null) {
             subParams.setTrialEnd(trialEndEpoch);
             // Don't surface a "trial ended" email at the actual end of this synthetic trial;

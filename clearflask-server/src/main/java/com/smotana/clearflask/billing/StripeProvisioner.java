@@ -102,7 +102,17 @@ public class StripeProvisioner {
             // flat-yearly: variable price set by super-admin at change time.
             new PlanSpec("flat-yearly", "Business", null, "year",
                     ImmutableSet.of("custom_domain", "private_projects", "api_access",
-                            "whitelabel", "unlimited_teammates", "extra_project"))
+                            "whitelabel", "unlimited_teammates", "extra_project")),
+            // Grandfathered selfhost plan ($108/yr) — kept in Stripe so the one customer
+            // on this legacy price can be migrated without a price hike to selfhost-yearly2.
+            new PlanSpec("selfhost-yearly", "Self-host Plan (Grandfathered)", 10800L, "year",
+                    ImmutableSet.of("custom_domain", "private_projects", "api_access",
+                            "whitelabel", "unlimited_teammates")),
+            // Grandfathered sponsor-monthly price-override variant at $29/mo
+            // (KillBill auto-suffixed plan_name for the override). One existing customer.
+            new PlanSpec("sponsor-monthly-5", "Sponsor (Grandfathered)", 2900L, "month",
+                    ImmutableSet.of("custom_domain", "private_projects", "whitelabel",
+                            "unlimited_teammates"))
     );
 
     /**

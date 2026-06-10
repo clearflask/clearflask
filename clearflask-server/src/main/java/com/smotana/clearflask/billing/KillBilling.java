@@ -722,21 +722,52 @@ public class KillBilling extends ManagedService implements Billing {
                 throw new ApiException(Response.Status.BAD_REQUEST, "Not allowed to cancel, delete account instead");
             }
 
-            kbSubscription.cancelSubscriptionPlan(
-                    subscriptionInKb.getSubscriptionId(),
-                    null,
-                    true,
-                    TimeUnit.MILLISECONDS.toSeconds(config.callTimeoutInMillis()),
+            cancelInKb(subscriptionInKb.getSubscriptionId(),
                     Entitlement.EntitlementActionPolicy.END_OF_TERM,
-                    BillingActionPolicy.END_OF_TERM,
-                    null,
-                    ImmutableMap.of(),
-                    KillBillUtil.roDefault());
+                    BillingActionPolicy.END_OF_TERM);
             return getSubscription(accountId);
         } catch (KillBillClientException ex) {
             log.warn("Failed to cancel KillBill subscription for account id {}", accountId, ex);
             throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to cancel subscription", ex);
         }
+    }
+
+    /**
+     * Bypass the user-facing trial guard. Used by the StripeBilling migration handoff: we just
+     * set account.stripeCustomerId and need KillBill to stop generating invoices, regardless of
+     * what phase the sub is in. IMMEDIATE policy because there's nothing left for KillBill to
+     * bill (Stripe owns the customer now).
+     * <p>JMX-exposed so operators can manually clean up half-migrated accounts whose webhook
+     * or success-URL finalize succeeded at the Stripe step but failed at the KB cancel step.
+     */
+    @Extern
+    @Override
+    public Subscription cancelSubscriptionForMigration(String accountId) {
+        try {
+            Subscription subscriptionInKb = getSubscription(accountId);
+            cancelInKb(subscriptionInKb.getSubscriptionId(),
+                    Entitlement.EntitlementActionPolicy.IMMEDIATE,
+                    BillingActionPolicy.IMMEDIATE);
+            return getSubscription(accountId);
+        } catch (KillBillClientException ex) {
+            log.warn("Failed to migration-cancel KillBill subscription for account id {}", accountId, ex);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to cancel subscription", ex);
+        }
+    }
+
+    private void cancelInKb(UUID subscriptionId,
+                            Entitlement.EntitlementActionPolicy entitlementPolicy,
+                            BillingActionPolicy billingPolicy) throws KillBillClientException {
+        kbSubscription.cancelSubscriptionPlan(
+                subscriptionId,
+                null,
+                true,
+                TimeUnit.MILLISECONDS.toSeconds(config.callTimeoutInMillis()),
+                entitlementPolicy,
+                billingPolicy,
+                null,
+                ImmutableMap.of(),
+                KillBillUtil.roDefault());
     }
 
     @Extern

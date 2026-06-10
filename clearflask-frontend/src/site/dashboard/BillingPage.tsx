@@ -53,6 +53,7 @@ import StripeCreditCard from '../../common/StripeCreditCard';
 import SubmitButton from '../../common/SubmitButton';
 import { TourAnchor, TourDefinitionGuideState } from '../../common/tour';
 import { initialWidth } from '../../common/util/screenUtil';
+import { isStripeBilledPlan } from '../../common/util/stripePlanIds';
 import { trackingBlock } from '../../common/util/trackingDelay';
 import windowIso from '../../common/windowIso';
 import PricingPlan from '../PricingPlan';
@@ -264,6 +265,40 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       }
     } catch (e) {
       console.warn('Stripe Customer Portal session creation failed', e);
+    }
+  }
+
+  // Used by KB-routed accounts when they hit "Add payment method" / "Update payment method".
+  // Routing them through Stripe Checkout (rather than the inline KillBill card form below)
+  // is what migrates them onto Stripe direct billing -- the success-URL handler at the top
+  // of this file calls accountBillingCheckoutCompleteAdmin, which sets stripeCustomerId AND
+  // cancels the KB sub end-of-term.
+  //
+  // Branching: if the account's current planid IS a Stripe-billable paid plan, send straight
+  // to Checkout for that plan. If it's a grandfathered free/NoOp plan (cloud-free,
+  // teammate-unlimited, *-lifetime, pitchground-*) the server has no Stripe Price for it
+  // and would 500. In that case open the existing plan-change dialog so the user picks a
+  // paid plan; the dialog's submit handler at line ~1240 already does
+  // accountUpdateAdmin -> 409 -> accountBillingCheckoutSessionAdmin(planId) for the picked
+  // plan, which is exactly the upgrade-to-paid flow we want.
+  async startCheckoutForCurrentPlan() {
+    const currentPlanId = this.props.accountBilling?.plan.basePlanId;
+    if (!isStripeBilledPlan(currentPlanId)) {
+      this.setState({ showPlanChange: true });
+      return;
+    }
+    try {
+      this.setState({ isSubmitting: true });
+      const d = await ServerAdmin.get().dispatchAdmin();
+      const session = await d.accountBillingCheckoutSessionAdmin({ planId: '' });
+      if (session?.url) {
+        windowIso.location.href = session.url;
+        return;
+      }
+      this.setState({ isSubmitting: false });
+    } catch (e) {
+      console.warn('Stripe Checkout session creation failed (add-card flow)', e);
+      this.setState({ isSubmitting: false });
     }
   }
 
@@ -503,13 +538,16 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       endOfTermChangeToPlanTitle = `Pending plan change to ${this.props.accountBilling.endOfTermChangeToPlan.title}`;
       endOfTermChangeToPlanDesc = `Your requested change of plans to ${this.props.accountBilling.endOfTermChangeToPlan.title} plan will take effect at the end of the term.`;
     }
-    // Stripe-billed accounts with a payment method on file get a single "Manage
-    // subscription" CTA that opens the Customer Portal. The portal is the entry
-    // point for updating cards, downloading invoices, and cancelling -- so the
-    // narrow "Update payment method" label was hiding everything else.
+    // Stripe-billed accounts get a single "Manage subscription" CTA that opens the
+    // Customer Portal. The portal is the entry point for updating cards, downloading
+    // invoices, and cancelling -- so the narrow "Update payment method" label was
+    // hiding everything else. We deliberately do NOT gate on `payment`: a half-
+    // migrated account (stripeCustomerId set but customer.invoice_settings.
+    // default_payment_method not yet propagated) shows "Add payment method" otherwise
+    // even though the click correctly goes to Portal.
     if (this.props.accountBilling?.isStripeBilled
-        && this.props.accountBilling?.payment
-        && setPaymentTitle === 'Update payment method') {
+        && (setPaymentTitle === 'Update payment method'
+            || setPaymentTitle === 'Add payment method')) {
       setPaymentTitle = 'Manage subscription';
     }
     switch (cardState) {
@@ -1312,14 +1350,18 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
                             }),
                           );
                         });
-                        // Stripe-billed accounts go to Customer Portal instead of the inline
-                        // KillBill credit-card dialog. Same button label, different action.
+                        // Stripe-billed accounts go to Customer Portal. KB-routed accounts
+                        // (legacy + the freshly-trial-ended fleet that never added a card)
+                        // go to Stripe Checkout: success-URL handler sets stripeCustomerId
+                        // and cancels the KB sub, completing the migration in one step.
+                        // The inline <StripeCreditCard> dialog below now only exists as a
+                        // dead-code fallback path; no UI surface still triggers it.
                         if (this.props.accountBilling?.isStripeBilled) {
                           this.openStripePortal();
                           return;
                         }
-                        this.setState({ showAddPayment: true });
-                        next();
+                        this.startCheckoutForCurrentPlan();
+                        return;
                       }}
                     >
                       {setPaymentTitle}
