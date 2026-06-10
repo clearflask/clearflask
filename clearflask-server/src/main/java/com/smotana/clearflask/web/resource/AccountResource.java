@@ -64,7 +64,8 @@ import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.Billing.Gateway;
 import com.smotana.clearflask.billing.CouponStore;
 import com.smotana.clearflask.billing.CouponStore.CouponModel;
-import com.smotana.clearflask.billing.KillBillPlanStore;
+import com.smotana.clearflask.billing.PlanConstants;
+import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.billing.PlanStore;
 import com.smotana.clearflask.billing.PlanStore.PlanWithAddons;
 import com.smotana.clearflask.billing.PlanVerifyStore;
@@ -736,7 +737,7 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
                 throw new ApiException(Response.Status.BAD_REQUEST, "Invalid number of teammates to add");
             }
             long extraTeammates = Optional.ofNullable(account.getAddons())
-                    .flatMap(addons -> Optional.ofNullable(addons.get(KillBillPlanStore.ADDON_EXTRA_TEAMMATE)))
+                    .flatMap(addons -> Optional.ofNullable(addons.get(PlanConstants.ADDON_EXTRA_TEAMMATE)))
                     .map(Longs::tryParse)
                     .orElse(0L);
             long adminAdditionalPrice = planStore.getPlan(account.getPlanid(), Optional.of(account.getAccountId()))
@@ -746,7 +747,7 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
                     .orElseThrow(() -> new ApiException(Response.Status.BAD_REQUEST, "Cannot add teammates to this plan"));
             billing.creditAdjustment(account.getAccountId(), -adminAdditionalPrice * accountUpdateAdmin.getAddExtraTeammates(), "Additional " + accountUpdateAdmin.getAddExtraTeammates() + " teammates");
             accountStore.updateAddons(account.getAccountId(), ImmutableMap.of(
-                            KillBillPlanStore.ADDON_EXTRA_TEAMMATE,
+                            PlanConstants.ADDON_EXTRA_TEAMMATE,
                             Long.toString(extraTeammates + accountUpdateAdmin.getAddExtraTeammates())),
                     false);
         }
@@ -1236,7 +1237,7 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
         }
 
         Long postCount = null;
-        if (KillBillPlanStore.PLAN_MAX_POSTS.containsKey(plan.getBasePlanId())) {
+        if (PlanConstants.PLAN_MAX_POSTS.containsKey(plan.getBasePlanId())) {
             postCount = accountStore.getPostCountForAccount(account.getAccountId());
         }
 
@@ -1249,7 +1250,7 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
         Long teammateMax = null;
         if (PlanStore.LIFETIME_TEAMMATES_FOR_PLANS.contains(plan.getBasePlanId())) {
             teammateMax = Optional.ofNullable(account.getAddons())
-                    .flatMap(addons -> Optional.ofNullable(addons.get(KillBillPlanStore.ADDON_EXTRA_TEAMMATE)))
+                    .flatMap(addons -> Optional.ofNullable(addons.get(PlanConstants.ADDON_EXTRA_TEAMMATE)))
                     .map(Longs::tryParse)
                     .orElse(0L)
                     + Optional.ofNullable(plan.getPricing())
@@ -1294,7 +1295,7 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
         Optional<AccountBillingPaymentActionRequired> actions = billing.getActions(subscription.getAccountId());
 
         String purchasedLicenseKey = null;
-        if (KillBillPlanStore.SELFHOST_SERVICE_PLANS.contains(plan.getBasePlanId())
+        if (PlanStore.SELFHOST_SERVICE_PLANS.contains(plan.getBasePlanId())
                 // Only show license if account is in good standing
                 && localLicenseStore.validateLicenseLocally(
                 localLicenseStore.getLicense(accountId),

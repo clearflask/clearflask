@@ -42,10 +42,14 @@ Plus three layers of redundancy after the cut:
 `billing.getSubscription(accountId).getEvents()`), so it's backend-agnostic.
 No change needed.
 
-**One subtle gap to verify before the delete commit:** confirm
-`StripeWebhookResource.processSubscriptionChanged` triggers `OnTrialEnded` at
-the actual TRIAL → EVERGREEN transition (not just at `subscription.deleted`).
-A quick read of the switch-case is sufficient; no test gymnastics.
+**OnTrialEnded path verified (2026-06-10):** `StripeBilling.updateAndGetEntitlementStatus`
+(lines 655-676) fires `notificationService.onTrialEnded(account, hasPaymentMethod)` on
+any `ACTIVETRIAL → non-ACTIVENORENEWAL` transition, guarded by
+`accountStore.shouldSendTrialEndedNotification` for one-shot semantics. The Stripe
+webhook `customer.subscription.updated` path (`onSubscriptionChanged`) calls this
+when Stripe transitions the sub from `trialing` to `active` at `trial_end`. For the
+3 migrated customers, no email fires (their pre-migration status was ACTIVE, no
+transition detected) — correct, they were already paying.
 
 ## B. Code-path dependencies to replace
 

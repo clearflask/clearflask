@@ -5,7 +5,7 @@ import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.smotana.clearflask.billing.Billing;
-import com.smotana.clearflask.billing.KillBillPlanStore;
+import com.smotana.clearflask.billing.PlanStore;
 import lombok.extern.slf4j.Slf4j;
 import org.killbill.billing.client.model.gen.Account;
 
@@ -38,7 +38,7 @@ public class CloudLocalLicenseStore implements LocalLicenseStore {
         }
         AccountStore.Account account = accountOpt.get();
 
-        if (!KillBillPlanStore.SELFHOST_SERVICE_PLANS.contains(account.getPlanid())) {
+        if (!PlanStore.SELFHOST_SERVICE_PLANS.contains(account.getPlanid())) {
             log.info("License Check: account {} with email {} found but not a selfhost service plan {}, ip {}",
                     accountId, account.getEmail(), account.getPlanid(), clientIp);
             return false;

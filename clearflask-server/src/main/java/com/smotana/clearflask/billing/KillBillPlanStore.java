@@ -39,14 +39,9 @@ import java.util.stream.Stream;
 @Slf4j
 @Singleton
 public class KillBillPlanStore extends ManagedService implements PlanStore {
-    /**
-     * If changed, also change in UpgradeWrapper.tsx
-     */
-    public static final ImmutableMap<String, Long> PLAN_MAX_POSTS = ImmutableMap.of(
-            "starter-unlimited", 30L,
-            "selfhost-free", 100L,
-            "self-host", 100L,
-            "cloud-free", 100L);
+    /** @deprecated reference {@link PlanConstants#PLAN_MAX_POSTS} -- kept for source-compat until the KB removal commit. */
+    @Deprecated
+    public static final ImmutableMap<String, Long> PLAN_MAX_POSTS = PlanConstants.PLAN_MAX_POSTS;
     /**
      * If changed, also change in UpgradeWrapper.tsx
      */
@@ -71,10 +66,9 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
      * If changed, also change in BillingPage.tsx
      */
     public static final String ADDON_EXTRA_PROJECT = "extra-project";
-    /**
-     * If changed, also change in BillingPage.tsx
-     */
-    public static final String ADDON_EXTRA_TEAMMATE = "extra-teammate";
+    /** @deprecated reference {@link PlanConstants#ADDON_EXTRA_TEAMMATE} -- kept for source-compat until the KB removal commit. */
+    @Deprecated
+    public static final String ADDON_EXTRA_TEAMMATE = PlanConstants.ADDON_EXTRA_TEAMMATE;
     /**
      * If changed, also change in BillingPage.tsx
      */
@@ -329,51 +323,9 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                     new PlanPerk("No billing", null)),
                     null, null)
     );
-    private static final FeaturesTable FEATURES_TABLE = new FeaturesTable(
-            ImmutableList.of("Open-source", "Self-host", "Cloud"),
-            ImmutableList.of(
-                    new FeaturesTableFeatures("Hosting", ImmutableList.of("Self", "Self", "Managed"), null),
-                    new FeaturesTableFeatures("Posts", ImmutableList.of("100 Max", "No limit", "No limit"), TERMS_POSTS),
-                    new FeaturesTableFeatures("Projects", ImmutableList.of("No limit", "No limit", "No limit"), TERMS_PROJECTS),
-                    new FeaturesTableFeatures("Users", ImmutableList.of("No limit", "No limit", "No limit"), null),
-                    new FeaturesTableFeatures("Teammates", ImmutableList.of("No limit", "No limit", "No limit"), TERMS_ADMINS),
-                    new FeaturesTableFeatures("Roadmap", ImmutableList.of("Yes", "Yes", "Yes"), null),
-                    new FeaturesTableFeatures("Credit System", ImmutableList.of("Yes", "Yes", "Yes"), TERMS_CREDIT_SYSTEM),
-                    new FeaturesTableFeatures("Content customization", ImmutableList.of("Yes", "Yes", "Yes"), null),
-                    new FeaturesTableFeatures("Custom domain", ImmutableList.of("No", "Yes", "Yes"), null),
-                    new FeaturesTableFeatures("Private projects", ImmutableList.of("No", "Yes", "Yes"), TERMS_PRIVATE_PROJECTS),
-                    new FeaturesTableFeatures("SSO and OAuth", ImmutableList.of("No", "Yes", "Yes"), TERMS_SSO_AND_OAUTH),
-                    new FeaturesTableFeatures("Site template", ImmutableList.of("No", "Yes", "Yes"), TERMS_SITE_TEMPLATE),
-                    new FeaturesTableFeatures("GitHub integration", ImmutableList.of("No", "Yes", "Yes"), TERMS_GITHUB),
-                    new FeaturesTableFeatures("Intercom integration", ImmutableList.of("No", "Yes", "Yes"), TERMS_INTERCOM),
-                    new FeaturesTableFeatures("Tracking integrations", ImmutableList.of("No", "Yes", "Yes"), TERMS_TRACKING),
-                    new FeaturesTableFeatures("API", ImmutableList.of("No", "Yes", "Yes"), TERMS_API),
-                    new FeaturesTableFeatures("Whitelabel", ImmutableList.of("No", "Yes", "Yes"), TERMS_WHITELABEL),
-                    new FeaturesTableFeatures("Support", ImmutableList.of("Community", "Priority", "Priority"), null)
-            ), null);
-    private static final FeaturesTable FEATURES_TABLE_SELFHOST = new FeaturesTable(
-            ImmutableList.of("Free", "Licensed"),
-            ImmutableList.of(
-                    new FeaturesTableFeatures("Projects", ImmutableList.of("No limit", "No limit"), TERMS_PROJECTS),
-                    new FeaturesTableFeatures("Users", ImmutableList.of("No limit", "No limit"), null),
-                    new FeaturesTableFeatures("Posts", ImmutableList.of("No limit", "No limit"), TERMS_POSTS),
-                    new FeaturesTableFeatures("Teammates", ImmutableList.of("All Free", "All Free"), TERMS_ADMINS),
-                    new FeaturesTableFeatures("ClearFlask AI", ImmutableList.of("Yes", "Yes"), TERMS_CLEARFLASK_AI),
-                    new FeaturesTableFeatures("Credit System", ImmutableList.of("Yes", "Yes"), TERMS_CREDIT_SYSTEM),
-                    new FeaturesTableFeatures("Roadmap", ImmutableList.of("Yes", "Yes"), null),
-                    new FeaturesTableFeatures("Content customization", ImmutableList.of("Yes", "Yes"), null),
-                    new FeaturesTableFeatures("Custom domain", ImmutableList.of("Yes", "Yes"), null),
-                    new FeaturesTableFeatures("Private projects", ImmutableList.of("Yes", "Yes"), TERMS_PRIVATE_PROJECTS),
-                    new FeaturesTableFeatures("SSO and OAuth", ImmutableList.of("Yes", "Yes"), TERMS_SSO_AND_OAUTH),
-                    new FeaturesTableFeatures("GitHub integration", ImmutableList.of("Yes", "Yes"), TERMS_GITHUB),
-                    new FeaturesTableFeatures("Intercom integration", ImmutableList.of("Yes", "Yes"), TERMS_INTERCOM),
-                    new FeaturesTableFeatures("Tracking integrations", ImmutableList.of("Yes", "Yes"), TERMS_TRACKING),
-                    new FeaturesTableFeatures("Site template", ImmutableList.of("Yes", "Yes"), TERMS_SITE_TEMPLATE),
-                    new FeaturesTableFeatures("API", ImmutableList.of("Yes", "Yes"), TERMS_API),
-                    new FeaturesTableFeatures("Whitelabel", ImmutableList.of("Yes", "Yes"), TERMS_WHITELABEL),
-                    new FeaturesTableFeatures("Search engine", ImmutableList.of("Yes", "Yes"), TERMS_ELASTICSEARCH),
-                    new FeaturesTableFeatures("Support & SLA", ImmutableList.of("No", "Yes"), null)
-            ), null);
+    // FEATURES_TABLE / FEATURES_TABLE_SELFHOST moved to PlanConstants — they describe
+    // plan-family product policy, not anything KillBill-specific, and need to survive
+    // the KB removal commit. plansGetResponse below references them via PlanConstants.
 
     @Inject
     private Billing billing;
@@ -530,8 +482,8 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 "Plans cannot end in a number, plans with price overrides end in a number");
         plansGetResponse = new PlansGetResponse(
                 availablePlans.values().asList(),
-                FEATURES_TABLE,
-                FEATURES_TABLE_SELFHOST);
+                PlanConstants.FEATURES_TABLE,
+                PlanConstants.FEATURES_TABLE_SELFHOST);
         allPlansGetResponse = new AllPlansGetResponse(
                 allPlans.values().asList());
     }

@@ -77,7 +77,9 @@ public class KillBillSync extends ManagedService {
             .build();
     private static final String PER_TENANT_CONFIG = "\"org.killbill.payment.retry.days=1,2,3\"," +
             "\"org.killbill.billing.server.notifications.retries=1m,2h,1d,2d\"";
-    public static final int CANCEL_AFTER_DURATION_IN_DAYS = 90;
+    /** @deprecated reference {@link PlanConstants#CANCEL_AFTER_DURATION_IN_DAYS} -- kept for source-compat until the KB removal commit. */
+    @Deprecated
+    public static final int CANCEL_AFTER_DURATION_IN_DAYS = PlanConstants.CANCEL_AFTER_DURATION_IN_DAYS;
     private static final Overdue OVERDUE = new Overdue()
             .setInitialReevaluationInterval(1)
             .addOverdueStatesItem(new OverdueStateConfig()
