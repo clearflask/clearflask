@@ -65,13 +65,29 @@ public class PlanStoreRouter implements PlanStore {
     @Override
     public PlansGetResponse getPublicPlans() {
         PlansGetResponse r = primary().getPublicPlans();
-        if (r != null && r.getPlans() != null && !r.getPlans().isEmpty()) {
-            return r;
+        if (r == null || r.getPlans() == null || r.getPlans().isEmpty()) {
+            // Stripe primary, but no Products provisioned yet (or Stripe call failed). Fall
+            // back to KillBill so the public pricing/signup page renders something rather
+            // than crashing.
+            log.warn("PlanStoreRouter.getPublicPlans: primary returned empty, falling back to KillBill catalog");
+            return killBillPlanStore.getPublicPlans();
         }
-        // Stripe primary, but no Products provisioned yet (or Stripe call failed). Fall back
-        // to KillBill so the public pricing/signup page renders something rather than crashing.
-        log.warn("PlanStoreRouter.getPublicPlans: primary returned empty, falling back to KillBill catalog");
-        return killBillPlanStore.getPublicPlans();
+        // Stripe primary returns its plan list but does NOT own the comparison tables -- those
+        // describe plan-family capabilities (Cloud vs Self-host) and are sourced from
+        // KillBillPlanStore. Merge them in when the primary left them empty so /pricing renders
+        // the full Features comparison table.
+        if (isFeaturesTableEmpty(r.getFeaturesTable()) || isFeaturesTableEmpty(r.getFeaturesTableSelfhost())) {
+            PlansGetResponse kb = killBillPlanStore.getPublicPlans();
+            return new PlansGetResponse(
+                    r.getPlans(),
+                    isFeaturesTableEmpty(r.getFeaturesTable()) ? kb.getFeaturesTable() : r.getFeaturesTable(),
+                    isFeaturesTableEmpty(r.getFeaturesTableSelfhost()) ? kb.getFeaturesTableSelfhost() : r.getFeaturesTableSelfhost());
+        }
+        return r;
+    }
+
+    private static boolean isFeaturesTableEmpty(com.smotana.clearflask.api.model.FeaturesTable t) {
+        return t == null || t.getFeatures() == null || t.getFeatures().isEmpty();
     }
 
     @Override
