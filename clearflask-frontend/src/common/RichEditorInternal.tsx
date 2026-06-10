@@ -471,9 +471,15 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
                     if (op.insert
                       && typeof op.insert === 'object'
                       && op.insert.image
-                      && typeof op.insert.image === 'string'
-                      && op.insert.image.startsWith('data:')) {
-                      this.onDataImageFound(op.insert.image, retainCount - 1);
+                      && typeof op.insert.image === 'string') {
+                      // Handle data URLs (base64 images)
+                      if (op.insert.image.startsWith('data:')) {
+                        this.onDataImageFound(op.insert.image, retainCount - 1);
+                      }
+                      // Handle external image URLs (http/https)
+                      else if (op.insert.image.startsWith('http://') || op.insert.image.startsWith('https://')) {
+                        this.onExternalImageFound(op.insert.image, retainCount - 1, op.attributes);
+                      }
                     }
                     retainCount += (op.insert ? 1 : 0) + (op.retain || 0) - (op.delete || 0);
                   }
@@ -733,7 +739,7 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
 
   /**
    * Convert data url by uploading and replacing with remote url.
-   * 
+   *
    * This catches any images not handled by the dropzone.
    * Particularly if you paste an image into the editor.
    */
@@ -770,6 +776,66 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
         op = editor.getContents(retainCount, 1).ops?.[0];
         if (op === undefined) {
           // The image was deleted while uploaded
+          return;
+        }
+      } while (!isOpOurImage(op));
+    }
+
+    if (imageLink) {
+      editor.updateContents(new Delta()
+        .retain(retainCount)
+        .delete(1)
+        .insert({ image: imageLink }, op.attributes) as any,
+        'silent');
+    } else {
+      editor.updateContents(new Delta()
+        .retain(retainCount)
+        .delete(1) as any,
+        'silent');
+    }
+  }
+
+  /**
+   * Download external image URL and upload to our service.
+   *
+   * This catches external image URLs pasted into the editor.
+   * Without this, external URLs would be sanitized away by the backend.
+   */
+  async onExternalImageFound(imageUrl: string, retainCount: number, attributes?: any) {
+    const editor = this.editorRef.current?.getEditor();
+    if (!editor) return;
+
+    var imageLink;
+    try {
+      // Fetch the image from the external URL
+      const response = await fetch(imageUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.statusText}`);
+      }
+      const blob = await response.blob();
+
+      // Upload to our service
+      imageLink = await this.props.uploadImage(blob);
+    } catch (e) {
+      imageLink = false;
+      this.props.enqueueSnackbar(
+        `Failed to download and upload external image: ${e}`,
+        { variant: 'error' });
+    }
+
+    // Ensure the image is still in the same spot
+    // or find where it was moved to and adjust retainCount
+    const isOpOurImage = o => (typeof o?.insert === 'object'
+      && typeof o.insert.image === 'string'
+      && o.insert.image === imageUrl);
+    var op = editor.getContents(retainCount).ops?.[0];
+    if (!op || !isOpOurImage(op)) {
+      retainCount = -1;
+      do {
+        retainCount++;
+        op = editor.getContents(retainCount, 1).ops?.[0];
+        if (op === undefined) {
+          // The image was deleted while being uploaded
           return;
         }
       } while (!isOpOurImage(op));
