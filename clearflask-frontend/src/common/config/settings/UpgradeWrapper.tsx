@@ -15,7 +15,7 @@ import {Path, pathEquals} from '../configEditor';
 /** If changed, also change in PlanStore.java */
 export const TeammatePlanId = 'teammate-unlimited';
 
-/** If changed, also change in KillBillPlanStore.java */
+/** If changed, also change in PlanConstants.java */
 export const SelfhostServicePlans: string[] = [
     // These are special plans in Cloud that allow you to pay for a license to use Selfhost
     // It does not include the selfhost-free plan used in SelfHostPlanStore.java
@@ -24,18 +24,18 @@ export const SelfhostServicePlans: string[] = [
     'selfhost-yearly2',
     'selfhost-monthly2',
 ];
-/** If changed, also change in KillBillPlanStore.java */
+/** If changed, also change in PlanConstants.java */
 const UnrestrictedProperties: Path[] = [];
-/** If changed, also change in KillBillPlanStore.java */
+/** If changed, also change in PlanConstants.java */
 const RestrictedPropertiesByDefault: Path[] = [
     ['style', 'whitelabel', 'poweredBy'],
 ];
-/** If changed, also change in KillBillPlanStore.java */
+/** If changed, also change in PlanConstants.java */
 const Standard2Properties: Path[] = [
     ['users', 'onboarding', 'visibility'],
     ['style', 'whitelabel', 'poweredBy'],
 ];
-/** If changed, also change in KillBillPlanStore.java */
+/** If changed, also change in PlanConstants.java */
 const GrowthRestrictedProperties: Path[] = [
     ['style', 'whitelabel', 'poweredBy'],
     ['users', 'onboarding', 'notificationMethods', 'sso'],
@@ -48,7 +48,7 @@ const GrowthRestrictedProperties: Path[] = [
     ['integrations', 'intercom'],
     ['noIndex'],
 ];
-/** If changed, also change in KillBillPlanStore.java */
+/** If changed, also change in PlanConstants.java */
 const CloudMonthlyRestrictedProperties: Path[] = [
     ['style', 'whitelabel', 'poweredBy'],
     ['github'],
@@ -57,12 +57,12 @@ const CloudMonthlyRestrictedProperties: Path[] = [
     ['integrations', 'intercom'],
     ['noIndex'],
 ];
-/** If changed, also change in KillBillPlanStore.java */
+/** If changed, also change in PlanConstants.java */
 const GrowthWithNoDomainRestrictedProperties: Path[] = [
     ['domain'],
     ...GrowthRestrictedProperties,
 ];
-/** If changed, also change in KillBillPlanStore.java */
+/** If changed, also change in PlanConstants.java */
 const AbPitchGroundRestrictedProperties: Path[] = [
     ['style', 'whitelabel', 'poweredBy'],
     ['users', 'onboarding', 'notificationMethods', 'sso'],
@@ -74,13 +74,13 @@ const AbPitchGroundRestrictedProperties: Path[] = [
     ['integrations', 'intercom'],
     ['style', 'templates'],
 ];
-/** If changed, also change in KillBillPlanStore.java */
+/** If changed, also change in PlanConstants.java */
 const CdPitchGroundRestrictedProperties: Path[] = [
     ['style', 'whitelabel', 'poweredBy'],
 ];
-/** If changed, also change in KillBillPlanStore.java */
+/** If changed, also change in PlanConstants.java */
 const EPitchGroundRestrictedProperties: Path[] = [];
-/** If changed, also change in KillBillPlanStore.java */
+/** If changed, also change in PlanConstants.java */
 const RestrictedPropertiesByPlan: { [basePlanId: string]: Path[] } = {
     'starter-unlimited': GrowthRestrictedProperties,
     'standard-unlimited': RestrictedPropertiesByDefault,
@@ -115,7 +115,7 @@ const RestrictedPropertiesByPlan: { [basePlanId: string]: Path[] } = {
     "selfhost-free": GrowthRestrictedProperties,
     'self-host': GrowthRestrictedProperties,
 };
-/** If changed, also change in KillBillPlanStore.java */
+/** If changed, also change in PlanConstants.java */
 export const TeammatesMaxCount: { [basePlanId: string]: number } = {
     'starter-unlimited': 2,
     'growth-monthly': 2,
@@ -134,14 +134,14 @@ export const TeammatesMaxCount: { [basePlanId: string]: number } = {
     'cloud-starter-monthly': 1,
     'selfhost-free': 3,
 };
-/** If changed, also change in KillBillPlanStore.java */
+/** If changed, also change in PlanConstants.java */
 export const ProjectMaxCount: { [basePlanId: string]: number } = {
     'pro-lifetime': 1,
     'pitchground-a-lifetime': 1,
     'pitchground-b-lifetime': 1,
     'pitchground-c-lifetime': 5,
 };
-/** If changed, also change in KillBillPlanStore.java */
+/** If changed, also change in PlanConstants.java */
 export const PostsMaxCount: { [basePlanId: string]: number } = {
     'starter-unlimited': 30,
     'selfhost-free': 100,
@@ -149,7 +149,7 @@ export const PostsMaxCount: { [basePlanId: string]: number } = {
     'cloud-free': 100,
     'cloud-starter-monthly': 100,
 };
-/** If changed, also change in KillBillPlanStore.java */
+/** If changed, also change in PlanConstants.java */
 const AllowedPropertiesByAddon: { [addonId: string]: Path[] } = {
     [AddonWhitelabel]: [
         ['style', 'whitelabel', 'poweredBy'],
@@ -164,7 +164,7 @@ export enum Action {
     TEAMMATE_INVITE,
 }
 
-/** If changed, also change in KillBillPlanStore.java */
+/** If changed, also change in PlanConstants.java */
 export const RestrictedActions: { [basePlanId: string]: Set<Action> } = {
     'starter-unlimited': new Set([Action.API_KEY]),
     'starter3-monthly': new Set([Action.API_KEY]),

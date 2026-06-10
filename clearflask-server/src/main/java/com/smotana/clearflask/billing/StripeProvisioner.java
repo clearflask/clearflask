@@ -238,7 +238,9 @@ public class StripeProvisioner {
             Price existing = existingDefaultPrice.get(spec.getPlanId());
             if (existing != null
                     && existing.getUnitAmount() != null
-                    && existing.getUnitAmount() == spec.getMonthlyAmountCents()
+                    // .equals() and NOT == -- Long auto-boxing means reference compare; every
+                    // upsertAll() run was creating a fresh duplicate Price before this fix.
+                    && existing.getUnitAmount().equals(spec.getMonthlyAmountCents())
                     && existing.getRecurring() != null
                     && spec.getInterval().equals(existing.getRecurring().getInterval())) {
                 report.append("  Price ").append(spec.getPlanId()).append(" OK id=")
