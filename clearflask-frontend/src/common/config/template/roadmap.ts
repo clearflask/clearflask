@@ -90,6 +90,78 @@ export async function roadmapOn(this: Templater): Promise<RoadmapInstance> {
 
     roadmap = (await this.roadmapGet())!;
     this.feedbackUpdateWithRoadmap(roadmap);
+  } else {
+    // Category exists - check if built-in statuses are missing and recreate them
+    const categoryIndex = roadmap.categoryAndIndex.index;
+    const workflowProp = this._get<ConfigEditor.ArrayProperty>(['content', 'categories', categoryIndex, 'workflow', 'statuses']);
+    const statuses = roadmap.categoryAndIndex.category.workflow.statuses;
+
+    // Check and recreate missing built-in statuses
+    const statusesToAdd: Admin.IdeaStatus[] = [];
+
+    if (!roadmap.statusIdBacklog) {
+      const statusIdBacklog = RoadmapStatusBacklogPrefix + randomUuid();
+      statusesToAdd.push({
+        name: T<'app'>('ideas'),
+        nextStatusIds: [], // Will be updated after all statuses are added
+        color: this.workflowColorNew,
+        statusId: statusIdBacklog,
+        disableFunding: false,
+        disableExpressions: false,
+        disableVoting: false,
+        disableComments: false,
+        disableIdeaEdits: false
+      });
+    }
+
+    if (!roadmap.statusIdCompleted) {
+      const statusIdCompleted = RoadmapStatusCompletedPrefix + randomUuid();
+      statusesToAdd.push({
+        name: T<'app'>('completed'),
+        nextStatusIds: [],
+        color: this.workflowColorComplete,
+        statusId: statusIdCompleted,
+        disableFunding: false,
+        disableExpressions: false,
+        disableVoting: false,
+        disableComments: false,
+        disableIdeaEdits: false
+      });
+    }
+
+    if (!roadmap.statusIdClosed) {
+      const statusIdClosed = RoadmapStatusClosedPrefix + randomUuid();
+      statusesToAdd.push({
+        name: T<'app'>('cancelled'),
+        nextStatusIds: [],
+        color: this.workflowColorFail,
+        statusId: statusIdClosed,
+        disableFunding: false,
+        disableExpressions: false,
+        disableVoting: false,
+        disableComments: false,
+        disableIdeaEdits: false
+      });
+    }
+
+    // Add missing statuses
+    if (statusesToAdd.length > 0) {
+      for (const status of statusesToAdd) {
+        workflowProp.insert().setRaw(Admin.IdeaStatusToJSON(status));
+      }
+
+      // Update entryStatus if missing
+      if (!roadmap.categoryAndIndex.category.workflow.entryStatus) {
+        const backlogStatus = roadmap.categoryAndIndex.category.workflow.statuses
+          .find(s => s.statusId.startsWith(RoadmapStatusBacklogPrefix));
+        if (backlogStatus) {
+          this._get<ConfigEditor.StringProperty>(['content', 'categories', categoryIndex, 'workflow', 'entryStatus'])
+            .set(backlogStatus.statusId);
+        }
+      }
+
+      roadmap = (await this.roadmapGet())!;
+    }
   }
 
   // Create page

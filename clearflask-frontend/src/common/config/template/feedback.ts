@@ -76,6 +76,28 @@ export async function feedbackOn(this: Templater, pageType: 'off' | 'feedback' |
     ]);
 
     feedback = (await this.feedbackGet())!;
+  } else {
+    // Category exists - check if built-in statuses are missing and recreate them
+    const categoryIndex = feedback.categoryAndIndex.index;
+    const workflowProp = this._get<ConfigEditor.ArrayProperty>(['content', 'categories', categoryIndex, 'workflow', 'statuses']);
+
+    // Check and recreate missing accepted status
+    if (!feedback.statusIdAccepted) {
+      const statusIdAccepted = FeedbackStatusAcceptedPrefix + randomUuid();
+      workflowProp.insert().setRaw(Admin.IdeaStatusToJSON({
+        name: T<'app'>('accepted'),
+        nextStatusIds: [],
+        color: this.workflowColorComplete,
+        statusId: statusIdAccepted,
+        disableFunding: false,
+        disableExpressions: false,
+        disableVoting: false,
+        disableComments: false,
+        disableIdeaEdits: false
+      }));
+
+      feedback = (await this.feedbackGet())!;
+    }
   }
 
   // Create/modify page
