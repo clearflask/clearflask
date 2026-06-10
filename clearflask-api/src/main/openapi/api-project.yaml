@@ -1406,6 +1406,23 @@ components:
           type: string
         email:
           type: string
+    WebhookListener:
+      type: object
+      required:
+        - resourceType
+        - eventType
+        - url
+      properties:
+        resourceType:
+          type: string
+          enum:
+            - POST
+            - COMMENT
+            - USER
+        eventType:
+          type: string
+        url:
+          type: string
     SlackChannelLink:
       x-clearflask-page: { name: 'Channel Link', nameFromProp: 'channelName' }
       type: object
@@ -1855,3 +1872,27 @@ components:
     responses:
       '200':
         $ref: 'api-client.yaml#/components/responses/Ok'
+/project/{projectId}/admin/webhooks:
+  get:
+    operationId: projectWebhooksListAdmin
+    tags: [ ProjectAdmin ]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              title: ProjectWebhooksListResult
+              type: object
+              required:
+                - webhooks
+              properties:
+                webhooks:
+                  type: array
+                  items:
+                    $ref: 'api-project.yaml#/components/schemas/WebhookListener'
