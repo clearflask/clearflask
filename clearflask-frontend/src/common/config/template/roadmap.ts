@@ -94,7 +94,6 @@ export async function roadmapOn(this: Templater): Promise<RoadmapInstance> {
     // Category exists - check if built-in statuses are missing and recreate them
     const categoryIndex = roadmap.categoryAndIndex.index;
     const workflowProp = this._get<ConfigEditor.ArrayProperty>(['content', 'categories', categoryIndex, 'workflow', 'statuses']);
-    const statuses = roadmap.categoryAndIndex.category.workflow.statuses;
 
     // Check and recreate missing built-in statuses
     const statusesToAdd: Admin.IdeaStatus[] = [];
