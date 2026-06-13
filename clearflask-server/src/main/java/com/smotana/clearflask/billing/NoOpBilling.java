@@ -70,7 +70,13 @@ public class NoOpBilling implements Billing {
             "pitchground-b-lifetime",
             "pitchground-c-lifetime",
             "pitchground-d-lifetime",
-            "pitchground-e-lifetime");
+            "pitchground-e-lifetime",
+            // Comped Business accounts on a $0 flat-yearly price override. Unlike the catalog
+            // $0 plans above, flat-yearly was historically a paid plan billed via KillBill with
+            // a per-customer price override (KB slug flat-yearly-1). The handful of $0 comps are
+            // migrated to NoOp (see OneShotFlatYearlyMigrator, which also normalizes their local
+            // planid flat-yearly-1 -> flat-yearly so this set membership check matches).
+            "flat-yearly");
 
     private static final UUID NOOP_KB_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
 

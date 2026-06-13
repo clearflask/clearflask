@@ -39,6 +39,27 @@ If green → unblocks everything below.
 
 ## Post-canary work
 
+### $0 comped accounts — handled
+
+The other grandfathered $0 plans (standard/starter/standard2-unlimited,
+pitchground-a..e-lifetime, pro-lifetime, cloud-free — ~276 accounts) have clean
+catalog slugs already in `NOOP_BILLED_PLAN_IDS`, so they already route to
+NoOpBilling in prod (`routeGrandfatheredToNoOp=true`) with zero KillBill
+dependency. No work needed for them.
+
+`flat-yearly` was the only $0 group still on KillBill — it was a price-overridden
+paid plan (KB slug + local planid `flat-yearly-1`, not in the NoOp set → else
+branch → KillBilling). Handled by:
+- Adding `"flat-yearly"` to `NOOP_BILLED_PLAN_IDS`.
+- `OneShotFlatYearlyMigrator.migrate(dryRun)` (@Extern): normalizes the 10 comp
+  accounts' planid `flat-yearly-1 -> flat-yearly` (also restores the base-plan
+  restriction switch, which the prod-primary identity `getBasePlanId` had been
+  bypassing) and sets merged addons (preserves existing; grants `whitelabel` to
+  khaled, pitchground, michaela, nomin).
+
+Post-migration these route to NoOp, keep $0 access, enforce flat-yearly
+restrictions, and can upgrade to Stripe via the standard grandfathered→paid path.
+
 ### Run the cleaner
 ```java
 // JMX: com.smotana.clearflask.billing:name=OneShotKbOrphanCleanerOpsMBean
