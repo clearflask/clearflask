@@ -30,7 +30,6 @@ import com.smotana.clearflask.billing.KillBillPlanStore;
 import com.smotana.clearflask.billing.KillBillSync;
 import com.smotana.clearflask.billing.KillBilling;
 import com.smotana.clearflask.billing.NoOpBilling;
-import com.smotana.clearflask.billing.OneShotFlatYearlyMigrator;
 import com.smotana.clearflask.billing.OneShotKbOrphanCleaner;
 import com.smotana.clearflask.billing.OneShotStripeMigrator;
 import com.smotana.clearflask.billing.PlanStoreRouter;
@@ -386,7 +385,6 @@ public enum ServiceInjector {
                     install(StripeOverdueEscalationService.module());
                     install(OneShotStripeMigrator.module());
                     install(OneShotKbOrphanCleaner.module());
-                    install(OneShotFlatYearlyMigrator.module());
                     install(NoOpBilling.module());
                     install(BillingRouter.module());
                     install(PlanStoreRouter.module());
