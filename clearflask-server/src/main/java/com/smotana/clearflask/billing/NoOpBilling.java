@@ -118,6 +118,17 @@ public class NoOpBilling implements Billing {
     public SubscriptionStatus getEntitlementStatus(Account account, Subscription subscription) {
         AccountStore.Account a = accountStore.getAccount(account.getExternalKey(), true)
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Account not found"));
+        if (!NOOP_BILLED_PLAN_IDS.contains(a.getPlanid())) {
+            // Orphan: an account on a legacy/paid planid with no Stripe customer, routed here by
+            // BillingRouter's orphan fallback (routeOrphansToNoOp) now that KillBilling no longer
+            // tracks it. It has no payment method on file, so access is denied via NOPAYMENTMETHOD
+            // (reactivatable via Stripe Checkout; aged out after CANCEL_AFTER_DURATION_IN_DAYS by
+            // ProjectDeletionService). An already-BLOCKED orphan stays BLOCKED (deleted sooner),
+            // preserving today's behavior for the ~790 BLOCKED zombies.
+            return a.getStatus() == SubscriptionStatus.BLOCKED
+                    ? SubscriptionStatus.BLOCKED
+                    : SubscriptionStatus.NOPAYMENTMETHOD;
+        }
         // Grandfathered customers are always considered active.
         return a.getStatus() == null ? SubscriptionStatus.ACTIVE : a.getStatus();
     }

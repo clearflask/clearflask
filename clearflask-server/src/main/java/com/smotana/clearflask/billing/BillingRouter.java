@@ -74,6 +74,21 @@ public class BillingRouter implements Billing {
          */
         @DefaultValue("false")
         boolean routeGrandfatheredToNoOp();
+
+        /**
+         * The "orphan" bucket is every account that is neither Stripe-billed nor grandfathered:
+         * post-trial no-CC zombies, dead BLOCKED trials, NOPAYMENTMETHOD lapses on legacy/paid
+         * planids. These are the last accounts still routed to KillBilling.
+         *
+         * <p>false (default): orphans continue on KillBilling.
+         * <p>true: orphans route to NoOpBilling, which serves them NOPAYMENTMETHOD (access denied,
+         * reactivatable via Stripe Checkout, aged out by ProjectDeletionService). Flipping this
+         * true removes the last live KillBill dependency. Must be flipped only AFTER the 4
+         * flat-yearly stragglers are normalized to the base {@code flat-yearly} planid, else they
+         * would be misclassified as orphans.
+         */
+        @DefaultValue("false")
+        boolean routeOrphansToNoOp();
     }
 
     @Inject
@@ -93,8 +108,9 @@ public class BillingRouter implements Billing {
     private Billing pick(String accountId) {
         Optional<AccountStore.Account> accountOpt = accountStore.getAccount(accountId, true);
         if (accountOpt.isEmpty()) {
-            // No local account: fall back to KillBilling (legacy path).
-            return killBill;
+            // No local account: the orphan fallback (KillBilling during migration, NoOpBilling once
+            // routeOrphansToNoOp is flipped). There is nothing to bill for a missing account anyway.
+            return config.routeOrphansToNoOp() ? noOp : killBill;
         }
         return pick(accountOpt.get());
     }
@@ -107,7 +123,10 @@ public class BillingRouter implements Billing {
                 && NoOpBilling.NOOP_BILLED_PLAN_IDS.contains(account.getPlanid())) {
             return noOp;
         }
-        return killBill;
+        // Orphan bucket: not Stripe-billed, not grandfathered. KillBilling during the migration;
+        // NoOpBilling (-> NOPAYMENTMETHOD) once routeOrphansToNoOp is flipped, removing the last
+        // live KillBill dependency.
+        return config.routeOrphansToNoOp() ? noOp : killBill;
     }
 
     /**
@@ -118,7 +137,10 @@ public class BillingRouter implements Billing {
             // $0 grandfathered signups never need external billing.
             return config.routeGrandfatheredToNoOp() ? noOp : killBill;
         }
-        return config.useStripeForNewSignups() ? stripe : killBill;
+        if (config.useStripeForNewSignups()) {
+            return stripe;
+        }
+        return config.routeOrphansToNoOp() ? noOp : killBill;
     }
 
     @Override
@@ -196,14 +218,21 @@ public class BillingRouter implements Billing {
         }
         AccountStore.Account current = accountOpt.get();
         boolean targetIsNoOp = NoOpBilling.NOOP_BILLED_PLAN_IDS.contains(planId);
+        boolean accountHasNoStripe = Strings.isNullOrEmpty(current.getStripeCustomerId());
         boolean accountIsNoOp = NoOpBilling.NOOP_BILLED_PLAN_IDS.contains(current.getPlanid())
-                && Strings.isNullOrEmpty(current.getStripeCustomerId());
+                && accountHasNoStripe;
+        // An orphan: not Stripe-billed and not grandfathered (legacy/paid planid, no Stripe
+        // customer). After routeOrphansToNoOp it sits at NOPAYMENTMETHOD; "reactivate" means
+        // upgrading to a paid plan, which must start a fresh Stripe subscription.
+        boolean accountIsOrphan = accountHasNoStripe
+                && !NoOpBilling.NOOP_BILLED_PLAN_IDS.contains(current.getPlanid());
 
-        // Upgrade path: a grandfathered $0 account upgrading to a paid plan starts a Stripe
-        // subscription. Once StripeBilling.changePlan returns, the account record has
-        // stripeCustomerId set and all future routing lands on StripeBilling.
-        if (accountIsNoOp && !targetIsNoOp && config.useStripeForNewSignups()) {
-            log.info("Upgrade from grandfathered plan {} to {} for account {} -- routing through StripeBilling",
+        // Upgrade path: a grandfathered $0 account OR a lapsed orphan upgrading to a paid plan
+        // starts a Stripe subscription. StripeBilling.changePlan with a null stripeCustomerId
+        // throws 409, which the frontend turns into a Stripe Checkout redirect (the reactivation
+        // flow). Once it returns the account has stripeCustomerId set and routes to Stripe.
+        if ((accountIsNoOp || accountIsOrphan) && !targetIsNoOp && config.useStripeForNewSignups()) {
+            log.info("Upgrade/reactivate from plan {} to {} for account {} -- routing through StripeBilling",
                     current.getPlanid(), planId, accountId);
             return stripe.changePlan(accountId, planId, recurringPriceOpt);
         }

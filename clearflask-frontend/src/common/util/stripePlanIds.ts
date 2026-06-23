@@ -10,20 +10,20 @@
  * teammate-unlimited, etc.) are NOT in this set — those route to NoOpBilling.
  */
 export const STRIPE_BILLED_PLAN_IDS: ReadonlySet<string> = new Set([
+  // Must stay in sync with StripeProvisioner.PLAN_SPECS (the only plans with a Stripe Price).
+  // Legacy planids with no provisioned Price (cloud-monthly, cloud-90day-yearly, selfhost-monthly,
+  // growth2-monthly, standard2-monthly, standard3-monthly, ...) are intentionally excluded: an
+  // account on one of those reactivates through the plan picker (-> 409 -> Checkout) rather than a
+  // direct Checkout that would 500 for lack of a Price.
   'cloud-starter-monthly',
-  'cloud-monthly',
   'cloud-monthly2',
   'cloud-yearly',
-  'cloud-90day-yearly',
-  'selfhost-monthly',
   'selfhost-monthly2',
-  'selfhost-yearly',
   'selfhost-yearly2',
-  'flat-yearly',
+  'selfhost-yearly',
   'sponsor-monthly',
-  'growth2-monthly',
-  'standard2-monthly',
-  'standard3-monthly',
+  'sponsor-monthly-5',
+  'flat-yearly',
 ]);
 
 export const isStripeBilledPlan = (planId: string | undefined): boolean =>
