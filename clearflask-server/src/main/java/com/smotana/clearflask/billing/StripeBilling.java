@@ -148,6 +148,16 @@ public class StripeBilling extends ManagedService implements Billing {
     @Inject
     @com.google.inject.name.Named("killbill")
     private Billing killBilling;
+    /**
+     * Read-only access to the routing flags. Once {@code routeOrphansToNoOp} is set, KillBilling
+     * is out of the live path: the Checkout-driven KB migration handoff below (read KB
+     * charged-through-date / cancel the KB sub) is obsolete -- the migrating payers it was built
+     * for are already Stripe-routed (short-circuited by stripeCustomerId), and every other account
+     * that can reach Checkout has no KB sub worth touching. Skipping it avoids a dead KB round-trip
+     * on every Checkout and lets KB be deleted without breaking the flow.
+     */
+    @Inject
+    private BillingRouter.Config routingConfig;
 
     /** Public-facing app URL derived from {@code Application.Config.domain}. */
     private String publicUrl() {
@@ -230,6 +240,11 @@ public class StripeBilling extends ManagedService implements Billing {
             Long migrationTrialEndEpoch = null;
             if (!Strings.isNullOrEmpty(accountInDyn.getStripeCustomerId())) {
                 // Already Stripe-billed; no KB sub to harmonize with.
+            } else if (routingConfig.routeOrphansToNoOp()) {
+                // KillBilling is out of the live path: no KB sub to harmonize. The migrating payers
+                // this was built for are already Stripe-routed (handled above); everyone else
+                // reaching Checkout (new signups, $0-comp upgrades, lapsed-orphan reactivations)
+                // has no KB charged-through-date worth honoring. Fall through to the default trial.
             } else {
                 try {
                     org.killbill.billing.client.model.gen.Subscription kbSub =
@@ -383,13 +398,17 @@ public class StripeBilling extends ManagedService implements Billing {
             // the new Stripe sub. cancelSubscriptionForMigration bypasses the user-facing
             // trial-phase guard. Best-effort: a stale KB sub is operator-fixable, but a failed
             // cancel must not undo the Checkout completion.
-            try {
-                killBilling.cancelSubscriptionForMigration(accountId);
-                log.info("Finalized Checkout session {}: cancelled KB subscription for account {}",
-                        sessionId, accountId);
-            } catch (Exception ex) {
-                log.warn("Finalized Checkout session {}: failed to cancel KB sub for account {} ({}); cancel manually in KB Kaui",
-                        sessionId, accountId, ex.getMessage());
+            // Skipped once KillBilling is out of the live path (routeOrphansToNoOp): nothing reaching
+            // Checkout has a live KB sub to cancel, and we want the flow KB-independent for deletion.
+            if (!routingConfig.routeOrphansToNoOp()) {
+                try {
+                    killBilling.cancelSubscriptionForMigration(accountId);
+                    log.info("Finalized Checkout session {}: cancelled KB subscription for account {}",
+                            sessionId, accountId);
+                } catch (Exception ex) {
+                    log.warn("Finalized Checkout session {}: failed to cancel KB sub for account {} ({}); cancel manually in KB Kaui",
+                            sessionId, accountId, ex.getMessage());
+                }
             }
         } catch (StripeException ex) {
             throw stripeError("finalizeCheckoutSession", sessionId, ex);

@@ -5,7 +5,7 @@ the rolling notes in `killbill-removal-plan.md` / `killbill-removal-remaining-wo
 for "what's left". Design detail for the orphan-routing work lives in the
 approved plan `~/.claude/plans/harmonic-stirring-prism.md`.
 
-## Where we are (as of 2026-06-22)
+## Where we are (as of 2026-06-23)
 
 **Done & in prod:**
 - 3 paying customers migrated to Stripe (Isaac `29a56fd4…`, Mahr `b741ef68…`,
@@ -16,10 +16,18 @@ approved plan `~/.claude/plans/harmonic-stirring-prism.md`.
 - `"flat-yearly"` added to `NoOpBilling.NOOP_BILLED_PLAN_IDS`.
 - `PlanConstants` extracted from KillBill classes; `StripeProvisioner` Long-eq
   duplicate-Price bug fixed; frontend `KillBillPlanStore.java` markers → `PlanConstants.java`.
+- **Phase 2 shipped + flag flipped (2026-06-23): orphans now route to NoOp.
+  `KillBill is no longer in the live routing path.`** (commit `912f29b0`,
+  deploy `28037275058`, `routeOrphansToNoOp=true` verified live via
+  `BillingRouterIceMBean`.)
 
-**NOT done (orphan-routing work was lost during the PII git-history purge):**
-- `BillingRouter` still routes the orphan bucket → KillBilling. **KillBill is
-  still in the live path.**
+**Known issue (pre-existing, not a Phase 2 regression):**
+- `flat-yearly` is in the frontend `STRIPE_BILLED_PLAN_IDS` but has variable
+  per-customer pricing → no default Stripe Price (`StripeProvisioner.upsertPrices`
+  SKIPS it). So a `flat-yearly` account clicking "Add payment method" → direct
+  Checkout → 500 `Plan flat-yearly is not configured in Stripe` (`StripeBilling:815`).
+  Affects the ~14 flat-yearly $0 comps only (no billing need). Fix: drop
+  `'flat-yearly'` from `STRIPE_BILLED_PLAN_IDS` so they hit the plan picker instead.
 
 ## Phase 1 — Normalize the 4 flat-yearly stragglers — DONE (2026-06-22)
 Ran the existing JMX op `setPlan(<accountId>, "flat-yearly")` against prod
@@ -34,25 +42,28 @@ statuses preserved, all `stripeCustomerId=null` → now route to NoOpBilling:
 These are now off KillBill. Phase 2's flag flip can proceed without misclassifying
 them as orphans.
 
-## Phase 2 — Orphan-routing (re-implement from harmonic-stirring-prism.md)
-1. `BillingRouter`: `else` branch + empty-account fallback → NoOp, behind a new
-   `routeOrphansToNoOp` config flag (mirrors `routeGrandfatheredToNoOp`).
-2. `NoOpBilling.getEntitlementStatus`: if planid NOT in `NOOP_BILLED_PLAN_IDS`
-   (an orphan), return `NOPAYMENTMETHOD` (preserve `BLOCKED`); grandfathered
-   plans behave exactly as today.
-3. `BillingRouter.changePlan`: broaden upgrade interception so an orphan
-   (no stripeCustomerId, non-NoOp plan) reactivates through `stripe.changePlan`
-   (→ 409 → frontend Stripe Checkout).
-4. Frontend `clearflask-frontend/src/common/util/stripePlanIds.ts`: trim
-   `STRIPE_BILLED_PLAN_IDS` to only Stripe-provisioned plans so legacy-plan
-   reactivation falls through to the plan picker instead of 500-ing.
-Rollout: ship with flag off → run Phase 1 → flip `routeOrphansToNoOp=true`.
-**This removes the last live KillBill dependency.**
+## Phase 2 — Orphan-routing — DONE (2026-06-23, commit `912f29b0`)
+1. ✅ `BillingRouter`: `else` branch + empty-account fallback + `pickForNewSignup`
+   fallback → NoOp, behind the new `routeOrphansToNoOp` config flag.
+2. ✅ `NoOpBilling.getEntitlementStatus`: planid NOT in `NOOP_BILLED_PLAN_IDS`
+   (an orphan) → `NOPAYMENTMETHOD` (preserves `BLOCKED`); grandfathered unchanged.
+3. ✅ `BillingRouter.changePlan`: broadened (`accountIsOrphan`) so an orphan
+   reactivates through `stripe.changePlan` (→ 409 → frontend Stripe Checkout).
+4. ✅ Frontend `stripePlanIds.ts`: trimmed `STRIPE_BILLED_PLAN_IDS` to the 9
+   Stripe-provisioned plans. (NOTE: `flat-yearly` left in but has no default Price
+   — see Known issue above.)
 
-## Phase 3 — Verify
-Orphans show NOPAYMENTMETHOD (access denied), can self-reactivate via Stripe
-Checkout, and the existing `ProjectDeletionService` ages them out (BLOCKED now,
-NOPAYMENTMETHOD after `CANCEL_AFTER_DURATION_IN_DAYS`=90d). No new deletion code.
+Rollout done: shipped flag-off → Phase 1 normalization → flipped
+`routeOrphansToNoOp=true` in `config-prod.cfg` (backup
+`config-prod.cfg.bak.20260623-orphanflip`) → restarted Tomcat 16:03 UTC →
+healthy 16:04:51, clean startup, flag verified live, 0 errors under live traffic.
+**KillBill is no longer in the live routing path.**
+
+## Phase 3 — Verify — DONE (2026-06-23)
+Flag confirmed live (`BillingRouterIceMBean.routeOrphansToNoOp=true`); matus
+(grandfathered flat-yearly) stays Active; orphans transition to NOPAYMENTMETHOD
+lazily on next reconcile/access; `ProjectDeletionService` ages them out (BLOCKED
+now, NOPAYMENTMETHOD after `CANCEL_AFTER_DURATION_IN_DAYS`=90d). No new code.
 
 ## Phase 4 — Delete KillBill code (subtractive PR)
 - Delete `KillBilling`, `KillBillSync`, `KillBillResource`, `KillBillClientProvider`,

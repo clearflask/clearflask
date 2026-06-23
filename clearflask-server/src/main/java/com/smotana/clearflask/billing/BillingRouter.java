@@ -192,6 +192,17 @@ public class BillingRouter implements Billing {
 
     @Override
     public Optional<AccountBillingPaymentActionRequired> getActions(UUID accountIdKb) {
+        // Pending 3DS/SCA "requires_action" is a KillBill-only concept: Stripe resolves SCA inside
+        // its hosted Checkout/Portal, so StripeBilling.getActions and NoOpBilling.getActions both
+        // return empty. This only ever did real work for KillBilling-managed accounts, yet it is
+        // invoked on every billing-page load (AccountResource.accountBillingAdmin). Once the live
+        // path is off KillBilling (routeOrphansToNoOp), no account routes here -- skip the wasted
+        // KB round-trip (which would otherwise break the billing page once KB is deleted). The KB
+        // UUID is meaningless for Stripe/NoOp accounts anyway. Phase 4 removes this method and its
+        // UUID-keyed siblings (getAccountByKbId, getDefaultPaymentMethodDetails(UUID)) outright.
+        if (config.routeOrphansToNoOp()) {
+            return Optional.empty();
+        }
         return killBill.getActions(accountIdKb);
     }
 
