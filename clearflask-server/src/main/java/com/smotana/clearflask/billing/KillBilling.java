@@ -115,6 +115,14 @@ public class KillBilling extends ManagedService implements Billing {
         @DefaultValue("true")
         boolean createSubscriptionIfNotExists();
 
+        /**
+         * When false, the daily background job that scans KillBill for uncommitted (draft)
+         * invoices and commits them is not scheduled, so KillBilling makes no periodic engine
+         * calls. Set false once billing is migrated off KillBill.
+         */
+        @DefaultValue("true")
+        boolean scanUncommitedInvoicesEnabled();
+
         @DefaultValue("P1D")
         Duration scanUncommitedInvoicesScheduleFrequency();
 
@@ -174,15 +182,19 @@ public class KillBilling extends ManagedService implements Billing {
         accountCreationExecutor = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(2, new ThreadFactoryBuilder()
                 .setNameFormat("KillBilling-account-creation-%d").build()));
 
-        commitUncommitedInvoicesSchedule = usageExecutor.scheduleAtFixedRate(
-                this::commitUncommitedInvoices,
-                (long) (config.scanUncommitedInvoicesScheduleFrequency().toMillis() * ThreadLocalRandom.current().nextDouble()),
-                config.scanUncommitedInvoicesScheduleFrequency().toMillis(), TimeUnit.MILLISECONDS);
+        if (config.scanUncommitedInvoicesEnabled()) {
+            commitUncommitedInvoicesSchedule = usageExecutor.scheduleAtFixedRate(
+                    this::commitUncommitedInvoices,
+                    (long) (config.scanUncommitedInvoicesScheduleFrequency().toMillis() * ThreadLocalRandom.current().nextDouble()),
+                    config.scanUncommitedInvoicesScheduleFrequency().toMillis(), TimeUnit.MILLISECONDS);
+        }
     }
 
     @Override
     protected void serviceStop() throws Exception {
-        commitUncommitedInvoicesSchedule.cancel(false);
+        if (commitUncommitedInvoicesSchedule != null) {
+            commitUncommitedInvoicesSchedule.cancel(false);
+        }
 
         usageExecutor.shutdown();
         accountCreationExecutor.shutdown();

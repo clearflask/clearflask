@@ -222,10 +222,13 @@ public class StripePlanStore extends ManagedService implements PlanStore {
         ImmutableList<Plan> publicPlans = loadPlans().stream()
                 .filter(p -> PlanStore.AVAILABLE_PLAN_NAMES.contains(p.getBasePlanId()))
                 .collect(ImmutableList.toImmutableList());
+        // Comparison/features tables come from PlanConstants (extracted from KillBillPlanStore),
+        // so /pricing renders the full Cloud + Self-host feature comparison without any KillBill
+        // dependency. Previously these were empty here and PlanStoreRouter merged KillBill's in.
         return new PlansGetResponse(
                 publicPlans,
-                emptyFeaturesTable(),
-                emptyFeaturesTable());
+                PlanConstants.FEATURES_TABLE,
+                PlanConstants.FEATURES_TABLE_SELFHOST);
     }
 
     @Override

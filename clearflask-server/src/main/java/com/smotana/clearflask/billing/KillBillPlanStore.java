@@ -330,8 +330,6 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     @Inject
     private Billing billing;
     @Inject
-    private CatalogApi catalogApi;
-    @Inject
     private ProjectStore projectStore;
     @Inject
     private AccountStore accountStore;
@@ -341,134 +339,58 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
     private PlansGetResponse plansGetResponse;
     private AllPlansGetResponse allPlansGetResponse;
 
+    private static PlanPricing pp(long basePrice, long baseMau, long unitPrice, long unitMau,
+                                 PeriodEnum period, PlanPricingAdmins admins) {
+        return PlanPricing.builder()
+                .basePrice(basePrice).baseMau(baseMau).unitPrice(unitPrice).unitMau(unitMau)
+                .period(period).admins(admins).build();
+    }
+
+    /**
+     * Plan pricing extracted verbatim from the KillBill catalog (catalog021 + older versions,
+     * latest-effectiveDate-wins) so this store no longer queries the KillBill engine on startup.
+     * Plans absent here resolve to null pricing (the grandfathered $0 plans). getPlan() still
+     * overrides the displayed price from each account's live subscription; the public pricing page
+     * renders sellable plans from StripePlanStore.
+     */
+    private static final ImmutableMap<String, PlanPricing> STATIC_PLAN_PRICING = ImmutableMap.<String, PlanPricing>builder()
+            .put("growth-monthly", pp(50L, 0L, 0L, 0L, PeriodEnum.MONTHLY, null))
+            .put("standard-monthly", pp(200L, 0L, 0L, 0L, PeriodEnum.MONTHLY, null))
+            .put("growth2-monthly", pp(10L, 50L, 10L, 50L, PeriodEnum.MONTHLY, null))
+            .put("standard2-monthly", pp(100L, 500L, 50L, 500L, PeriodEnum.MONTHLY, null))
+            .put("pitchground-a-lifetime", pp(0L, 50L, 10L, 50L, PeriodEnum.LIFETIME, null))
+            .put("pitchground-b-lifetime", pp(0L, 500L, 50L, 500L, PeriodEnum.LIFETIME, null))
+            .put("starter3-monthly", pp(10L, 0L, 0L, 0L, PeriodEnum.MONTHLY, null))
+            .put("sponsor-monthly", pp(50L, 0L, 0L, 0L, PeriodEnum.MONTHLY, null))
+            .put("standard3-monthly", pp(8L, 0L, 0L, 0L, PeriodEnum.MONTHLY, new PlanPricingAdmins(1L, 4L)))
+            .put("lifetime-lifetime", pp(250L, 0L, 0L, 0L, PeriodEnum.LIFETIME, null))
+            .put("lifetime2-lifetime", pp(150L, 0L, 0L, 0L, PeriodEnum.LIFETIME, new PlanPricingAdmins(1L, 75L)))
+            .put("cloud-starter-monthly", pp(6L, 0L, 0L, 0L, PeriodEnum.MONTHLY, null))
+            .put("cloud-monthly", pp(29L, 0L, 0L, 0L, PeriodEnum.MONTHLY, new PlanPricingAdmins(3L, 12L)))
+            .put("cloud-yearly", pp(490L, 0L, 0L, 0L, PeriodEnum.YEARLY, null))
+            .put("cloud-90day-yearly", pp(490L, 0L, 0L, 0L, PeriodEnum.YEARLY, null))
+            .put("selfhost-monthly", pp(18L, 0L, 0L, 0L, PeriodEnum.MONTHLY, null))
+            .put("selfhost-yearly", pp(108L, 0L, 0L, 0L, PeriodEnum.YEARLY, null))
+            .put("selfhost-yearly2", pp(720L, 0L, 0L, 0L, PeriodEnum.YEARLY, null))
+            .put("cloud-monthly2", pp(29L, 0L, 0L, 0L, PeriodEnum.MONTHLY, null))
+            .put("selfhost-monthly2", pp(9L, 0L, 0L, 0L, PeriodEnum.MONTHLY, null))
+            .build();
+
     @Override
     protected ImmutableSet<Class> serviceDependencies() {
-        return ImmutableSet.of(KillBillSync.class);
+        return ImmutableSet.of();
     }
 
     @Override
     protected void serviceStart() throws Exception {
-        Catalogs catalogs = catalogApi.getCatalogJson(null, null, KillBillUtil.roDefault());
-        ImmutableList<Plan> plans = PLANS_BUILDER.entrySet().stream().map(e -> {
-            // Oh god this is just terrible, this is what happens when you check in at 4am
-            String planName = e.getKey();
-            org.killbill.billing.client.model.gen.Plan plan = catalogs
-                    .stream()
-                    .sorted(Comparator.comparing(Catalog::getEffectiveDate).reversed())
-                    .flatMap(c -> c.getProducts().stream())
-                    .flatMap(p -> p.getPlans().stream())
-                    .filter(p -> planName.equals(p.getName()))
-                    .findFirst()
-                    .orElseThrow(() -> new RuntimeException("Plan not found in catalog:" + e.getKey()));
-            Optional<Phase> evergreenOpt = Stream.of(plan)
-                    .flatMap(p -> p.getPhases().stream())
-                    .filter(p -> PhaseType.EVERGREEN.name().equals(p.getType()))
-                    .findAny();
-            long basePrice = evergreenOpt.stream()
-                    // Regular pricing
-                    .flatMap(p -> p.getPrices().stream())
-                    .map(Price::getValue)
-                    .map(BigDecimal::longValueExact)
-                    .max(Long::compareTo)
-                    // Fixed pricing
-                    .or(() -> evergreenOpt.stream()
-                            .flatMap(p -> p.getFixedPrices().stream())
-                            .map(Price::getValue)
-                            .map(BigDecimal::longValueExact)
-                            .max(Long::compareTo))
-                    .orElse(0L);
-            Optional<Usage> usageOpt = evergreenOpt.stream()
-                    .flatMap(p -> p.getUsages().stream())
-                    .findFirst();
-            PeriodEnum period;
-            if (BillingPeriod.MONTHLY.equals(plan.getBillingPeriod())) {
-                period = PeriodEnum.MONTHLY;
-            } else if (BillingPeriod.ANNUAL.equals(plan.getBillingPeriod())) {
-                period = PeriodEnum.YEARLY;
-            } else if (BillingPeriod.QUARTERLY.equals(plan.getBillingPeriod())) {
-                period = PeriodEnum.QUARTERLY;
-            } else if (BillingPeriod.NO_BILLING_PERIOD.equals(plan.getBillingPeriod())) {
-                period = PeriodEnum.LIFETIME;
-            } else {
-                log.error("Unknown billing period {} for plan {}, defaulting to yearly", plan.getBillingPeriod(), plan.getPrettyName());
-                period = PeriodEnum.YEARLY;
-            }
-            long baseMau = 0L;
-            long unitPrice = 0L;
-            long unitMau = 0L;
-            Optional<PlanPricingAdmins> adminsOpt = Optional.empty();
-            if (usageOpt.stream()
-                    .flatMap(usage -> usage.getTiers().stream())
-                    .flatMap(tier -> tier.getBlocks().stream())
-                    .anyMatch(block -> KillBilling.TRACKED_TEAMMATE_UNIT_NAME.equals(block.getUnit()))) {
-                adminsOpt = Optional.of(new PlanPricingAdmins(
-                        usageOpt.stream()
-                                .flatMap(usage -> usage.getTiers().stream())
-                                .flatMap(tier -> tier.getBlocks().stream())
-                                .filter(block -> KillBilling.TRACKED_TEAMMATE_UNIT_NAME.equals(block.getUnit()))
-                                .findFirst()
-                                .map(TieredBlock::getMax)
-                                .map(Double::valueOf)
-                                .map(Double::longValue)
-                                .orElseThrow(),
-                        usageOpt.stream()
-                                .flatMap(usage -> usage.getTiers().stream())
-                                .flatMap(tier -> tier.getBlocks().stream())
-                                .filter(block -> KillBilling.TRACKED_TEAMMATE_UNIT_NAME.equals(block.getUnit()))
-                                .skip(1)
-                                .flatMap(block -> block.getPrices().stream())
-                                .findFirst()
-                                .map(Price::getValue)
-                                .map(BigDecimal::longValueExact)
-                                .orElseThrow()));
-            } else if (usageOpt.stream()
-                    .flatMap(usage -> usage.getTiers().stream())
-                    .flatMap(tier -> tier.getBlocks().stream())
-                    .anyMatch(block -> KillBilling.TRACKED_USER_UNIT_NAME.equals(block.getUnit()))) {
-                baseMau = usageOpt.stream()
-                        .flatMap(usage -> usage.getTiers().stream())
-                        .flatMap(tier -> tier.getBlocks().stream())
-                        .filter(block -> KillBilling.TRACKED_USER_UNIT_NAME.equals(block.getUnit()))
-                        .findFirst()
-                        .map(TieredBlock::getSize)
-                        .map(Double::valueOf)
-                        .map(Double::longValue)
-                        .orElse(0L);
-                unitPrice = usageOpt.stream()
-                        .flatMap(usage -> usage.getTiers().stream())
-                        .flatMap(tier -> tier.getBlocks().stream())
-                        .filter(block -> KillBilling.TRACKED_USER_UNIT_NAME.equals(block.getUnit()))
-                        .skip(1)
-                        .flatMap(block -> block.getPrices().stream())
-                        .findFirst()
-                        .map(Price::getValue)
-                        .map(BigDecimal::longValueExact)
-                        .orElse(0L);
-                unitMau = usageOpt.stream()
-                        .flatMap(usage -> usage.getTiers().stream())
-                        .skip(1)
-                        .flatMap(tier -> tier.getBlocks().stream())
-                        .findFirst()
-                        .map(TieredBlock::getSize)
-                        .map(Double::valueOf)
-                        .map(Double::longValue)
-                        .orElse(0L);
-            } else if (LIFETIME_TEAMMATES_FOR_PLANS.contains(planName)) {
-                adminsOpt = Optional.of(new PlanPricingAdmins(
-                        LIFETIME_MAX_TEAMMATES,
-                        75L));
-            }
-            PlanPricing planPricing = (basePrice == 0L && unitPrice == 0L) ? null
-                    : PlanPricing.builder()
-                    .basePrice(basePrice)
-                    .baseMau(baseMau)
-                    .unitPrice(unitPrice)
-                    .unitMau(unitMau)
-                    .period(period)
-                    .admins(adminsOpt.orElse(null))
-                    .build();
-            return e.getValue().apply(planPricing);
-        }).collect(ImmutableList.toImmutableList());
+        ImmutableList<Plan> plans = PLANS_BUILDER.entrySet().stream()
+                // Pricing/period/MAU were previously parsed from the KillBill catalog via
+                // catalogApi.getCatalogJson(). They are now baked into STATIC_PLAN_PRICING so this
+                // store never queries the KillBill engine. getPlan() still overrides the displayed
+                // price from each account's live subscription; sellable plans render via Stripe.
+                // Absent key -> null pricing (the grandfathered $0 plans).
+                .map(e -> e.getValue().apply(STATIC_PLAN_PRICING.get(e.getKey())))
+                .collect(ImmutableList.toImmutableList());
         allPlans = Stream.concat(plans.stream(), PLANS_STATIC.stream())
                 .collect(ImmutableMap.toImmutableMap(
                         Plan::getBasePlanId,

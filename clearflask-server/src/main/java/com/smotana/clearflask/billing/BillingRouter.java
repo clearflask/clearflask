@@ -155,8 +155,9 @@ public class BillingRouter implements Billing {
 
     @Override
     public Account getAccountByKbId(UUID accountIdKb) {
-        // KB UUIDs are by definition KillBilling-managed.
-        return killBill.getAccountByKbId(accountIdKb);
+        // KB-UUID lookups only ever came from the KillBill webhook (KillBillResource), which is now
+        // inert. Route to NoOp (synthetic shell) so this no longer calls the KillBill engine.
+        return noOp.getAccountByKbId(accountIdKb);
     }
 
     @Override
@@ -170,7 +171,7 @@ public class BillingRouter implements Billing {
         // KillBill DTO convention used by all backends, so route by that.
         String accountId = subscription.getExternalKey();
         if (Strings.isNullOrEmpty(accountId)) {
-            return killBill.getEndOfTermChangeToPlanId(subscription);
+            return noOp.getEndOfTermChangeToPlanId(subscription);
         }
         return pick(accountId).getEndOfTermChangeToPlanId(subscription);
     }
@@ -287,7 +288,7 @@ public class BillingRouter implements Billing {
         if (accountIdOpt.isPresent()) {
             return pick(accountIdOpt.get()).getInvoiceHtml(invoiceId, accountIdOpt);
         }
-        return killBill.getInvoiceHtml(invoiceId, accountIdOpt);
+        return noOp.getInvoiceHtml(invoiceId, accountIdOpt);
     }
 
     @Override
@@ -297,7 +298,8 @@ public class BillingRouter implements Billing {
 
     @Override
     public Optional<PaymentMethodDetails> getDefaultPaymentMethodDetails(UUID accountIdKb) {
-        return killBill.getDefaultPaymentMethodDetails(accountIdKb);
+        // KB-UUID-keyed; only reached from the now-inert KillBill webhook. NoOp returns empty.
+        return noOp.getDefaultPaymentMethodDetails(accountIdKb);
     }
 
     @Override
@@ -305,7 +307,7 @@ public class BillingRouter implements Billing {
         if (accountId.isPresent()) {
             return pick(accountId.get()).getAvailablePlans(accountId);
         }
-        return killBill.getAvailablePlans(accountId);
+        return noOp.getAvailablePlans(accountId);
     }
 
     @Override
