@@ -43,7 +43,10 @@ const styles = (theme: Theme) => createStyles({
   },
   buttonsContainer: {
     display: 'flex',
-    flexWrap: 'wrap',
+    // Keep "Source code" + "Get started" on a single row at every width. The buttons set
+    // flexShrink: 0 / whiteSpace: nowrap, so with flexWrap: wrap they dropped onto a second
+    // row once the hero text column got narrow; nowrap pins them side by side.
+    flexWrap: 'nowrap',
     justifyContent: 'flex-end',
     alignSelf: 'flex-end',
     margin: theme.spacing(4, 8),
