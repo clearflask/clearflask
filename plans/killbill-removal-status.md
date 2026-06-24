@@ -5,6 +5,27 @@ the rolling notes in `killbill-removal-plan.md` / `killbill-removal-remaining-wo
 for "what's left". Design detail for the orphan-routing work lives in the
 approved plan `~/.claude/plans/harmonic-stirring-prism.md`.
 
+## Where we are (as of 2026-06-24)
+
+**KillBill is now UNUSED at runtime (no classes deleted yet)** — commit `701f9e65`,
+deploy `28127577799`, verified 2026-06-24:
+- `KillBillPlanStore` builds plans from a static `STATIC_PLAN_PRICING` map (extracted
+  verbatim from catalog021 + older versions) instead of `catalogApi.getCatalogJson`;
+  dropped the `KillBillSync` service dependency. Startup clean, no catalog/KB calls.
+- `StripePlanStore.getPublicPlans` serves `PlanConstants.FEATURES_TABLE/_SELFHOST`;
+  `/pricing` renders plans + features tables with no KillBill (verified `GET /admin/plan`).
+- `BillingRouter` UUID/edge fallbacks (`getAccountByKbId`, `getEndOfTermChangeToPlanId`,
+  `getInvoiceHtml`, `getDefaultPaymentMethodDetails(UUID)`, `getAvailablePlans`) → NoOp.
+- `KillBilling` daily `commitUncommitedInvoices` KB scan gated behind
+  `scanUncommitedInvoicesEnabled`.
+- Prod config (`config-prod.cfg`, backup `config-prod.cfg.bak.20260624-kbunused`):
+  `KillBillSync.enabled=false` (logs "Skipping killbill sync, disabled"),
+  `KillBillResource.registerWebhookOnStartup=false` (no webhook registered at startup),
+  `KillBilling.scanUncommitedInvoicesEnabled=false` — all verified live via Ice MBeans.
+- Residual: the KB webhook *handler* still exists (would call KB if an event arrived),
+  but registration is off and no events fire (SES/logs confirmed). Removed in Phase 4.
+- Rollback: restore the config backup (+ revert `701f9e65`).
+
 ## Where we are (as of 2026-06-23)
 
 **Done & in prod:**
