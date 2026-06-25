@@ -41,14 +41,14 @@ public class PlanStoreRouter implements PlanStore {
     @Inject
     private AccountStore accountStore;
     @Inject
-    @Named("killbill")
-    private PlanStore killBillPlanStore;
+    @Named("legacy")
+    private PlanStore legacyPlanStore;
     @Inject
     @Named("stripe")
     private PlanStore stripePlanStore;
 
     private PlanStore primary() {
-        return config.useStripeForNewSignups() ? stripePlanStore : killBillPlanStore;
+        return config.useStripeForNewSignups() ? stripePlanStore : legacyPlanStore;
     }
 
     private PlanStore pickByAccount(String accountId) {
@@ -69,15 +69,15 @@ public class PlanStoreRouter implements PlanStore {
             // Stripe primary, but no Products provisioned yet (or Stripe call failed). Fall
             // back to KillBill so the public pricing/signup page renders something rather
             // than crashing.
-            log.warn("PlanStoreRouter.getPublicPlans: primary returned empty, falling back to KillBill catalog");
-            return killBillPlanStore.getPublicPlans();
+            log.warn("PlanStoreRouter.getPublicPlans: primary returned empty, falling back to legacy plan catalog");
+            return legacyPlanStore.getPublicPlans();
         }
         // Stripe primary returns its plan list but does NOT own the comparison tables -- those
         // describe plan-family capabilities (Cloud vs Self-host) and are sourced from
         // KillBillPlanStore. Merge them in when the primary left them empty so /pricing renders
         // the full Features comparison table.
         if (isFeaturesTableEmpty(r.getFeaturesTable()) || isFeaturesTableEmpty(r.getFeaturesTableSelfhost())) {
-            PlansGetResponse kb = killBillPlanStore.getPublicPlans();
+            PlansGetResponse kb = legacyPlanStore.getPublicPlans();
             return new PlansGetResponse(
                     r.getPlans(),
                     isFeaturesTableEmpty(r.getFeaturesTable()) ? kb.getFeaturesTable() : r.getFeaturesTable(),
@@ -96,8 +96,8 @@ public class PlanStoreRouter implements PlanStore {
         if (r != null && r.getPlans() != null && !r.getPlans().isEmpty()) {
             return r;
         }
-        log.warn("PlanStoreRouter.getAllPlans: primary returned empty, falling back to KillBill catalog");
-        return killBillPlanStore.getAllPlans();
+        log.warn("PlanStoreRouter.getAllPlans: primary returned empty, falling back to legacy plan catalog");
+        return legacyPlanStore.getAllPlans();
     }
 
     @Override
@@ -112,7 +112,7 @@ public class PlanStoreRouter implements PlanStore {
         if (p.isPresent()) return p;
         // Fallback to the other store -- coupon-applied lifetime/grandfathered plans live in
         // KillBillPlanStore even when the primary mode is Stripe.
-        PlanStore fallback = (picked == stripePlanStore) ? killBillPlanStore : stripePlanStore;
+        PlanStore fallback = (picked == stripePlanStore) ? legacyPlanStore : stripePlanStore;
         return fallback.getPlan(planId, accountIdOpt);
     }
 
@@ -120,7 +120,7 @@ public class PlanStoreRouter implements PlanStore {
     public Optional<PlanWithAddons> getCouponPlan(CouponStore.CouponModel coupon, Optional<String> accountIdOpt) {
         Optional<PlanWithAddons> p = primary().getCouponPlan(coupon, accountIdOpt);
         if (p.isPresent()) return p;
-        PlanStore fallback = primary() == killBillPlanStore ? stripePlanStore : killBillPlanStore;
+        PlanStore fallback = primary() == legacyPlanStore ? stripePlanStore : legacyPlanStore;
         return fallback.getCouponPlan(coupon, accountIdOpt);
     }
 

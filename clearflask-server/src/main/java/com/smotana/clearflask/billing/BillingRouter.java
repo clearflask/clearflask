@@ -96,9 +96,6 @@ public class BillingRouter implements Billing {
     @Inject
     private AccountStore accountStore;
     @Inject
-    @Named("killbill")
-    private Billing killBill;
-    @Inject
     @Named("stripe")
     private Billing stripe;
     @Inject
@@ -110,7 +107,7 @@ public class BillingRouter implements Billing {
         if (accountOpt.isEmpty()) {
             // No local account: the orphan fallback (KillBilling during migration, NoOpBilling once
             // routeOrphansToNoOp is flipped). There is nothing to bill for a missing account anyway.
-            return config.routeOrphansToNoOp() ? noOp : killBill;
+            return noOp;
         }
         return pick(accountOpt.get());
     }
@@ -126,7 +123,7 @@ public class BillingRouter implements Billing {
         // Orphan bucket: not Stripe-billed, not grandfathered. KillBilling during the migration;
         // NoOpBilling (-> NOPAYMENTMETHOD) once routeOrphansToNoOp is flipped, removing the last
         // live KillBill dependency.
-        return config.routeOrphansToNoOp() ? noOp : killBill;
+        return noOp;
     }
 
     /**
@@ -135,12 +132,12 @@ public class BillingRouter implements Billing {
     private Billing pickForNewSignup(AccountStore.Account accountInDyn) {
         if (NoOpBilling.NOOP_BILLED_PLAN_IDS.contains(accountInDyn.getPlanid())) {
             // $0 grandfathered signups never need external billing.
-            return config.routeGrandfatheredToNoOp() ? noOp : killBill;
+            return noOp;
         }
         if (config.useStripeForNewSignups()) {
             return stripe;
         }
-        return config.routeOrphansToNoOp() ? noOp : killBill;
+        return noOp;
     }
 
     @Override
@@ -201,10 +198,7 @@ public class BillingRouter implements Billing {
         // KB round-trip (which would otherwise break the billing page once KB is deleted). The KB
         // UUID is meaningless for Stripe/NoOp accounts anyway. Phase 4 removes this method and its
         // UUID-keyed siblings (getAccountByKbId, getDefaultPaymentMethodDetails(UUID)) outright.
-        if (config.routeOrphansToNoOp()) {
-            return Optional.empty();
-        }
-        return killBill.getActions(accountIdKb);
+        return Optional.empty();
     }
 
     @Override
@@ -226,7 +220,7 @@ public class BillingRouter implements Billing {
     public Subscription changePlan(String accountId, String planId, Optional<Long> recurringPriceOpt) {
         Optional<AccountStore.Account> accountOpt = accountStore.getAccount(accountId, true);
         if (accountOpt.isEmpty()) {
-            return killBill.changePlan(accountId, planId, recurringPriceOpt);
+            return noOp.changePlan(accountId, planId, recurringPriceOpt);
         }
         AccountStore.Account current = accountOpt.get();
         boolean targetIsNoOp = NoOpBilling.NOOP_BILLED_PLAN_IDS.contains(planId);

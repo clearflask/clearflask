@@ -19,8 +19,8 @@ import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 
-import static com.smotana.clearflask.billing.KillBillPlanStore.AVAILABLE_PLAN_NAMES;
-import static com.smotana.clearflask.billing.KillBillPlanStore.SELFHOST_SERVICE_PLANS;
+import static com.smotana.clearflask.billing.PlanStore.AVAILABLE_PLAN_NAMES;
+import static com.smotana.clearflask.billing.PlanStore.SELFHOST_SERVICE_PLANS;
 import static com.smotana.clearflask.testutil.HtmlUtil.textToSimpleHtml;
 
 public class MockModelUtil {

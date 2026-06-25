@@ -139,25 +139,6 @@ public class StripeBilling extends ManagedService implements Billing {
     private com.smotana.clearflask.core.push.NotificationService notificationService;
     @Inject
     private PlanVerifyStore planVerifyStore;
-    /**
-     * KillBilling backend, used during Checkout-driven migration of a KB-routed account to
-     * Stripe. We need to (1) honor the KB charged-through-date as the Stripe trial_end so
-     * the customer isn't double-billed, and (2) cancel the KB sub end-of-term after Checkout
-     * completes. Injected via the same @Named binding as BillingRouter.
-     */
-    @Inject
-    @com.google.inject.name.Named("killbill")
-    private Billing killBilling;
-    /**
-     * Read-only access to the routing flags. Once {@code routeOrphansToNoOp} is set, KillBilling
-     * is out of the live path: the Checkout-driven KB migration handoff below (read KB
-     * charged-through-date / cancel the KB sub) is obsolete -- the migrating payers it was built
-     * for are already Stripe-routed (short-circuited by stripeCustomerId), and every other account
-     * that can reach Checkout has no KB sub worth touching. Skipping it avoids a dead KB round-trip
-     * on every Checkout and lets KB be deleted without breaking the flow.
-     */
-    @Inject
-    private BillingRouter.Config routingConfig;
 
     /** Public-facing app URL derived from {@code Application.Config.domain}. */
     private String publicUrl() {
@@ -237,35 +218,9 @@ public class StripeBilling extends ManagedService implements Billing {
             // exactly when KB would have billed. Falls back to the default 14-day trial for
             // fresh signups and free-to-paid upgrades. Marks the resulting sub as migrated
             // so the entitlement mapper surfaces it as ACTIVE (not ACTIVETRIAL).
-            Long migrationTrialEndEpoch = null;
-            if (!Strings.isNullOrEmpty(accountInDyn.getStripeCustomerId())) {
-                // Already Stripe-billed; no KB sub to harmonize with.
-            } else if (routingConfig.routeOrphansToNoOp()) {
-                // KillBilling is out of the live path: no KB sub to harmonize. The migrating payers
-                // this was built for are already Stripe-routed (handled above); everyone else
-                // reaching Checkout (new signups, $0-comp upgrades, lapsed-orphan reactivations)
-                // has no KB charged-through-date worth honoring. Fall through to the default trial.
-            } else {
-                try {
-                    org.killbill.billing.client.model.gen.Subscription kbSub =
-                            killBilling.getSubscription(accountInDyn.getAccountId());
-                    if (kbSub != null && kbSub.getChargedThroughDate() != null) {
-                        long epoch = kbSub.getChargedThroughDate()
-                                .toDateTimeAtStartOfDay().getMillis() / 1000;
-                        // Only use it if it's in the future; otherwise stale and Stripe rejects.
-                        if (epoch > java.time.Instant.now().getEpochSecond() + 60) {
-                            migrationTrialEndEpoch = epoch;
-                        }
-                    }
-                } catch (Exception ex) {
-                    log.info("createCheckoutSession: no usable KB chargedThroughDate for account {} ({}); using default trial",
-                            accountInDyn.getAccountId(), ex.getMessage());
-                }
-            }
-            if (migrationTrialEndEpoch != null) {
-                subData.setTrialEnd(migrationTrialEndEpoch);
-                subData.putMetadata(META_MIGRATED_FROM_KILLBILL, "true");
-            } else if (!PlanStore.PLANS_WITHOUT_TRIAL.contains(planId)) {
+            // New Stripe subscription gets the standard trial unless the plan opts out. (The old
+            // KillBill charged-through-date handoff is gone now that KillBill no longer bills.)
+            if (!PlanStore.PLANS_WITHOUT_TRIAL.contains(planId)) {
                 subData.setTrialPeriodDays(config.defaultTrialDays());
             }
 
@@ -392,23 +347,6 @@ public class StripeBilling extends ManagedService implements Billing {
             } catch (Exception ex) {
                 log.warn("Finalized Checkout session {}: failed to propagate default_payment_method to customer ({})",
                         sessionId, ex.getMessage());
-            }
-            // Account just transitioned from KB-routed (or NoOp-routed) to Stripe-routed.
-            // Cancel the live KB subscription so it doesn't keep generating invoices alongside
-            // the new Stripe sub. cancelSubscriptionForMigration bypasses the user-facing
-            // trial-phase guard. Best-effort: a stale KB sub is operator-fixable, but a failed
-            // cancel must not undo the Checkout completion.
-            // Skipped once KillBilling is out of the live path (routeOrphansToNoOp): nothing reaching
-            // Checkout has a live KB sub to cancel, and we want the flow KB-independent for deletion.
-            if (!routingConfig.routeOrphansToNoOp()) {
-                try {
-                    killBilling.cancelSubscriptionForMigration(accountId);
-                    log.info("Finalized Checkout session {}: cancelled KB subscription for account {}",
-                            sessionId, accountId);
-                } catch (Exception ex) {
-                    log.warn("Finalized Checkout session {}: failed to cancel KB sub for account {} ({}); cancel manually in KB Kaui",
-                            sessionId, accountId, ex.getMessage());
-                }
             }
         } catch (StripeException ex) {
             throw stripeError("finalizeCheckoutSession", sessionId, ex);
