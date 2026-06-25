@@ -25,13 +25,8 @@ import com.smotana.clearflask.antispam.CastleAntiSpam;
 import com.smotana.clearflask.billing.BillingRouter;
 import com.smotana.clearflask.billing.CommonPlanVerifyStore;
 import com.smotana.clearflask.billing.DynamoCouponStore;
-import com.smotana.clearflask.billing.KillBillClientProvider;
-import com.smotana.clearflask.billing.KillBillPlanStore;
-import com.smotana.clearflask.billing.KillBillSync;
-import com.smotana.clearflask.billing.KillBilling;
+import com.smotana.clearflask.billing.LegacyPlanStore;
 import com.smotana.clearflask.billing.NoOpBilling;
-import com.smotana.clearflask.billing.OneShotKbOrphanCleaner;
-import com.smotana.clearflask.billing.OneShotStripeMigrator;
 import com.smotana.clearflask.billing.PlanStoreRouter;
 import com.smotana.clearflask.billing.SelfHostBilling;
 import com.smotana.clearflask.billing.SelfHostPlanStore;
@@ -143,7 +138,6 @@ import com.smotana.clearflask.web.resource.GitLabResource;
 import com.smotana.clearflask.web.resource.HealthResource;
 import com.smotana.clearflask.web.resource.JiraResource;
 import com.smotana.clearflask.web.resource.IdeaResource;
-import com.smotana.clearflask.web.resource.KillBillResource;
 import com.smotana.clearflask.web.resource.LlmResource;
 import com.smotana.clearflask.web.resource.NotificationResource;
 import com.smotana.clearflask.web.resource.ProjectResource;
@@ -345,7 +339,6 @@ public enum ServiceInjector {
                     bind(TestResource.class);
                 }
                 if (env != Environment.PRODUCTION_SELF_HOST) {
-                    install(KillBillResource.module());
                 }
                 install(GitHubResource.module());
                 install(JiraResource.module());
@@ -373,18 +366,13 @@ public enum ServiceInjector {
                     // Cloud env: BillingRouter and PlanStoreRouter delegate per-account
                     // between KillBilling, StripeBilling, and NoOpBilling. Routing key is
                     // account.stripeCustomerId / planid plus the useStripeForNewSignups flag.
-                    install(KillBillClientProvider.module());
-                    install(KillBilling.module());
-                    install(KillBillSync.module());
-                    install(KillBillPlanStore.module());
+                    install(LegacyPlanStore.module());
                     install(StripeClientSetup.module());
                     install(StripeBilling.module());
                     install(StripePlanStore.module());
                     install(StripeProvisioner.module());
                     install(StripeSyncService.module());
                     install(StripeOverdueEscalationService.module());
-                    install(OneShotStripeMigrator.module());
-                    install(OneShotKbOrphanCleaner.module());
                     install(NoOpBilling.module());
                     install(BillingRouter.module());
                     install(PlanStoreRouter.module());

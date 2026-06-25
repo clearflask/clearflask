@@ -49,6 +49,16 @@ public final class PlanConstants {
      */
     public static final String ADDON_EXTRA_TEAMMATE = "extra-teammate";
 
+    // Addon ids + per-plan teammate caps, relocated from KillBillPlanStore so they survive the
+    // KillBill removal. (If changed, also change in BillingPage.tsx / UpgradeWrapper.tsx.)
+    public static final String ADDON_WHITELABEL = "whitelabel";
+    public static final String ADDON_PRIVATE_PROJECTS = "private-projects";
+    public static final String ADDON_EXTRA_PROJECT = "extra-project";
+    public static final String ADDON_AI = "extra-ai";
+    public static final long GROWTH_MAX_TEAMMATES = 2L;
+    public static final long STANDARD_MAX_TEAMMATES = 8L;
+    public static final long LIFETIME_MAX_TEAMMATES = 1L;
+
     // ============================ Features comparison tables ============================
 
     // TERMS_* are duplicated from KillBillPlanStore on purpose: they're used by the

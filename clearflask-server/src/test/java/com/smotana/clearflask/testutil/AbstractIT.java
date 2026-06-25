@@ -13,7 +13,6 @@ import com.google.inject.Module;
 import com.google.inject.Provider;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
-import com.smotana.clearflask.billing.KillBillClientProvider;
 import com.smotana.clearflask.store.ProjectStore.SearchEngine;
 import com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider;
 import com.smotana.clearflask.store.mysql.DefaultMysqlProvider;
@@ -62,7 +61,7 @@ public abstract class AbstractIT extends AbstractTest {
         install(Modules.override(
                 enableElasticClient ? DefaultElasticSearchProvider.module() : disabledElasticClient(),
                 enableMysqlClient ? DefaultMysqlProvider.module() : disabledMysqlClient(),
-                enableKillBillClient ? KillBillClientProvider.module() : disabledKillBillClient()
+                disabledKillBillClient()
         ).with(new AbstractModule() {
             @Override
             protected void configure() {
@@ -74,17 +73,6 @@ public abstract class AbstractIT extends AbstractTest {
                 String apiKey = IdUtil.randomAscId();
                 String secretKey = IdUtil.randomId();
                 log.info("KillBill test randomized apiKey {} secretKey {}", apiKey, secretKey);
-                if (enableKillBillClient) {
-                    install(ConfigSystem.overrideModule(KillBillClientProvider.Config.class, om -> {
-                        om.override(om.id().host()).withValue("localhost");
-                        om.override(om.id().port()).withValue(8082);
-                        om.override(om.id().user()).withValue("admin");
-                        om.override(om.id().pass()).withValue("password");
-                        om.override(om.id().apiKey()).withValue(apiKey);
-                        om.override(om.id().apiSecret()).withValue(secretKey);
-                        om.override(om.id().requireTls()).withValue(false);
-                    }));
-                }
                 if (enableMysqlClient) {
                     install(ConfigSystem.overrideModule(DefaultMysqlProvider.Config.class, om -> {
                         om.override(om.id().host()).withValue("localhost");

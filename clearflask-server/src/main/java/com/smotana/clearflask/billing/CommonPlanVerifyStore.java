@@ -35,7 +35,7 @@ public class CommonPlanVerifyStore implements PlanVerifyStore {
 
     public static final ImmutableSet<String> PLANS_WITHOUT_WEEKLY_DIGEST = ImmutableSet.<String>builder()
             // License only plans don't need digest
-            .addAll(KillBillPlanStore.SELFHOST_SERVICE_PLANS)
+            .addAll(PlanStore.SELFHOST_SERVICE_PLANS)
             .build();
 
     @Inject
@@ -108,7 +108,7 @@ public class CommonPlanVerifyStore implements PlanVerifyStore {
     @Override
     public boolean isAccountExceedsPostLimit(String planId, String accountId) {
         Optional<Long> maxPostsOpt = Optional.ofNullable(
-                KillBillPlanStore.PLAN_MAX_POSTS.get(planStore.getBasePlanId(planId)));
+                PlanConstants.PLAN_MAX_POSTS.get(planStore.getBasePlanId(planId)));
         if (maxPostsOpt.isPresent()
                 && accountStore.getPostCountForAccount(accountId) > maxPostsOpt.get()) {
             return true;
@@ -165,8 +165,8 @@ public class CommonPlanVerifyStore implements PlanVerifyStore {
         ImmutableMap<String, String> addons = accountStore.getAccount(accountId, true)
                 .map(Account::getAddons)
                 .orElse(ImmutableMap.of());
-        boolean hasAddonWhitelabel = "true".equals(addons.get(KillBillPlanStore.ADDON_WHITELABEL));
-        boolean hasAddonPrivateProjects = "true".equals(addons.get(KillBillPlanStore.ADDON_PRIVATE_PROJECTS));
+        boolean hasAddonWhitelabel = "true".equals(addons.get(PlanConstants.ADDON_WHITELABEL));
+        boolean hasAddonPrivateProjects = "true".equals(addons.get(PlanConstants.ADDON_PRIVATE_PROJECTS));
 
         switch (planStore.getBasePlanId(planId)) {
             case PlanStore.TEAMMATE_PLAN_ID:
@@ -352,11 +352,11 @@ public class CommonPlanVerifyStore implements PlanVerifyStore {
                 break;
             case "growth-monthly":
             case "growth2-monthly":
-                teammateLimitOpt = Optional.of(KillBillPlanStore.GROWTH_MAX_TEAMMATES);
+                teammateLimitOpt = Optional.of(PlanConstants.GROWTH_MAX_TEAMMATES);
                 break;
             case "standard-monthly":
             case "standard2-monthly":
-                teammateLimitOpt = Optional.of(KillBillPlanStore.STANDARD_MAX_TEAMMATES);
+                teammateLimitOpt = Optional.of(PlanConstants.STANDARD_MAX_TEAMMATES);
                 break;
             case "pitchground-d-lifetime":
                 teammateLimitOpt = Optional.of(10L);
@@ -368,7 +368,7 @@ public class CommonPlanVerifyStore implements PlanVerifyStore {
                 teammateLimitOpt = Optional.of(3L);
                 break;
             case "lifetime2-lifetime":
-                teammateLimitOpt = Optional.of(KillBillPlanStore.LIFETIME_MAX_TEAMMATES);
+                teammateLimitOpt = Optional.of(PlanConstants.LIFETIME_MAX_TEAMMATES);
                 requiredPlanId = ""; // Not upgradeable
                 break;
             case "starter3-monthly":
@@ -393,7 +393,7 @@ public class CommonPlanVerifyStore implements PlanVerifyStore {
         ImmutableMap<String, String> addons = accountStore.getAccount(accountId, true)
                 .map(Account::getAddons)
                 .orElse(ImmutableMap.of());
-        long addonExtraTeammateCount = Optional.ofNullable(addons.get(KillBillPlanStore.ADDON_EXTRA_TEAMMATE))
+        long addonExtraTeammateCount = Optional.ofNullable(addons.get(PlanConstants.ADDON_EXTRA_TEAMMATE))
                 .flatMap(addonExtraProjectCountStr -> Optional.ofNullable(Longs.tryParse(addonExtraProjectCountStr)))
                 .orElse(0L);
         teammateLimitOpt = teammateLimitOpt.map(planLimit -> planLimit + addonExtraTeammateCount);
@@ -447,7 +447,7 @@ public class CommonPlanVerifyStore implements PlanVerifyStore {
     public void verifyProjectCountMeetsPlanRestrictions(String planId, String accountId, boolean addOne) throws ApiException {
         Optional<Long> projectCountLimitOpt = Optional.empty();
 
-        if (KillBillPlanStore.SELFHOST_SERVICE_PLANS.contains(planId)) {
+        if (PlanStore.SELFHOST_SERVICE_PLANS.contains(planId)) {
             projectCountLimitOpt = Optional.of(0L);
         } else {
             switch (planStore.getBasePlanId(planId)) {
@@ -468,7 +468,7 @@ public class CommonPlanVerifyStore implements PlanVerifyStore {
         ImmutableMap<String, String> addons = accountStore.getAccount(accountId, true)
                 .map(Account::getAddons)
                 .orElse(ImmutableMap.of());
-        long addonExtraProjectCount = Optional.ofNullable(addons.get(KillBillPlanStore.ADDON_EXTRA_PROJECT))
+        long addonExtraProjectCount = Optional.ofNullable(addons.get(PlanConstants.ADDON_EXTRA_PROJECT))
                 .flatMap(addonExtraProjectCountStr -> Optional.ofNullable(Longs.tryParse(addonExtraProjectCountStr)))
                 .orElse(0L);
         projectCountLimitOpt = projectCountLimitOpt.map(planLimit -> planLimit + addonExtraProjectCount);

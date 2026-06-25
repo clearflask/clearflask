@@ -36,10 +36,6 @@ import com.smotana.clearflask.api.model.UserMeWithBalance;
 import com.smotana.clearflask.billing.Billing;
 import com.smotana.clearflask.billing.CommonPlanVerifyStore;
 import com.smotana.clearflask.billing.DynamoCouponStore;
-import com.smotana.clearflask.billing.KillBillPlanStore;
-import com.smotana.clearflask.billing.KillBillSync;
-import com.smotana.clearflask.billing.KillBillUtil;
-import com.smotana.clearflask.billing.KillBilling;
 import com.smotana.clearflask.billing.StripeClientSetup;
 import com.smotana.clearflask.core.ClearFlaskCreditSync;
 import com.smotana.clearflask.core.email.AmazonSimpleEmailServiceProvider;
@@ -168,8 +164,6 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     @Inject
     protected ContentResource contentResource;
     @Inject
-    protected KillBillResource killBillResource;
-    @Inject
     protected GitHubResource gitHubResource;
     @Inject
     protected LlmResource llmResource;
@@ -235,16 +229,13 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 LangChainLlmAgentStore.module(),
                 LangChainLlmToolingStore.module(),
                 MustacheProvider.module(),
-                KillBillResource.module(),
                 GitHubResource.module(),
                 GitHubStoreImpl.module(),
                 MarkdownAndQuillUtil.module(),
                 GitHubClientProviderImpl.module(),
                 AmazonSimpleEmailServiceProvider.module(),
                 ClearFlaskCreditSync.module(),
-                KillBillSync.module(),
                 StripeClientSetup.module(),
-                KillBilling.module(),
                 InMemoryDynamoDbProvider.module(),
                 SingleTableProvider.module(),
                 NotificationServiceImpl.module(),
@@ -277,7 +268,6 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 LocalRateLimiter.module(),
                 ResourceLegalStore.module(),
                 CommonPlanVerifyStore.module(),
-                KillBillPlanStore.module(),
                 SuperAdminPredicate.module(),
                 DynamoElasticCommentStore.module(),
                 DynamoElasticAccountStore.module(),
@@ -312,11 +302,8 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 // doesn't care about the routing, so bind the unannotated keys directly to the
                 // KillBill impls -- avoids pulling in StripeBilling and its ServiceSecretStore
                 // dep, which would expand test wiring without exercising anything we test here.
-                bind(com.smotana.clearflask.billing.Billing.class).to(KillBilling.class);
-                bind(com.smotana.clearflask.billing.PlanStore.class).to(KillBillPlanStore.class);
-                install(ConfigSystem.overrideModule(KillBilling.Config.class, om -> {
-                    om.override(om.id().reuseDraftInvoices()).withValue(false);
-                }));
+                bind(com.smotana.clearflask.billing.Billing.class).to(com.smotana.clearflask.billing.NoOpBilling.class);
+                bind(com.smotana.clearflask.billing.PlanStore.class).to(com.smotana.clearflask.billing.LegacyPlanStore.class);
                 install(ConfigSystem.overrideModule(DefaultServerSecret.Config.class, Names.named("cursor"), om -> {
                     om.override(om.id().sharedKey()).withValue(ServerSecretTest.getRandomSharedKey());
                 }));
@@ -341,14 +328,6 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 install(ConfigSystem.overrideModule(StripeClientSetup.Config.class, om -> {
                     om.override(om.id().stripeApiKey()).withValue("none");
                     om.override(om.id().overrideBaseUrl()).withValue("http://localhost");
-                }));
-                install(ConfigSystem.overrideModule(KillBillSync.Config.class, om -> {
-                    om.override(om.id().createTenant()).withValue(true);
-                    // These slow down the system
-                    om.override(om.id().uploadAnalyticsReports()).withValue(false);
-                }));
-                install(ConfigSystem.overrideModule(KillBillResource.Config.class, om -> {
-                    om.override(om.id().registerWebhookOnStartup()).withValue(false);
                 }));
                 install(ConfigSystem.overrideModule(S3ContentStore.Config.class, om -> {
                     om.override(om.id().hostname()).withValue(contentUploadBucketName + ".s3.localhost.localstack.cloud:4566");
@@ -497,7 +476,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
 
     protected void kbClockReset() throws Exception {
         // https://github.com/killbill/killbill/blob/master/jaxrs/src/main/java/org/killbill/billing/jaxrs/resources/TestResource.java#L170
-        var response = kbClient.doPost("/1.0/kb/test/clock", "", KillBillUtil.roDefault());
+        var response = kbClient.doPost("/1.0/kb/test/clock", "", org.killbill.billing.client.RequestOptions.builder().build());
         log.info("Reset clock to {}", response.getResponseBody());
     }
 
@@ -509,7 +488,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
 
     protected void kbClockSleep(long sleepInDays) throws Exception {
         // https://github.com/killbill/killbill/blob/master/jaxrs/src/main/java/org/killbill/billing/jaxrs/resources/TestResource.java#L193
-        var response = kbClient.doPut("/1.0/kb/test/clock?days=" + sleepInDays, "", KillBillUtil.roDefault());
+        var response = kbClient.doPut("/1.0/kb/test/clock?days=" + sleepInDays, "", org.killbill.billing.client.RequestOptions.builder().build());
         log.info("Slept for {} days, current clock is {}", sleepInDays, response.getResponseBody());
         refreshStatus();
     }
@@ -524,7 +503,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
 
     protected void paymentTestPluginConfigure(PaymentTestPluginAction configureAction, Optional<Long> sleepTimeInMillisOpt) throws KillBillClientException {
         PaymentTestPluginConfigure props = new PaymentTestPluginConfigure(configureAction, sleepTimeInMillisOpt);
-        kbClient.doPost("/plugins/killbill-payment-test/configure", gson.toJson(props), KillBillUtil.roBuilder()
+        kbClient.doPost("/plugins/killbill-payment-test/configure", gson.toJson(props), org.killbill.billing.client.RequestOptions.builder()
                 .withHeader("Content-Type", MediaType.APPLICATION_JSON)
                 .build());
     }
@@ -558,12 +537,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
 
     protected void refreshStatus(String accountId) throws Exception {
         UUID accountIdKb = billing.getAccount(accountId).getAccountId();
-        killBillResource.webhook(gson.toJson(new KillBillResource.Event(
-                ExtBusEventType.SUBSCRIPTION_CHANGE,
-                ObjectType.ACCOUNT,
-                accountIdKb,
-                accountIdKb,
-                null)));
+        // KillBill removed: webhook-driven status refresh is a no-op now (ITs don't run).
         log.info("Account status {}", accountStore.getAccount(accountId, false).get().getStatus());
     }
 
@@ -589,16 +563,11 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 false,
                 null,
                 null,
-                KillBillUtil.roDefault());
+                org.killbill.billing.client.RequestOptions.builder().build());
         long invoicesCommitted = 0L;
         for (Invoice invoice : invoices) {
             if (InvoiceStatus.DRAFT.equals(invoice.getStatus())) {
-                killBillResource.webhook(gson.toJson(new KillBillResource.Event(
-                        ExtBusEventType.INVOICE_CREATION,
-                        ObjectType.INVOICE,
-                        invoice.getInvoiceId(),
-                        invoice.getAccountId(),
-                        null)));
+                // KillBill removed: invoice-commit webhook is a no-op now.
                 invoicesCommitted++;
             }
         }
@@ -629,7 +598,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 true,
                 null,
                 null,
-                KillBillUtil.roDefault());
+                org.killbill.billing.client.RequestOptions.builder().build());
         log.info("KB invoices:\n{}", invoicesKb);
 
         assertEquals("Uncommitted invoices", 0L, invoicesKb.stream()

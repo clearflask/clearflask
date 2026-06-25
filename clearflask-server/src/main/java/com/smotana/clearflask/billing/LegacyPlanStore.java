@@ -24,8 +24,6 @@ import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
 import org.killbill.billing.catalog.api.BillingPeriod;
 import org.killbill.billing.catalog.api.PhaseType;
-import org.killbill.billing.client.api.gen.CatalogApi;
-import org.killbill.billing.client.model.Catalogs;
 import org.killbill.billing.client.model.gen.*;
 import org.killbill.billing.client.model.gen.Subscription;
 
@@ -38,7 +36,7 @@ import java.util.stream.Stream;
 
 @Slf4j
 @Singleton
-public class KillBillPlanStore extends ManagedService implements PlanStore {
+public class LegacyPlanStore extends ManagedService implements PlanStore {
     /** @deprecated reference {@link PlanConstants#PLAN_MAX_POSTS} -- kept for source-compat until the KB removal commit. */
     @Deprecated
     public static final ImmutableMap<String, Long> PLAN_MAX_POSTS = PlanConstants.PLAN_MAX_POSTS;
@@ -624,6 +622,11 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
                 return PeriodEnum.QUARTERLY;
             case ANNUAL:
                 return PeriodEnum.YEARLY;
+            case NO_BILLING_PERIOD:
+                // NoOpBilling synthetic subscriptions report NO_BILLING_PERIOD; treat as LIFETIME
+                // (matches the catalog period mapping). Prevents the billing page 500ing for NoOp/
+                // grandfathered accounts now that they no longer route through KillBilling.
+                return PeriodEnum.LIFETIME;
             default:
                 throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Unexpected billing period");
         }
@@ -633,9 +636,9 @@ public class KillBillPlanStore extends ManagedService implements PlanStore {
         return new AbstractModule() {
             @Override
             protected void configure() {
-                bind(KillBillPlanStore.class).asEagerSingleton();
-                bind(PlanStore.class).annotatedWith(com.google.inject.name.Names.named("killbill")).to(KillBillPlanStore.class);
-                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(KillBillPlanStore.class).asEagerSingleton();
+                bind(LegacyPlanStore.class).asEagerSingleton();
+                bind(PlanStore.class).annotatedWith(com.google.inject.name.Names.named("legacy")).to(LegacyPlanStore.class);
+                Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(LegacyPlanStore.class).asEagerSingleton();
             }
         };
     }
