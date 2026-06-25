@@ -257,9 +257,48 @@ public class StripePlanStore extends ManagedService implements PlanStore {
 
     @Override
     public Optional<Plan> getPlan(String planId, Optional<String> accountIdOpt) {
-        return loadPlans().stream()
+        Optional<Plan> planOpt = loadPlans().stream()
                 .filter(p -> p.getBasePlanId().equals(planId))
                 .findAny();
+        // Variable per-customer plans (flat-yearly, sponsor-monthly) have no catalog Price, so their
+        // default pricing is null. For an account actually on such a plan, reflect its real Stripe
+        // subscription price (e.g. a flattened custom yearly price) instead of showing $0.
+        if (planOpt.isPresent() && planOpt.get().getPricing() == null && accountIdOpt.isPresent()) {
+            Optional<PlanPricing> actual = accountActualPricing(accountIdOpt.get());
+            if (actual.isPresent()) {
+                return planOpt.map(p -> p.toBuilder().pricing(actual.get()).build());
+            }
+        }
+        return planOpt;
+    }
+
+    /** The account's actual price from its live Stripe subscription item, if any. */
+    private Optional<PlanPricing> accountActualPricing(String accountId) {
+        var aOpt = accountStoreProvider.get().getAccount(accountId, true);
+        if (aOpt.isEmpty() || Strings.isNullOrEmpty(aOpt.get().getStripeCustomerId())) {
+            return Optional.empty();
+        }
+        try {
+            for (com.stripe.model.Subscription sub : com.stripe.model.Subscription.list(
+                    com.stripe.param.SubscriptionListParams.builder()
+                            .setCustomer(aOpt.get().getStripeCustomerId())
+                            .setStatus(com.stripe.param.SubscriptionListParams.Status.ALL)
+                            .setLimit(10L)
+                            .build()).getData()) {
+                String s = sub.getStatus();
+                if (("active".equals(s) || "trialing".equals(s) || "past_due".equals(s))
+                        && !sub.getItems().getData().isEmpty()) {
+                    Price price = sub.getItems().getData().get(0).getPrice();
+                    if (price != null) {
+                        return Optional.of(buildPricing(price));
+                    }
+                }
+            }
+        } catch (StripeException ex) {
+            log.warn("StripePlanStore: failed to read actual subscription price for account {} ({})",
+                    accountId, ex.getMessage());
+        }
+        return Optional.empty();
     }
 
     @Override
