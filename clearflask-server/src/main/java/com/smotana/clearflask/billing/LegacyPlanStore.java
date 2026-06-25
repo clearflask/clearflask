@@ -622,6 +622,11 @@ public class LegacyPlanStore extends ManagedService implements PlanStore {
                 return PeriodEnum.QUARTERLY;
             case ANNUAL:
                 return PeriodEnum.YEARLY;
+            case NO_BILLING_PERIOD:
+                // NoOpBilling synthetic subscriptions report NO_BILLING_PERIOD; treat as LIFETIME
+                // (matches the catalog period mapping). Prevents the billing page 500ing for NoOp/
+                // grandfathered accounts now that they no longer route through KillBilling.
+                return PeriodEnum.LIFETIME;
             default:
                 throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Unexpected billing period");
         }
