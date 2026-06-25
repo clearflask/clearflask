@@ -259,7 +259,10 @@ public class BillingRouter implements Billing {
 
     @Override
     public Subscription changePlanToFlatYearly(String accountId, long yearlyPrice) {
-        return pick(accountId).changePlanToFlatYearly(accountId, yearlyPrice);
+        // A custom yearly price can only be represented in Stripe. Route to Stripe regardless of
+        // current routing: an existing Stripe sub is repriced; a non-Stripe (grandfathered/NoOp)
+        // account gets a fresh Stripe customer + subscription on the custom price.
+        return stripe.changePlanToFlatYearly(accountId, yearlyPrice);
     }
 
     @Override

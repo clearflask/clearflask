@@ -396,18 +396,7 @@ public class StripeBilling extends ManagedService implements Billing {
      * creates a new Stripe Customer and persists its id on the account.
      */
     public void createCustomerAndSubscriptionFresh(AccountStore.Account accountInDyn, String idempotencySuffix) throws StripeException {
-        Customer customer;
-        if (!Strings.isNullOrEmpty(accountInDyn.getStripeCustomerId())) {
-            customer = Customer.retrieve(accountInDyn.getStripeCustomerId());
-        } else {
-            customer = Customer.create(CustomerCreateParams.builder()
-                            .setEmail(accountInDyn.getEmail())
-                            .setName(accountInDyn.getName())
-                            .putMetadata(META_CLEARFLASK_ACCOUNT_ID, accountInDyn.getAccountId())
-                            .build(),
-                    idempotency(accountInDyn.getAccountId(), "createCustomer" + idempotencySuffix));
-            accountStore.setStripeCustomerId(accountInDyn.getAccountId(), Optional.of(customer.getId()));
-        }
+        Customer customer = ensureStripeCustomer(accountInDyn, idempotencySuffix);
 
         Optional<String> priceIdOpt = resolvePriceId(accountInDyn.getPlanid());
         if (priceIdOpt.isEmpty()) {
@@ -435,6 +424,21 @@ public class StripeBilling extends ManagedService implements Billing {
         invalidateSubCache(accountInDyn.getAccountId());
         log.info("Stripe: created customer={} subscription={} for account={} (suffix={})",
                 customer.getId(), sub.getId(), accountInDyn.getAccountId(), idempotencySuffix);
+    }
+
+    /** Retrieve the account's existing Stripe Customer, or create one and persist its id. */
+    private Customer ensureStripeCustomer(AccountStore.Account accountInDyn, String idempotencySuffix) throws StripeException {
+        if (!Strings.isNullOrEmpty(accountInDyn.getStripeCustomerId())) {
+            return Customer.retrieve(accountInDyn.getStripeCustomerId());
+        }
+        Customer customer = Customer.create(CustomerCreateParams.builder()
+                        .setEmail(accountInDyn.getEmail())
+                        .setName(accountInDyn.getName())
+                        .putMetadata(META_CLEARFLASK_ACCOUNT_ID, accountInDyn.getAccountId())
+                        .build(),
+                idempotency(accountInDyn.getAccountId(), "createCustomer" + idempotencySuffix));
+        accountStore.setStripeCustomerId(accountInDyn.getAccountId(), Optional.of(customer.getId()));
+        return customer;
     }
 
     /**
@@ -783,23 +787,50 @@ public class StripeBilling extends ManagedService implements Billing {
             Price price = Price.create(priceParams,
                     idempotency(accountId, "createFlatYearlyPrice:" + yearlyPrice));
 
-            Subscription sub = findActiveSubscription(a)
-                    .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "No subscription to change"));
-            String itemId = sub.getItems().getData().isEmpty() ? null : sub.getItems().getData().get(0).getId();
-            SubscriptionUpdateParams.Item.Builder itemBuilder = SubscriptionUpdateParams.Item.builder()
-                    .setPrice(price.getId());
-            if (itemId != null) {
-                itemBuilder.setId(itemId);
+            Optional<Subscription> activeOpt = findActiveSubscription(a);
+            Subscription resultSub;
+            if (activeOpt.isPresent()) {
+                // Existing Stripe subscription: reprice its item onto the custom flat-yearly price.
+                Subscription sub = activeOpt.get();
+                String itemId = sub.getItems().getData().isEmpty() ? null : sub.getItems().getData().get(0).getId();
+                SubscriptionUpdateParams.Item.Builder itemBuilder = SubscriptionUpdateParams.Item.builder()
+                        .setPrice(price.getId());
+                if (itemId != null) {
+                    itemBuilder.setId(itemId);
+                }
+                SubscriptionUpdateParams params = SubscriptionUpdateParams.builder()
+                        .addItem(itemBuilder.build())
+                        .putMetadata(META_CLEARFLASK_PLAN_ID, "flat-yearly")
+                        .build();
+                resultSub = sub.update(params,
+                        idempotency(accountId, "changePlanToFlatYearly:" + yearlyPrice));
+            } else {
+                // Non-Stripe (grandfathered/NoOp) or never-subscribed account: create a fresh Stripe
+                // customer + subscription on the custom flat-yearly price. Starts DEFAULT_INCOMPLETE
+                // with the standard trial; if no payment method is added by trial end it pauses
+                // (same lifecycle as a fresh signup), and the customer can pay via Portal/Checkout.
+                Customer customer = ensureStripeCustomer(a, ":flatYearly");
+                SubscriptionCreateParams.Builder fresh = SubscriptionCreateParams.builder()
+                        .setCustomer(customer.getId())
+                        .addItem(SubscriptionCreateParams.Item.builder().setPrice(price.getId()).build())
+                        .setPaymentBehavior(SubscriptionCreateParams.PaymentBehavior.DEFAULT_INCOMPLETE)
+                        .setProrationBehavior(SubscriptionCreateParams.ProrationBehavior.NONE)
+                        .putMetadata(META_CLEARFLASK_ACCOUNT_ID, accountId)
+                        .putMetadata(META_CLEARFLASK_PLAN_ID, "flat-yearly");
+                if (!PlanStore.PLANS_WITHOUT_TRIAL.contains("flat-yearly")) {
+                    fresh.setTrialPeriodDays(config.defaultTrialDays())
+                            .setTrialSettings(SubscriptionCreateParams.TrialSettings.builder()
+                                    .setEndBehavior(SubscriptionCreateParams.TrialSettings.EndBehavior.builder()
+                                            .setMissingPaymentMethod(SubscriptionCreateParams.TrialSettings.EndBehavior.MissingPaymentMethod.PAUSE)
+                                            .build())
+                                    .build());
+                }
+                resultSub = Subscription.create(fresh.build(),
+                        idempotency(accountId, "createFlatYearlySub:" + yearlyPrice));
             }
-            SubscriptionUpdateParams params = SubscriptionUpdateParams.builder()
-                    .addItem(itemBuilder.build())
-                    .putMetadata(META_CLEARFLASK_PLAN_ID, "flat-yearly")
-                    .build();
-            Subscription updated = sub.update(params,
-                    idempotency(accountId, "changePlanToFlatYearly:" + yearlyPrice));
             accountStore.setPlan(accountId, "flat-yearly", Optional.empty());
             invalidateSubCache(accountId);
-            return synthSubscription(a, updated);
+            return synthSubscription(a, resultSub);
         } catch (StripeException ex) {
             throw stripeError("changePlanToFlatYearly", accountId, ex);
         }
@@ -1002,11 +1033,20 @@ public class StripeBilling extends ManagedService implements Billing {
     }
 
     private Optional<String> resolveProductId(String planId) throws StripeException {
+        // Plans with a fixed price: derive the Product from the default Price.
         Optional<String> priceIdOpt = resolvePriceId(planId);
-        if (priceIdOpt.isEmpty()) {
-            return Optional.empty();
+        if (priceIdOpt.isPresent()) {
+            return Optional.ofNullable(Price.retrieve(priceIdOpt.get()).getProduct());
         }
-        return Optional.ofNullable(Price.retrieve(priceIdOpt.get()).getProduct());
+        // Variable-priced plans (e.g. flat-yearly) have no default Price, so look the Product up
+        // directly by its clearflask_plan_id metadata -- the same match StripeProvisioner uses.
+        com.stripe.param.ProductListParams listParams = com.stripe.param.ProductListParams.builder().setLimit(100L).build();
+        for (com.stripe.model.Product p : com.stripe.model.Product.list(listParams).autoPagingIterable()) {
+            if (p.getMetadata() != null && planId.equals(p.getMetadata().get(META_CLEARFLASK_PLAN_ID))) {
+                return Optional.of(p.getId());
+            }
+        }
+        return Optional.empty();
     }
 
     private String createOrReuseOneOffMonthlyPrice(String accountId, String planId, long monthlyAmount) throws StripeException {
