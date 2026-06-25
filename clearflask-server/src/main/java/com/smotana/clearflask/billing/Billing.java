@@ -19,9 +19,6 @@ import org.killbill.billing.client.model.gen.Subscription;
 import java.util.Optional;
 import java.util.UUID;
 
-import static com.smotana.clearflask.billing.KillBillClientProvider.PAYMENT_TEST_PLUGIN_NAME;
-import static com.smotana.clearflask.billing.KillBillClientProvider.STRIPE_PLUGIN_NAME;
-
 public interface Billing {
 
     ImmutableSet<SubscriptionStatus> SUBSCRIPTION_STATUS_ACTIVE_ENUMS = Sets.immutableEnumSet(
@@ -194,8 +191,9 @@ public interface Billing {
     }
 
     enum Gateway {
-        STRIPE(STRIPE_PLUGIN_NAME, true),
-        PAYMENT_TEST(PAYMENT_TEST_PLUGIN_NAME, false),
+        // Legacy KillBill payment-plugin identifiers; retained as plain labels post-KB removal.
+        STRIPE("killbill-stripe", true),
+        PAYMENT_TEST("killbill-payment-test", false),
         EXTERNAL("__EXTERNAL_PAYMENT__", false),
         OTHER("unknown", false);
 
