@@ -80,7 +80,7 @@ as `docker-compose.yml`, and run the following:
 docker-compose --profile with-deps up
 ```
 
-Point your browser at [http://localhost](http://localhost) and create an account using email `admin@localhost`.
+Point your browser at [http://localhost](http://localhost) and create an account using email `admin@clearflask.com`.
 
 You also want to setup outgoing mail, read the [Email section](#email).
 
