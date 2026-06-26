@@ -8,7 +8,7 @@ import windowIso from './windowIso';
 
 const MockOauthProvider = () => {
     const [guid, setGuid] = useState<string>('9skwfp7x3kq');
-    const [email, setEmail] = useState<string>('admin@localhost');
+    const [email, setEmail] = useState<string>('admin@clearflask.com');
     const [name, setName] = useState<string>('Sandy Beach');
 
     const params = new URL(windowIso.location.href).searchParams;
