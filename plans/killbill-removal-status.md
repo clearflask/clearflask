@@ -5,6 +5,26 @@ the rolling notes in `killbill-removal-plan.md` / `killbill-removal-remaining-wo
 for "what's left". Design detail for the orphan-routing work lives in the
 approved plan `~/.claude/plans/harmonic-stirring-prism.md`.
 
+## Where we are (as of 2026-06-26) — MIGRATION COMPLETE
+
+**KillBill is fully removed from the codebase AND decommissioned in prod.**
+- **Phase 4 (delete KB code)** shipped to master `c57782d9`, deployed 2026-06-25
+  (`28196350935`), verified green: site/api/`/admin/plan` 200, clean startup,
+  0 KB refs at runtime.
+- **Phase 5 (prod infra decommission)** done 2026-06-26:
+  - KB MariaDB DB dumped (30 MB gz) → Google Drive
+    `My Drive/ClearFlask/killbill-db-last-backup.sql.gz` (verified complete).
+  - `100killbill`/`200kaui` Tomcat webapps removed; `killbill`/`kaui` `<Host>`
+    Services dropped from `server.xml` (ports 8081/8082 gone).
+  - `conf.d/killbill.conf` → `conf.d/tomcat-opts.conf` (KB JVM args stripped,
+    heap/GC/JMX kept); KB blocks removed from `catalina.properties`.
+  - `killbill` DB + `killbill@%` MySQL user dropped; `/var/lib/killbill` removed.
+  - Tomcat restarted: ClearFlask healthy (200s), heap/JMX intact, 0 KB args.
+  - Rollback configs at prod `/var/backups/kb-decomm-20260626/`.
+- **Left intentionally (cosmetic):** catalog XMLs, config templates, frontend
+  billing copy, and the `killbill-client-java` Maven dep (still provides the DTO
+  types the `Billing` interface returns).
+
 ## Where we are (as of 2026-06-24)
 
 **KillBill is now UNUSED at runtime (no classes deleted yet)** — commit `701f9e65`,
@@ -86,7 +106,7 @@ Flag confirmed live (`BillingRouterIceMBean.routeOrphansToNoOp=true`); matus
 lazily on next reconcile/access; `ProjectDeletionService` ages them out (BLOCKED
 now, NOPAYMENTMETHOD after `CANCEL_AFTER_DURATION_IN_DAYS`=90d). No new code.
 
-## Phase 4 — Delete KillBill code (subtractive PR)
+## Phase 4 — Delete KillBill code (subtractive PR) — DONE (2026-06-25, commit `c57782d9`)
 - Delete `KillBilling`, `KillBillSync`, `KillBillResource`, `KillBillClientProvider`,
   `KillBillUtil`, `KillBillPlanStore`, `BillingIT`, `KillBillCatalogTest`,
   `clearflask-server/src/main/resources/killbill/`, `killbill-engine` compose.
@@ -101,9 +121,17 @@ now, NOPAYMENTMETHOD after `CANCEL_AFTER_DURATION_IN_DAYS`=90d). No new code.
 - Fix tests: `AbstractBlackboxIT` unannotated Billing/PlanStore bindings,
   `MockModelUtil` KillBillPlanStore references.
 
-## Phase 5 — Decommission prod KB infra
-Stop `killbill-engine` + `killbill-kaui`; snapshot then drop the KB MySQL DB;
-remove KB env vars from `config-prod.cfg`.
+## Phase 5 — Decommission prod KB infra — DONE (2026-06-26)
+KB ran as the `100killbill` webapp (+ empty `200kaui`) inside the same Tomcat JVM
+as ClearFlask (no Docker on prod). Decommissioned:
+- Snapshotted KB MariaDB → `killbill-db-last-backup.sql.gz` (30 MB) in Drive.
+- Removed `100killbill`/`200kaui` webapps; dropped their `<Host>` Services from
+  `server.xml` (freed ports 8081/8082).
+- Renamed `conf.d/killbill.conf` → `tomcat-opts.conf` keeping only heap/GC/JMX +
+  generic safety flags; stripped KB blocks from `catalina.properties`.
+- `DROP DATABASE killbill; DROP USER 'killbill'@'%';`
+- Deleted `/var/lib/killbill`. Config backups at `/var/backups/kb-decomm-20260626/`.
+- Verified: ClearFlask healthy, `-Xmx896m`/JMX 9050 intact, 0 KB args, KB ports gone.
 
 ## Separate track — PII incident follow-ups (still open)
 - GitHub Support request to purge by-SHA access to the original PII commits
