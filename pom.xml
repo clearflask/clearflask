@@ -18,7 +18,7 @@
     </licenses>
 
     <properties>
-        <java.version>11</java.version>
+        <java.version>17</java.version>
         <JAVA_VERSION>${java.version}</JAVA_VERSION>
         <COPYING.path>${basedir}/COPYING</COPYING.path>
         <sentry.version>8.0.0-beta.3</sentry.version>
