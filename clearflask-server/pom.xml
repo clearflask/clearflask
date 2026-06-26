@@ -221,11 +221,11 @@
             <artifactId>curator-recipes</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.kik.config</groupId>
+            <groupId>com.github.matusfaro.ice</groupId>
             <artifactId>ice</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.kik.config</groupId>
+            <groupId>com.github.matusfaro.ice</groupId>
             <artifactId>ice-jmx</artifactId>
         </dependency>
         <dependency>

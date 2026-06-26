@@ -18,7 +18,7 @@
     </licenses>
 
     <properties>
-        <java.version>11</java.version>
+        <java.version>17</java.version>
         <JAVA_VERSION>${java.version}</JAVA_VERSION>
         <COPYING.path>${basedir}/COPYING</COPYING.path>
         <sentry.version>8.0.0-beta.3</sentry.version>
@@ -40,7 +40,8 @@
         <lucene.version>8.8.2</lucene.version>
         <!-- 3.16 is last minor version supporting Java 11 -->
         <jooq.version>3.16.23</jooq.version>
-        <ice.version>1.0.9</ice.version>
+        <!-- matusfaro/ice fork (JDK 21+ support) published via JitPack as com.github.matusfaro.ice -->
+        <ice.version>1.1.0</ice.version>
         <curator.version>5.7.1</curator.version>
         <jersey.version>2.45</jersey.version>
         <awssdk.version>1.12.778</awssdk.version>
@@ -53,8 +54,8 @@
         <projectlombok.version>1.18.36</projectlombok.version>
         <twelvemonkeys.version>3.12.0</twelvemonkeys.version>
         <batik.version>1.18</batik.version>
-        <!-- Kik Ice fails with 1.11+ due to InvocationHandlerAdapter method signature change -->
-        <bytebuddy.version>1.10.22</bytebuddy.version>
+        <!-- 1.15.11 works with the matusfaro/ice 1.1.0 fork (fixes the old 1.11+ InvocationHandlerAdapter break) -->
+        <bytebuddy.version>1.15.11</bytebuddy.version>
         <mockito.version>4.0.0</mockito.version>
         <!-- Don't jump on the bouncy castle -->
         <bouncycastle.version>1.79</bouncycastle.version>
@@ -95,6 +96,11 @@
             <id>dynamodb-local-oregon</id>
             <name>DynamoDB Local Release Repository</name>
             <url>https://s3-us-west-2.amazonaws.com/dynamodb-local/release</url>
+        </repository>
+        <repository>
+            <id>jitpack.io</id>
+            <name>JitPack</name>
+            <url>https://jitpack.io</url>
         </repository>
     </repositories>
 
@@ -640,12 +646,12 @@
                 <version>${curator.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.kik.config</groupId>
+                <groupId>com.github.matusfaro.ice</groupId>
                 <artifactId>ice</artifactId>
                 <version>${ice.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.kik.config</groupId>
+                <groupId>com.github.matusfaro.ice</groupId>
                 <artifactId>ice-jmx</artifactId>
                 <version>${ice.version}</version>
             </dependency>
