@@ -228,6 +228,8 @@
                     <pnpmVersion>${pnpm.version}</pnpmVersion>
                     <environmentVariables>
                         <ADBLOCK>1</ADBLOCK>
+                        <!-- react-scripts 4 / webpack 4 needs the legacy OpenSSL provider on Node 17+ -->
+                        <NODE_OPTIONS>--openssl-legacy-provider</NODE_OPTIONS>
                     </environmentVariables>
                 </configuration>
             </plugin>

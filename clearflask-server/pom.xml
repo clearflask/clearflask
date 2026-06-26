@@ -114,10 +114,6 @@
         </dependency>
         <dependency>
             <groupId>com.google.inject.extensions</groupId>
-            <artifactId>guice-multibindings</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.google.inject.extensions</groupId>
             <artifactId>guice-servlet</artifactId>
         </dependency>
         <dependency>
@@ -622,7 +618,7 @@
                 <artifactId>protobuf-maven-plugin</artifactId>
                 <configuration>
                     <protoSourceRoot>${basedir}/src/main/proto</protoSourceRoot>
-                    <protocArtifact>com.google.protobuf:protoc:3.4.0:exe:${os.detected.classifier}</protocArtifact>
+                    <protocArtifact>com.google.protobuf:protoc:3.25.5:exe:${os.detected.classifier}</protocArtifact>
                 </configuration>
                 <executions>
                     <execution>
