@@ -292,6 +292,10 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 ElasticUtil.module(),
                 Sanitizer.module(),
                 SimpleEmailValidator.module(),
+                // Registers LegacyPlanStore as a ManagedService so its serviceStart() runs and
+                // populates the static plan catalog (getAllPlans()/getPublicPlans()). The
+                // unannotated PlanStore binding below resolves to this same eager singleton.
+                com.smotana.clearflask.billing.LegacyPlanStore.module(),
                 DefaultServerSecret.module(Names.named("cursor"))
         ).with(new AbstractModule() {
             @Override
