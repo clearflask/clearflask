@@ -475,9 +475,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     }
 
     protected void kbClockReset() throws Exception {
-        // https://github.com/killbill/killbill/blob/master/jaxrs/src/main/java/org/killbill/billing/jaxrs/resources/TestResource.java#L170
-        var response = kbClient.doPost("/1.0/kb/test/clock", "", org.killbill.billing.client.RequestOptions.builder().build());
-        log.info("Reset clock to {}", response.getResponseBody());
+        // KillBill removed: NoOpBilling has no time-based lifecycle, so there is no clock to reset.
     }
 
     protected void kbClockSleepAndRefresh(long sleepInDays, AccountAndProject accountAndProject) throws Exception {
@@ -487,9 +485,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     }
 
     protected void kbClockSleep(long sleepInDays) throws Exception {
-        // https://github.com/killbill/killbill/blob/master/jaxrs/src/main/java/org/killbill/billing/jaxrs/resources/TestResource.java#L193
-        var response = kbClient.doPut("/1.0/kb/test/clock?days=" + sleepInDays, "", org.killbill.billing.client.RequestOptions.builder().build());
-        log.info("Slept for {} days, current clock is {}", sleepInDays, response.getResponseBody());
+        // KillBill removed: there is no external billing clock to advance. Still refresh local status.
         refreshStatus();
     }
 
@@ -502,10 +498,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     }
 
     protected void paymentTestPluginConfigure(PaymentTestPluginAction configureAction, Optional<Long> sleepTimeInMillisOpt) throws KillBillClientException {
-        PaymentTestPluginConfigure props = new PaymentTestPluginConfigure(configureAction, sleepTimeInMillisOpt);
-        kbClient.doPost("/plugins/killbill-payment-test/configure", gson.toJson(props), org.killbill.billing.client.RequestOptions.builder()
-                .withHeader("Content-Type", MediaType.APPLICATION_JSON)
-                .build());
+        // KillBill removed: the payment-test plugin no longer exists, so there is nothing to configure.
     }
 
     protected AccountAndProject cancelAccount(AccountAndProject accountAndProject) throws Exception {
@@ -553,25 +546,8 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     }
 
     private long finalizeInvoices(AccountAndProject accountAndProject) throws Exception {
-        UUID accountIdKb = billing.getAccount(accountAndProject.getAccount().getAccountId()).getAccountId();
-        Invoices invoices = kbAccount.getInvoicesForAccount(
-                accountIdKb,
-                null,
-                null,
-                false,
-                false,
-                false,
-                null,
-                null,
-                org.killbill.billing.client.RequestOptions.builder().build());
-        long invoicesCommitted = 0L;
-        for (Invoice invoice : invoices) {
-            if (InvoiceStatus.DRAFT.equals(invoice.getStatus())) {
-                // KillBill removed: invoice-commit webhook is a no-op now.
-                invoicesCommitted++;
-            }
-        }
-        return invoicesCommitted;
+        // KillBill removed: NoOpBilling does not generate invoices, so there is nothing to finalize.
+        return 0L;
     }
 
     protected void dumpDynamoTable() {
@@ -589,27 +565,8 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     }
 
     void assertInvoices(AccountAndProject accountAndProject, ImmutableList<Double> invoiceAmountsExpected) throws Exception {
-        Invoices invoicesKb = kbAccount.getInvoicesForAccount(
-                billing.getAccount(accountAndProject.getAccount().getAccountId()).getAccountId(),
-                null,
-                null,
-                false,
-                false,
-                true,
-                null,
-                null,
-                org.killbill.billing.client.RequestOptions.builder().build());
-        log.info("KB invoices:\n{}", invoicesKb);
-
-        assertEquals("Uncommitted invoices", 0L, invoicesKb.stream()
-                .filter(i -> InvoiceStatus.DRAFT.equals(i.getStatus()))
-                .count());
-
-        ImmutableList<Double> invoiceAmountsActual = invoicesKb.stream()
-                .sorted(Comparator.comparingLong(i -> i.getTargetDate().toDate().toInstant().getEpochSecond()))
-                .map(i -> i.getAmount().doubleValue())
-                .collect(ImmutableList.toImmutableList());
-        assertEquals(invoiceAmountsExpected, invoiceAmountsActual);
+        // KillBill removed: NoOpBilling does not produce invoices. Only an empty expectation is valid.
+        assertEquals(ImmutableList.of(), invoiceAmountsExpected);
     }
 
     void assertSubscriptionStatus(SubscriptionStatus status) throws Exception {

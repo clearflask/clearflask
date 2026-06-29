@@ -85,17 +85,11 @@ public class BlackboxIT extends AbstractBlackboxIT {
                 ModelUtil.createEmptyConfig("sermyproject").getConfig());
         String projectId = newProjectResult.getProjectId();
         addUserAndDoThings(projectId, newProjectResult.getConfig().getConfig());
-        // Wait for subscription to be created in KillBill before updating payment token
-        TestUtil.retry(() -> accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
-                .paymentToken(AccountUpdateAdminPaymentToken.builder()
-                        .type(Billing.Gateway.EXTERNAL.getPluginName())
-                        .token("token")
-                        .build())
-                .build()));
+        // KillBill removed: NoOpBilling has no payment method or billing clock, so a flat-yearly
+        // account simply stays ACTIVETRIAL. Exercise the resource layer (users, cancel/resume,
+        // delete) rather than the old trial->active billing transition.
         refreshStatus(accountId);
         addActiveUser(projectId, newProjectResult.getConfig().getConfig());
-        kbClockSleep(30);
-        TestUtil.retry(() -> assertEquals(SubscriptionStatus.ACTIVE, accountResource.accountBillingAdmin(true).getSubscriptionStatus()));
         addActiveUser(projectId, newProjectResult.getConfig().getConfig());
         refreshStatus(accountId);
         accountResource.accountUpdateAdmin(AccountUpdateAdmin.builder()
