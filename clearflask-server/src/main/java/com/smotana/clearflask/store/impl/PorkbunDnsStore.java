@@ -93,36 +93,39 @@ public class PorkbunDnsStore extends ManagedService implements DnsStore {
     public void upsertTxtRecord(String host, String value) {
         String subdomain = toSubdomain(host);
 
-        // Porkbun "editByNameType" overwrites all records with the same (name,type) tuple,
-        // which is what we want for TXT challenge upsert semantics.
-        EditBody body = new EditBody();
-        body.apikey = config.apiKey();
-        body.secretapikey = config.secretApiKey();
-        body.content = value;
-        body.ttl = String.valueOf(config.defaultTtlSeconds());
-
-        StatusResponse response = post(
-                "/dns/editByNameType/" + config.domain() + "/TXT" + (subdomain.isEmpty() ? "" : "/" + subdomain),
-                body,
+        // Delete any pre-existing TXT records at this name (e.g. a stale challenge left over
+        // from a previously-aborted run) so we don't accumulate duplicates, then create the
+        // record fresh.
+        //
+        // We deliberately do NOT use Porkbun's editByNameType: it returns status=SUCCESS even
+        // when there is no existing record to edit (a no-op). The previous implementation
+        // relied on edit returning a failure status to decide whether to create, so on a
+        // not-yet-existing record the create was silently skipped and the challenge TXT was
+        // never published -- making ACME DNS-01 verification fail with an empty record set.
+        StatusResponse deleteResponse = post(
+                "/dns/deleteByNameType/" + config.domain() + "/TXT" + (subdomain.isEmpty() ? "" : "/" + subdomain),
+                emptyAuthBody(),
                 StatusResponse.class);
+        if (!"SUCCESS".equalsIgnoreCase(deleteResponse.status)) {
+            // ERROR is expected when no record exists yet; log and continue to create.
+            log.info("Porkbun pre-delete for {} returned status={} message={} (continuing)",
+                    host, deleteResponse.status, deleteResponse.message);
+        }
 
-        // editByNameType returns failure when no record exists yet; in that case create one.
-        if (!"SUCCESS".equalsIgnoreCase(response.status)) {
-            CreateBody createBody = new CreateBody();
-            createBody.apikey = config.apiKey();
-            createBody.secretapikey = config.secretApiKey();
-            createBody.name = subdomain;
-            createBody.type = "TXT";
-            createBody.content = value;
-            createBody.ttl = String.valueOf(config.defaultTtlSeconds());
-            StatusResponse createResponse = post(
-                    "/dns/create/" + config.domain(),
-                    createBody,
-                    StatusResponse.class);
-            if (!"SUCCESS".equalsIgnoreCase(createResponse.status)) {
-                throw new RuntimeException("Porkbun create failed for " + host
-                        + ": status=" + createResponse.status + " message=" + createResponse.message);
-            }
+        CreateBody createBody = new CreateBody();
+        createBody.apikey = config.apiKey();
+        createBody.secretapikey = config.secretApiKey();
+        createBody.name = subdomain;
+        createBody.type = "TXT";
+        createBody.content = value;
+        createBody.ttl = String.valueOf(config.defaultTtlSeconds());
+        StatusResponse createResponse = post(
+                "/dns/create/" + config.domain(),
+                createBody,
+                StatusResponse.class);
+        if (!"SUCCESS".equalsIgnoreCase(createResponse.status)) {
+            throw new RuntimeException("Porkbun create failed for " + host
+                    + ": status=" + createResponse.status + " message=" + createResponse.message);
         }
     }
 
@@ -186,13 +189,6 @@ public class PorkbunDnsStore extends ManagedService implements DnsStore {
         String secretapikey;
         String name;
         String type;
-        String content;
-        String ttl;
-    }
-
-    private static class EditBody {
-        String apikey;
-        String secretapikey;
         String content;
         String ttl;
     }

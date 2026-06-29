@@ -45,6 +45,10 @@ import org.shredzone.acme4j.util.KeyPairUtils;
 import org.xbill.DNS.ARecord;
 import org.xbill.DNS.Cache;
 import org.xbill.DNS.Lookup;
+import org.xbill.DNS.NSRecord;
+import org.xbill.DNS.Record;
+import org.xbill.DNS.Resolver;
+import org.xbill.DNS.SimpleResolver;
 import org.xbill.DNS.TXTRecord;
 import org.xbill.DNS.Type;
 
@@ -479,16 +483,31 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
         } catch (Exception ignored) {
         }
 
-        // Poll to verify DNS entry.
-        Cache cache = new Cache();
-        cache.setMaxCache(0);
-        cache.setMaxNCache(0);
-        cache.setMaxEntries(0);
-        Lookup lookup = new Lookup(challengeDomain, Type.TXT);
-        lookup.setCache(cache);
+        // Verify the challenge record is visible before triggering Let's Encrypt validation.
+        //
+        // We query the zone's AUTHORITATIVE nameservers directly rather than going through a
+        // recursive resolver: recursive resolvers negatively-cache the (previously absent)
+        // _acme-challenge name for the zone's negative-cache TTL, and our DNS provider
+        // (Porkbun) can take a couple of minutes to propagate a freshly-created record to its
+        // own authoritative nameservers. Querying the authoritative servers avoids the
+        // negative-cache trap and reflects exactly what Let's Encrypt will check. We also poll
+        // for several minutes to allow that propagation to complete (the record stays in place
+        // until the challenge is torn down).
+        Optional<Resolver> authoritativeResolverOpt = authoritativeResolver(authorization.getIdentifier().getDomain());
+
         ImmutableList<String> txtStrings = ImmutableList.of();
-        int attempts = 10;
-        for (int i = 0; i < 10; i++) {
+        int attempts = 80;
+        for (int i = 0; i < attempts; i++) {
+            // Fresh Lookup + empty cache each iteration so we actually re-query rather than
+            // returning the first (likely empty) result.
+            Cache cache = new Cache();
+            cache.setMaxCache(0);
+            cache.setMaxNCache(0);
+            cache.setMaxEntries(0);
+            Lookup lookup = new Lookup(challengeDomain, Type.TXT);
+            lookup.setCache(cache);
+            authoritativeResolverOpt.ifPresent(lookup::setResolver);
+
             txtStrings = Optional.ofNullable(lookup.run())
                     .stream()
                     .flatMap(Arrays::stream)
@@ -503,12 +522,43 @@ public class CertFetcherImpl extends ManagedService implements CertFetcher {
                 return;
             }
 
-            // Wait for a few seconds
+            // Wait a few seconds before re-checking
             Thread.sleep(3000L);
         }
         throw new Exception("Failed to verify own set DNS challenge for domain: " + authorization.getIdentifier().getDomain()
                 + " expected string: " + challenge.getDigest()
                 + " got strings: " + txtStrings);
+    }
+
+    /**
+     * Returns a resolver that queries the authoritative nameservers for the given domain's
+     * zone, so challenge verification is unaffected by recursive-resolver negative caching.
+     * Walks up the labels until an NS record set is found (so subdomains resolve to their zone
+     * apex's nameservers). Returns empty on failure, in which case the caller falls back to the
+     * default resolver.
+     */
+    private Optional<Resolver> authoritativeResolver(String domain) {
+        try {
+            String name = domain.endsWith(".") ? domain : domain + ".";
+            // Stop once only the TLD label remains (don't query the TLD/root for NS).
+            while (name.indexOf('.') != name.lastIndexOf('.')) {
+                Record[] records = new Lookup(name, Type.NS).run();
+                if (records != null) {
+                    for (Record record : records) {
+                        if (record instanceof NSRecord) {
+                            String ns = ((NSRecord) record).getTarget().toString();
+                            log.info("Verifying DNS challenge against authoritative nameserver {} for {}", ns, domain);
+                            return Optional.of(new SimpleResolver(ns));
+                        }
+                    }
+                }
+                // Try the parent zone.
+                name = name.substring(name.indexOf('.') + 1);
+            }
+        } catch (Exception ex) {
+            log.warn("Could not resolve authoritative nameserver for {}; falling back to default resolver", domain, ex);
+        }
+        return Optional.empty();
     }
 
     private void challengeTeardown(Authorization authorization, Challenge challenge) {
