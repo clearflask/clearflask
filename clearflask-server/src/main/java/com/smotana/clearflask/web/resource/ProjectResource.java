@@ -530,6 +530,11 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     }
 
     public void projectDeleteAdmin(Account account, String projectId) {
+        // Capture the teammate admins before the project is deleted so we can scrub their
+        // back-references afterwards (mirror of deleteAccount's admins scrub).
+        ImmutableSet<String> adminsAccountIds = projectStore.getProject(projectId, false)
+                .map(project -> project.getModel().getAdminsAccountIds())
+                .orElse(ImmutableSet.of());
         try {
             ListenableFuture<Void> projectFuture = accountStore.removeProject(account.getAccountId(), projectId).getIndexingFuture();
             projectStore.deleteProject(projectId);
@@ -543,6 +548,17 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
             log.warn("Failed to delete project {}, potentially partially deleted", projectId, th);
             throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR, "Failed to delete project, please contact support", th);
         }
+        // Best-effort: remove the now-deleted project from every teammate's external project list
+        // so it doesn't leave a dangling externalProjectId. Non-fatal and tolerant of ids whose
+        // account no longer exists (removeExternalProject requires the account to still exist).
+        adminsAccountIds.forEach(adminAccountId -> {
+            try {
+                accountStore.getAccount(adminAccountId, false)
+                        .ifPresent(admin -> accountStore.removeExternalProject(adminAccountId, projectId));
+            } catch (Exception ex) {
+                log.warn("Failed to scrub deleted project {} from admin {} external projects", projectId, adminAccountId, ex);
+            }
+        });
     }
 
     @RolesAllowed({Role.PROJECT_ADMIN})
