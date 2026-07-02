@@ -369,7 +369,10 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 .flatMap(project -> Stream.concat(
                         Stream.of(project.getAccountId()),
                         project.getAdminsAccountIds().stream()))
-                .map(accountId -> accountStore.getAccount(accountId, true).orElseThrow())
+                // Skip dangling admin ids whose account was deleted without scrubbing the
+                // project back-reference; matches projectAdminsListAdmin's tolerant handling
+                // and prevents a single stale id from 500ing every invite on the project.
+                .flatMap(accountId -> accountStore.getAccount(accountId, true).stream())
                 .map(Account::getEmail)
                 .anyMatch(email::equalsIgnoreCase)) {
             throw new ApiException(Response.Status.CONFLICT, "An admin with the same email already exists");
