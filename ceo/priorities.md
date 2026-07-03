@@ -1,6 +1,16 @@
 # Priorities — Working Backlog
 
-_Last updated: 2026-07-02. Statuses: TODO / IN PROGRESS / BLOCKED(on) / DONE._
+_Last updated: 2026-07-03. Statuses: TODO / IN PROGRESS / BLOCKED(on) / DONE._
+
+## P0 — Lean-compose variant (BOARD-approved 2026-07-03; unblocks all listings)
+Drop localstack: local-disk file storage + embedded/local DynamoDB so the stack
+is server + connect + MariaDB. Durable fix for the packaging blocker that stalled
+the Railway live test (server hung on localstack over IPv6 private net). Unlocks
+Railway + PikaPods + Umbrel + CasaOS.
+- [ ] Scope the two swaps (S3→local-disk, DynamoDB→embedded) — investigation
+      running now.
+- [ ] Implement + test.
+- [ ] Re-test Railway template deploy against the lean stack; then publish.
 
 ## P1 — Self-host marketplace listings (passive revenue + funnel)
 Status: IN PROGRESS — research done (see `reports/marketplace-research-2026-07-02.md`

@@ -3,6 +3,12 @@
 _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
 
 ## 2026-07-03
+- DECISION (board): fix the storage/packaging blocker via the **lean-compose
+  variant** — drop localstack; local-disk file storage + an embedded/local
+  DynamoDB answer, so the stack is server + connect + MariaDB. Durable fix that
+  unlocks Railway + PikaPods + Umbrel + CasaOS together. This becomes the new P1.
+- Test Railway project "zippy-amazement" DELETED (board instructed "you shut it
+  down"; 48h grace period). Credit burn stopped.
 - Release 2.5.0 shipped (env-var config + first-boot secrets). Images on GHCR.
 - Railway template BUILT + SAVED in Matus's account (railway.com/deploy/9geeXl),
   name "ClearFlask", 4 services. **NOT published** — live test surfaced the
