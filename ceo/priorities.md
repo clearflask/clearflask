@@ -10,10 +10,15 @@ Railway + PikaPods + Umbrel + CasaOS.
 - [x] Scope the two swaps — done (`specs/lean-compose.md`).
 - [x] Design: NOT an option inside self-host — a new **PRODUCTION_PLATFORM**
       deployment type (board call). Self-hosters untouched.
-- [x] Implement — committed `e5c93029`: LocalDiskContentStore, file-backed
-      EmbeddedDynamoDbProvider, wiring, config-platform.cfg, native-lib packaging,
-      docker-compose.platform.yml. CI validating the build now.
-- [ ] Durability test: deploy, add data, restart server container, confirm survival.
+- [x] Implement — committed `e5c93029` (+ test fix `6c2e5a94`). **CI GREEN.** The
+      parameterized ServiceInjectorTest now builds the injector for PRODUCTION_PLATFORM
+      successfully (validates the wiring). Includes LocalDiskContentStore, file-backed
+      EmbeddedDynamoDbProvider, config-platform.cfg, native-lib packaging,
+      docker-compose.platform.yml.
+- [~] Release 2.6.0 cut to publish platform images + native libs (CI doesn't push
+      images). Monitoring. Needed before any deploy test.
+- [ ] Durability test: deploy platform stack, add data, restart server container,
+      confirm the embedded file-backed DB kept everything. THE gate before publishing.
 - [ ] amd64-only platform image constraint (sqlite4java has no arm64 build) —
       ensure platform image/tag built amd64-only.
 - [ ] Re-test Railway template against the platform stack (set
