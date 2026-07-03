@@ -80,7 +80,7 @@ as `docker-compose.yml`, and run the following:
 docker-compose --profile with-deps up
 ```
 
-Point your browser at [http://localhost](http://localhost) and create an account using email `admin@clearflask.com`.
+Point your browser at [http://localhost](http://localhost) and create an account using email `admin@localhost`.
 
 You also want to setup outgoing mail, read the [Email section](#email).
 
@@ -535,7 +535,7 @@ all the steps in reverse order.
 
 To disable any telemetry, set the following configuration property:
 
-`config-selfhost.cfg:com.smotana.clearflask.Application$Config.enableTelemetry`: `false`
+`config-selfhost.cfg:com.smotana.clearflask.web.Application$Config.enableTelemetry`: `false`
 
 # Contributing
 
