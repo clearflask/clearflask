@@ -26,17 +26,21 @@ anything requiring a human identity).
 
 ## Releases & versioning (semver — board directive 2026-07-03)
 
-Choose the release level deliberately per change and state the reasoning when cutting
-one. `make release-{major,minor,patch}` via the Release workflow.
-- **MAJOR** — breaking changes: incompatible API/config/deployment changes that require
-  users to act (e.g. removing/renaming a config key, changing a default that alters
-  existing installs, dropping a supported deployment).
+**STAY ON v2.** Board directive (2026-07-03): keep the major version at 2 for the
+foreseeable future — nothing in the pipeline warrants a breaking change. Only ever cut
+**minor** or **patch**; NEVER run `make release-major` / cut a major without explicit
+per-release board approval.
+
+Choose minor vs patch deliberately and state the reasoning when cutting a release
+(`make release-{minor,patch}` via the Release workflow):
 - **MINOR** — backward-compatible new features: new deployment type, new config options,
   new integrations, additive endpoints. (2.5.0 = env-var config + first-boot secrets;
   2.6.0 = platform-hosting deployment type — both additive → minor.)
 - **PATCH** — backward-compatible fixes: bug fixes, security patches, doc-only changes
   with no behavior change for existing installs.
-When unsure between two levels, pick the higher and say why.
+- **MAJOR** — breaking changes (renamed/removed config key, changed default that alters
+  existing installs, dropped deployment). Reserved; needs board sign-off. None planned.
+When unsure between minor and patch, pick minor and say why.
 
 ## Operational lessons (avoid repeating)
 
