@@ -17,6 +17,7 @@ public class IpUtil {
         switch (env) {
             case PRODUCTION_AWS:
             case PRODUCTION_SELF_HOST:
+            case PRODUCTION_PLATFORM:
                 String xForwardedFor = request.getHeader("x-forwarded-for");
                 if (Strings.isNullOrEmpty(xForwardedFor)) {
                     // Most likely originated as a LB health check or a local query bypassing LB

@@ -78,6 +78,7 @@ import com.smotana.clearflask.security.limiter.rate.LocalRateLimiter;
 import com.smotana.clearflask.store.CloudLocalLicenseStore;
 import com.smotana.clearflask.store.ConfigAwsCredentialsProvider;
 import com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider;
+import com.smotana.clearflask.store.dynamo.EmbeddedDynamoDbProvider;
 import com.smotana.clearflask.store.dynamo.SingleTableProvider;
 import com.smotana.clearflask.store.elastic.DefaultElasticSearchProvider;
 import com.smotana.clearflask.store.elastic.ElasticUtil;
@@ -108,6 +109,7 @@ import com.smotana.clearflask.store.impl.LangChainLlmAgentStore;
 import com.smotana.clearflask.store.impl.LangChainLlmToolingStore;
 import com.smotana.clearflask.store.impl.PorkbunDnsStore;
 import com.smotana.clearflask.store.impl.ResourceLegalStore;
+import com.smotana.clearflask.store.impl.LocalDiskContentStore;
 import com.smotana.clearflask.store.impl.S3ContentStore;
 import com.smotana.clearflask.store.mysql.DefaultMysqlProvider;
 import com.smotana.clearflask.store.mysql.MysqlUtil;
@@ -170,7 +172,15 @@ public enum ServiceInjector {
         TEST(false),
         DEVELOPMENT_LOCAL(false),
         PRODUCTION_AWS(true),
-        PRODUCTION_SELF_HOST(true);
+        PRODUCTION_SELF_HOST(true),
+        /**
+         * Platform-hosting: a batteries-included single-container-style deployment for one-click
+         * marketplace platforms (Railway, PikaPods, Elestio, ...). Behaves like PRODUCTION_SELF_HOST
+         * except it uses local-disk file storage and an embedded (file-backed) DynamoDB instead of
+         * S3 + external DynamoDB, so no localstack/AWS dependencies are required. Existing
+         * self-hosters keep PRODUCTION_SELF_HOST and their real DynamoDB/S3.
+         */
+        PRODUCTION_PLATFORM(true);
 
         private boolean isProduction;
 
@@ -180,6 +190,11 @@ public enum ServiceInjector {
 
         public boolean isProduction() {
             return isProduction;
+        }
+
+        /** True for both self-host and platform-hosting: single-tenant installs, not the cloud. */
+        public boolean isSelfHostLike() {
+            return this == PRODUCTION_SELF_HOST || this == PRODUCTION_PLATFORM;
         }
     }
 
@@ -229,11 +244,18 @@ public enum ServiceInjector {
 
                 // Stores
                 install(ConfigAwsCredentialsProvider.module());
-                install(DefaultDynamoDbProvider.module());
-                install(DefaultS3ClientProvider.module());
+                if (env == Environment.PRODUCTION_PLATFORM) {
+                    // Batteries-included: embedded file-backed DynamoDB + local-disk content.
+                    // No S3 client is needed (nothing else injects AmazonS3).
+                    install(EmbeddedDynamoDbProvider.module());
+                    install(LocalDiskContentStore.module());
+                } else {
+                    install(DefaultDynamoDbProvider.module());
+                    install(DefaultS3ClientProvider.module());
+                    install(S3ContentStore.module());
+                }
                 install(DefaultElasticSearchProvider.module());
                 install(DefaultMysqlProvider.module());
-                install(S3ContentStore.module());
                 install(DynamoProjectStore.module());
                 install(DynamoElasticAccountStore.module());
                 install(DynamoElasticUserStore.module());
@@ -246,7 +268,7 @@ public enum ServiceInjector {
                 install(DynamoCertStore.module());
                 install(DynamoRemoteLicenseStore.module());
                 install(CloudLocalLicenseStore.module());
-                if (env != Environment.PRODUCTION_SELF_HOST) {
+                if (!env.isSelfHostLike()) {
                     install(PorkbunDnsStore.module());
                 }
                 install(GitHubClientProviderImpl.module());
@@ -360,7 +382,7 @@ public enum ServiceInjector {
 
                 // Billing
                 install(CommonPlanVerifyStore.module());
-                if (env == Environment.PRODUCTION_SELF_HOST) {
+                if (env.isSelfHostLike()) {
                     install(SelfHostBilling.module());
                     install(SelfHostPlanStore.module());
                 } else {
@@ -404,6 +426,9 @@ public enum ServiceInjector {
                         break;
                     case PRODUCTION_SELF_HOST:
                         configFilePath = "/opt/clearflask/config-selfhost.cfg";
+                        break;
+                    case PRODUCTION_PLATFORM:
+                        configFilePath = "/opt/clearflask/config-platform.cfg";
                         break;
                     case PRODUCTION_AWS:
                         configFilePath = "/opt/clearflask/config-prod.cfg";

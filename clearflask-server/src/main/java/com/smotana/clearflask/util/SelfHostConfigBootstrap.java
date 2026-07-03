@@ -105,7 +105,7 @@ public class SelfHostConfigBootstrap {
     @VisibleForTesting
     static void run(String configFilePath, ServiceInjector.Environment env, boolean configJustCreated,
                     Function<String, String> getenv, SecureRandom random) {
-        if (env != ServiceInjector.Environment.PRODUCTION_SELF_HOST) {
+        if (!env.isSelfHostLike()) {
             return;
         }
         File file = new File(configFilePath);

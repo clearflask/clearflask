@@ -26,4 +26,8 @@ ADD ROOT/ /usr/local/tomcat/webapps/ROOT
 # keeping the JCE provider off the reloadable webapp classloader (see clearflask-server/pom.xml).
 # Staged into the build context by clearflask-release's copy-bouncycastle-to-docker-context.
 ADD lib/bc*-jdk*on-*.jar /usr/local/tomcat/lib/
+# sqlite4java native lib for the embedded file-backed DynamoDB (platform-hosting only,
+# CLEARFLASK_ENVIRONMENT=PRODUCTION_PLATFORM). EmbeddedDynamoDbProvider points
+# sqlite4java.library.path here. Present but unused by AWS/self-host deployments.
+ADD native-libs/ /opt/clearflask/native-libs/
 ADD logback.xml /usr/local/tomcat/webapps/ROOT/WEB-INF/classes/logback.xml

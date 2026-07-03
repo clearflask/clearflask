@@ -86,7 +86,7 @@ public class CommonPlanVerifyStore implements PlanVerifyStore {
 
     @Override
     public void verifyPlanMeetsLicense(String planId, String accountId) {
-        if ("selfhost-licensed".equals(planId) && Environment.PRODUCTION_SELF_HOST.equals(env)) {
+        if ("selfhost-licensed".equals(planId) && env.isSelfHostLike()) {
             Optional<Boolean> licenseValidation = ServiceInjector.INSTANCE.get().getInstance(RemoteLicenseStore.class)
                     .validateLicenseRemotely(true);
             if (licenseValidation.isEmpty()) {
@@ -317,7 +317,7 @@ public class CommonPlanVerifyStore implements PlanVerifyStore {
     @Override
     public void verifyConfigChangeMeetsRestrictions(boolean isSuperAdmin, Optional<ConfigAdmin> configAdminPreviousOpt, ConfigAdmin configAdmin) throws ApiException {
         // Allow Super admins and all of selfhost to change search engine
-        if ((!isSuperAdmin && env != Environment.PRODUCTION_SELF_HOST)
+        if ((!isSuperAdmin && !env.isSelfHostLike())
                 && !configAdminPreviousOpt
                 .flatMap(ca -> Optional.ofNullable(ca.getForceSearchEngine()))
                 .equals(Optional.ofNullable(configAdmin.getForceSearchEngine()))) {

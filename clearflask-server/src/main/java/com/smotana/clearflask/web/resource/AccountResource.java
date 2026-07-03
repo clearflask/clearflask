@@ -767,7 +767,7 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
             account = changePlan(account, newPlanid, ImmutableMap.of(), Optional.empty());
         }
         if (accountUpdateAdmin.getApplyLicenseKey() != null) {
-            if (env != Environment.PRODUCTION_SELF_HOST) {
+            if (!env.isSelfHostLike()) {
                 throw new ApiException(Response.Status.BAD_REQUEST, "License key can only be applied in self-hosted environment");
             }
             if (accountUpdateAdmin.getApplyLicenseKey().isEmpty()) {
@@ -1305,7 +1305,7 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
         }
 
         String appliedLicenseKey = null;
-        if (env == Environment.PRODUCTION_SELF_HOST) {
+        if (env.isSelfHostLike()) {
             appliedLicenseKey = remoteLicenseStore.getLicense().orElse(null);
         }
 

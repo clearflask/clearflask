@@ -32,6 +32,9 @@ public class AutoCreateKikConfigFile {
             case PRODUCTION_SELF_HOST:
                 inputUrl = Thread.currentThread().getContextClassLoader().getResource("config-selfhost.cfg");
                 break;
+            case PRODUCTION_PLATFORM:
+                inputUrl = Thread.currentThread().getContextClassLoader().getResource("config-platform.cfg");
+                break;
             case PRODUCTION_AWS:
             case TEST:
             default:

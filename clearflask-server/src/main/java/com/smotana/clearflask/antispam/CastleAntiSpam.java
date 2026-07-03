@@ -95,6 +95,7 @@ public class CastleAntiSpam extends ManagedService implements AntiSpam {
     private void initCastle() {
         switch (env) {
             case PRODUCTION_SELF_HOST:
+            case PRODUCTION_PLATFORM:
             case TEST:
                 castleOpt = Optional.empty();
                 return;

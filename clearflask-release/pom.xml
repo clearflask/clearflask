@@ -157,6 +157,35 @@
                             </artifactItems>
                         </configuration>
                     </execution>
+                    <execution>
+                        <!--
+                          sqlite4java native lib for the embedded file-backed DynamoDB used by the
+                          platform-hosting deployment (CLEARFLASK_ENVIRONMENT=PRODUCTION_PLATFORM).
+                          Staged into the docker context; server.Dockerfile copies it to
+                          /opt/clearflask/native-libs, where EmbeddedDynamoDbProvider points
+                          sqlite4java.library.path. Version stripped so the filename matches what
+                          sqlite4java expects. linux-amd64 only (no arm64 build exists) => the
+                          platform image is amd64-only.
+                        -->
+                        <id>copy-sqlite4java-native-to-docker-context</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.almworks.sqlite4java</groupId>
+                                    <artifactId>libsqlite4java-linux-amd64</artifactId>
+                                    <version>${sqlite4java}</version>
+                                    <type>so</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}/docker-root-server/native-libs</outputDirectory>
+                                    <destFileName>libsqlite4java-linux-amd64.so</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>

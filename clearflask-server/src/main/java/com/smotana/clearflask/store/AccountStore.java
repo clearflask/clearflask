@@ -252,7 +252,7 @@ public interface AccountStore {
             // - This is not a Guice managed class so we can't @Inject anything here
             // - In tests: we can't use ServiceInjector.INSTANCE here, since each test has its own injector
             // - In tests: there is no env var for Environment, so we compare the optionals here as we expect it to be empty
-            if (ServiceInjector.detectEnvironment().equals(Optional.of(ServiceInjector.Environment.PRODUCTION_SELF_HOST))) {
+            if (ServiceInjector.detectEnvironment().map(ServiceInjector.Environment::isSelfHostLike).orElse(false)) {
                 return ServiceInjector.INSTANCE.get().getInstance(RemoteLicenseStore.class)
                         .getSelfhostEntitlementStatus(planid);
             }
