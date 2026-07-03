@@ -113,6 +113,7 @@ import com.smotana.clearflask.store.mysql.DefaultMysqlProvider;
 import com.smotana.clearflask.store.mysql.MysqlUtil;
 import com.smotana.clearflask.store.s3.DefaultS3ClientProvider;
 import com.smotana.clearflask.util.AutoCreateKikConfigFile;
+import com.smotana.clearflask.util.SelfHostConfigBootstrap;
 import com.smotana.clearflask.util.BeanUtil;
 import com.smotana.clearflask.util.ChatwootUtil;
 import com.smotana.clearflask.util.ConfigSchemaUpgrader;
@@ -411,7 +412,8 @@ public enum ServiceInjector {
                     default:
                         throw new RuntimeException("Unsupported environment: " + env);
                 }
-                AutoCreateKikConfigFile.run(configFilePath, env);
+                boolean configJustCreated = AutoCreateKikConfigFile.run(configFilePath, env);
+                SelfHostConfigBootstrap.run(configFilePath, env, configJustCreated);
                 bind(String.class).annotatedWith(Names.named(FileDynamicConfigSource.FILENAME_NAME)).toInstance(configFilePath);
 
                 install(ExternController.module());

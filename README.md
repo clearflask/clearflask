@@ -298,6 +298,36 @@ the [Helm Chart documentation](clearflask-helm/README.md).
 4. Carefully read and modify `connect/connect.config.json`.
 5. Adjust the Docker Compose service file to add/remove dependencies if you are hosting them outside of Docker
 
+On the first run, install-specific secrets (VAPID keypair, cursor encryption key, token signing key, SSO key)
+are generated automatically into `server/config-selfhost.cfg`. Installs created before this behavior existed
+share publicly-known default secrets: check your server logs for a `SECURITY:` warning and regenerate any
+flagged values using the commands in the config file comments.
+
+#### Configuration via environment variables
+
+Instead of editing the configuration files, common settings can be set with environment variables on the
+`clearflask-server` container. They are applied into `config-selfhost.cfg` on startup and always take
+precedence over values in the file. This is useful on platforms without persistent-file editing
+(Railway, PikaPods, Elestio, ...).
+
+| Environment variable | Purpose |
+|---|---|
+| `CLEARFLASK_DOMAIN` | Your domain, e.g. `feedback.example.com` |
+| `CLEARFLASK_SUPER_ADMIN_EMAIL` | Email address allowed to sign up as super-admin |
+| `CLEARFLASK_SIGNUP_ENABLED` | `true`/`false`: allow further signups |
+| `CLEARFLASK_AUTH_COOKIE_SECURE` | `true` when serving over HTTPS |
+| `CLEARFLASK_CONNECT_TOKEN` | Shared secret between Connect and Server; set the same value on both containers |
+| `CLEARFLASK_TELEMETRY_ENABLED` | `false` to disable telemetry |
+| `CLEARFLASK_SMTP_HOST` / `CLEARFLASK_SMTP_PORT` / `CLEARFLASK_SMTP_USER` / `CLEARFLASK_SMTP_PASSWORD` / `CLEARFLASK_SMTP_STRATEGY` | Outgoing email via SMTP; setting the host also switches email service to SMTP |
+| `CLEARFLASK_EMAIL_DISPLAY_NAME` / `CLEARFLASK_EMAIL_FROM_LOCAL_PART` / `CLEARFLASK_EMAIL_FROM_DOMAIN` | Outgoing email sender identity |
+| `CLEARFLASK_MYSQL_HOST` / `CLEARFLASK_MYSQL_USER` / `CLEARFLASK_MYSQL_PASSWORD` | MySQL/MariaDB connection |
+| `CLEARFLASK_DYNAMO_ENDPOINT` / `CLEARFLASK_ES_ENDPOINT` / `CLEARFLASK_S3_ENDPOINT` | Dependency service endpoints |
+| `CLEARFLASK_EXTRA_PROPS` | Newline-separated `full.property.key=value` lines for any other setting |
+
+The `clearflask-connect` container supports: `CLEARFLASK_CONNECT_TOKEN`, `CLEARFLASK_DOMAIN`,
+`CLEARFLASK_API_BASE_PATH`, `CLEARFLASK_LISTEN_PORT`, `CLEARFLASK_DISABLE_AUTO_FETCH_CERTIFICATE`
+and `CLEARFLASK_FORCE_REDIRECT_HTTPS`, overriding `connect.config.json`.
+
 #### Email
 
 By default, email is configured for AWS SES pointing to your Localstack (which doesn't do anything).

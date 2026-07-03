@@ -12,15 +12,16 @@ import java.net.URL;
 
 @Slf4j
 public class AutoCreateKikConfigFile {
-    public static void run(String configFilePath, ServiceInjector.Environment env) {
+    /** @return whether the config file was just created from the template */
+    public static boolean run(String configFilePath, ServiceInjector.Environment env) {
         String doCreateEnvVariable = System.getenv("CLEARFLASK_CREATE_SERVER_CONFIG_IF_MISSING");
         if (!"1".equals(doCreateEnvVariable) && !"true".equalsIgnoreCase(doCreateEnvVariable)) {
-            return;
+            return false;
         }
 
         File file = new File(configFilePath);
         if (file.exists()) {
-            return;
+            return false;
         }
 
         URL inputUrl;
@@ -35,19 +36,20 @@ public class AutoCreateKikConfigFile {
             case TEST:
             default:
                 log.warn("Could not create default config file, unsupported environment {}", env);
-                return;
+                return false;
         }
         if (inputUrl == null) {
             log.warn("Could not create default config file, can't find it, continuing anyway");
-            return;
+            return false;
         }
         try {
             FileUtils.copyURLToFile(inputUrl, new File(configFilePath));
         } catch (IOException ex) {
             log.warn("Could not create default config file, continuing anyway", ex);
-            return;
+            return false;
         }
 
         log.info("Auto-created default config file at {}", configFilePath);
+        return true;
     }
 }

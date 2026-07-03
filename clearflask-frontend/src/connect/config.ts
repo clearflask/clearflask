@@ -70,6 +70,34 @@ if (process.env.ENV === 'production'
     console.info('Failed to load config file', configFile, e);
     throw e;
   }
+
+  // Environment variables override the config file; mirrors CLEARFLASK_* handling
+  // on the server side (SelfHostConfigBootstrap) for env-configured platforms.
+  const envString = (name: string): string | undefined => process.env[name] || undefined;
+  const envBoolean = (name: string): boolean | undefined => {
+    const value = process.env[name];
+    if (value === undefined || value === '') return undefined;
+    return value === '1' || value.toLowerCase() === 'true';
+  };
+  const envNumber = (name: string): number | undefined => {
+    const value = process.env[name];
+    if (value === undefined || value === '') return undefined;
+    const parsed = parseInt(value, 10);
+    return isNaN(parsed) ? undefined : parsed;
+  };
+  const envOverrides: Partial<ConnectConfig> = {
+    connectToken: envString('CLEARFLASK_CONNECT_TOKEN'),
+    parentDomain: envString('CLEARFLASK_DOMAIN'),
+    apiBasePath: envString('CLEARFLASK_API_BASE_PATH'),
+    listenPort: envNumber('CLEARFLASK_LISTEN_PORT'),
+    disableAutoFetchCertificate: envBoolean('CLEARFLASK_DISABLE_AUTO_FETCH_CERTIFICATE'),
+    forceRedirectHttpToHttps: envBoolean('CLEARFLASK_FORCE_REDIRECT_HTTPS'),
+  };
+  Object.entries(envOverrides).forEach(([key, value]) => {
+    if (value !== undefined) {
+      (connectConfig as any)[key] = value;
+    }
+  });
 } else {
   connectConfig = {
     ...connectConfig,
