@@ -50,6 +50,50 @@ needs backups. Getting persistence + volume + restart-survival right is where Sw
 real effort/risk lives. Secondary: DynamoDBLocal's engine isn't 100% identical to real
 DynamoDB at scale, but the passing test suite de-risks the access patterns actually used.
 
+## DESIGN CHANGE (board, 2026-07-03): platform-hosting is its own deployment type
+Do NOT make the lean stack an option within self-hosting — existing self-hosters run
+real DynamoDB/S3 and don't want file-based storage. Instead the lean stack is a NEW
+deployment type **PRODUCTION_PLATFORM** (env `CLEARFLASK_ENVIRONMENT=PRODUCTION_PLATFORM`)
+for one-click marketplace deploys. It behaves exactly like PRODUCTION_SELF_HOST
+(SelfHostBilling/PlanStore, DNS skip, config bootstrap, licensing, x-forwarded-for,
+Castle disabled) EXCEPT it uses LocalDiskContentStore + EmbeddedDynamoDbProvider.
+Implemented via a new enum value + `Environment.isSelfHostLike()` helper.
+
+## STATUS — application layer DONE (uncommitted WIP), packaging remains
+Written this turn (all uncommitted, mid-feature):
+- `store/impl/LocalDiskContentStore.java` — Swap 1 impl (done earlier).
+- `store/dynamo/EmbeddedDynamoDbProvider.java` — Swap 2 impl: **file-backed** DynamoDB
+  Local via in-process `DynamoDBProxyServer` (`-dbPath -sharedDb -port`), NOT the
+  in-memory `DynamoDBEmbedded.create()`. Persists to `/opt/clearflask/dynamo` volume.
+- `core/ServiceInjector.java` — added `PRODUCTION_PLATFORM` + `isSelfHostLike()`; branch
+  Dynamo/S3/content bindings on platform; config path → `config-platform.cfg`; imports.
+- `resources/config-platform.cfg` — platform template (no localstack endpoints).
+- `util/AutoCreateKikConfigFile.java` + `util/SelfHostConfigBootstrap.java` — handle
+  PRODUCTION_PLATFORM (secret gen + env-var config apply for platform too).
+- Widened self-host branches to `isSelfHostLike()`: IpUtil, CastleAntiSpam,
+  AccountResource (×2), AccountStore, CommonPlanVerifyStore (×2).
+- `clearflask-server/pom.xml` — promoted DynamoDBLocal + sqlite-jdbc + sqlite4java +
+  libsqlite4java-linux-amd64 from `test` to compile/runtime scope.
+
+## REMAINING (needs a build+run loop — the fiddly part)
+1. **Docker native lib**: server image must have the sqlite4java `.so` on disk and
+   `sqlite4java.library.path` (default `/opt/clearflask/native-libs`) pointing at it.
+   server.Dockerfile (`tomcat:9.0-jdk17-temurin`) needs the linux-amd64 `.so` staged in
+   (mirror the bouncycastle staging pattern in clearflask-release), OR bundle+point at
+   WEB-INF/lib. Validate the lib name matches what sqlite4java expects.
+2. **arm64 CONSTRAINT (flag to board)**: sqlite4java native libs exist only for
+   linux-amd64 (no linux-arm64 in the dep list). So the **platform image must be
+   amd64-only**. Our current images are multi-arch. Railway/most marketplaces run
+   amd64, so acceptable — but the platform tag should be built amd64-only, or find an
+   arm64 sqlite4java build.
+3. Lean **platform compose** file (server + connect + MariaDB; volumes for
+   /opt/clearflask/dynamo, /opt/clearflask/content, and connect config;
+   `CLEARFLASK_ENVIRONMENT=PRODUCTION_PLATFORM`; no localstack).
+4. **Durability test**: deploy, create data, restart the server container, confirm data
+   survives (the whole point of file-backed vs in-memory).
+5. Update Railway template to `PRODUCTION_PLATFORM` + drop localstack service; re-test; publish.
+6. Build validation via CI (local build blocked by protoc arch + user prefers CI).
+
 ## Plan / order + STATUS (updated 2026-07-03)
 1. Swap 1 (LocalDiskContentStore) — **CODE WRITTEN (uncommitted WIP)**:
    `store/impl/LocalDiskContentStore.java`. Mirrors S3ContentStore's contract (same
