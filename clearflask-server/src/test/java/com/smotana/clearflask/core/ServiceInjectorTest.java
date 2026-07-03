@@ -52,7 +52,7 @@ public class ServiceInjectorTest {
                 VoteResource.class,
                 ConnectResource.class,
                 HealthResource.class,
-                env != Environment.PRODUCTION_SELF_HOST ? StripeWebhookResource.class : SelfHostBilling.class,
+                !env.isSelfHostLike() ? StripeWebhookResource.class : SelfHostBilling.class,
                 ProjectResource.class,
                 CreditResource.class,
                 ContentResource.class,
