@@ -60,6 +60,28 @@ i.e. cut a release after commit `87a4dd4a` before publishing the template.
   `LOCALSTACK_HOSTNAME=${{RAILWAY_PRIVATE_DOMAIN}}`,
   `HOSTNAME_EXTERNAL=${{RAILWAY_PRIVATE_DOMAIN}}`
 
+## LIVE TEST RESULT (2026-07-03) — template built, NOT published
+
+Deployed from the template (Railway project "zippy-amazement"). Outcome:
+- Template flow works end-to-end: 4 services provision, cross-service refs +
+  `secret(32)` connect token resolve, volumes attach, super-admin email prompts
+  the deployer. Public template page + deploy screen render correctly.
+- **localstack + mariadb: Online.** **clearflask-server: hangs during startup**
+  — Tomcat boots (no errors in logs), but app never finishes Guice init; healthcheck
+  never passes; connect crash-loops waiting on it.
+- **Diagnosis (open question #1/#2 confirmed):** server stalls initializing its
+  S3/DynamoDB clients against localstack over Railway's **IPv6-only private
+  network**. Our `DefaultS3ClientProvider` custom DNS resolver (`dnsResolverTo`)
+  and localstack 0.14.3 don't resolve the private domain cleanly. NOT a template
+  bug — a self-host networking assumption (localstack + custom DNS + IPv4).
+- **Next step (code, not browser):** either (a) make the S3 client's DNS resolver
+  IPv6-aware / bypass it when endpoint is a private host, or (b) drop localstack on
+  Railway in favor of real DynamoDB+S3 via env (the env-var work already supports
+  pointing at external endpoints), or (c) the lean-compose "local-disk storage +
+  embedded Dynamo" variant from `../reports/marketplace-research-2026-07-02.md`.
+  Option (c) is the durable fix and also unlocks PikaPods/Umbrel.
+- Test project should be deleted to stop credit burn (BOARD).
+
 ## Open questions (resolve during live test)
 
 1. S3 presigned-URL hostname with localstack behind Railway private networking —

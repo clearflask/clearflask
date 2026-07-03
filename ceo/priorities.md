@@ -15,11 +15,13 @@ and `reports/packaging-audit-2026-07-02.md`). Executing in this order:
 - [x] First-boot secret generation (`SelfHostConfigBootstrap.java`) — committed
       `87a4dd4a`, CI validating.
 - [x] Env-var config support (server + connect) — committed `87a4dd4a`.
-- [ ] Cut a release (minor: 2.5.0) so GHCR images contain env-var support —
-      prerequisite for all listings. After CI green on `87a4dd4a`.
-- [ ] Railway template: spec ready (`specs/railway-template.md`); compose in
-      Railway builder after release. BOARD: Railway account. Live-test the S3/
-      localstack open questions during first deploy.
+- [x] Cut release 2.5.0 — GHCR images `:latest`/`:2.5.0` now carry env-var
+      support. Workflow green, tag pushed, Helm charts published.
+- [~] Railway template: BUILT and SAVED in Railway (Matus's account), name
+      "ClearFlask", deploy URL railway.com/deploy/9geeXl. 4 services wired via
+      cross-service refs + secret(32) connect token, volumes attached,
+      super-admin email left as user-fill. NOT YET PUBLISHED — live-testing a
+      deploy first (project "zippy-amazement"). See `specs/railway-template.md`.
 - [x] Outreach drafts written: `outreach/pikapods-draft.md`,
       `outreach/elestio-draft.md`. BOARD: review + send.
 - [ ] Lean compose variant dropping localstack (local-disk file storage; embedded

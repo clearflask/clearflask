@@ -14,7 +14,19 @@ minor bump → 2.5.0, carrying the self-host secret-generation + env-var
 configuration feature (commit 87a4dd4a). Dispatching `release.yml` workflow
 (`versionType=minor`) after CI is green on master; monitoring to completion.
 
+## 3. Railway template built + live-tested
+- Composed the 4-service ClearFlask template in Railway (Matus logged in, CEO drove
+  the browser). Saved as "ClearFlask", deploy URL railway.com/deploy/9geeXl.
+- Live-test deploy: template flow + deps work; server hangs on localstack
+  S3/DynamoDB over Railway IPv6-only private net. NOT published. Diagnosis + next
+  steps in `../specs/railway-template.md`.
+
 ## Actions (CEO)
-- [ ] Dispatch + monitor release 2.5.0.
-- [ ] After release: compose Railway template (needs BOARD Railway account).
+- [x] Dispatch + monitor release 2.5.0 — SUCCESS.
+- [x] Compose Railway template — built + saved (not published pending fix).
+- [ ] Fix server startup over IPv6 private net (code) OR pursue lean-compose
+      variant; then re-test and publish.
 - [ ] Track PikaPods/Elestio replies; prepare packaging per their format on reply.
+
+## Actions (Board)
+- [ ] Delete test Railway project "zippy-amazement" to stop credit burn.
