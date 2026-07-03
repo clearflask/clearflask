@@ -1,6 +1,10 @@
-# Outreach draft — PikaPods (hello@pikapods.com)
+# Outreach — PikaPods (hello@pikapods.com)
 
-_Status: DRAFT for board review. Matus sends from matus@smotana.com; never sent by CEO directly._
+_Status: **SENT 2026-07-03** by Matus (shortened version: intro + "listed for
+revenue sharing, can provide packaging in the format you need"). Awaiting reply —
+follow up ~2026-07-10 if silent._
+
+Original draft below for reference:
 
 **Subject:** ClearFlask listing + revenue share — open-source feedback tool (author)
 

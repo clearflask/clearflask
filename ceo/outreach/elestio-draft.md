@@ -1,6 +1,10 @@
-# Outreach draft — Elestio (kaiwalya@elest.io)
+# Outreach — Elestio (kaiwalya@elest.io)
 
-_Status: DRAFT for board review. Matus sends from matus@smotana.com; never sent by CEO directly._
+_Status: **SENT 2026-07-03** by Matus (shortened version: intro + docker-compose-
+native + "listed for revenue sharing, can provide packaging"). Awaiting reply —
+follow up ~2026-07-10 if silent._
+
+Original draft below for reference:
 
 **Subject:** Adding ClearFlask to the Elestio catalog (open-source author, revenue share)
 
