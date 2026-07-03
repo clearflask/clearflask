@@ -144,3 +144,21 @@ build-green, tested unit, not piecemeal.
 - `resources/config-selfhost.cfg` (strip localstack endpoints)
 - `clearflask-release/.../docker-compose.self-host.yml` (remove localstack; add volumes)
 - `pom.xml` / `clearflask-server/pom.xml` (promote DynamoDBLocal + sqlite4java from test scope)
+
+## RAILWAY PLATFORM TEMPLATE — LIVE DEPLOY (2026-07-03)
+Rebuilt the Railway template for platform mode (3 services, no localstack): new
+deploy URL railway.com/deploy/j5dQvf (old localstack template 9geeXl is stale,
+delete before publish). Deployed a live test instance. Two real bugs caught + fixed:
+1. **mariadb crash**: custom start command `mysqld ...` ran mysqld as root Linux
+   user → "run mysqld as root" abort. FIX: prepend `docker-entrypoint.sh` so the
+   image's user setup runs. Applied to running service AND the template.
+2. **server healthcheck timeout**: ClearFlask first-boot (create all MySQL +
+   embedded-DynamoDB tables) exceeds Railway's default 300s healthcheck window →
+   deploy killed. FIX: raised Healthcheck Timeout to 900s on the running service.
+   NOTE: the template composer only exposes Healthcheck Path, not timeout — so the
+   PUBLISHED template must either drop the healthcheck path or set timeout via
+   config-as-code, else every one-click deploy fails on first boot. TODO before publish.
+Public URL of the test instance: clearflask-connect-production-dead.up.railway.app
+Volume note: server uses one volume /opt/clearflask/dynamo (Railway = 1 vol/service);
+before publish, consider mounting /opt/clearflask (parent) to also persist config
+secrets across redeploys.
