@@ -50,13 +50,26 @@ needs backups. Getting persistence + volume + restart-survival right is where Sw
 real effort/risk lives. Secondary: DynamoDBLocal's engine isn't 100% identical to real
 DynamoDB at scale, but the passing test suite de-risks the access patterns actually used.
 
-## Plan / order
-1. Swap 1 (LocalDiskContentStore) — cleanest, self-contained.
-2. Swap 2 (EmbeddedDynamoDbProvider, file-backed) — the careful one; prove restart
-   durability.
-3. Lean self-host compose (no localstack) + config; Docker native-lib path.
+## Plan / order + STATUS (updated 2026-07-03)
+1. Swap 1 (LocalDiskContentStore) — **CODE WRITTEN (uncommitted WIP)**:
+   `store/impl/LocalDiskContentStore.java`. Mirrors S3ContentStore's contract (same
+   KEY_PREFIX, same two URL regexes, same proxy-endpoint serving path). Stores files
+   under `{baseDir}/img/ugc/{proj}/{user}/{file}`; `signUrl` always returns the proxy
+   URL; `proxy()` reads from disk and ignores xAmz params; path-traversal guarded
+   (SAFE_SEGMENT + normalize/startsWith base). NOT yet wired into ServiceInjector.
+   REMAINING for Swap 1: (a) switch binding at `ServiceInjector.java:236` to choose
+   LocalDisk vs S3 by env/config flag (default S3 for AWS/prod, LocalDisk for a new
+   self-host "lean" flag); (b) unit test mirroring any S3ContentStore test; (c) mount
+   a Docker volume for baseDir in the lean compose.
+2. Swap 2 (EmbeddedDynamoDbProvider, **file-backed** — NOT `DynamoDBEmbedded.create()`
+   which is in-memory) — the careful one; prove restart durability. Not started.
+3. Lean self-host compose (no localstack) + config; Docker native-lib path
+   (`sqlite4java.library.path`). Not started.
 4. Re-test the Railway template against the lean stack; then publish. Also feeds
    PikaPods/Elestio replies.
+
+Commit discipline: this is feature WIP — commit the lean variant as one coherent,
+build-green, tested unit, not piecemeal.
 
 ## Key files
 - `store/ContentStore.java`, `store/impl/S3ContentStore.java`, `store/s3/DefaultS3ClientProvider.java`
