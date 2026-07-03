@@ -22,5 +22,8 @@ HEALTHCHECK --start-period=30s --interval=5s --timeout=1m --retries=3 \
 RUN rm -fr /usr/local/tomcat/webapps/*
 ADD logging.properties /usr/local/tomcat/conf/logging.properties
 ADD ROOT/ /usr/local/tomcat/webapps/ROOT
-ADD ROOT/WEB-INF/lib/bc*-jdk*on-*.jar /usr/local/tomcat/lib/
+# BouncyCastle is 'provided' (not in the WAR) so it lives on Tomcat's shared classloader,
+# keeping the JCE provider off the reloadable webapp classloader (see clearflask-server/pom.xml).
+# Staged into the build context by clearflask-release's copy-bouncycastle-to-docker-context.
+ADD lib/bc*-jdk*on-*.jar /usr/local/tomcat/lib/
 ADD logback.xml /usr/local/tomcat/webapps/ROOT/WEB-INF/classes/logback.xml

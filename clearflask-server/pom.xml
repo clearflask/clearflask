@@ -268,17 +268,28 @@
             <groupId>org.simplejavamail</groupId>
             <artifactId>simple-java-mail</artifactId>
         </dependency>
+        <!--
+          BouncyCastle is 'provided' so it is NOT bundled in the WAR. It must live on Tomcat's
+          shared (common) classloader instead - see $CATALINA_HOME/lib on the host and the
+          server.Dockerfile COPY for self-host. This keeps the globally-registered JCE provider
+          off the reloadable webapp classloader, so Tomcat parallel/hot deployment no longer
+          poisons BouncyCastle (NoClassDefFoundError: .../drbg/EntropyGatherer against a stopped
+          webapp classloader). Keep these versions in sync with the jars placed in tomcat/lib.
+        -->
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk18on</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk18on</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcutil-jdk18on</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
