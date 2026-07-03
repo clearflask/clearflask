@@ -3,6 +3,13 @@
 _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
 
 ## 2026-07-03
+- DECISION (board): the lean stack is NOT an option within self-hosting — it's a
+  **new deployment type PRODUCTION_PLATFORM** for one-click marketplace deploys.
+  Existing self-hosters keep real DynamoDB/S3, unchanged. Implemented + committed
+  (`e5c93029`); CI validating.
+- BOUNCE: Elestio outreach to kaiwalya@elest.io bounced (address not found).
+  BOARD ASK: resend to `support@elest.io` (or contact form elest.io/contact).
+  See `outreach/elestio-draft.md`.
 - DECISION (board): fix the storage/packaging blocker via the **lean-compose
   variant** — drop localstack; local-disk file storage + an embedded/local
   DynamoDB answer, so the stack is server + connect + MariaDB. Durable fix that

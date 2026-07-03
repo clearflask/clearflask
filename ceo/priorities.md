@@ -7,10 +7,17 @@ Drop localstack: local-disk file storage + embedded/local DynamoDB so the stack
 is server + connect + MariaDB. Durable fix for the packaging blocker that stalled
 the Railway live test (server hung on localstack over IPv6 private net). Unlocks
 Railway + PikaPods + Umbrel + CasaOS.
-- [ ] Scope the two swaps (S3→local-disk, DynamoDB→embedded) — investigation
-      running now.
-- [ ] Implement + test.
-- [ ] Re-test Railway template deploy against the lean stack; then publish.
+- [x] Scope the two swaps — done (`specs/lean-compose.md`).
+- [x] Design: NOT an option inside self-host — a new **PRODUCTION_PLATFORM**
+      deployment type (board call). Self-hosters untouched.
+- [x] Implement — committed `e5c93029`: LocalDiskContentStore, file-backed
+      EmbeddedDynamoDbProvider, wiring, config-platform.cfg, native-lib packaging,
+      docker-compose.platform.yml. CI validating the build now.
+- [ ] Durability test: deploy, add data, restart server container, confirm survival.
+- [ ] amd64-only platform image constraint (sqlite4java has no arm64 build) —
+      ensure platform image/tag built amd64-only.
+- [ ] Re-test Railway template against the platform stack (set
+      CLEARFLASK_ENVIRONMENT=PRODUCTION_PLATFORM, drop localstack); then publish.
 
 ## P1 — Self-host marketplace listings (passive revenue + funnel)
 Status: IN PROGRESS — research done (see `reports/marketplace-research-2026-07-02.md`

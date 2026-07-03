@@ -1,8 +1,12 @@
-# Outreach — Elestio (kaiwalya@elest.io)
+# Outreach — Elestio (support@elest.io)
 
-_Status: **SENT 2026-07-03** by Matus (shortened version: intro + docker-compose-
-native + "listed for revenue sharing, can provide packaging"). Awaiting reply —
-follow up ~2026-07-10 if silent._
+_Status: first attempt to **kaiwalya@elest.io BOUNCED** 2026-07-03 ("address couldn't
+be found"). That Developer-Advocate address is dead. **RESEND to `support@elest.io`**
+(Elestio's stated general/partnership inbox), or use the contact form at
+https://elest.io/contact. GitHub fallback: open an issue/PR on
+https://github.com/elestio/elestio-examples referencing our compose file._
+
+_BOARD ASK: resend the same short message to support@elest.io (CEO can't send)._
 
 Original draft below for reference:
 
