@@ -17,8 +17,16 @@ Railway + PikaPods + Umbrel + CasaOS.
       docker-compose.platform.yml.
 - [~] Release 2.6.0 cut to publish platform images + native libs (CI doesn't push
       images). Monitoring. Needed before any deploy test.
-- [ ] Durability test: deploy platform stack, add data, restart server container,
-      confirm the embedded file-backed DB kept everything. THE gate before publishing.
+- [x] **Durability test PASSED (2.6.1, local docker amd64 emulation).** Platform
+      server boots fully (native lib extracted from WAR, embedded DynamoDB init,
+      health 200). Created super-admin account via API (HTTP 200) → sqlite
+      `shared-local-instance.db` persisted to the volume → **restarted the server
+      container → logged in with the pre-restart account (HTTP 200)**. Data survives
+      restart. Platform-hosting validated end-to-end.
+- [ ] Rebuild Railway template for platform mode (server PRODUCTION_PLATFORM +
+      connect + MariaDB, NO localstack; volumes for /opt/clearflask/dynamo +
+      /content; CLEARFLASK_CONNECT_TOKEN=secret(32) on both). Re-test deploy.
+      BOARD: approve publishing the template publicly.
 - [ ] amd64-only platform image constraint (sqlite4java has no arm64 build) —
       ensure platform image/tag built amd64-only.
 - [ ] Re-test Railway template against the platform stack (set

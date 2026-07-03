@@ -3,6 +3,11 @@
 _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
 
 ## 2026-07-03
+- MILESTONE: **platform-hosting validated end-to-end.** Durability test passed on
+  2.6.1 — account created before a server-container restart survived it (embedded
+  file-backed DynamoDB persists to volume). Releases: 2.6.0 (feature), 2.6.1 (fix:
+  bundle native lib in WAR + require connect token). Next: rebuild + republish the
+  Railway template for platform mode (needs board OK to publish publicly).
 - DECISION (board): the lean stack is NOT an option within self-hosting — it's a
   **new deployment type PRODUCTION_PLATFORM** for one-click marketplace deploys.
   Existing self-hosters keep real DynamoDB/S3, unchanged. Implemented + committed
