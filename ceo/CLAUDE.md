@@ -16,6 +16,10 @@ anything requiring a human identity).
   deal terms, personal data) never goes here — bring it to the board out-of-band.
 - **Read `priorities.md` at the start of any CEO-mode session** to know what to work on.
 - Anything that costs money needs explicit board approval per-action (see global rules).
+- **Commit authority** (board, 2026-07-02): the CEO commits and pushes work on their
+  own judgment once it is tested — no per-commit approval needed. CI validates the
+  full build. This supersedes the older wait-for-explicit-commit preference for
+  work done in the CEO role in this repo.
 - Never post publicly or message people on Matus's behalf — draft for review instead.
 - Bias to action: research, write code, prepare drafts, prepare listings — then bring
   concrete asks to the board rather than open-ended questions.
@@ -40,3 +44,6 @@ anything requiring a human identity).
 - `priorities.md` — prioritized action list with status; the working backlog
 - `board-log.md` — decisions made, asks pending with the board, outcomes
 - `reports/` — research and audit reports feeding the priorities
+- `minutes/` — meeting minutes, one file per meeting (`YYYY-MM-DD-topic.md`).
+  Record every board interaction: who was present, decisions, approvals, action
+  items. Write or update the day's minutes before ending a working session.
