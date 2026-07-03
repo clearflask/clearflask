@@ -19,6 +19,10 @@ import com.smotana.clearflask.core.ManagedService;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 
 /**
@@ -45,13 +49,16 @@ public class EmbeddedDynamoDbProvider extends ManagedService implements Provider
         String port();
 
         /**
-         * Directory containing the sqlite4java native libraries. Set as the
-         * {@code sqlite4java.library.path} system property before the server starts. Empty leaves any
-         * externally-provided system property in place.
+         * Optional override for the directory containing the sqlite4java native library. When empty
+         * (the default), the linux-amd64 native library bundled in the WAR is extracted to a temp
+         * directory and used — this is the reliable path that needs no image-side staging.
          */
-        @DefaultValue("/opt/clearflask/native-libs")
+        @DefaultValue("")
         String nativeLibsPath();
     }
+
+    /** Bundled in the WAR at WEB-INF/classes/native-libs/ by the clearflask-server build. */
+    private static final String BUNDLED_NATIVE_LIB = "/native-libs/libsqlite4java-linux-amd64.so";
 
     @Inject
     private Config config;
@@ -61,9 +68,7 @@ public class EmbeddedDynamoDbProvider extends ManagedService implements Provider
 
     @Override
     public AmazonDynamoDB get() {
-        if (!Strings.isNullOrEmpty(config.nativeLibsPath())) {
-            System.setProperty("sqlite4java.library.path", config.nativeLibsPath());
-        }
+        System.setProperty("sqlite4java.library.path", resolveNativeLibsPath());
         try {
             File dbDir = new File(config.dbPath());
             if (!dbDir.exists() && !dbDir.mkdirs()) {
@@ -88,6 +93,34 @@ public class EmbeddedDynamoDbProvider extends ManagedService implements Provider
                 .build();
         amazonDynamoDBOpt = Optional.of(amazonDynamoDB);
         return amazonDynamoDB;
+    }
+
+    /**
+     * Returns the directory to point {@code sqlite4java.library.path} at: the configured override if
+     * set, otherwise a temp directory into which the WAR-bundled linux-amd64 native library is
+     * extracted. Extracting from the classpath avoids depending on image-side file staging.
+     */
+    private String resolveNativeLibsPath() {
+        if (!Strings.isNullOrEmpty(config.nativeLibsPath())) {
+            return config.nativeLibsPath();
+        }
+        try (InputStream in = EmbeddedDynamoDbProvider.class.getResourceAsStream(BUNDLED_NATIVE_LIB)) {
+            if (in == null) {
+                throw new ProvisionException("Bundled sqlite4java native library not found on classpath at "
+                        + BUNDLED_NATIVE_LIB + "; set nativeLibsPath to a directory containing it.");
+            }
+            Path libDir = Files.createTempDirectory("clearflask-sqlite4java");
+            libDir.toFile().deleteOnExit();
+            Path libFile = libDir.resolve("libsqlite4java-linux-amd64.so");
+            Files.copy(in, libFile, StandardCopyOption.REPLACE_EXISTING);
+            libFile.toFile().deleteOnExit();
+            log.info("Extracted bundled sqlite4java native library to {}", libDir);
+            return libDir.toString();
+        } catch (ProvisionException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new ProvisionException("Failed to extract bundled sqlite4java native library", ex);
+        }
     }
 
     @Override

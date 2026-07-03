@@ -94,6 +94,26 @@ Written this turn (all uncommitted, mid-feature):
 5. Update Railway template to `PRODUCTION_PLATFORM` + drop localstack service; re-test; publish.
 6. Build validation via CI (local build blocked by protoc arch + user prefers CI).
 
+## DURABILITY TEST ATTEMPT 1 (2026-07-03) — found 2 real issues, fixing
+Ran the 2.6.0 platform image locally (docker, amd64 emulation on arm64 Mac). Findings:
+1. **Confirmed working**: SelfHostConfigBootstrap generated fresh secrets; env-var
+   overrides applied; EmbeddedDynamoDbProvider reached "Initializing DynamoDB Local,
+   DbPath: /opt/clearflask/dynamo".
+2. **SecretsGuard blocks default connectToken** (correct security behavior, not a bug):
+   the published-placeholder connectToken is rejected in production. Platform must
+   supply CLEARFLASK_CONNECT_TOKEN. Fixed docker-compose.platform.yml to require it on
+   both server + connect (marketplace templates already inject it, e.g. Railway
+   secret(32)). NOTE: self-host has the same guard — operators must set a fresh token
+   (README already instructs uuidgen).
+3. **BUG — native lib missing**: `sqlite4java cannot find native library`. The
+   Docker-context staging (release pom copy + Dockerfile ADD) put the .so in
+   docker-root-server/native-libs but it did NOT end up in the published image (a
+   release:prepare-vs-perform checkout/phase ordering issue). **FIX: bundle the .so
+   inside the WAR** (WEB-INF/classes/native-libs) and extract at runtime in
+   EmbeddedDynamoDbProvider — removes all image-staging fragility. Reverted the release
+   pom copy + Dockerfile ADD. Validating the WAR contains the .so locally before
+   re-releasing (2.6.1, patch — fixes the just-shipped 2.6.0 platform feature).
+
 ## Plan / order + STATUS (updated 2026-07-03)
 1. Swap 1 (LocalDiskContentStore) — **CODE WRITTEN (uncommitted WIP)**:
    `store/impl/LocalDiskContentStore.java`. Mirrors S3ContentStore's contract (same

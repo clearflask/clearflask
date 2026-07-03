@@ -7,6 +7,12 @@
 ## IMPORTANT: the server image is amd64-only in this mode (embedded DynamoDB's sqlite4java
 ## native lib has no arm64 build). Self-hosters wanting real DynamoDB/S3 should instead use
 ## docker-compose.self-host.yml.
+##
+## BEFORE STARTING: set a fresh shared Connect<->Server token (the server refuses to start
+## in production with the published default). Generate one and put it in a .env file next
+## to this compose file:
+##   echo "CLEARFLASK_CONNECT_TOKEN=$(openssl rand -hex 16)" > .env
+## One-click marketplace platforms inject this automatically (per-install secret).
 version: '3.8'
 volumes:
   data:
@@ -23,6 +29,7 @@ services:
       - NODE_ENV=production
       - ENV=selfhost
       - CLEARFLASK_CREATE_CONNECT_CONFIG_IF_MISSING=1
+      - CLEARFLASK_CONNECT_TOKEN=${CLEARFLASK_CONNECT_TOKEN:?set a generated shared token, e.g. openssl rand -hex 16}
     volumes:
       - ./connect:/opt/clearflask/
   clearflask-server:
@@ -33,6 +40,7 @@ services:
     environment:
       - CLEARFLASK_ENVIRONMENT=PRODUCTION_PLATFORM
       - CLEARFLASK_CREATE_SERVER_CONFIG_IF_MISSING=1
+      - CLEARFLASK_CONNECT_TOKEN=${CLEARFLASK_CONNECT_TOKEN:?set a generated shared token, e.g. openssl rand -hex 16}
     volumes:
       - ./server:/opt/clearflask/
       # Embedded DynamoDB file-backed store — the source-of-truth datastore. Back this up.

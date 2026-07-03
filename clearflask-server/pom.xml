@@ -1094,6 +1094,33 @@
                             <outputDirectory>${project.build.directory}/native-libs</outputDirectory>
                         </configuration>
                     </execution>
+                    <execution>
+                        <!--
+                          Bundle the linux-amd64 sqlite4java native lib INTO the WAR
+                          (WEB-INF/classes/native-libs). EmbeddedDynamoDbProvider extracts it at
+                          runtime for the platform-hosting embedded DynamoDB. Bundling in the WAR
+                          (vs staging into the image) makes it travel with the artifact reliably.
+                          Version stripped so the runtime filename is predictable.
+                        -->
+                        <id>bundle-sqlite4java-native-in-war</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.almworks.sqlite4java</groupId>
+                                    <artifactId>libsqlite4java-linux-amd64</artifactId>
+                                    <version>${sqlite4java}</version>
+                                    <type>so</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.outputDirectory}/native-libs</outputDirectory>
+                                    <destFileName>libsqlite4java-linux-amd64.so</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
