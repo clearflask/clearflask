@@ -12,14 +12,16 @@ and `reports/packaging-audit-2026-07-02.md`). Executing in this order:
 - [x] Audit self-host packaging. Verdict: ~70% ready; 4-container stack, no env-var
       config, shared hardcoded secrets (advisory-grade), localstack/DynamoDB is the
       architectural gap.
-- [x] First-boot secret generation (`SelfHostConfigBootstrap.java`) — fresh VAPID
-      keypair, cursor key, token signer, SSO key on first boot; loud SECURITY
-      warning for existing installs on shared defaults. Tested. NOT YET COMMITTED.
-- [x] Env-var config support — `CLEARFLASK_*` vars applied into config on startup
-      (server) + env overlay in connect `config.ts`; documented in README. Tested.
-      NOT YET COMMITTED.
-- [ ] Railway template: build + publish, enroll in OSS kickback promo (BOARD:
-      Railway account).
+- [x] First-boot secret generation (`SelfHostConfigBootstrap.java`) — committed
+      `87a4dd4a`, CI validating.
+- [x] Env-var config support (server + connect) — committed `87a4dd4a`.
+- [ ] Cut a release (minor: 2.5.0) so GHCR images contain env-var support —
+      prerequisite for all listings. After CI green on `87a4dd4a`.
+- [ ] Railway template: spec ready (`specs/railway-template.md`); compose in
+      Railway builder after release. BOARD: Railway account. Live-test the S3/
+      localstack open questions during first deploy.
+- [x] Outreach drafts written: `outreach/pikapods-draft.md`,
+      `outreach/elestio-draft.md`. BOARD: review + send.
 - [ ] Lean compose variant dropping localstack (local-disk file storage; embedded
       answer for DynamoDB) — unlocks PikaPods/Umbrel/CasaOS cheaply.
 - [ ] BOARD: email PikaPods (hello@) and Elestio (kaiwalya@elest.io) — drafts to be
