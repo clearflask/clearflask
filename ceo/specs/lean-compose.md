@@ -238,3 +238,16 @@ TEMPLATE (j5dQvf) still needs, for a clean redeploy by others: server JAVA_TOOL_
 connect /opt/clearflask volume added to the template definition (the live instance has both, set
 manually). After a release that includes the connect mkdir fix, the connect volume becomes optional.
 Board asked to keep the instance up for testing — LEFT RUNNING (not torn down); burns trial credit.
+
+## KNOWN CONSTRAINT: project portals need a custom domain (not the platform's generated one)
+Discovered while testing the live Railway instance (2026-07-03). ClearFlask serves each project
+portal on a SUBDOMAIN of the parent domain (slug.<domain>). One-click platform hosts (Railway,
+PikaPods, etc.) hand out a single generated hostname with NO wildcard subdomain support, and
+Railway's *.up.railway.app is on the HSTS preload list (browser force-upgrades to HTTPS for a
+host that has no cert and no route) — so project portals are unreachable on the generated domain.
+The dashboard + admin all work fine; only the public per-project portals are affected.
+=> Platform-hosting docs must tell users to attach a CUSTOM domain with a wildcard DNS record
+   (*.feedback.example.com) + wildcard TLS pointed at the connect service. Also worth evaluating
+   whether Connect could optionally path-route projects (/-/slug) for single-domain hosts as a
+   fallback — would remove the wildcard requirement entirely for small self-hosters.
+Not blocking for the "it runs" milestone; is blocking for a polished one-click end-user experience.
