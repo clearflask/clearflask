@@ -44,6 +44,16 @@ When unsure between minor and patch, pick minor and say why.
 
 ## Operational lessons (avoid repeating)
 
+- **Shut down test deployments before ending a run.** Don't leave a test
+  project/instance running (it burns the board's trial credit and is untidy). Tear it
+  down as the last step of the session unless the board asked to keep it. (Board
+  directive 2026-07-03.)
+- **AWS SDK metadata hang on non-AWS clouds:** any deployment that builds an AWS
+  client without static creds/region will hang for minutes on the EC2 metadata
+  endpoint (169.254.169.254) on clouds like Railway. Always set dummy AWS creds
+  (`ConfigAwsCredentialsProvider awsAccessKeyId/awsSecretKey=test`) — config-selfhost
+  and config-platform both must. (Learned 2026-07-03, cost a long Railway debug.)
+
 - **Don't push to master while a release workflow is running.** The maven-release
   plugin commits a version tag + "prepare for next development iteration" and pushes;
   a cabinet push in between can cause a non-fast-forward and fail the release. Wait
