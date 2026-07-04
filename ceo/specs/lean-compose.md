@@ -191,3 +191,17 @@ application directory ROOT", then ZERO ClearFlask app logs for 14+ min → healt
   (c) PIVOT to PikaPods/Elestio first — standard Docker, likely no Railway IPv6 quirk;
       our platform image may just work there. Recommended as the higher-ROI path.
 - Test Railway project DELETED (per board: shut down before ending). Trial ~$4.99 intact.
+
+## ROOT CAUSE FOUND (2026-07-03): MariaDB IPv4-only vs Railway IPv6 private net
+The server hangs in DefaultMysqlProvider.get() at NetworkUtil.waitUntilPortOpen(mariadb
+host:3306). waitUntilPortOpen does `new Socket(host, port)` with NO connect timeout;
+Railway's private network is IPv6-only (mariadb.railway.internal = AAAA), but the mariadb
+image listens IPv4-only (bind-address=0.0.0.0) -> the IPv6 connect black-holes and blocks
+the syscall for many minutes (retryer's 5-min cap can't interrupt a blocked Socket()).
+Works locally because docker bridge is IPv4. Same class as the original localstack failure.
+FIX: mariadb must listen on IPv6 -> add `--bind-address=::` to the mariadb start command
+(dual-stack: accepts IPv6 + IPv4-mapped). Applying to Railway template + docker-compose.
+Also removing the server healthcheck from the template (composer can't set timeout; without
+it the container stays active so slow first-boot isn't killed and Console/jstack works).
+Robustness follow-up (code): give waitUntilPortOpen a connect timeout so a black-holed host
+fails fast instead of blocking indefinitely.
