@@ -48,6 +48,10 @@ if (process.env.ENV === 'production'
       fs.statSync(configFile);
     } catch (err: any) {
       if (err?.code === 'ENOENT') {
+        // Ensure the parent dir exists — on batteries-included platform hosts
+        // (e.g. Railway) /opt/clearflask is not pre-created, so a bare
+        // writeFileSync would throw ENOENT and crash Connect on first boot.
+        fs.mkdirSync(path.dirname(configFile), { recursive: true });
         fs.writeFileSync(
           configFile,
           JSON.stringify(selfHostDeafaultConfigFile, null, 4));

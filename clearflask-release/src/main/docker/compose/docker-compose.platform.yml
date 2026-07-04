@@ -41,6 +41,12 @@ services:
       - CLEARFLASK_ENVIRONMENT=PRODUCTION_PLATFORM
       - CLEARFLASK_CREATE_SERVER_CONFIG_IF_MISSING=1
       - CLEARFLASK_CONNECT_TOKEN=${CLEARFLASK_CONNECT_TOKEN:?set a generated shared token, e.g. openssl rand -hex 16}
+      # Cap the JVM footprint for memory-constrained one-click hosts (e.g. Railway's
+      # 1 GB plan). Without this the default max heap (25% of detected RAM) plus
+      # metaspace + Tomcat's WAR scan spikes RSS past the container limit and the
+      # kernel OOM-kills the process mid-startup with no Java error. Tune up if your
+      # host gives more memory.
+      - JAVA_TOOL_OPTIONS=-Xmx256m -XX:MaxMetaspaceSize=224m -Xss512k -XX:ReservedCodeCacheSize=64m -XX:+ExitOnOutOfMemoryError
     volumes:
       - ./server:/opt/clearflask/
       # Embedded DynamoDB file-backed store — the source-of-truth datastore. Back this up.

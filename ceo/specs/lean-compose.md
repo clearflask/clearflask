@@ -205,3 +205,36 @@ Also removing the server healthcheck from the template (composer can't set timeo
 it the container stays active so slow first-boot isn't killed and Console/jstack works).
 Robustness follow-up (code): give waitUntilPortOpen a connect timeout so a black-holed host
 fails fast instead of blocking indefinitely.
+
+## ✅ RAILWAY IS LIVE (2026-07-03) — full stack working end-to-end
+Public instance: https://clearflask-connect-production-08f8.up.railway.app → /dashboard (HTTP 200),
+/api/health → "ok" through connect→server→MySQL→embedded-DynamoDB. All 3 services Online.
+
+Complete list of fixes required to make the platform stack run on Railway (1 GB / 2 vCPU plan):
+1. **mariadb start command**: `docker-entrypoint.sh mysqld ... --bind-address=::`
+   - docker-entrypoint.sh so mysqld doesn't abort as root; --bind-address=:: so it listens on
+     IPv6 (Railway private network is IPv6-only) — else the server's startup connect black-holes.
+2. **server AWS creds** (config-platform.cfg): dummy creds so the AWS SDK doesn't hang on the
+   EC2 metadata endpoint on non-AWS clouds. [[feedback_...]]
+3. **server JVM memory cap** — THE big one. On the 1 GB plan the server OOM-KILLS mid-startup:
+   default max heap (25% of RAM) + metaspace + Tomcat's scan of the DynamoDBLocal-bloated WAR
+   spikes RSS past the ~953 MB cgroup limit → SIGKILL, no Java error, no hs_err (external kill,
+   so ExitOnOutOfMemoryError doesn't catch it). Confirmed by watching memory climb 240→448→581→
+   829 MB in 4 s straight into the cap. FIX: JAVA_TOOL_OPTIONS=-Xmx256m -XX:MaxMetaspaceSize=224m
+   -Xss512k -XX:ReservedCodeCacheSize=64m -XX:+ExitOnOutOfMemoryError. With this the server boots
+   fully ("All services started", "Server startup in 20920 ms"). Baked into docker-compose.platform.yml.
+   Diagnosis technique that cracked it: set the server start command to `sleep infinity` so the
+   crash-looping container stays up, then Console in and run bin/catalina.sh by hand while polling
+   /sys/fs/cgroup/memory.current.
+4. **server healthcheck**: removed from the template (first boot >300 s composer-default; and the
+   composer can't set a longer timeout).
+5. **connect config dir**: connect writes /opt/clearflask/connect.config.json on first boot but
+   that dir isn't pre-created on Railway → ENOENT crash → 502. Two fixes shipped: (a) code fix in
+   connect config.ts to mkdirSync the parent dir (permanent, no volume needed after next release);
+   (b) template/running-service: a volume mounted at /opt/clearflask on connect (works with the
+   current released image today). Connect listens on port 9080 (selfhost) — Railway targets it fine.
+
+TEMPLATE (j5dQvf) still needs, for a clean redeploy by others: server JAVA_TOOL_OPTIONS var +
+connect /opt/clearflask volume added to the template definition (the live instance has both, set
+manually). After a release that includes the connect mkdir fix, the connect volume becomes optional.
+Board asked to keep the instance up for testing — LEFT RUNNING (not torn down); burns trial credit.
