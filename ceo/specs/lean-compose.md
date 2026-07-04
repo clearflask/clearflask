@@ -162,3 +162,32 @@ Public URL of the test instance: clearflask-connect-production-dead.up.railway.a
 Volume note: server uses one volume /opt/clearflask/dynamo (Railway = 1 vol/service);
 before publish, consider mounting /opt/clearflask (parent) to also persist config
 secrets across redeploys.
+
+## RAILWAY STARTUP HANG — DEEP DEBUG (2026-07-03) — PARTIALLY SOLVED
+Deployed the platform template to Railway. mariadb + connect fine after fixes, but the
+SERVER hangs during startup and never serves /api/health → Railway healthcheck kills it.
+Fixes found + applied (real bugs):
+1. **mariadb**: start command `mysqld ...` ran as root → abort. FIX: `docker-entrypoint.sh mysqld ...` (template + running). DONE.
+2. **healthcheck timeout**: first-boot > 300s default → killed. FIX: raise to 900s. NOTE:
+   template composer can't set timeout — publish needs healthcheck dropped or config-as-code.
+3. **AWS creds** (committed to config-platform.cfg): missing dummy creds → AWS SDK chain
+   hits EC2 metadata (169.254.169.254) → hangs on non-AWS clouds. Added `=test` creds.
+
+REMAINING HANG (unsolved): even with AWS_EC2_METADATA_DISABLED=true + AWS creds set via
+env, the server STILL hangs. Symptom: Tomcat logs (JULI) appear up to "Deploying web
+application directory ROOT", then ZERO ClearFlask app logs for 14+ min → healthcheck kill.
+- Rules OUT: WAR contents / bundled DynamoDBLocal-Jetty (identical 2.6.1 image + WAR runs
+  FINE locally; durability test passed). So it's Railway-ENVIRONMENT-specific.
+- Suspect: a network/DNS operation during Tomcat webapp init (contextInitialized → Guice
+  injector) that hangs on Railway's IPv6-only private network — same class as the original
+  localstack IPv6 failure. Hang is BEFORE the first app log (SelfHostConfigBootstrap).
+- Blocked on diagnosis: Railway Console unavailable during a failing-healthcheck deploy, so
+  couldn't get a jstack thread dump (the definitive tool).
+- NEXT STEPS (pick one):
+  (a) Get a thread dump: deploy with healthcheck REMOVED (so the container stays "active"
+      and Console works), then `jstack` the java PID → exact hang line.
+  (b) Add `-Djava.net.preferIPv4Stack=false` / verify IPv6, or test whether removing
+      `startupWaitUntilDeps` / the JMX-RMI opts (`java.rmi.server.hostname`) changes it.
+  (c) PIVOT to PikaPods/Elestio first — standard Docker, likely no Railway IPv6 quirk;
+      our platform image may just work there. Recommended as the higher-ROI path.
+- Test Railway project DELETED (per board: shut down before ending). Trial ~$4.99 intact.
