@@ -61,6 +61,9 @@ services:
       - '--sql-mode=IGNORE_SPACE'
       - '--explicit-defaults-for-timestamp'
       - '--secure-file-priv=/tmp'
+      # Listen on IPv6 too. Platforms with IPv6-only private networking (e.g. Railway)
+      # can't reach an IPv4-only mysqld, which black-holes the server's startup connect.
+      - '--bind-address=::'
     volumes:
       - ./data/mysql:/var/lib/mysql
       - ./mysql-db:/docker-entrypoint-initdb.d
