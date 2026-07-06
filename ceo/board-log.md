@@ -12,12 +12,15 @@ _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
   for almost everything; MINOR is reserved for major user-facing features; the
   CEO had it backwards (minors for work that should have been patches). Rules
   updated in `ceo/CLAUDE.md`.
-- BOARD ASK (pending): approve **release 2.6.3 (patch)**. Contents on master since
-  2.6.2: exactly one feature commit — `527bea61` single-tenant platform mode
-  (below). CI green AND validated end-to-end locally (7-point check incl. UI,
-  API caps, root-domain portal, restart durability — see minutes 2026-07-06).
-  Purpose: GHCR images only publish on release, and the Railway template re-test
-  needs images carrying this feature.
+- APPROVED + SHIPPED: **release 2.6.3 (patch)** — board approved same day; workflow
+  green, tag `2.6.3` cut, `ghcr.io/clearflask/clearflask-{server,connect}:2.6.3`
+  published, Helm charts updated. Contents: exactly one feature commit `527bea61`
+  (single-tenant platform mode), CI green and validated end-to-end locally before
+  the ask (7-point check incl. UI, API caps, root-domain portal, restart
+  durability — see minutes 2026-07-06).
+- NEXT: rebuild Railway template on 2.6.3 images (ENV=platform on connect,
+  JAVA_TOOL_OPTIONS on server, drop connect volume). Live re-test needs board
+  spend approval; then the publish decision.
 - DECISION (board): **never test via releases.** Release-free test loop documented
   in `ceo/CLAUDE.md`: local images + `make platform-up` for functional tests;
   throwaway `test-<sha>` GHCR tags for cloud-specific tests; one board-approved

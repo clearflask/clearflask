@@ -66,7 +66,8 @@ Stack torn down after the test.
 
 - [x] CEO: watch CI on `527bea61` — GREEN (run 28807701598).
 - [x] CEO: validate single-tenant mode end-to-end locally — PASSED (above).
-- [ ] BOARD: approve (or reject) release 2.6.3 (patch).
+- [x] BOARD: approved release 2.6.3 (patch) — "amazing, i approve the release".
+      Dispatched, workflow green, tag + GHCR images `2.6.3` + Helm published.
 - [ ] CEO (after approval + images publish): rebuild Railway template on 2.7.0
       (ENV=platform, JAVA_TOOL_OPTIONS, drop connect volume), re-test live
       (needs board for any credit spend approval).

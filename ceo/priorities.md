@@ -38,9 +38,8 @@ Railway + PikaPods + Umbrel + CasaOS.
       project bound to root domain; portal + anonymous SSR served on root
       domain; second project blocked by API; "Add project" hidden; data +
       session survived server restart.
-- [ ] BLOCKED(board): release 2.6.3 (patch) — platform images with single-tenant
-      mode, now fully tested. CI green on `527bea61`; awaiting board approval
-      (per-release approval required for ALL releases, board directive 2026-07-06).
+- [x] Release 2.6.3 (patch) — board-approved 2026-07-06, shipped. GHCR images
+      `2.6.3` + Helm charts published; carries single-tenant platform mode.
 - [ ] Rebuild Railway template on 2.7.0 images (ENV=platform on connect,
       JAVA_TOOL_OPTIONS on server, drop connect volume). Re-test live deploy.
 - [ ] amd64-only platform image constraint (sqlite4java has no arm64 build) —
