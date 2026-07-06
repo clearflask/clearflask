@@ -49,3 +49,19 @@ _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
 - DECISION (CEO): priority order P1 marketplace listings → P2 AI dedupe/digest +
   relaunch → P3 distribution basics → P4 pricing → P5 trust quick-wins.
   Rewrites deprioritized. See `priorities.md`.
+
+## 2026-07-05
+- MILESTONE: **platform-hosting proven LIVE on Railway, end-to-end.** Rebuilt the
+  template for the PRODUCTION_PLATFORM stack (server + connect + MariaDB, no
+  localstack) and got a working public instance: dashboard, signup, account +
+  project creation, /api/health "ok" through connect→server→MySQL→embedded-Dynamo.
+  Board tested it, then instructed shutdown; test project deleted (cost ~$0.01).
+- Fixes committed to master (see specs/lean-compose.md): mariadb IPv6 bind +
+  entrypoint, dummy AWS creds, JVM heap cap for 1 GB hosts, connect mkdir config dir.
+- CONSTRAINT FOUND: project portals are subdomain-based; one-click hosts' generated
+  domains can't do wildcard subdomains (and *.up.railway.app is HSTS-preloaded), so
+  portals need a custom domain. Dashboard/admin unaffected. This gates a *polished*
+  public listing — see recommendation to board (2026-07-05).
+- P0 is effectively complete except: (1) publish decision + template polish
+  (JAVA_TOOL_OPTIONS var; connect volume until a release carries the mkdir fix),
+  (2) the single-domain routing question below.
