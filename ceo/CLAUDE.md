@@ -47,6 +47,25 @@ When unsure between minor and patch, **pick patch**. (The CEO got this backwards
 during 2026-07-02→05 and burned through 2.5.0/2.6.0 minors on work that should
 mostly have been patches — don't repeat that.)
 
+## Testing without releases (board directive 2026-07-06)
+
+**NEVER cut a release to test something.** Releases are for shipping already-tested
+work to customers, each individually board-approved. The test loop is local:
+
+1. **Functional testing — fully local, no push anywhere.** `mvn install -DskipTests`
+   builds the docker images locally (fabric8 builds `clearflask/clearflask-server` +
+   `clearflask/clearflask-connect` as linux/amd64). Then `make platform-up` (or
+   `local-up`/`selfhost-up`) runs the stack against those local images.
+2. **Cloud-specific testing (Railway IPv6/memory/edge)** — push the locally built
+   image under a **throwaway test tag only**: `docker tag clearflask/clearflask-server:latest
+   ghcr.io/clearflask/clearflask-server:test-<shortsha>` then push that tag (login:
+   `gh auth token | docker login ghcr.io -u <user> --password-stdin`). Point the
+   private Railway test project at the `test-*` tags. NEVER push `latest` or a
+   version tag from a local machine — those channels belong to the release workflow.
+3. **Release once at the end** — after the live test passes, one board-approved
+   release blesses the exact tested code. (This does re-build from the tag via CI,
+   which is fine: the code is identical.)
+
 ## Operational lessons (avoid repeating)
 
 - **Shut down test deployments before ending a run.** Don't leave a test
