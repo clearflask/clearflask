@@ -561,6 +561,16 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
             throw new ApiException(Response.Status.BAD_REQUEST, "Signups are disabled");
         }
 
+        // Platform-hosting is single-tenant: only the configured super-admin may self-register a
+        // dashboard account (the owner). Everyone else participates as portal users, not admins.
+        // Owner-initiated teammate invitations are still allowed through. Self-host/local/prod
+        // keep normal open multi-account signup.
+        if (env.isPlatform()
+                && invitationIdOpt.isEmpty()
+                && !superAdminPredicate.isEmailSuperAdmin(email)) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "This instance only allows its administrator to sign up");
+        }
+
         checkState(guidOpt.isPresent() || passwordOpt.isPresent());
         // More robust check than sanitizer.email(email);
         emailValidator.assertValid(email);

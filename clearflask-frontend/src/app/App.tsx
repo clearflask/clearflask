@@ -9,7 +9,7 @@ import { Server, StateSettings, Status } from '../api/server';
 import ServerMock from '../api/serverMock';
 import MyLoadingBar from '../common/MyLoadingBar';
 import WebNotification, { Status as WebNotificationStatus } from '../common/notification/webNotification';
-import { Environment, detectEnv } from '../common/util/detectEnv';
+import { isSelfHostLike, Environment, detectEnv } from '../common/util/detectEnv';
 import { IframeBroadcastPathname } from '../common/util/iframeUrlSync';
 import { OAuthFlow } from '../common/util/oauthUtil';
 import { RedirectIso, RouteWithStatus } from '../common/util/routerUtil';
@@ -160,7 +160,7 @@ class App extends Component<Props> {
     if (!confStatus || confStatus === Status.PENDING) {
       return (<Loading />);
     } else if (confStatus === Status.REJECTED) {
-      if (detectEnv() === Environment.PRODUCTION_SELF_HOST) {
+      if (isSelfHostLike()) {
         return (
           <RedirectIso to='/dashboard' />
         );

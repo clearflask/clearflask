@@ -196,6 +196,15 @@ public enum ServiceInjector {
         public boolean isSelfHostLike() {
             return this == PRODUCTION_SELF_HOST || this == PRODUCTION_PLATFORM;
         }
+
+        /**
+         * True only for platform-hosting (one-click marketplace appliance). Unlike self-host, the
+         * generated host has no wildcard subdomains, so it is treated as single-tenant: exactly one
+         * owner account and one project. Self-host/local/prod are unrestricted.
+         */
+        public boolean isPlatform() {
+            return this == PRODUCTION_PLATFORM;
+        }
     }
 
     private static volatile Injector injector = null;

@@ -40,7 +40,7 @@ import Message from '../common/Message';
 import SubmitButton from '../common/SubmitButton';
 import GoogleIcon from '../common/icon/GoogleIcon';
 import {saltHashPassword} from '../common/util/auth';
-import {detectEnv, Environment, isProd} from '../common/util/detectEnv';
+import { isSelfHostLike, isProd } from '../common/util/detectEnv';
 import {OAuthFlow} from '../common/util/oauthUtil';
 import {RedirectIso} from '../common/util/routerUtil';
 import {trackingBlock} from '../common/util/trackingDelay';
@@ -336,7 +336,7 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
             }
         }
 
-        const isSingleCustomer = detectEnv() === Environment.PRODUCTION_SELF_HOST;
+        const isSingleCustomer = isSelfHostLike();
         const isOauthEnabled = !isSingleCustomer;
         const signUpOrLogIn = this.props.type === 'signup' ? this.props.t('sign-up-with') : this.props.t('log-in-with');
 

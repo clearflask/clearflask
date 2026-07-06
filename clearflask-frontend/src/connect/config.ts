@@ -39,11 +39,12 @@ var connectConfig: ConnectConfig = {
 
 if (process.env.ENV === 'production'
   || process.env.ENV === 'selfhost'
+  || process.env.ENV === 'platform'
   || process.env.ENV === 'local') {
 
   // Create config if doesn't exist
   if (!!process.env.CLEARFLASK_CREATE_CONNECT_CONFIG_IF_MISSING
-    && process.env.ENV === 'selfhost') {
+    && (process.env.ENV === 'selfhost' || process.env.ENV === 'platform')) {
     try {
       fs.statSync(configFile);
     } catch (err: any) {

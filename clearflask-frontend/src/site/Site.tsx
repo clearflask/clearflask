@@ -32,7 +32,7 @@ import Loading from '../app/utils/Loading';
 import OpenSourceIcon from '../common/icon/OpenSourceIcon';
 import { MenuButton, MenuDropdown, MenuItems } from '../common/menus';
 import MuiAnimatedSwitch from '../common/MuiAnimatedSwitch';
-import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
+import { isSelfHostLike, isProd } from '../common/util/detectEnv';
 import { RedirectIso, RouteWithStatus } from '../common/util/routerUtil';
 import { SetTitle } from '../common/util/titleUtil';
 import windowIso from '../common/windowIso';
@@ -153,7 +153,7 @@ class Site extends Component<ConnectProps & WithTranslation<'site'> & RouteCompo
   }
 
   render() {
-    const isSingleCustomer = detectEnv() === Environment.PRODUCTION_SELF_HOST;
+    const isSingleCustomer = isSelfHostLike();
     if (isSingleCustomer) {
       return (
         <RedirectIso to='/login' />

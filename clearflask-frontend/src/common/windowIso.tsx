@@ -72,7 +72,7 @@ export type WindowIso = {
 } & (( // CSR only
   Window & typeof globalThis & {
     isSsr: false;
-    ENV?: 'development' | 'production' | 'selfhost' | 'local' | 'test';
+    ENV?: 'development' | 'production' | 'selfhost' | 'platform' | 'local' | 'test';
   }
 ) | ( // SSR only
     NodeJS.Global & {

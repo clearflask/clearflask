@@ -59,7 +59,7 @@ import windowIso from '../../common/windowIso';
 import PricingPlan from '../PricingPlan';
 import BillingChangePlanDialog from './BillingChangePlanDialog';
 import { ProjectSettingsBase, Section } from './ProjectSettings';
-import { detectEnv, Environment } from '../../common/util/detectEnv';
+import { isSelfHostLike } from '../../common/util/detectEnv';
 import { Link } from 'react-router-dom';
 
 /** If changed, also change in KillBilling.java */
@@ -341,7 +341,7 @@ class BillingPage extends Component<Props & ConnectProps & WithStyles<typeof sty
       cardNumber = (<span className={this.props.classes.blurry}>5200&nbsp;8282&nbsp;8282&nbsp;8210</span>);
       cardExpiry = (<span className={this.props.classes.blurry}>06 / 32</span>);
     }
-    const isSelfhost = detectEnv() === Environment.PRODUCTION_SELF_HOST;
+    const isSelfhost = isSelfHostLike();
     var hasAvailablePlansToSwitch: boolean = (this.props.accountBilling?.availablePlans || [])
       .filter(p => p.basePlanId !== this.props.accountBilling?.plan.basePlanId)
       .length > 0;

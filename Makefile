@@ -247,3 +247,20 @@ list-instances-killbill:
 	build-no-test \
 	killbill-sleep-% \
 	get-project-version
+
+# Platform-hosting stack (single-tenant one-click appliance): server + connect + MariaDB,
+# embedded file-backed DynamoDB, local-disk content. Works like local-up but for the
+# PRODUCTION_PLATFORM deployment: build local images first (mvn install), then platform-up.
+# The server runs under linux/amd64 emulation (embedded DynamoDB sqlite4java has no arm64
+# linux build). Once up, open http://localhost and sign up as admin@localhost.
+clearflask-release/target/run-docker-compose-platform/docker-compose.yml:
+	rm -fr clearflask-release/target/run-docker-compose-platform
+	mkdir -p clearflask-release/target/run-docker-compose-platform
+	cp clearflask-release/src/main/docker/compose/docker-compose.platform.yml clearflask-release/target/run-docker-compose-platform/docker-compose.yml
+	sed -i'.original' s,ghcr.io/clearflask,clearflask,g clearflask-release/target/run-docker-compose-platform/docker-compose.yml
+	test -f clearflask-release/target/run-docker-compose-platform/.env || printf 'CLEARFLASK_CONNECT_TOKEN=%s\nCLEARFLASK_FORCE_REDIRECT_HTTPS=0\nCLEARFLASK_DISABLE_AUTO_FETCH_CERTIFICATE=1\n' "$$(openssl rand -hex 16)" > clearflask-release/target/run-docker-compose-platform/.env
+platform-up: clearflask-release/target/run-docker-compose-platform/docker-compose.yml
+	docker-compose --env-file clearflask-release/target/run-docker-compose-platform/.env -f clearflask-release/target/run-docker-compose-platform/docker-compose.yml up -d
+	docker-compose --env-file clearflask-release/target/run-docker-compose-platform/.env -f clearflask-release/target/run-docker-compose-platform/docker-compose.yml logs -f
+platform-down: clearflask-release/target/run-docker-compose-platform/docker-compose.yml
+	docker-compose --env-file clearflask-release/target/run-docker-compose-platform/.env -f clearflask-release/target/run-docker-compose-platform/docker-compose.yml down -t 0

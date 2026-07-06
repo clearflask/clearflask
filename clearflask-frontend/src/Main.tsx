@@ -23,7 +23,7 @@ import Loading from './app/utils/Loading';
 import MuiSnackbarProvider from './app/utils/MuiSnackbarProvider';
 import ServerErrorNotifier from './app/utils/ServerErrorNotifier';
 import { closeLoadingScreen } from './common/loadingScreen';
-import { detectEnv, Environment, isProd } from './common/util/detectEnv';
+import { isSelfHostLike, isProd } from './common/util/detectEnv';
 import { RedirectIso } from './common/util/routerUtil';
 import { vh } from './common/util/screenUtil';
 import ScrollAnchor from './common/util/ScrollAnchor';
@@ -150,7 +150,7 @@ class Main extends Component<Props> {
       return (<RedirectIso to={windowIso.location.origin.replace(`www.`, '')} />);
     }
 
-    const isSelfHost = detectEnv() === Environment.PRODUCTION_SELF_HOST;
+    const isSelfHost = isSelfHostLike();
     const isParentDomain = windowIso.location.hostname === windowIso.parentDomain
       || (!isProd() && windowIso.location.hostname === 'localhost');
 
@@ -226,7 +226,7 @@ class Main extends Component<Props> {
                                   <Dashboard {...props} />
                                 </NoSsr>
                                 {/* <IntercomWrapperMain suppressBind /> */}
-                                {detectEnv() !== Environment.PRODUCTION_SELF_HOST && (
+                                {!isSelfHostLike() && (
                                   <ChatwootWrapperMain suppressBind />)}
                                 <HotjarWrapperMain />
                               </Provider>
@@ -288,7 +288,7 @@ class Main extends Component<Props> {
                                 <SetMaxAge val={24 * 60 * 60} />
                                 <Site {...props} />
                                 {/* <IntercomWrapperMain /> */}
-                                {detectEnv() !== Environment.PRODUCTION_SELF_HOST && (
+                                {!isSelfHostLike() && (
                                   <ChatwootWrapperMain />)}
                                 <HotjarWrapperMain />
                               </Provider>

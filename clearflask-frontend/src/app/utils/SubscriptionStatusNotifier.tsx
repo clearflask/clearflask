@@ -5,7 +5,7 @@ import { SnackbarKey, useSnackbar, VariantType } from 'notistack';
 import { useHistory } from 'react-router';
 import * as Admin from '../../api/admin';
 import ServerAdmin from '../../api/serverAdmin';
-import { detectEnv, Environment } from '../../common/util/detectEnv';
+import { isSelfHostLike } from '../../common/util/detectEnv';
 
 var lastShown: Admin.SubscriptionStatus | undefined;
 var lastKey: SnackbarKey;
@@ -48,13 +48,13 @@ const SubscriptionStatusNotifier = (props: {
       break;
     case Admin.SubscriptionStatus.Blocked:
       variant = 'error';
-      content = detectEnv() === Environment.PRODUCTION_SELF_HOST
+      content = isSelfHostLike()
         ? 'Your current license is invalid, update your billing to continue'
         : 'Your account is blocked, contact support';
       break;
     case Admin.SubscriptionStatus.Cancelled:
       variant = 'error';
-      content = detectEnv() === Environment.PRODUCTION_SELF_HOST
+      content = isSelfHostLike()
         ? 'Your current plan requires a license, update your billing to continue'
         : 'Your account is cancelled, update your billing to continue';
       break;

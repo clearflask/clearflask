@@ -27,9 +27,18 @@ services:
       - 443:9443
     environment:
       - NODE_ENV=production
-      - ENV=selfhost
+      # 'platform' makes the dashboard single-tenant (no subdomain picking, one project);
+      # Connect otherwise behaves like selfhost. The server uses CLEARFLASK_ENVIRONMENT=PRODUCTION_PLATFORM.
+      - ENV=platform
       - CLEARFLASK_CREATE_CONNECT_CONFIG_IF_MISSING=1
       - CLEARFLASK_CONNECT_TOKEN=${CLEARFLASK_CONNECT_TOKEN:?set a generated shared token, e.g. openssl rand -hex 16}
+      # Connect proxies the API to the server container over the compose network.
+      - CLEARFLASK_API_BASE_PATH=http://clearflask-server:8080
+      - CLEARFLASK_DOMAIN=${CLEARFLASK_DOMAIN:-localhost}
+      # HTTPS handling: default on (real deploys terminate TLS / auto-fetch a cert). For local
+      # http://localhost testing set these to 0/1 in .env so Connect doesn't force HTTPS.
+      - CLEARFLASK_FORCE_REDIRECT_HTTPS=${CLEARFLASK_FORCE_REDIRECT_HTTPS:-1}
+      - CLEARFLASK_DISABLE_AUTO_FETCH_CERTIFICATE=${CLEARFLASK_DISABLE_AUTO_FETCH_CERTIFICATE:-0}
     volumes:
       - ./connect:/opt/clearflask/
   clearflask-server:

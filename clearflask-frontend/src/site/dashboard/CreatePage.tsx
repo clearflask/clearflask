@@ -35,7 +35,7 @@ import * as ConfigEditor from '../../common/config/configEditor';
 import Templater, { CreateTemplateV2Options, CreateTemplateV2Result, createTemplateV2OptionsBlank, createTemplateV2OptionsDefault } from '../../common/config/configTemplater';
 import UpgradeWrapper, { ProjectMaxCount, TeammatePlanId } from '../../common/config/settings/UpgradeWrapper';
 import { TourDefinitionGuideState } from '../../common/tour';
-import { Environment, detectEnv } from '../../common/util/detectEnv';
+import { isSelfHostLike, Environment, detectEnv } from '../../common/util/detectEnv';
 import { trackingBlock } from '../../common/util/trackingDelay';
 import windowIso from '../../common/windowIso';
 import Logo from '../Logo';
@@ -542,8 +542,8 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
                     }}
                   />
                 </Collapse>
-                <Collapse in={this.state.infoDomain !== undefined || this.state.infoSlug !== undefined}>
-                  {detectEnv() === Environment.PRODUCTION_SELF_HOST ? (
+                <Collapse in={detectEnv() !== Environment.PRODUCTION_PLATFORM && (this.state.infoDomain !== undefined || this.state.infoSlug !== undefined)}>
+                  {detectEnv() === Environment.PRODUCTION_PLATFORM ? null : isSelfHostLike() ? (
                     <TextField
                       className={this.props.classes.field}
                       variant='outlined'
@@ -684,7 +684,7 @@ class CreatePage extends Component<Props & ConnectProps & WithTranslation<'site'
     const templater = Templater.get(editor);
     const templates = await templater.createTemplateV2({
       ...this.state,
-      ...(detectEnv() === Environment.PRODUCTION_SELF_HOST ? {
+      ...(isSelfHostLike() ? {
         infoDomain: this.state.infoDomain || windowIso.parentDomain,
       } : {})
     });

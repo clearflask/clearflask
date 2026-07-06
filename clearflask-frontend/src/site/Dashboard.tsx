@@ -58,7 +58,7 @@ import LogoutIcon from '../common/icon/LogoutIcon';
 import Layout, { LayoutSize, Section } from '../common/Layout';
 import { MenuButton, MenuItems } from '../common/menus';
 import { TourDefinitionGuideState } from '../common/tour';
-import { detectEnv, Environment, isProd } from '../common/util/detectEnv';
+import { isSelfHostLike, detectEnv, Environment, isProd } from '../common/util/detectEnv';
 import { getProjectLink, getProjectName } from '../common/util/projectUtil';
 import { createMutableRef, MutableRef } from '../common/util/refUtil';
 import { RedirectIso, redirectIso } from '../common/util/routerUtil';
@@ -517,7 +517,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
       // Selfhost service is a mode that turns the dashboard into a license key store. It is triggered when:
       // - This is the cloud (not self-hosted instance)
       // - The account is on a self-host service plan
-      isSelfhostServiceOnly: detectEnv() !== Environment.PRODUCTION_SELF_HOST && SelfhostServicePlans.includes(this.props.account?.basePlanId),
+      isSelfhostServiceOnly: !isSelfHostLike() && SelfhostServicePlans.includes(this.props.account?.basePlanId),
     };
     switch (activePath) {
       case '':
@@ -850,12 +850,14 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                         icon: p.projectId === activeProjectId ? CheckIcon : undefined,
                       }))),
                       { type: 'divider' },
-                      {
-                        type: 'button',
+                      // Platform-hosting is single-tenant: no adding a second project once one
+                      // exists (extra projects would need subdomains the one-click host can't serve).
+                      ...((detectEnv() === Environment.PRODUCTION_PLATFORM && projects.length >= 1) ? [] : [{
+                        type: 'button' as 'button',
                         link: '/dashboard/create',
                         title: this.props.t('add-project'),
                         icon: AddIcon,
-                      },
+                      }]),
                       {
                         type: 'button',
                         link: '/dashboard/settings/project/branding',
@@ -875,7 +877,7 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                         title: this.props.t('account'),
                         icon: AccountIcon,
                       },
-                      ...(!!this.props.isSuperAdmin && detectEnv() !== Environment.PRODUCTION_SELF_HOST ? [
+                      ...(!!this.props.isSuperAdmin && !isSelfHostLike() ? [
                         {
                           type: 'button' as 'button',
                           link: '/dashboard/settings/super/loginas',

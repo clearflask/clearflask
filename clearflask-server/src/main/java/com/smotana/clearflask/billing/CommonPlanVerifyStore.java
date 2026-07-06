@@ -473,6 +473,13 @@ public class CommonPlanVerifyStore implements PlanVerifyStore {
                 .orElse(0L);
         projectCountLimitOpt = projectCountLimitOpt.map(planLimit -> planLimit + addonExtraProjectCount);
 
+        // Platform-hosting (one-click marketplace appliance) is single-tenant: hard cap at exactly
+        // one project regardless of plan or addons. Additional projects would be served on
+        // subdomains the generated host cannot route. Self-host/local/prod are unaffected.
+        if (env.isPlatform()) {
+            projectCountLimitOpt = Optional.of(1L);
+        }
+
         if (projectCountLimitOpt.isPresent()) {
             long projectCount = accountStore.getAccount(accountId, true).get()
                     .getProjectIds().size();

@@ -105,7 +105,7 @@ import { TourAnchor, TourDefinitionGuideState } from '../../common/tour';
 import { notEmpty } from '../../common/util/arrayUtil';
 import { Bag } from '../../common/util/bag';
 import debounce, { SearchTypeDebounceTime } from '../../common/util/debounce';
-import { detectEnv, Environment } from '../../common/util/detectEnv';
+import { isSelfHostLike, detectEnv, Environment } from '../../common/util/detectEnv';
 import { OAUTH_CODE_PARAM_NAME, OAuthFlow } from '../../common/util/oauthUtil';
 import { getProjectLink } from '../../common/util/projectUtil';
 import randomUuid from '../../common/util/uuid';
@@ -1127,7 +1127,7 @@ export const ProjectSettingsBranding = (props: {
           </>
         )}
       />
-      {detectEnv() !== Environment.PRODUCTION_SELF_HOST && (
+      {!isSelfHostLike() && (
         <Section
           title="Whitelabel"
           content={(
@@ -1178,7 +1178,7 @@ export const ProjectSettingsDomain = (props: {
         <Typography variant="body1" component="div">Ensure your DNS settings are configured with your domain set
           to
           CNAME sni.clearflask.com</Typography>
-        {detectEnv() !== Environment.PRODUCTION_SELF_HOST && (
+        {!isSelfHostLike() && (
           <Typography variant="caption" component="div">NOTE: First request to a custom domain always bypasses
             our
             global CDN, contact support if you need both.</Typography>

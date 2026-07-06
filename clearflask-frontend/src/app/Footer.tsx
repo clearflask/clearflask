@@ -6,7 +6,7 @@ import { Component } from 'react';
 import { connect } from 'react-redux';
 import * as Client from '../api/client';
 import { ReduxState, Status } from '../api/server';
-import { detectEnv, Environment } from '../common/util/detectEnv';
+import { isSelfHostLike } from '../common/util/detectEnv';
 import TemplateLiquid from './comps/TemplateLiquid';
 import PoweredBy from './PoweredBy';
 
@@ -53,7 +53,7 @@ interface ConnectProps {
 
 class Footer extends Component<Props & ConnectProps & WithStyles<typeof styles, true>> {
   render() {
-    const isSelfHost = detectEnv() === Environment.PRODUCTION_SELF_HOST;
+    const isSelfHost = isSelfHostLike();
     var footerTemplate = (this.props.config?.style.templates?.pageFooters || []).find(p => !!p && p.pageId === this.props.page?.pageId)?.template
       || this.props.config?.style.templates?.footer;
     var footer;
