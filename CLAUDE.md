@@ -86,6 +86,47 @@ cd clearflask-server && mvn test -Dtest=ClassName#methodName
 cd clearflask-server && mvn verify
 ```
 
+## Deployment
+
+**Always deploy via CI (GitHub Actions), never from a local build.** CI checks out a clean
+`origin/master`, so uncommitted local changes never reach prod, and CI holds the AWS/registry
+credentials (you do not need a local `AWS_PROFILE`). To ship a change: commit + push it to
+`master`, then dispatch the appropriate workflow with `gh`.
+
+### Deploy the cloud SaaS (clearflask.com)
+
+Builds `master` and rolls it out to the production EC2 fleet (`make deploy-singlehost`):
+
+```bash
+# Fast hotfix — skips slow integration tests (still runs unit tests):
+gh workflow run deploy-restart-no-it.yml --ref master
+
+# Full deploy — runs integration tests too (safest, slowest):
+gh workflow run deploy-restart.yml --ref master
+
+# Emergency — skips ALL tests (use only when you must):
+gh workflow run deploy-restart-no-tests.yml --ref master
+```
+
+Watch it to completion (always monitor a deploy):
+
+```bash
+gh run list --workflow=deploy-restart-no-it.yml --limit 1     # get the run id
+gh run watch <run-id>                                         # or: gh run view <run-id> --log
+```
+
+### Cut a versioned release (git tag + ghcr images + Helm charts, for self-host)
+
+Uses the maven-release-plugin to bump the version, tag it, publish the `ghcr.io/clearflask/*`
+Docker images, and update the Helm charts. Keep the major at `2` (see `ceo/CLAUDE.md`):
+
+```bash
+gh workflow run release.yml -f versionType=patch    # or minor / major
+```
+
+A release does NOT deploy the SaaS — it only tags/publishes. Deploying prod and cutting a
+release are independent steps; do both when shipping a user-facing fix.
+
 ## Project Structure
 
 - **clearflask-api** - OpenAPI definitions (YAML) for client-server communication. Generates TypeScript and Java clients via openapi-generator.
