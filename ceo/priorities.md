@@ -1,6 +1,6 @@
 # Priorities — Working Backlog
 
-_Last updated: 2026-07-03. Statuses: TODO / IN PROGRESS / BLOCKED(on) / DONE._
+_Last updated: 2026-07-06. Statuses: TODO / IN PROGRESS / BLOCKED(on) / DONE._
 
 ## P0 — Lean-compose variant (BOARD-approved 2026-07-03; unblocks all listings)
 Drop localstack: local-disk file storage + embedded/local DynamoDB so the stack
@@ -23,14 +23,21 @@ Railway + PikaPods + Umbrel + CasaOS.
       `shared-local-instance.db` persisted to the volume → **restarted the server
       container → logged in with the pre-restart account (HTTP 200)**. Data survives
       restart. Platform-hosting validated end-to-end.
-- [ ] Rebuild Railway template for platform mode (server PRODUCTION_PLATFORM +
-      connect + MariaDB, NO localstack; volumes for /opt/clearflask/dynamo +
-      /content; CLEARFLASK_CONNECT_TOKEN=secret(32) on both). Re-test deploy.
-      BOARD: approve publishing the template publicly.
+- [x] **Proven LIVE on Railway (2026-07-05).** Template rebuilt for the platform
+      stack; public instance worked end-to-end (dashboard, signup, project,
+      /api/health). Torn down after board test. Fixes on master: mariadb IPv6
+      bind, dummy AWS creds, JVM heap cap for 1 GB hosts, connect mkdir.
+- [x] **Single-tenant platform mode (2026-07-06, `527bea61`).** Answers the
+      subdomain constraint: one project on the root domain, super-admin-only
+      signup, project cap 1, no slug/domain fields. Generated host domains are
+      now fully usable without custom DNS. Plus `make platform-up` local stack.
+- [ ] Cut release 2.7.0 (minor) once CI green — platform images with
+      single-tenant mode + connect mkdir fix (makes template volume optional).
+- [ ] Rebuild Railway template on 2.7.0 images (ENV=platform on connect,
+      JAVA_TOOL_OPTIONS on server, drop connect volume). Re-test live deploy.
 - [ ] amd64-only platform image constraint (sqlite4java has no arm64 build) —
       ensure platform image/tag built amd64-only.
-- [ ] Re-test Railway template against the platform stack (set
-      CLEARFLASK_ENVIRONMENT=PRODUCTION_PLATFORM, drop localstack); then publish.
+- [ ] BOARD: approve publishing the template publicly after the re-test.
 
 ## P1 — Self-host marketplace listings (passive revenue + funnel)
 Status: IN PROGRESS — research done (see `reports/marketplace-research-2026-07-02.md`

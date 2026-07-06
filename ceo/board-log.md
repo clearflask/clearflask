@@ -2,6 +2,39 @@
 
 _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
 
+## 2026-07-06
+- SHIPPED: **single-tenant mode for PRODUCTION_PLATFORM** (`527bea61`) — the durable
+  answer to the 2026-07-05 subdomain/routing constraint. Platform deploys are now a
+  one-project appliance on the root domain: dashboard signup restricted to the
+  configured super-admin (teammate invites still work), project count hard-capped
+  at 1, CreatePage binds the project to the root domain (no slug/domain fields),
+  "Add project" hidden once one exists. Self-host and cloud behavior unchanged.
+  Also: `make platform-up`/`platform-down` for local testing of the platform stack,
+  and compose now sets `ENV=platform` + API base path + HTTPS toggles. CI validating.
+- With this, custom domains + wildcard DNS are OPTIONAL polish (multi-project users
+  can still self-host); the generated Railway/PikaPods domain is fully usable
+  out of the box. Unblocks a polished public listing.
+- NEXT: cut release 2.7.0 (minor — new platform behavior) once CI is green, then
+  rebuild the Railway template on the released images and re-test live.
+- BOARD ASK (pending): approve publishing the Railway template publicly once the
+  re-test passes; Elestio resend to support@elest.io still pending (2026-07-03).
+
+## 2026-07-05
+- MILESTONE: **platform-hosting proven LIVE on Railway, end-to-end.** Rebuilt the
+  template for the PRODUCTION_PLATFORM stack (server + connect + MariaDB, no
+  localstack) and got a working public instance: dashboard, signup, account +
+  project creation, /api/health "ok" through connect→server→MySQL→embedded-Dynamo.
+  Board tested it, then instructed shutdown; test project deleted (cost ~$0.01).
+- Fixes committed to master (see specs/lean-compose.md): mariadb IPv6 bind +
+  entrypoint, dummy AWS creds, JVM heap cap for 1 GB hosts, connect mkdir config dir.
+- CONSTRAINT FOUND: project portals are subdomain-based; one-click hosts' generated
+  domains can't do wildcard subdomains (and *.up.railway.app is HSTS-preloaded), so
+  portals need a custom domain. Dashboard/admin unaffected. This gates a *polished*
+  public listing — see recommendation to board (2026-07-05).
+- P0 is effectively complete except: (1) publish decision + template polish
+  (JAVA_TOOL_OPTIONS var; connect volume until a release carries the mkdir fix),
+  (2) the single-domain routing question — ANSWERED 2026-07-06: single-tenant mode.
+
 ## 2026-07-03
 - MILESTONE: **platform-hosting validated end-to-end.** Durability test passed on
   2.6.1 — account created before a server-container restart survived it (embedded
@@ -49,19 +82,3 @@ _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
 - DECISION (CEO): priority order P1 marketplace listings → P2 AI dedupe/digest +
   relaunch → P3 distribution basics → P4 pricing → P5 trust quick-wins.
   Rewrites deprioritized. See `priorities.md`.
-
-## 2026-07-05
-- MILESTONE: **platform-hosting proven LIVE on Railway, end-to-end.** Rebuilt the
-  template for the PRODUCTION_PLATFORM stack (server + connect + MariaDB, no
-  localstack) and got a working public instance: dashboard, signup, account +
-  project creation, /api/health "ok" through connect→server→MySQL→embedded-Dynamo.
-  Board tested it, then instructed shutdown; test project deleted (cost ~$0.01).
-- Fixes committed to master (see specs/lean-compose.md): mariadb IPv6 bind +
-  entrypoint, dummy AWS creds, JVM heap cap for 1 GB hosts, connect mkdir config dir.
-- CONSTRAINT FOUND: project portals are subdomain-based; one-click hosts' generated
-  domains can't do wildcard subdomains (and *.up.railway.app is HSTS-preloaded), so
-  portals need a custom domain. Dashboard/admin unaffected. This gates a *polished*
-  public listing — see recommendation to board (2026-07-05).
-- P0 is effectively complete except: (1) publish decision + template polish
-  (JAVA_TOOL_OPTIONS var; connect volume until a release carries the mkdir fix),
-  (2) the single-domain routing question below.
