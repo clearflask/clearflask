@@ -36,13 +36,16 @@ generated domains).
   per-release board approval** — board pushed back on release cadence (four
   releases in five days) and on the CEO preparing to cut 2.7.0 unilaterally.
   Recorded in `ceo/CLAUDE.md`. Commit/push authority unchanged.
-- Proposal to board: next release is **2.7.0 (minor)** — single release containing
+- DECISION (board): **version-bump convention corrected** — patch is the default
+  for almost everything; minor only for major user-facing features. The CEO had
+  been doing the opposite (five minor bumps in days). `ceo/CLAUDE.md` updated.
+- Proposal to board: next release is **2.6.3 (patch)** — single release containing
   exactly one feature commit (`527bea61`, single-tenant platform mode). CI green.
 
 ## Action items
 
 - [x] CEO: watch CI on `527bea61` — GREEN (run 28807701598).
-- [ ] BOARD: approve (or reject) release 2.7.0.
+- [ ] BOARD: approve (or reject) release 2.6.3 (patch).
 - [ ] CEO (after approval + images publish): rebuild Railway template on 2.7.0
       (ENV=platform, JAVA_TOOL_OPTIONS, drop connect volume), re-test live
       (needs board for any credit spend approval).

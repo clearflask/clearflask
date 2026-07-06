@@ -31,7 +31,7 @@ Railway + PikaPods + Umbrel + CasaOS.
       subdomain constraint: one project on the root domain, super-admin-only
       signup, project cap 1, no slug/domain fields. Generated host domains are
       now fully usable without custom DNS. Plus `make platform-up` local stack.
-- [ ] BLOCKED(board): release 2.7.0 (minor) — platform images with single-tenant
+- [ ] BLOCKED(board): release 2.6.3 (patch) — platform images with single-tenant
       mode. CI green on `527bea61`; awaiting board approval (per-release approval
       now required for ALL releases, board directive 2026-07-06).
 - [ ] Rebuild Railway template on 2.7.0 images (ENV=platform on connect,

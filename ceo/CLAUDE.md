@@ -37,16 +37,15 @@ foreseeable future — nothing in the pipeline warrants a breaking change. Only 
 **minor** or **patch**; NEVER run `make release-major` / cut a major without explicit
 per-release board approval.
 
-Choose minor vs patch deliberately and state the reasoning when cutting a release
-(`make release-{minor,patch}` via the Release workflow):
-- **MINOR** — backward-compatible new features: new deployment type, new config options,
-  new integrations, additive endpoints. (2.5.0 = env-var config + first-boot secrets;
-  2.6.0 = platform-hosting deployment type — both additive → minor.)
-- **PATCH** — backward-compatible fixes: bug fixes, security patches, doc-only changes
-  with no behavior change for existing installs.
-- **MAJOR** — breaking changes (renamed/removed config key, changed default that alters
-  existing installs, dropped deployment). Reserved; needs board sign-off. None planned.
-When unsure between minor and patch, pick minor and say why.
+Version-bump convention (board, 2026-07-06 — this is how Matus has always run it):
+- **PATCH — the default for almost everything.** Fixes, packaging, config options,
+  small additive features, deployment tweaks. Most releases are patches.
+- **MINOR — major user-facing features only.** A headline capability worth
+  announcing (e.g. a new integration, a new product surface). Rare.
+- **MAJOR — breaking changes.** Reserved; never without explicit board sign-off.
+When unsure between minor and patch, **pick patch**. (The CEO got this backwards
+during 2026-07-02→05 and burned through 2.5.0/2.6.0 minors on work that should
+mostly have been patches — don't repeat that.)
 
 ## Operational lessons (avoid repeating)
 

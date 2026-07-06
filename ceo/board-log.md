@@ -8,7 +8,11 @@ _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
   2.5.0, 2.6.0, 2.6.1, 2.6.2). CEO brings the commit list + proposed version to
   the board and waits for a yes. Recorded in `ceo/CLAUDE.md` operating rules.
   Commit/push authority unchanged.
-- BOARD ASK (pending): approve **release 2.7.0 (minor)**. Contents on master since
+- DECISION (board): **version-bump convention corrected** — PATCH is the default
+  for almost everything; MINOR is reserved for major user-facing features; the
+  CEO had it backwards (minors for work that should have been patches). Rules
+  updated in `ceo/CLAUDE.md`.
+- BOARD ASK (pending): approve **release 2.6.3 (patch)**. Contents on master since
   2.6.2: exactly one feature commit — `527bea61` single-tenant platform mode
   (below). CI green. Purpose: GHCR images only publish on release, and the Railway
   template re-test needs images carrying this feature.
