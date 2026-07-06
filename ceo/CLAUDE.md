@@ -26,6 +26,12 @@ anything requiring a human identity).
 
 ## Releases & versioning (semver — board directive 2026-07-03)
 
+**EVERY release needs explicit per-release board approval** (board directive
+2026-07-06). No cutting releases on CEO judgment alone — bring the exact commit
+list and proposed version to the board, get a yes, then dispatch. This supersedes
+any earlier practice of releasing autonomously; commit authority (2026-07-02) is
+unchanged and covers commits/pushes only, not releases.
+
 **STAY ON v2.** Board directive (2026-07-03): keep the major version at 2 for the
 foreseeable future — nothing in the pipeline warrants a breaking change. Only ever cut
 **minor** or **patch**; NEVER run `make release-major` / cut a major without explicit

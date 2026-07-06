@@ -30,16 +30,20 @@ generated domains).
 - Cabinet updated: board-log reordered to newest-first and 2026-07-06 entry
   added; priorities P0 refreshed.
 
-## Decisions (CEO)
+## Decisions
 
-- Next release will be **2.7.0 (minor)**: new user-facing behavior for the
-  platform deployment type (single-tenancy) — additive, no breaking change for
-  self-host/cloud. Cut only after CI is green on `527bea61`.
+- DECISION (board, later in session): **every release now requires explicit
+  per-release board approval** — board pushed back on release cadence (four
+  releases in five days) and on the CEO preparing to cut 2.7.0 unilaterally.
+  Recorded in `ceo/CLAUDE.md`. Commit/push authority unchanged.
+- Proposal to board: next release is **2.7.0 (minor)** — single release containing
+  exactly one feature commit (`527bea61`, single-tenant platform mode). CI green.
 
 ## Action items
 
-- [ ] CEO: watch CI on `527bea61`; if green, dispatch release.yml (minor).
-- [ ] CEO: after images publish, rebuild Railway template on 2.7.0
+- [x] CEO: watch CI on `527bea61` — GREEN (run 28807701598).
+- [ ] BOARD: approve (or reject) release 2.7.0.
+- [ ] CEO (after approval + images publish): rebuild Railway template on 2.7.0
       (ENV=platform, JAVA_TOOL_OPTIONS, drop connect volume), re-test live
       (needs board for any credit spend approval).
 - [ ] BOARD: publish approval for the Railway template after re-test.

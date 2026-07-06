@@ -31,8 +31,9 @@ Railway + PikaPods + Umbrel + CasaOS.
       subdomain constraint: one project on the root domain, super-admin-only
       signup, project cap 1, no slug/domain fields. Generated host domains are
       now fully usable without custom DNS. Plus `make platform-up` local stack.
-- [ ] Cut release 2.7.0 (minor) once CI green — platform images with
-      single-tenant mode + connect mkdir fix (makes template volume optional).
+- [ ] BLOCKED(board): release 2.7.0 (minor) — platform images with single-tenant
+      mode. CI green on `527bea61`; awaiting board approval (per-release approval
+      now required for ALL releases, board directive 2026-07-06).
 - [ ] Rebuild Railway template on 2.7.0 images (ENV=platform on connect,
       JAVA_TOOL_OPTIONS on server, drop connect volume). Re-test live deploy.
 - [ ] amd64-only platform image constraint (sqlite4java has no arm64 build) —

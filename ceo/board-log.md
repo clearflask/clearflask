@@ -3,6 +3,15 @@
 _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
 
 ## 2026-07-06
+- DECISION (board): **every release requires explicit per-release board approval.**
+  No more releasing on CEO judgment (four releases had gone out in five days:
+  2.5.0, 2.6.0, 2.6.1, 2.6.2). CEO brings the commit list + proposed version to
+  the board and waits for a yes. Recorded in `ceo/CLAUDE.md` operating rules.
+  Commit/push authority unchanged.
+- BOARD ASK (pending): approve **release 2.7.0 (minor)**. Contents on master since
+  2.6.2: exactly one feature commit — `527bea61` single-tenant platform mode
+  (below). CI green. Purpose: GHCR images only publish on release, and the Railway
+  template re-test needs images carrying this feature.
 - SHIPPED: **single-tenant mode for PRODUCTION_PLATFORM** (`527bea61`) — the durable
   answer to the 2026-07-05 subdomain/routing constraint. Platform deploys are now a
   one-project appliance on the root domain: dashboard signup restricted to the
@@ -14,8 +23,8 @@ _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
 - With this, custom domains + wildcard DNS are OPTIONAL polish (multi-project users
   can still self-host); the generated Railway/PikaPods domain is fully usable
   out of the box. Unblocks a polished public listing.
-- NEXT: cut release 2.7.0 (minor — new platform behavior) once CI is green, then
-  rebuild the Railway template on the released images and re-test live.
+- NEXT (pending release approval above): rebuild the Railway template on the
+  released images and re-test live.
 - BOARD ASK (pending): approve publishing the Railway template publicly once the
   re-test passes; Elestio resend to support@elest.io still pending (2026-07-03).
 
