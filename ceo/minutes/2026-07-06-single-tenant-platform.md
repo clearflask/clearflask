@@ -42,9 +42,30 @@ generated domains).
 - Proposal to board: next release is **2.6.3 (patch)** — single release containing
   exactly one feature commit (`527bea61`, single-tenant platform mode). CI green.
 
+## Local end-to-end validation (later in session — PASSED)
+
+Board pushed back again on testing-via-releases; CEO documented a release-free
+test process (`ceo/CLAUDE.md`) and ran it: built images locally (fixes needed on
+this machine: arm64 protoc classifier override vs the forced `osx-x86_64` in
+`~/.m2/settings.xml`; fabric8 buildx endpoint repointed to Docker Desktop socket;
+server image rebuilt `linux/amd64` for sqlite4java), then `make platform-up` and
+tested through the real dashboard UI + API:
+
+1. Non-admin signup → 400 "This instance only allows its administrator to sign up".
+2. `admin@localhost` signup → 200; UI login works.
+3. Create wizard shows NO slug/domain fields; project created bound to root
+   domain (`domain: localhost`).
+4. Second project via API → 400 "Your plan has reached project limit".
+5. "Add project" absent from the dashboard account menu.
+6. Portal + anonymous SSR served on the root domain (`<title>Example</title>`).
+7. Server container restart → health OK, project + admin session survived.
+
+Stack torn down after the test.
+
 ## Action items
 
 - [x] CEO: watch CI on `527bea61` — GREEN (run 28807701598).
+- [x] CEO: validate single-tenant mode end-to-end locally — PASSED (above).
 - [ ] BOARD: approve (or reject) release 2.6.3 (patch).
 - [ ] CEO (after approval + images publish): rebuild Railway template on 2.7.0
       (ENV=platform, JAVA_TOOL_OPTIONS, drop connect volume), re-test live

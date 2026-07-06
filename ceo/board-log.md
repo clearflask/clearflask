@@ -14,8 +14,14 @@ _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
   updated in `ceo/CLAUDE.md`.
 - BOARD ASK (pending): approve **release 2.6.3 (patch)**. Contents on master since
   2.6.2: exactly one feature commit — `527bea61` single-tenant platform mode
-  (below). CI green. Purpose: GHCR images only publish on release, and the Railway
-  template re-test needs images carrying this feature.
+  (below). CI green AND validated end-to-end locally (7-point check incl. UI,
+  API caps, root-domain portal, restart durability — see minutes 2026-07-06).
+  Purpose: GHCR images only publish on release, and the Railway template re-test
+  needs images carrying this feature.
+- DECISION (board): **never test via releases.** Release-free test loop documented
+  in `ceo/CLAUDE.md`: local images + `make platform-up` for functional tests;
+  throwaway `test-<sha>` GHCR tags for cloud-specific tests; one board-approved
+  release at the end blessing tested code.
 - SHIPPED: **single-tenant mode for PRODUCTION_PLATFORM** (`527bea61`) — the durable
   answer to the 2026-07-05 subdomain/routing constraint. Platform deploys are now a
   one-project appliance on the root domain: dashboard signup restricted to the
