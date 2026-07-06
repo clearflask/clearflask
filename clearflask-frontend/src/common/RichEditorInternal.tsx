@@ -724,11 +724,16 @@ class RichEditorQuill extends React.Component<PropsQuill & Omit<InputProps, 'onC
   async onDropFiles(files: File[]) {
     const editor = this.editorRef.current?.getEditor();
     if (!editor) return;
-    const range = editor.getSelection(true);
+    var index = editor.getSelection(true).index;
     for (const file of files) {
       try {
         const url = await this.props.uploadImage(file);
-        editor.insertEmbed(range.index, 'image', url, 'user');
+        // Insert as 'api', NOT 'user': this URL is already on our content store, so it must
+        // not be picked up by the onChange 'user'-source handler as an externally pasted image
+        // (which would re-fetch it — blocked by CORS — and then delete it). 'api' still fires
+        // onChange so the content is saved.
+        editor.insertEmbed(index, 'image', url, 'api');
+        index++;
       } catch (e) {
         this.props.enqueueSnackbar(
           `${file.name}: ${e}`,
