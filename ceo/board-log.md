@@ -2,6 +2,24 @@
 
 _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
 
+## 2026-07-08
+- MILESTONE: **Railway template re-test PASSED on 2.6.3 — publish-ready.** Rebuilt
+  template j5dQvf for single-tenant platform mode (connect ENV=platform, server
+  JAVA_TOOL_OPTIONS baked in, volume widened to /opt/clearflask, healthcheck off,
+  mariadb IPv6 start command verified) and deployed live (project "sunny-unity").
+  All 3 services Online on FIRST TRY, no manual fixes. Verified on the live
+  instance: /api/health ok; non-admin signup rejected; admin signup + project
+  create OK; second project blocked; **portal serves on the generated
+  up.railway.app domain (anonymous SSR)** — the old wildcard-subdomain blocker is
+  fully resolved. No custom domain needed for a complete out-of-box experience.
+- BOARD ASK: test the live instance if you want
+  (https://clearflask-connect-production-2018.up.railway.app — admin@localhost /
+  Test1234!), then I tear it down. Say "shut it down" (or test first) — I won't
+  leave it running past this session.
+- BOARD ASK: approve **publishing template j5dQvf** to the Railway marketplace
+  (+ kickback & OSS promo enrollment). Also: stale localstack template 9geeXl
+  should be deleted before publish — approve deletion or do it in the dashboard.
+
 ## 2026-07-06
 - DECISION (board): **every release requires explicit per-release board approval.**
   No more releasing on CEO judgment (four releases had gone out in five days:

@@ -40,11 +40,14 @@ Railway + PikaPods + Umbrel + CasaOS.
       session survived server restart.
 - [x] Release 2.6.3 (patch) — board-approved 2026-07-06, shipped. GHCR images
       `2.6.3` + Helm charts published; carries single-tenant platform mode.
-- [ ] Rebuild Railway template on 2.7.0 images (ENV=platform on connect,
-      JAVA_TOOL_OPTIONS on server, drop connect volume). Re-test live deploy.
+- [x] **Railway template rebuilt on 2.6.3 + live re-test PASSED (2026-07-08).**
+      All 3 services Online first try; single-tenant verified live; portal works
+      on the generated domain. See minutes/2026-07-08-railway-retest.md.
+- [ ] BOARD: approve publishing template j5dQvf (+ kickback/OSS promo signup,
+      delete stale 9geeXl template). Then prepare listing assets.
 - [ ] amd64-only platform image constraint (sqlite4java has no arm64 build) —
-      ensure platform image/tag built amd64-only.
-- [ ] BOARD: approve publishing the template publicly after the re-test.
+      release images are already amd64+arm64 via buildx; platform runs amd64.
+      Documented; revisit only if arm64 pulls of the server image cause reports.
 
 ## P1 — Self-host marketplace listings (passive revenue + funnel)
 Status: IN PROGRESS — research done (see `reports/marketplace-research-2026-07-02.md`
