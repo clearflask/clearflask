@@ -3,6 +3,18 @@
 _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
 
 ## 2026-07-08
+- MILESTONE: **🚀 PUBLISHED — ClearFlask is live on the Railway marketplace:
+  https://railway.com/deploy/clearflask** (board approved same day). First
+  marketplace listing for the company; earns up to 25% usage kickback. Full
+  overview copy on the listing (single-tenant, works on generated domain,
+  ~50-word product blurb, use cases, dependencies). Category "Other" (closest
+  available; no product-management category exists). Logo from clearflask.com.
+- DONE per board instruction: test project "sunny-unity" deleted (48h grace;
+  total re-test cost ~$0.20); stale localstack template 9geeXl deleted.
+- FOLLOW-UP (CEO): Railway "Template Queue" questions earn a +10% support bonus —
+  investigate; OSS 50% promo enrollment may need a separate application (BOARD
+  may need to submit a form). Listing analytics visible under workspace
+  Templates → Published ($ earnings tracker starts at $0.00).
 - MILESTONE: **Railway template re-test PASSED on 2.6.3 — publish-ready.** Rebuilt
   template j5dQvf for single-tenant platform mode (connect ENV=platform, server
   JAVA_TOOL_OPTIONS baked in, volume widened to /opt/clearflask, healthcheck off,
@@ -12,13 +24,8 @@ _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
   create OK; second project blocked; **portal serves on the generated
   up.railway.app domain (anonymous SSR)** — the old wildcard-subdomain blocker is
   fully resolved. No custom domain needed for a complete out-of-box experience.
-- BOARD ASK: test the live instance if you want
-  (https://clearflask-connect-production-2018.up.railway.app — admin@localhost /
-  Test1234!), then I tear it down. Say "shut it down" (or test first) — I won't
-  leave it running past this session.
-- BOARD ASK: approve **publishing template j5dQvf** to the Railway marketplace
-  (+ kickback & OSS promo enrollment). Also: stale localstack template 9geeXl
-  should be deleted before publish — approve deletion or do it in the dashboard.
+- Board instructed (same day): "shut it down, publish and kill stale localstack
+  templates" — all three executed (see MILESTONE above).
 
 ## 2026-07-06
 - DECISION (board): **every release requires explicit per-release board approval.**

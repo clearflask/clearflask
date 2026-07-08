@@ -43,8 +43,11 @@ Railway + PikaPods + Umbrel + CasaOS.
 - [x] **Railway template rebuilt on 2.6.3 + live re-test PASSED (2026-07-08).**
       All 3 services Online first try; single-tenant verified live; portal works
       on the generated domain. See minutes/2026-07-08-railway-retest.md.
-- [ ] BOARD: approve publishing template j5dQvf (+ kickback/OSS promo signup,
-      delete stale 9geeXl template). Then prepare listing assets.
+- [x] **PUBLISHED (2026-07-08): https://railway.com/deploy/clearflask** — live on
+      the Railway marketplace with full listing copy; stale 9geeXl deleted; test
+      project torn down. P0 COMPLETE.
+- [ ] Follow-ups: Railway Template Queue questions (+10% bonus); OSS 50% promo
+      enrollment (may need board to submit); watch listing analytics/earnings.
 - [ ] amd64-only platform image constraint (sqlite4java has no arm64 build) —
       release images are already amd64+arm64 via buildx; platform runs amd64.
       Documented; revisit only if arm64 pulls of the server image cause reports.

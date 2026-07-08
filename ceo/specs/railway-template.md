@@ -93,19 +93,23 @@ Deployed from the template (Railway project "zippy-amazement"). Outcome:
 4. Custom domains: user sets their domain on the connect service; `CLEARFLASK_DOMAIN`
    must then be overridden manually — document in template README.
 
-## Listing copy (draft)
+## Listing copy (FINAL for publish — updated 2026-07-08, platform/single-tenant)
 
 > **ClearFlask — open-source feedback management**
 > Collect and prioritize user feedback with voting boards, roadmaps and
-> changelogs. Self-hosted alternative to Canny and UserVoice. Deploys the full
-> stack: API server, SSR frontend, MariaDB and localstack for storage.
+> changelogs. Open-source alternative to Canny and UserVoice. Deploys a
+> self-contained stack — API server, SSR frontend and MariaDB — that works
+> entirely on your generated Railway domain: sign up as the admin, create your
+> project, done. Attach a custom domain any time.
 
 Categories: Developer Tools / Product Management. 
 
 ## Publish checklist
 
-- [ ] Release cut containing env-var support; images tagged on GHCR
-- [ ] BOARD: Railway account + template composed (CEO can drive via browser)
-- [ ] Live test deploy from the template, fix Open questions
-- [ ] Publish to marketplace + enroll kickback + OSS 50% promo
+- [x] Release cut containing env-var support; images tagged on GHCR (2.5.0…2.6.3)
+- [x] BOARD: Railway account + template composed (CEO can drive via browser)
+- [x] Live test deploy from the template — PASSED 2026-07-08 on 2.6.3 (platform
+      single-tenant; first-try clean deploy; portal on generated domain)
+- [ ] Publish to marketplace + enroll kickback + OSS 50% promo (BOARD approved
+      2026-07-08; delete stale 9geeXl first)
 - [ ] Answer Template Queue questions (earns the +10% support bonus)
