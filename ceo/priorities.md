@@ -96,11 +96,18 @@ and `reports/packaging-audit-2026-07-02.md`). Executing in this order:
 - [ ] DO Marketplace Packer image (after the above).
 
 ## P2 — AI dedupe + weekly digest, then relaunch
-Status: TODO.
-- [ ] Spec: auto-detect duplicate posts on create + admin merge suggestions;
-      weekly email digest summarizing new feedback themes for admins.
-- [ ] Audit existing LangChain4j usage + post merging TODOs in DynamoElasticIdeaStore
-      (merge feature overlaps with broken post-merging roadmap item).
+Status: IN PROGRESS (spec drafted 2026-07-13).
+- [x] Audit LangChain4j usage + post merging (2026-07-13). Big findings: post
+      merging is FULLY BUILT (API+model+admin UI, not broken); lexical
+      similar-posts already suggests duplicates at post-create; a weekly digest
+      cron ALREADY RUNS (WeeklyDigestService + OnDigest email + plan gating);
+      LLM plumbing exists (LangChain4j/OpenAI, global key). No embedding infra.
+- [x] Spec drafted: `specs/ai-dedupe-digest.md` — v1 is LLM-reranked lexical
+      candidates (no vector DB), admin "suggested merges" endpoint + UI, AI
+      themes + duplicates sections in the existing digest. BOARD: review spec
+      (esp. gating: Business-tier on cloud, own-API-key on self-host; also
+      plan-gate the currently-ungated AI chat).
+- [ ] Implement (est. a few sessions; no new infra/schema).
 - [ ] Ship behind a plan flag (Business tier / cloud).
 - [ ] Relaunch: Product Hunt + HN "Show HN" draft for board review.
 

@@ -36,12 +36,24 @@ the queued post-launch follow-ups from 2026-07-08.
      now references docker-compose.platform.yml.
    - BOARD: review + send both.
 
+## P2 kicked off (later in session)
+
+Ran the codebase audit and drafted the spec (`specs/ai-dedupe-digest.md`).
+Findings that reshape the estimate: **post merging is fully built** (API, data
+model, admin merge UI — not the broken TODO the backlog assumed), **lexical
+similar-posts already suggests duplicates at post-create**, and **a weekly
+digest cron already runs** (WeeklyDigestService + OnDigest email + plan
+gating). LLM plumbing (LangChain4j/OpenAI, hot-reloadable config, global API
+key) exists from the AI-chat feature. No embedding infra — v1 spec therefore
+uses LLM-reranked lexical candidates, no vector DB. Net-new: duplicate-rerank
+store + admin "suggested merges" endpoint/UI + AI sections in the existing
+digest + plan-gate the (currently ungated) AI chat. Estimated a few sessions,
+no new infra or schema.
+
 ## Next (CEO)
 
-- Start the **P2 spec: AI duplicate detection + weekly feedback digest** — the
-  relaunch story ("open-source Canny alternative with AI triage"); Product
-  Hunt / Show HN drafts to follow for board review.
 - Monitor Template Queue + listing analytics on future sessions.
+- On spec approval: implement P2 per the build plan.
 
 ## Action items
 
@@ -54,4 +66,5 @@ the queued post-launch follow-ups from 2026-07-08.
       `outreach/elestio-draft.md`.
 - [ ] BOARD: submit Railway Open Source Partner application
       (railway.com/partners) — suggested answers in `specs/railway-template.md`.
-- [ ] CEO: P2 spec (AI dedupe + weekly digest).
+- [x] CEO: P2 spec (AI dedupe + weekly digest) — DRAFTED, see above.
+- [ ] BOARD: review `specs/ai-dedupe-digest.md` (gating question inside).

@@ -22,8 +22,13 @@ _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
   listing: (1) PikaPods follow-up to hello@pikapods.com (silent since 07-03,
   follow-up was due 07-10); (2) Elestio to support@elest.io (first attempt
   bounced).
-- NEXT (CEO): start P2 spec — AI duplicate detection + weekly digest — while
-  outreach responses trickle in; relaunch (Product Hunt / Show HN) rides on it.
+- P2 STARTED: codebase audit + spec drafted (`specs/ai-dedupe-digest.md`).
+  Audit surprise: post merging and a weekly digest cron are ALREADY BUILT and
+  running; LLM plumbing (LangChain4j/OpenAI) exists too. Net-new work is just
+  the LLM duplicate-rerank layer + admin "suggested merges" surface + AI
+  sections in the existing digest — no new infra, no vector DB in v1.
+  BOARD ASK: review the spec, esp. gating (Business-tier on cloud / own API
+  key on self-host; also plan-gate the existing ungated AI chat).
 
 ## 2026-07-08
 - MILESTONE: **🚀 PUBLISHED — ClearFlask is live on the Railway marketplace:
