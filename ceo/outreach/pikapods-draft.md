@@ -1,8 +1,39 @@
 # Outreach — PikaPods (hello@pikapods.com)
 
 _Status: **SENT 2026-07-03** by Matus (shortened version: intro + "listed for
-revenue sharing, can provide packaging in the format you need"). Awaiting reply —
-follow up ~2026-07-10 if silent._
+revenue sharing, can provide packaging in the format you need"). No reply as of
+2026-07-13 — follow-up draft below, ready for board to send._
+
+## FOLLOW-UP draft (2026-07-13) — BOARD: review + send
+
+**Subject:** Re: ClearFlask listing + revenue share — open-source feedback tool (author)
+
+Hi PikaPods team,
+
+Quick follow-up with news since my last email — ClearFlask now ships a
+marketplace-ready deployment mode built exactly for platforms like yours:
+
+- **Lean 3-container stack**: API server + SSR frontend + MariaDB. No more
+  localstack — file storage is local-disk and the datastore is embedded, all
+  persisting to a single volume.
+- **Zero-config single-tenant mode**: works entirely on a generated subdomain
+  (no wildcard DNS or custom domain needed) — admin signs up, creates their
+  project, done. Signup is locked to the configured admin.
+- All config via environment variables; secrets auto-generated on first boot;
+  runs comfortably in ~1 GB RAM.
+
+It's proven in production: we just launched on the Railway marketplace with this
+stack (https://railway.com/deploy/clearflask, first-try clean deploys).
+
+You host Fider in this category — ClearFlask is the feature-complete option for
+teams that outgrow it, and I'd love to get it on PikaPods with revenue share.
+Happy to adapt packaging to whatever format you need.
+
+Best,
+Matus Faro
+https://clearflask.com
+
+---
 
 Original draft below for reference:
 

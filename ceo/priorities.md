@@ -1,6 +1,6 @@
 # Priorities — Working Backlog
 
-_Last updated: 2026-07-06. Statuses: TODO / IN PROGRESS / BLOCKED(on) / DONE._
+_Last updated: 2026-07-13. Statuses: TODO / IN PROGRESS / BLOCKED(on) / DONE._
 
 ## P0 — Lean-compose variant (BOARD-approved 2026-07-03; unblocks all listings)
 Drop localstack: local-disk file storage + embedded/local DynamoDB so the stack
@@ -46,8 +46,17 @@ Railway + PikaPods + Umbrel + CasaOS.
 - [x] **PUBLISHED (2026-07-08): https://railway.com/deploy/clearflask** — live on
       the Railway marketplace with full listing copy; stale 9geeXl deleted; test
       project torn down. P0 COMPLETE.
-- [ ] Follow-ups: Railway Template Queue questions (+10% bonus); OSS 50% promo
-      enrollment (may need board to submit); watch listing analytics/earnings.
+- [x] Follow-ups investigated (2026-07-13): the **50% OSS promo is over** (was a
+      limited-time offer; current program is 15% base + 10% support bonus = 25%
+      max — we're already at max potential, nothing to enroll). The **+10% bonus
+      is automatic**: answer user questions in the Template Queue
+      (station.railway.com/my-template-queue) as they arrive — no enrollment.
+      NEW opportunity: **Open Source Partner application** (railway.com/partners
+      → "Become a partner") gives a Verified badge + featured placement, same
+      rates. BOARD: submit the form (CEO drafted answers in
+      `specs/railway-template.md`).
+- [ ] Monitor Template Queue for user questions (answers earn the +10% bonus;
+      draft answers for board review per posting rules) + listing analytics.
 - [ ] amd64-only platform image constraint (sqlite4java has no arm64 build) —
       release images are already amd64+arm64 via buildx; platform runs amd64.
       Documented; revisit only if arm64 pulls of the server image cause reports.
@@ -76,8 +85,13 @@ and `reports/packaging-audit-2026-07-02.md`). Executing in this order:
       `outreach/elestio-draft.md`. BOARD: review + send.
 - [ ] Lean compose variant dropping localstack (local-disk file storage; embedded
       answer for DynamoDB) — unlocks PikaPods/Umbrel/CasaOS cheaply.
-- [ ] BOARD: email PikaPods (hello@) and Elestio (kaiwalya@elest.io) — drafts to be
-      prepared for review.
+- [x] Lean compose variant — DONE via P0 (PRODUCTION_PLATFORM stack, 2.6.3).
+- [x] README "Deploy on Railway" button added (2026-07-13) — one-click deploy
+      section at the top of Self Hosting; every deploy through it earns kickback.
+- [ ] BOARD: send refreshed outreach (2026-07-13 drafts in `outreach/`):
+      PikaPods follow-up to hello@pikapods.com (no reply since 07-03) and
+      Elestio to support@elest.io (first attempt bounced). Both now pitch the
+      lean 3-container stack + live Railway listing as proof.
 - [ ] Prepare listing assets: description, screenshots, logo, categories.
 - [ ] DO Marketplace Packer image (after the above).
 

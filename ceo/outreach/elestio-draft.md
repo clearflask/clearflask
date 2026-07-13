@@ -6,7 +6,42 @@ be found"). That Developer-Advocate address is dead. **RESEND to `support@elest.
 https://elest.io/contact. GitHub fallback: open an issue/PR on
 https://github.com/elestio/elestio-examples referencing our compose file._
 
-_BOARD ASK: resend the same short message to support@elest.io (CEO can't send)._
+_BOARD ASK: resend to support@elest.io (CEO can't send). Use the UPDATED draft
+below (2026-07-13) — the original referenced the old localstack stack._
+
+## UPDATED draft (2026-07-13) — BOARD: review + send to support@elest.io
+
+**Subject:** Adding ClearFlask to the Elestio catalog (open-source author, revenue share)
+
+Hi Elestio team,
+
+I'm Matus, author of ClearFlask (https://github.com/clearflask/clearflask), an
+open-source feedback management platform — voting boards, roadmap, changelog; an
+alternative to Canny/UserVoice (Apache-2.0, actively developed since 2019).
+
+I'd like to get ClearFlask into the Elestio catalog and set up your open-source
+revenue-share partnership.
+
+We're docker-compose-native and marketplace-proven — we just launched on the
+Railway marketplace (https://railway.com/deploy/clearflask):
+
+- Lean compose stack: API server (Java) + SSR frontend (Node) + MariaDB —
+  official platform compose file at
+  https://github.com/clearflask/clearflask/blob/master/clearflask-release/src/main/docker/compose/docker-compose.platform.yml
+  (a fuller self-host variant with external search/storage also exists).
+- Official images on GHCR, semver-tagged, `/api/health` healthcheck.
+- Full environment-variable configuration (domain, admin email, SMTP, DB) and
+  automatic per-install secret generation on first boot.
+
+Happy to prepare the integration template against your elestio-examples format and
+to promote Elestio in our README as a managed-hosting option. Could you share the
+terms of your revenue-share program for participating authors?
+
+Best,
+Matus Faro
+https://clearflask.com
+
+---
 
 Original draft below for reference:
 

@@ -45,6 +45,7 @@
 
 - [Managed hosting](#managed-hosting)
 - [Self hosting](#self-hosting)
+    - [One-click deploy](#one-click-deploy)
     - [Quick start](#quick-start)
     - [Kubernetes deployment](#kubernetes-deployment)
     - [Deploy dependencies](#deploy-dependencies)
@@ -69,6 +70,13 @@ Support our open-source development by choosing cloud hosting with [scalable pri
 check us out on [our website](https://clearflask.com).
 
 # Self Hosting
+
+## One-click deploy
+
+Deploy a self-contained instance (API server, SSR frontend, MariaDB) in a few clicks — no
+custom domain required, it works entirely on your generated domain:
+
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/clearflask)
 
 ## Quick start
 

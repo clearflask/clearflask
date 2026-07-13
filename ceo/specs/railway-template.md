@@ -110,6 +110,18 @@ Categories: Developer Tools / Product Management.
 - [x] BOARD: Railway account + template composed (CEO can drive via browser)
 - [x] Live test deploy from the template — PASSED 2026-07-08 on 2.6.3 (platform
       single-tenant; first-try clean deploy; portal on generated domain)
-- [ ] Publish to marketplace + enroll kickback + OSS 50% promo (BOARD approved
-      2026-07-08; delete stale 9geeXl first)
-- [ ] Answer Template Queue questions (earns the +10% support bonus)
+- [x] Publish to marketplace — DONE 2026-07-08: https://railway.com/deploy/clearflask
+      (stale 9geeXl deleted; kickback tracker live)
+- [x] OSS 50% promo — investigated 2026-07-13: **promo is over** (limited-time
+      offer). Current program: 15% base + 10% support bonus = 25% max; kickback
+      is automatic for published templates, no enrollment. Credits by default;
+      cash opt-out on the Earnings page ($100 min withdrawal).
+- [ ] Answer Template Queue questions as they arrive
+      (station.railway.com/my-template-queue) — earns the +10% support bonus
+      automatically; no sign-up. Draft answers for board review before posting.
+- [ ] BOARD: apply as **Railway Open Source Partner** (railway.com/partners →
+      "Become a partner") — Verified badge + featured placement. Suggested form
+      answers: project = ClearFlask, github.com/clearflask/clearflask
+      (Apache-2.0, open-core, actively developed since 2019); template already
+      published + live-tested at railway.com/deploy/clearflask; description =
+      the listing's short description; contact = matus@smotana.com.

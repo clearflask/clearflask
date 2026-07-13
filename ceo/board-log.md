@@ -2,6 +2,29 @@
 
 _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
 
+## 2026-07-13
+- SHIPPED: **"Deploy on Railway" button in the README** — new "One-click deploy"
+  section at the top of Self Hosting linking railway.com/deploy/clearflask. The
+  GitHub repo is our largest traffic source; deploys through the button earn the
+  kickback.
+- INVESTIGATED (closes the 07-08 follow-up): the **Railway 50% OSS promo is
+  over** — it was a limited-time launch offer. The live program is 15% base +
+  10% support bonus (25% max), automatic for published templates, nothing to
+  enroll in. The +10% comes from answering user questions in the Template Queue
+  (station.railway.com/my-template-queue) as they arrive. Payouts are Railway
+  credits by default; cash opt-out on the Earnings page.
+- NEW BOARD ASK: apply as a **Railway Open Source Partner**
+  (railway.com/partners → "Become a partner") — grants a Verified badge +
+  featured marketplace placement at the same rates. Suggested form answers in
+  `specs/railway-template.md`.
+- BOARD ASK (refreshed): **send the two outreach emails** — drafts updated
+  2026-07-13 in `outreach/` to pitch the lean 3-container stack + live Railway
+  listing: (1) PikaPods follow-up to hello@pikapods.com (silent since 07-03,
+  follow-up was due 07-10); (2) Elestio to support@elest.io (first attempt
+  bounced).
+- NEXT (CEO): start P2 spec — AI duplicate detection + weekly digest — while
+  outreach responses trickle in; relaunch (Product Hunt / Show HN) rides on it.
+
 ## 2026-07-08
 - MILESTONE: **🚀 PUBLISHED — ClearFlask is live on the Railway marketplace:
   https://railway.com/deploy/clearflask** (board approved same day). First
