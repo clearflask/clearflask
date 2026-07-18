@@ -1,8 +1,47 @@
-# Outreach — PikaPods (hello@pikapods.com)
+# Outreach — PikaPods
 
-_Status: **SENT 2026-07-03** by Matus (shortened version: intro + "listed for
-revenue sharing, can provide packaging in the format you need"). No reply as of
-2026-07-13 — follow-up draft below, ready for board to send._
+## Verified submission channels (researched 2026-07-18)
+
+PikaPods documents no formal author-submission process. Verified channels:
+
+1. **`hello@pikapods.com`** — the general contact listed on pikapods.com
+   (verified 2026-07-18; this is where the 07-03 email went — address is
+   legitimate, they're just silent).
+2. **feedback.pikapods.com** — their public request board (a Fider instance)
+   with a green **`app-request`** tag; catalog additions are visibly driven by
+   requests + votes there. **No ClearFlask request exists yet** (checked via
+   their API 2026-07-18). This is the higher-signal route: a public request
+   creates community pressure an email can't.
+3. Homepage states "20% revenue share with project authors where possible" —
+   revenue share is negotiated once they decide to list, not applied for.
+
+Plan: BOARD posts the app-request below on feedback.pikapods.com (needs an
+account there), and optionally still sends the email follow-up. We can also
+mention the request link in our own community/socials to gather votes.
+
+## App-request post draft (for feedback.pikapods.com, tag: app-request)
+
+**Title:** Add ClearFlask — open-source feedback management (Canny alternative)
+
+I'm the author of ClearFlask (https://github.com/clearflask/clearflask,
+Apache-2.0). It's feedback management — voting boards, roadmap, changelog — an
+open-source alternative to Canny/UserVoice, and a feature-complete step up from
+Fider which you already host.
+
+It's a good fit for PikaPods: lean 3-container stack (API server + SSR
+frontend + MariaDB, single persistent volume), all config via env vars,
+secrets auto-generated on first boot, runs in ~1 GB RAM, works entirely on a
+generated subdomain (single-tenant mode — no wildcard DNS needed). Already
+live on the Railway marketplace with this stack:
+https://railway.com/deploy/clearflask
+
+Happy to adapt packaging to PikaPods' needs and interested in the author
+revenue share. — Matus
+
+_Status: **SENT 2026-07-03** by Matus to hello@pikapods.com (shortened version:
+intro + "listed for revenue sharing, can provide packaging in the format you
+need"). No reply as of 2026-07-13 — follow-up draft below, ready for board to
+send._
 
 ## FOLLOW-UP draft (2026-07-13) — BOARD: review + send
 

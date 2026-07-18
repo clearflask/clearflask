@@ -2,6 +2,25 @@
 
 _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
 
+## 2026-07-18
+- CORRECTION (board pushback): board flagged that the PikaPods/Elestio outreach
+  channels were never verified (kaiwalya@elest.io had bounced; PikaPods silent).
+  CEO re-researched from primary sources. Outcome: `hello@pikapods.com` and
+  `support@elest.io` ARE genuinely listed on the respective sites (not
+  hallucinated), but two better channels were being missed and one reference
+  was wrong:
+  - **PikaPods**: catalog additions are driven by their public request board
+    feedback.pikapods.com (Fider, `app-request` tag). No ClearFlask request
+    exists there. NEW BOARD ASK: post the drafted app-request (draft in
+    `outreach/pikapods-draft.md`); email follow-up optional.
+  - **Elestio**: `contact@elest.io` is their stated address for "partnership
+    opportunities" (better than support@); their Discord
+    (discord.gg/4T4JGaMYrD) is where catalog requests visibly happen. The
+    previously referenced `elestio-examples` GitHub repo does NOT exist —
+    removed from the draft. BOARD ASK: send to contact@elest.io.
+  - Lesson recorded: verify submission channels from primary sources before
+    drafting outreach around them.
+
 ## 2026-07-13
 - SHIPPED: **"Deploy on Railway" button in the README** — new "One-click deploy"
   section at the top of Self Hosting linking railway.com/deploy/clearflask. The

@@ -1,15 +1,29 @@
-# Outreach — Elestio (support@elest.io)
+# Outreach — Elestio
 
-_Status: first attempt to **kaiwalya@elest.io BOUNCED** 2026-07-03 ("address couldn't
-be found"). That Developer-Advocate address is dead. **RESEND to `support@elest.io`**
-(Elestio's stated general/partnership inbox), or use the contact form at
-https://elest.io/contact. GitHub fallback: open an issue/PR on
-https://github.com/elestio/elestio-examples referencing our compose file._
+## Verified submission channels (researched 2026-07-18)
 
-_BOARD ASK: resend to support@elest.io (CEO can't send). Use the UPDATED draft
-below (2026-07-13) — the original referenced the old localstack stack._
+Corrections to earlier notes: `kaiwalya@elest.io` is dead (bounced 07-03), and
+the previously referenced `github.com/elestio/elestio-examples` repo does NOT
+exist (404; not in their GitHub org — earlier note was wrong). Verified
+channels, decoded from elest.io/contact on 2026-07-18:
 
-## UPDATED draft (2026-07-13) — BOARD: review + send to support@elest.io
+1. **`contact@elest.io`** — elest.io/contact lists it "for general inquiries,
+   sales questions, and partnership opportunities" → **best address for this**.
+2. **`support@elest.io`** — also on the contact page (support-oriented).
+3. **Discord: https://discord.gg/4T4JGaMYrD** — their blog says new catalog
+   software is driven by requests from Discord + YouTube comments (~10
+   additions/month). Good follow-up channel if email is slow.
+4. Ticket system (requires an account).
+
+Their about page confirms the program: "We share revenue with open-source
+authors participating in our program" (publicly cited at ~20%; Rallly gets 30%
+— anchor there, accept >=20%). No application form exists — it starts as a
+conversation.
+
+_BOARD ASK: send the draft below to **contact@elest.io** (CEO can't send).
+If no reply in ~1 week, post a short version in their Discord._
+
+## UPDATED draft (2026-07-13) — BOARD: review + send to contact@elest.io
 
 **Subject:** Adding ClearFlask to the Elestio catalog (open-source author, revenue share)
 
@@ -33,8 +47,8 @@ Railway marketplace (https://railway.com/deploy/clearflask):
 - Full environment-variable configuration (domain, admin email, SMTP, DB) and
   automatic per-install secret generation on first boot.
 
-Happy to prepare the integration template against your elestio-examples format and
-to promote Elestio in our README as a managed-hosting option. Could you share the
+Happy to prepare the integration in whatever template format you use and to
+promote Elestio in our README as a managed-hosting option. Could you share the
 terms of your revenue-share program for participating authors?
 
 Best,

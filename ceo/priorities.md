@@ -88,10 +88,13 @@ and `reports/packaging-audit-2026-07-02.md`). Executing in this order:
 - [x] Lean compose variant — DONE via P0 (PRODUCTION_PLATFORM stack, 2.6.3).
 - [x] README "Deploy on Railway" button added (2026-07-13) — one-click deploy
       section at the top of Self Hosting; every deploy through it earns kickback.
-- [ ] BOARD: send refreshed outreach (2026-07-13 drafts in `outreach/`):
-      PikaPods follow-up to hello@pikapods.com (no reply since 07-03) and
-      Elestio to support@elest.io (first attempt bounced). Both now pitch the
-      lean 3-container stack + live Railway listing as proof.
+- [ ] BOARD: submission channels re-verified 2026-07-18 (see `outreach/`):
+      (a) PikaPods — post the drafted **app-request on feedback.pikapods.com**
+      (their real intake; no ClearFlask request exists) + optional email
+      follow-up to hello@pikapods.com; (b) Elestio — send draft to
+      **contact@elest.io** (their stated partnerships address), Discord
+      (discord.gg/4T4JGaMYrD) as fallback. Both drafts pitch the lean
+      3-container stack + live Railway listing.
 - [ ] Prepare listing assets: description, screenshots, logo, categories.
 - [ ] DO Marketplace Packer image (after the above).
 
