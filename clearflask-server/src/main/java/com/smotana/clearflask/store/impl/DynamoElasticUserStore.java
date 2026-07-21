@@ -1203,8 +1203,14 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                     .setSigningKey(config.tokenSignerPrivKey())
                     .parseClaimsJws(token)
                     .getBody();
-        } catch (UnsupportedJwtException | MalformedJwtException | SignatureException ex) {
-            log.warn("Failed to parse token {}", token, ex);
+        } catch (UnsupportedJwtException | MalformedJwtException ex) {
+            // Malformed/unsupported tokens are expected on this public endpoint (stale or corrupted
+            // client-supplied tokens); log quietly without the token value or stack trace.
+            log.trace("Failed to parse token: {}", ex.getMessage());
+            return Optional.empty();
+        } catch (SignatureException ex) {
+            // A well-formed but wrongly-signed token is more interesting (possible tampering).
+            log.warn("Token signature verification failed: {}", ex.getMessage());
             return Optional.empty();
         } catch (ExpiredJwtException ex) {
             log.trace("Token is past expiration {}", token);
