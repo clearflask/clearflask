@@ -92,6 +92,14 @@
     </distributionManagement>
 
     <repositories>
+        <!-- Central must be tried before jitpack: jitpack answers HTTP 200 with an
+             empty body for artifacts it doesn't host, which Maven happily saves as
+             a corrupt 0-byte jar, breaking any build without a warm ~/.m2 cache. -->
+        <repository>
+            <id>central</id>
+            <name>Maven Central</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
         <repository>
             <id>dynamodb-local-oregon</id>
             <name>DynamoDB Local Release Repository</name>
