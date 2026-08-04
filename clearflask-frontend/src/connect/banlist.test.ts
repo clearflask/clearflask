@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2026 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import * as assert from 'assert';
-import { isBanned, normalizeIp, recordStrike } from './banlist';
+import { isBanned, isHostNotFound, normalizeIp, recordHostNotFound, recordStrike } from './banlist';
 
 // Tests share module state via the Maps inside banlist.ts. Each test below
 // uses a distinct subnet so it can't be polluted by a previous test.
@@ -106,6 +106,36 @@ run('IPv6 /64: too few segments without :: returns to per-key fallback', () => {
   assert.strictEqual(isBanned('2001:db8:bad'), true);
   // …but it doesn't leak into the real 2001:db8:0:0::/64 bucket.
   assert.strictEqual(isBanned('2001:db8::1'), false);
+});
+
+run('host-not-found cache: unseen host is not cached', () => {
+  assert.strictEqual(isHostNotFound('fresh.example.com'), false);
+});
+
+run('host-not-found cache: recorded host is cached', () => {
+  recordHostNotFound('mx1.example.com');
+  assert.strictEqual(isHostNotFound('mx1.example.com'), true);
+  assert.strictEqual(isHostNotFound('other.example.com'), false);
+});
+
+run('host-not-found cache: entry expires after TTL', () => {
+  const now = Date.now();
+  recordHostNotFound('ttl.example.com', now);
+  assert.strictEqual(isHostNotFound('ttl.example.com', now + 4 * 60 * 1000), true);
+  assert.strictEqual(isHostNotFound('ttl.example.com', now + 6 * 60 * 1000), false);
+  // Expired entry is evicted, not resurrected
+  assert.strictEqual(isHostNotFound('ttl.example.com', now + 4 * 60 * 1000), false);
+});
+
+run('host-not-found cache: full of live entries stops growing but keeps existing', () => {
+  const now = Date.now();
+  for (let i = 0; i < 5000; i++) recordHostNotFound(`bulk${i}.example.com`, now);
+  recordHostNotFound('overflow.example.com', now);
+  assert.strictEqual(isHostNotFound('overflow.example.com', now), false);
+  assert.strictEqual(isHostNotFound('bulk0.example.com', now), true);
+  // Existing key can still refresh its TTL at capacity
+  recordHostNotFound('bulk0.example.com', now + 1000);
+  assert.strictEqual(isHostNotFound('bulk0.example.com', now + 5 * 60 * 1000 + 500), true);
 });
 
 if (failures > 0) {

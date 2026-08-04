@@ -81,8 +81,24 @@ const indexHtmlPromise: Promise<string> = new Promise<string>((resolve, error) =
   return $.root().html() || '';
 });
 
+// Bound how much SSR work can pile up in one worker: each in-flight render
+// holds a full store/extractor/stylesheet graph, and unbounded pileup is what
+// let a subdomain-enumeration flood swap-thrash the host to death. Above the
+// cap, fall back to client-side rendering — the site stays usable.
+const MAX_CONCURRENT_RENDERS = 16;
+var rendersInFlight = 0;
+
 export default function render(): Handler {
   return async (req, res, next) => {
+    if (rendersInFlight >= MAX_CONCURRENT_RENDERS) {
+      console.warn(`Render capacity exceeded (${rendersInFlight} in flight), falling back to CSR for ${req.hostname}${req.path}`);
+      res.status(503);
+      res.header('Cache-Control', 'public, max-age=10');
+      res.header('Retry-After', '2');
+      res.sendFile(path.resolve(connectConfig.publicPath, 'index.html'));
+      return;
+    }
+    rendersInFlight++;
     try {
       const staticRouterContext: StaticRouterContext = {};
       const storesState: StoresState = {};
@@ -239,6 +255,8 @@ export default function render(): Handler {
       } else {
         res.end();
       }
+    } finally {
+      rendersInFlight--;
     }
   };
 };

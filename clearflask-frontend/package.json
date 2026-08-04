@@ -184,7 +184,7 @@
     "build-connect": "rm -fR target/dist && webpack --node-env production -c webpack.config.connect.js",
     "audit-fix": "./node/node_modules/pnpm/bin/pnpm.cjs audit --fix",
     "eject": "react-scripts eject",
-    "test": "NODE_ENV=test ENV=test ./node/node --unhandled-rejections=strict --trace-warnings src/connect/test.js",
+    "test": "./node/node src/connect/banlist.test-runner.js && NODE_ENV=test ENV=test ./node/node --unhandled-rejections=strict --trace-warnings src/connect/test.js",
     "test:banlist": "./node/node src/connect/banlist.test-runner.js",
     "analyze": "GENERATE_SOURCEMAP=true react-app-rewired build && source-map-explorer 'build/static/js/*.js'"
   },

@@ -22,7 +22,7 @@ import connectConfig from './config';
 import httpx from './httpx';
 import reactRenderer, {replaceParentDomain} from './renderer';
 import ServerConnect from './serverConnect';
-import {isBanned, normalizeIp, recordStrike} from './banlist';
+import {isBanned, isHostNotFound, normalizeIp, recordHostNotFound, recordStrike} from './banlist';
 
 Sentry.init({
   dsn: "https://600460a790e34b3e884ebe25ed26944d@o934836.ingest.sentry.io/5884409",
@@ -80,10 +80,27 @@ function replaceAndSend(res, filePath) {
 }
 
 const secureContextCache = new MapExpire([], {
-  capacity: 100,
+  capacity: 10000,
   duration: 0, // default expiry in millisecond
 });
+// Servernames whose cert lookup failed on the backend. Without this, a scanner
+// enumerating nonexistent subdomains turns every TLS handshake into a backend
+// call; with it, repeats are rejected in-memory for a minute.
+const certFailureCache = new MapExpire([], {
+  capacity: 10000,
+  duration: 60 * 1000,
+});
 const sniCallback: ServerOptions['SNICallback'] = async (servername, callback) => {
+  // The parent domain's wildcard cert covers a single label (foo.clearflask.com),
+  // so a deeper name (a.b.clearflask.com) can never be served — only subdomain
+  // scanners ask for those. Reject before involving the backend.
+  const parentSuffix = '.' + connectConfig.parentDomain;
+  if (servername.endsWith(parentSuffix)
+    && servername.slice(0, -parentSuffix.length).includes('.')) {
+    callback(new Error('No certificate found'), null as any);
+    return;
+  }
+
   // Get cert
   const wildName = '*.' + servername
     .split('.')
@@ -91,6 +108,10 @@ const sniCallback: ServerOptions['SNICallback'] = async (servername, callback) =
     .join('.');
   var secureContext: SecureContext = secureContextCache.get(servername) || secureContextCache.get(wildName);
   if (!secureContext) {
+    if (certFailureCache.get(servername)) {
+      callback(new Error('No certificate found'), null as any);
+      return;
+    }
     var certAndKey: CertGetOrCreateResponse;
     try {
       certAndKey = await ServerConnect.get()
@@ -102,6 +123,7 @@ const sniCallback: ServerOptions['SNICallback'] = async (servername, callback) =
       console.log('Found cert for servername', servername);
     } catch (response: any) {
       console.log('Cert get unknown error for servername', servername, response);
+      certFailureCache.set(servername, true);
       callback(new Error('No certificate found'), null as any);
       return;
     }
@@ -112,12 +134,15 @@ const sniCallback: ServerOptions['SNICallback'] = async (servername, callback) =
       cert: certAndKey.cert.cert + "\n" + certAndKey.cert.chain,
     });
 
-    // Add to cache
-    const expiresInSec = certAndKey.cert.expiresAt - new Date().getTime();
+    // Add to cache under every name the cert covers — including the wildcard
+    // altname, so all single-label subdomains share one entry. expiresAt and
+    // MapExpire durations are both in milliseconds; cap at one hour.
+    const expiresInMs = certAndKey.cert.expiresAt - new Date().getTime();
+    const cacheDurationMs = Math.min(60 * 60 * 1000, Math.max(1000, expiresInMs));
     [servername, ...certAndKey.cert.altnames].forEach(altName => secureContextCache.set(
-      servername,
+      altName,
       secureContext,
-      Math.min(3600, expiresInSec)));
+      cacheDurationMs));
   }
 
   callback(null, secureContext);
@@ -171,14 +196,26 @@ function createApp(serverApi) {
       res.status(429).set('Retry-After', '3600').send('Too Many Requests');
       return;
     }
-    // Only count strikes on top-level page navigations (Accept: text/html),
-    // not on /api/ requests, embedded assets, or favicon hits — otherwise an
-    // attacker could ban innocent visitors by embedding <img src="https://x.clearflask.com/y.png">.
-    const acceptsHtml = (req.headers.accept || '').includes('text/html');
-    if (ip && req.hostname && req.hostname !== connectConfig.parentDomain && !req.path.startsWith('/api/') && acceptsHtml) {
+    const isSubdomain = !!req.hostname && req.hostname !== connectConfig.parentDomain;
+    // Exempt /api/ and ACME challenges: they must keep working while a custom
+    // domain is being onboarded, before its project is reachable.
+    const isExemptPath = req.path.startsWith('/api/') || req.path.startsWith('/.well-known/');
+    if (isSubdomain && !isExemptPath) {
+      // Only count strikes on top-level page navigations (Accept: text/html),
+      // not on /api/ requests, embedded assets, or favicon hits — otherwise an
+      // attacker could ban innocent visitors by embedding <img src="https://x.clearflask.com/y.png">.
+      const acceptsHtml = (req.headers.accept || '').includes('text/html');
       res.on('finish', () => {
-        if (res.statusCode === 404) recordStrike(ip);
+        if (res.statusCode !== 404) return;
+        if (ip && acceptsHtml) recordStrike(ip);
+        // A 404 on the root path means no project answers for this hostname —
+        // safe to short-circuit the whole host, since every path 404s anyway.
+        if (req.path === '/') recordHostNotFound(req.hostname);
       });
+      if (isHostNotFound(req.hostname)) {
+        res.status(404).set('Cache-Control', 'public, max-age=60').send('Not found');
+        return;
+      }
     }
     next();
   });

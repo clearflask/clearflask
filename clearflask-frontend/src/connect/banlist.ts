@@ -12,6 +12,35 @@ const MAX_TRACKED_KEYS = 10000;
 const strikes = new Map<string, number[]>();
 const bans = new Map<string, number>();
 
+// Hosts whose root path rendered a 404: the hostname has no project behind it,
+// so every path 404s and there is no reason to spend a full SSR render on any
+// of them. Subdomain-enumeration scanners request the same garbage hostname
+// hundreds of times; this cache turns all but the first into a cheap 404.
+// TTL keeps a freshly-created project reachable within minutes.
+const HOST_NOT_FOUND_TTL_MS = 5 * 60 * 1000;
+const MAX_NOT_FOUND_HOSTS = 5000;
+const notFoundHosts = new Map<string, number>();
+
+export function isHostNotFound(host: string, now: number = Date.now()): boolean {
+  const expiresAt = notFoundHosts.get(host);
+  if (expiresAt === undefined) return false;
+  if (now >= expiresAt) {
+    notFoundHosts.delete(host);
+    return false;
+  }
+  return true;
+}
+
+export function recordHostNotFound(host: string, now: number = Date.now()): void {
+  if (notFoundHosts.size >= MAX_NOT_FOUND_HOSTS && !notFoundHosts.has(host)) {
+    for (const [h, expiresAt] of notFoundHosts) {
+      if (now >= expiresAt) notFoundHosts.delete(h);
+    }
+    if (notFoundHosts.size >= MAX_NOT_FOUND_HOSTS) return;
+  }
+  notFoundHosts.set(host, now + HOST_NOT_FOUND_TTL_MS);
+}
+
 export function normalizeIp(raw: string | undefined): string | undefined {
   if (!raw) return undefined;
   return raw.replace(/^::ffff:/, '');
