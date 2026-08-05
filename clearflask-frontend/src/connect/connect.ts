@@ -207,7 +207,7 @@ function createApp(serverApi) {
       const acceptsHtml = (req.headers.accept || '').includes('text/html');
       res.on('finish', () => {
         if (res.statusCode !== 404) return;
-        if (ip && acceptsHtml) recordStrike(ip);
+        if (ip && acceptsHtml) recordStrike(ip, req.hostname + req.path);
         // A 404 on the root path means no project answers for this hostname —
         // safe to short-circuit the whole host, since every path 404s anyway.
         if (req.path === '/') recordHostNotFound(req.hostname);

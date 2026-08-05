@@ -4,12 +4,16 @@
 // Per-worker threshold. Connect runs as a cluster (one worker per CPU) so the
 // effective per-/24 limit is THRESHOLD * workerCount in the worst case where
 // requests round-robin across workers.
+// Strikes count UNIQUE 404 targets (host+path), not raw hits: a human
+// refreshing one dead link a hundred times is 1 strike, while a scanner
+// enumerating hostnames or paths bans just as fast as before.
 const THRESHOLD = 20;
 const WINDOW_MS = 10 * 60 * 1000;
 const BAN_DURATION_MS = 60 * 60 * 1000;
 const MAX_TRACKED_KEYS = 10000;
 
-const strikes = new Map<string, number[]>();
+// subnet key -> (404'd target -> time first seen in this window)
+const strikes = new Map<string, Map<string, number>>();
 const bans = new Map<string, number>();
 
 // Hosts whose root path rendered a 404: the hostname has no project behind it,
@@ -102,27 +106,32 @@ export function isBanned(ip: string): boolean {
   return true;
 }
 
-export function recordStrike(ip: string): void {
+export function recordStrike(ip: string, target: string): void {
   const key = toKey(ip);
   const now = Date.now();
-  const history = (strikes.get(key) || []).filter(t => now - t < WINDOW_MS);
-  history.push(now);
+  const targets = strikes.get(key) || new Map<string, number>();
+  for (const [t, firstSeen] of targets) {
+    if (now - firstSeen >= WINDOW_MS) targets.delete(t);
+  }
+  if (!targets.has(target)) targets.set(target, now);
 
-  if (history.length >= THRESHOLD) {
+  if (targets.size >= THRESHOLD) {
     const unbanAt = now + BAN_DURATION_MS;
     bans.set(key, unbanAt);
     strikes.delete(key);
-    console.log(`[banlist] Banned ${key} until ${new Date(unbanAt).toISOString()} (${history.length} strikes in ${Math.round(WINDOW_MS / 60000)}m)`);
+    console.log(`[banlist] Banned ${key} until ${new Date(unbanAt).toISOString()} (${targets.size} unique 404 targets in ${Math.round(WINDOW_MS / 60000)}m)`);
     return;
   }
 
-  strikes.set(key, history);
+  strikes.set(key, targets);
 
   if (strikes.size > MAX_TRACKED_KEYS) {
-    for (const [k, ts] of strikes) {
-      if (ts.length === 0 || now - ts[ts.length - 1] >= WINDOW_MS) {
-        strikes.delete(k);
+    for (const [k, targetMap] of strikes) {
+      let newest = 0;
+      for (const firstSeen of targetMap.values()) {
+        if (firstSeen > newest) newest = firstSeen;
       }
+      if (now - newest >= WINDOW_MS) strikes.delete(k);
     }
   }
 }
