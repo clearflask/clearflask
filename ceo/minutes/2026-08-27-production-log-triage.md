@@ -106,9 +106,39 @@ and been answered. Nearly all of them were finding #1 reported a second time.
   404 all day. Harmless now that it is quiet — but it is also a list of churned
   customers.
 
+### 6. Redirects assembled a page body they had no use for (found mid-deploy)
+
+Fixing #1 revealed a second bug behind it. The renderer runs its page
+post-processing unconditionally, and a redirect renders no components, so
+nothing had asked i18next for a translation and `reportNamespaces` was
+undefined. `www` went on returning 500 after the first deploy — same symptom,
+new cause. Redirects now answer with the `Location` and stop, and an absent
+`reportNamespaces` is tolerated.
+
 ## Verification & deploy
 
-- Server module built clean (`mvn install -DskipTests` on api/logging/server).
-- Frontend typechecked clean (0 errors in `src/`); connect bundle built clean;
-  all banlist tests pass.
-- Three commits pushed to master; deployed via `deploy-restart-no-it.yml`.
+Deployed in two rounds via `deploy-restart-no-it.yml`, both green
+(runs 33114938435 and 33116225738). Prod stayed up throughout.
+
+Confirmed against production after the second deploy:
+
+| | before | after |
+|---|---|---|
+| `www.clearflask.com/`, `/pricing`, `/features` | 500 | 301 → apex, path kept, 200 on follow |
+| Tomcat SEVERE traces | 5,241/day | 0 |
+| `userBind` on a missing project | 500 | 404 + correct `userFacingMessage` JSON |
+| Connect worker deaths | 65 in 5 days | 0 |
+| Cert-lookup log dumps | 26 lines each | 0 |
+| Spurious render timeouts | 1,527 | 0 |
+
+Apex SSR unchanged (200, 109 KB) and `/api/health` ok.
+
+### Process note for the CEO
+
+The first deploy went out on a connect bundle that had never actually built
+locally: the build command ended in an `echo`, so the exit status read was the
+echo's, not the build's. The build was failing on a Node/OpenSSL 3
+incompatibility (needs `--openssl-legacy-provider`; CI is unaffected). CI caught
+nothing because the code was in fact fine — but the local check was worthless
+and reported as if it had passed. **Check the exit status of the thing being
+tested, not of the last command in the chain.**

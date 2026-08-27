@@ -27,6 +27,12 @@ _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
 - **Unauthenticated 500 in `userBind`/`userCreate`** — `Optional.get()` on a
   missing project. Both are `@PermitAll`, so anyone could trigger it with any
   project id. Now returns 404 like the other project resources.
+- Deployed in two rounds (both green): the first fix uncovered a second bug
+  behind it — the renderer assembled a page body for redirects, and a redirect
+  renders nothing, so i18next's `reportNamespaces` was undefined. Verified
+  against prod after the second deploy: `www` now 301s to the apex with the path
+  kept, SEVERE traces 5,241/day -> 0, worker deaths 65-in-5-days -> 0, cert log
+  dumps -> 0, spurious render timeouts 1,527 -> 0. Apex SSR unchanged.
 - NOT FIXED, flagged for the board:
   - **The cluster kills every worker when one dies.** That is deliberate
     (`// Kill entire cluster if one worker dies`), and it turns any single
