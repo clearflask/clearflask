@@ -2,6 +2,44 @@
 
 _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
 
+## 2026-08-27
+- **Production log triage** (board asked "check recent errors/warnings, fix and
+  deploy"). Prod itself was healthy the whole time — no outage, no downtime.
+  Five real defects found in the logs and fixed; deployed to the SaaS fleet.
+- **www.clearflask.com returned HTTP 500 on every page** (P0, silent for who
+  knows how long). The `www` redirect in `Main.tsx` returned a react-router
+  `<Route>` before the `<Router>` was mounted, so it threw on every render —
+  ~1,300 failed SSRs/day. Google saw a 500 across the whole marketing site and
+  human visitors on `www` got a blank page. Now a real 301 to the apex domain,
+  keeping the path. **The marketing site's SEO was quietly broken; worth
+  checking Search Console for lost coverage.**
+- **Connect crashed 65 times in 5 days**, each crash taking the entire worker
+  cluster down (one dead worker calls `process.exit(42)`) and leaving systemd to
+  restart the site. Cause: nothing listened for socket errors, so an ordinary
+  client reset (abandoned TLS handshake, scanner hanging up) was an uncaught
+  'error' event that killed the process. Fixed at the httpx demultiplexer, on
+  all three listeners, and in the proxy's error handler.
+- **32 MB/day of SEVERE log spam** — 5,241 stack traces on a normal day, all of
+  them the same *handled* 404 for a deleted project. `ApiException` was left to
+  escape the servlet so the container error page could answer it; Tomcat logs
+  every escape at SEVERE first. Now mapped inside Jersey (identical response).
+  Disk is at 70%, and real faults had nowhere to hide.
+- **Unauthenticated 500 in `userBind`/`userCreate`** — `Optional.get()` on a
+  missing project. Both are `@PermitAll`, so anyone could trigger it with any
+  project id. Now returns 404 like the other project resources.
+- NOT FIXED, flagged for the board:
+  - **The cluster kills every worker when one dies.** That is deliberate
+    (`// Kill entire cluster if one worker dies`), and it turns any single
+    worker fault into a full site restart. Reforking the one worker instead
+    would be the resilience fix, but changing process supervision is the
+    board's call. Recommend doing it.
+  - **~30 other `getProject(...).get()` call sites** on authenticated endpoints
+    have the same 500-instead-of-404 shape. Left alone: a 30-site sweep is its
+    own change, not a hotfix.
+  - **Stale customer DNS**: former customers' custom domains (gozen.io,
+    stonekick.com, snow-track.de and others) still point at us and 404 all day.
+    Harmless now that it is quiet, but it is also a list of churned customers.
+
 ## 2026-07-18
 - CORRECTION (board pushback): board flagged that the PikaPods/Elestio outreach
   channels were never verified (kaiwalya@elest.io had bounced; PikaPods silent).
