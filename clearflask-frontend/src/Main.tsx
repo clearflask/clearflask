@@ -24,7 +24,6 @@ import MuiSnackbarProvider from './app/utils/MuiSnackbarProvider';
 import ServerErrorNotifier from './app/utils/ServerErrorNotifier';
 import { closeLoadingScreen } from './common/loadingScreen';
 import { isSelfHostLike, isProd } from './common/util/detectEnv';
-import { RedirectIso } from './common/util/routerUtil';
 import { vh } from './common/util/screenUtil';
 import ScrollAnchor from './common/util/ScrollAnchor';
 import { SetTitle } from './common/util/titleUtil';
@@ -145,9 +144,21 @@ class Main extends Component<Props> {
   render() {
     const Router = (windowIso.isSsr ? StaticRouter : BrowserRouter) as React.ElementType;
 
-    // Redirect www to homepage
+    // Canonicalize www to the bare domain, preserving the path. This runs
+    // outside the Router below, so it cannot use react-router components; and
+    // the target is a different origin, which react-router cannot navigate to
+    // anyway. Drive the redirect through the SSR context / the browser directly.
     if (windowIso.location.hostname.startsWith('www.')) {
-      return (<RedirectIso to={windowIso.location.origin.replace(`www.`, '')} />);
+      const target = windowIso.location.origin.replace('//www.', '//')
+        + windowIso.location.pathname
+        + windowIso.location.search;
+      if (windowIso.isSsr) {
+        windowIso.staticRouterContext.statusCode = 301;
+        windowIso.staticRouterContext.url = target;
+      } else {
+        windowIso.location.replace(target);
+      }
+      return null;
     }
 
     const isSelfHost = isSelfHostLike();
