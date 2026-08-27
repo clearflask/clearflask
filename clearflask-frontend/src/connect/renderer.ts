@@ -175,6 +175,17 @@ export default function render(): Handler {
         return;
       }
 
+      // A redirect has nowhere to put a body, and assembling one means running
+      // page post-processing over a render that deliberately produced nothing.
+      // Answer with the Location and stop.
+      if (staticRouterContext.url) {
+        res.writeHead(staticRouterContext.statusCode || 302, {
+          Location: staticRouterContext.url,
+        });
+        res.end();
+        return;
+      }
+
       var html = await indexHtmlPromise;
 
       if (process.env.ENV !== 'production') {
@@ -229,10 +240,13 @@ export default function render(): Handler {
       const lng = i18n.language;
       html = html.replace(PH_I18N_INIT_LNG, htmlDataCreate('__SSR_I18N_INIT_LNG__', lng));
       const i18nStore: Resource = { [lng]: {} };
+      // reportNamespaces only exists once something rendered has actually asked
+      // for a translation; a page that renders none leaves it undefined.
+      const usedNamespaces = i18n.reportNamespaces?.getUsedNamespaces() || [];
       (lng === 'en' ? ['en'] : ['en', lng]).forEach(l => {
         i18nStore[l] = {};
-        i18n.reportNamespaces.getUsedNamespaces().forEach(ns => {
-          i18nStore[l][ns] = i18n.services.resourceStore.data[l][ns];
+        usedNamespaces.forEach(ns => {
+          i18nStore[l][ns] = i18n.services.resourceStore.data[l]?.[ns];
         });
       });
       html = html.replace(PH_I18N_INIT_STORE, htmlDataCreate('__SSR_I18N_INIT_STORE__', i18nStore));
