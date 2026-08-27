@@ -52,8 +52,17 @@ function createApiProxy() {
     }
   });
 
-  serverHttpp.on('error', function (err, req, res) {
+  serverHttpp.on('error', function (err, req, res: any) {
     console.error(err);
+    // This also fires for WebSocket upgrades, where the third argument is a raw
+    // socket rather than a response, and for requests whose headers have already
+    // gone out — a client that resets mid-response reaches here. Writing a reply
+    // in either case throws, and an uncaught throw kills the worker, which by
+    // the cluster policy below takes the whole site down with it.
+    if (!res || typeof res.writeHead !== 'function' || res.headersSent) {
+      res?.destroy?.();
+      return;
+    }
     res.writeHead(500, { 'Content-Type': 'text/javascript' });
     res.end(JSON.stringify({
       userFacingMessage: 'Oops, something went wrong',
@@ -122,7 +131,15 @@ const sniCallback: ServerOptions['SNICallback'] = async (servername, callback) =
           { 'x-cf-connect-token': connectConfig.connectToken });
       console.log('Found cert for servername', servername);
     } catch (response: any) {
-      console.log('Cert get unknown error for servername', servername, response);
+      // A 404 is the backend's normal answer for "no project owns this domain":
+      // stale customer DNS and subdomain scanners both land here, so it is the
+      // common case rather than an error. Log a single line for it and reserve
+      // the full response dump for genuinely unexpected failures.
+      if (response?.status === 404) {
+        console.log('No cert for servername', servername);
+      } else {
+        console.log('Cert get unknown error for servername', servername, response);
+      }
       certFailureCache.set(servername, true);
       callback(new Error('No certificate found'), null as any);
       return;
@@ -341,6 +358,20 @@ if (!connectConfig.disableAutoFetchCertificate) {
 
     // Http(s)
     const serverHttpx = httpx.createServer(serverHttp, serverHttps);
+
+    // A client vanishing mid-connection — an abandoned TLS handshake, a closed
+    // tab, a scanner hanging up — surfaces as an 'error' on the socket. Node
+    // throws any 'error' event that has no listener, so a single reset would
+    // otherwise take the worker, and with it every other connection this
+    // process is serving. These are routine, so drop them silently; faults on
+    // the listeners themselves stay visible.
+    [serverHttp, serverHttps, serverHttpx].forEach(server => {
+      server.on('connection', socket => socket.on('error', () => { }));
+      server.on('secureConnection', socket => socket.on('error', () => { }));
+      server.on('tlsClientError', () => { });
+      server.on('clientError', (err, socket) => socket.destroy());
+      server.on('error', err => console.error('Listener error', err));
+    });
     serverHttpx.listen(connectConfig.listenPort, () => {
       console.info("Http(s) on", connectConfig.listenPort);
     });

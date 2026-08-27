@@ -6,6 +6,12 @@ let net = require('net');
 exports.createServer = (serverHttp, serverHttps) => {
 
   let server = net.createServer(socket => {
+    // The socket is ours until a proxy adopts it below, and a client that
+    // hangs up before finishing its first write — an abandoned handshake, a
+    // scanner moving on — makes it emit 'error'. Node throws an 'error' event
+    // that nobody listens for, which would kill the whole worker process.
+    socket.on('error', () => { });
+
     socket.once('data', buffer => {
       // Pause the socket
       socket.pause();
@@ -26,6 +32,11 @@ exports.createServer = (serverHttp, serverHttps) => {
 
         // Emit the socket to the HTTP(s) server
         proxy.emit('connection', socket);
+      } else {
+        // Neither TLS nor HTTP. Nothing will ever adopt this socket, so close
+        // it rather than leaving it open until the peer gives up.
+        socket.destroy();
+        return;
       }
 
       // As of NodeJS 10.x the socket must be 

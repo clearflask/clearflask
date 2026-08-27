@@ -256,6 +256,10 @@ export default function render(): Handler {
         res.end();
       }
     } finally {
+      // The assignment after the race is skipped when the render rejects, so
+      // without this the timer still pending would report a timeout ten seconds
+      // later for a request that had already failed and been answered.
+      isFinished = true;
       rendersInFlight--;
     }
   };
