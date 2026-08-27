@@ -155,7 +155,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 Optional.ofNullable(userBind.getOauthToken()),
                 Optional.ofNullable(Strings.emptyToNull(userBind.getBrowserPushToken())));
 
-        Project project = projectStore.getProject(projectId, true).get();
+        Project project = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         return new UserBindResponse(loggedInUserOpt
                 .map(loggedInUser -> loggedInUser.toUserMeWithBalance(project.getIntercomEmailToIdentityFun()))
                 .orElse(null));
@@ -173,7 +174,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
             sanitizer.email(userCreate.getEmail());
         }
 
-        Project project = projectStore.getProject(projectId, true).get();
+        Project project = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
 
         // If email already exists, ask to login via email link
         if (!Strings.isNullOrEmpty(userCreate.getEmail())) {

@@ -98,6 +98,7 @@ public class Application extends ResourceConfig {
         injector.getInstance(new Key<Set<Object>>(Names.named(RESOURCE_NAME)) {
         }).forEach(this::register);
         register(GsonMessageBody.class);
+        register(ApiExceptionMapper.class);
         register(AuthenticationFilter.class);
         register(RolesAllowedDynamicFeature.class);
         register(LimiterDynamicFeature.class);
