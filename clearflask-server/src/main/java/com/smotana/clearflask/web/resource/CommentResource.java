@@ -86,7 +86,8 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
 
         String userId = getExtendedPrincipal().flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt).map(UserStore.UserSession::getUserId).get();
         UserModel user = userStore.getUser(projectId, userId).orElseThrow(() -> new ApiException(Response.Status.UNAUTHORIZED, "User not found"));
-        Project project = projectStore.getProject(projectId, true).get();
+        Project project = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         ConfigAdmin configAdmin = project.getVersionedConfigAdmin().getConfig();
         IdeaStore.IdeaModel idea = ideaStore.getIdea(projectId, ideaIdOrMergedIdeaId)
                 .orElseThrow(() -> new BadRequestException("Cannot create comment, containing idea doesn't exist"));
@@ -145,7 +146,8 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
 
         UserModel user = userStore.getUser(projectId, create.getAuthorUserId())
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "User not found"));
-        Project project = projectStore.getProject(projectId, true).get();
+        Project project = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         ConfigAdmin configAdmin = project.getVersionedConfigAdmin().getConfig();
         IdeaStore.IdeaModel idea = ideaStore.getIdea(projectId, ideaIdOrMergedIdeaId)
                 .orElseThrow(() -> new BadRequestException("Cannot create comment, containing idea doesn't exist"));

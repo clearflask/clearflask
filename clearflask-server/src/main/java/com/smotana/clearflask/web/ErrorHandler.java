@@ -64,9 +64,12 @@ public class ErrorHandler extends HttpServlet {
                         .map(ApiException::getStatus)
                         .map(Response.Status::getStatusCode)
                         .orElse(statusCode));
-                PrintWriter out = response.getWriter();
+                // Both must be set before the writer is taken, or the response
+                // keeps the container default encoding and any non-ASCII in the
+                // message reaches the client mangled.
                 response.setContentType("application/json");
                 response.setCharacterEncoding("UTF-8");
+                PrintWriter out = response.getWriter();
                 apiExceptionOpt.flatMap(ApiException::getUserFacingMessageOpt).ifPresent(userFacingMessage -> {
                     out.print(gson.toJson(new ErrorResponse(userFacingMessage)));
                     out.flush();

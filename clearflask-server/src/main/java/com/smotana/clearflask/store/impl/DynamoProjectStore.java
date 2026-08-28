@@ -330,7 +330,8 @@ public class DynamoProjectStore implements ProjectStore {
 
     @Override
     public void updateConfig(String projectId, Optional<String> previousVersionOpt, VersionedConfigAdmin versionedConfigAdmin, boolean isSuperAdmin) {
-        Project project = getProject(projectId, false).get();
+        Project project = getProject(projectId, false)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
 
         ImmutableMap.Builder<String, String> slugsToChangeBuilder = ImmutableMap.builder();
 

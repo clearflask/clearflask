@@ -308,7 +308,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
                 .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
                 .get();
 
-        Project project = projectStore.getProject(projectId, false).get();
+        Project project = projectStore.getProject(projectId, false)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
 
         Account projectAccount = accountStore.getAccount(project.getAccountId(), true).get();
         try {
@@ -398,7 +399,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 1)
     @Override
     public ProjectAdminsListResult projectAdminsListAdmin(String projectId) {
-        Project project = projectStore.getProject(projectId, true).get();
+        Project project = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         ImmutableList<ProjectAdmin> admins = Stream.concat(Stream.of(project.getAccountId()), project.getModel().getAdminsAccountIds().stream())
                 .map(accountId -> accountStore.getAccount(accountId, true))
                 .filter(Optional::isPresent)
@@ -431,7 +433,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Limit(requiredPermits = 1)
     @Override
     public ProjectWebhooksListResult projectWebhooksListAdmin(String projectId) {
-        Project project = projectStore.getProject(projectId, true).get();
+        Project project = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         ImmutableList<com.smotana.clearflask.api.model.WebhookListener> webhooks = project.getAllWebhookListeners().stream()
                 .map(listener -> new com.smotana.clearflask.api.model.WebhookListener(
                         com.smotana.clearflask.api.model.WebhookListener.ResourceTypeEnum.valueOf(listener.getResourceType().name()),
@@ -525,7 +528,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
     @Extern
     private void projectDeleteAdminExtern(String projectId) {
-        Project project = projectStore.getProject(projectId, true).get();
+        Project project = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         projectDeleteAdmin(accountStore.getAccount(project.getAccountId(), true).get(), projectId);
     }
 

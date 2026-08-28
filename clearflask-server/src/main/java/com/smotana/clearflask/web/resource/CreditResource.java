@@ -69,7 +69,9 @@ public class CreditResource extends AbstractResource implements CreditApi, Credi
                 Optional.ofNullable(Strings.emptyToNull(creditIncome.getSummary())).orElse("Automatic income"),
                 Optional.of(creditIncome.getTransactionId()));
         userStore.updateUserBalance(projectId, user.getUserId(), creditIncome.getAmount(), Optional.empty());
-        ConfigAdmin configAdmin = projectStore.getProject(projectId, true).get().getVersionedConfigAdmin().getConfig();
+        ConfigAdmin configAdmin = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"))
+                .getVersionedConfigAdmin().getConfig();
         notificationService.onCreditChanged(configAdmin, user, transaction);
     }
 

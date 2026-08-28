@@ -88,7 +88,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     public IdeaWithVote ideaCreate(String projectId, IdeaCreate ideaCreate) {
         sanitizer.postTitle(ideaCreate.getTitle());
         sanitizer.content(ideaCreate.getDescription());
-        Project project = projectStore.getProject(projectId, true).get();
+        Project project = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         project.areTagsAllowedByUser(ideaCreate.getTagIds(), ideaCreate.getCategoryId());
 
         UserModel user = getExtendedPrincipal()
@@ -182,7 +183,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
             }
         }
 
-        Project project = projectStore.getProject(projectId, true).get();
+        Project project = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         UserModel author = userStore.getUser(projectId, ideaCreateAdmin.getAuthorUserId())
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "User not found"));
         String ideaId = ideaStore.genIdeaId(ideaCreateAdmin.getTitle());
@@ -346,7 +348,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Limit(requiredPermits = 10)
     @Override
     public IdeaConnectResponse ideaLinkAdmin(String projectId, String ideaId, String parentIdeaId) {
-        Project project = projectStore.getProject(projectId, true).get();
+        Project project = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         IdeaStore.LinkResponse linkResponse = ideaStore.linkIdeas(projectId, ideaId, parentIdeaId, false, project::getCategoryExpressionWeight);
         return new IdeaConnectResponse(linkResponse.getIdea().toIdeaAdmin(sanitizer), linkResponse.getParentIdea().toIdeaAdmin(sanitizer));
     }
@@ -355,7 +358,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Limit(requiredPermits = 10)
     @Override
     public IdeaConnectResponse ideaUnLinkAdmin(String projectId, String ideaId, String parentIdeaId) {
-        Project project = projectStore.getProject(projectId, true).get();
+        Project project = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         IdeaStore.LinkResponse linkResponse = ideaStore.linkIdeas(projectId, ideaId, parentIdeaId, true, project::getCategoryExpressionWeight);
         return new IdeaConnectResponse(linkResponse.getIdea().toIdeaAdmin(sanitizer), linkResponse.getParentIdea().toIdeaAdmin(sanitizer));
     }
@@ -364,7 +368,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Limit(requiredPermits = 10)
     @Override
     public IdeaConnectResponse ideaMerge(String projectId, String ideaId, String parentIdeaId) {
-        Project project = projectStore.getProject(projectId, true).get();
+        Project project = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         ImmutableMap<String, IdeaModel> ideas = ideaStore.getIdeas(projectId, ImmutableSet.of(ideaId, parentIdeaId));
         IdeaModel idea = ideas.get(ideaId);
         IdeaModel parentIdea = ideas.get(parentIdeaId);
@@ -387,7 +392,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Limit(requiredPermits = 10)
     @Override
     public IdeaConnectResponse ideaMergeAdmin(String projectId, String ideaId, String parentIdeaId) {
-        Project project = projectStore.getProject(projectId, true).get();
+        Project project = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         IdeaStore.MergeResponse mergeResponse = ideaStore.mergeIdeas(projectId, ideaId, parentIdeaId, false, project::getCategoryExpressionWeight);
         return new IdeaConnectResponse(mergeResponse.getIdea().toIdeaAdmin(sanitizer), mergeResponse.getParentIdea().toIdeaAdmin(sanitizer));
     }
@@ -396,7 +402,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Limit(requiredPermits = 10)
     @Override
     public IdeaConnectResponse ideaUnMergeAdmin(String projectId, String ideaId, String parentIdeaId) {
-        Project project = projectStore.getProject(projectId, true).get();
+        Project project = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         IdeaStore.MergeResponse mergeResponse = ideaStore.mergeIdeas(projectId, ideaId, parentIdeaId, true, project::getCategoryExpressionWeight);
         return new IdeaConnectResponse(mergeResponse.getIdea().toIdeaAdmin(sanitizer), mergeResponse.getParentIdea().toIdeaAdmin(sanitizer));
     }
@@ -512,7 +519,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
             }
         }
 
-        Project project = projectStore.getProject(projectId, true).get();
+        Project project = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         ConfigAdmin configAdmin = project.getVersionedConfigAdmin().getConfig();
         Optional<UserModel> authorUserOpt = Optional.ofNullable(Strings.emptyToNull(ideaUpdateAdmin.getResponseAuthorUserId()))
                 .or(() -> getExtendedPrincipal()
@@ -558,7 +566,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Limit(requiredPermits = 1)
     @Override
     public IdeaVotersAdminResponse ideaVotersGetAdmin(String projectId, String ideaId, String cursor) {
-        Project project = projectStore.getProject(projectId, true).get();
+        Project project = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         VoteStore.ListResponse<VoteStore.VoteModel> votesBatch = voteStore.voteListByTarget(
                 projectId,
                 ideaId,
@@ -586,7 +595,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
                 .flatMap(ExtendedSecurityContext.ExtendedPrincipal::getAuthenticatedUserSessionOpt)
                 .map(UserSession::getUserId)
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "User not found"));
-        Project project = projectStore.getProject(projectId, true).get();
+        Project project = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         billing.recordUsage(Billing.UsageType.POST_DELETED, project.getAccountId(), project.getProjectId(), userId);
     }
 
@@ -597,7 +607,8 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
         ideaStore.deleteIdea(projectId, ideaId, true);
         commentStore.deleteCommentsForIdea(projectId, ideaId);
 
-        Project project = projectStore.getProject(projectId, true).get();
+        Project project = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         billing.recordUsage(Billing.UsageType.POST_DELETED, project.getAccountId(), project.getProjectId());
     }
 

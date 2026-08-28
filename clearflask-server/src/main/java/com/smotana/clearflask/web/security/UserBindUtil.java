@@ -14,12 +14,14 @@ import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.UserStore.UserSession;
+import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.resource.UserResource;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Response;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Instant;
@@ -83,7 +85,8 @@ public class UserBindUtil {
 
         // Auto login using sso token
         if (!userOpt.isPresent() && ssoTokenOpt.isPresent()) {
-            Project project = projectStore.getProject(projectId, true).get();
+            Project project = projectStore.getProject(projectId, true)
+                    .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
             userOpt = userStore.ssoCreateOrGet(projectId, project.getVersionedConfigAdmin().getConfig().getSsoSecretKey(), ssoTokenOpt.get());
             if (userOpt.isPresent()) {
                 createSession = true;
@@ -92,7 +95,8 @@ public class UserBindUtil {
 
         // Auto login using oauth token
         if (!userOpt.isPresent() && oauthTokenOpt.isPresent()) {
-            Project project = projectStore.getProject(projectId, true).get();
+            Project project = projectStore.getProject(projectId, true)
+                    .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
             Optional<NotificationMethodsOauth> oauthMethodOpt = project.getVersionedConfigAdmin().getConfig().getUsers().getOnboarding().getNotificationMethods().getOauth().stream()
                     .filter(nmo -> oauthTokenOpt.get().getId().equals(nmo.getClientId()))
                     .findAny();

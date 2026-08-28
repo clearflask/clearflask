@@ -371,10 +371,13 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 ImmutableSet.of());
         userStore.createUser(user);
         if (user.getIsMod() == Boolean.TRUE) {
-            ConfigAdmin configAdmin = projectStore.getProject(projectId, true).get().getVersionedConfigAdmin().getConfig();
+            ConfigAdmin configAdmin = projectStore.getProject(projectId, true)
+                    .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"))
+                    .getVersionedConfigAdmin().getConfig();
             notificationService.onModInvite(configAdmin, user);
         }
-        Project project = projectStore.getProject(projectId, true).get();
+        Project project = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         return user.toUserAdmin(project.getIntercomEmailToIdentityFun());
     }
 
@@ -464,7 +467,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 Instant.now().plus(config.sessionExpiry()).getEpochSecond());
         authCookie.setAuthCookie(request, response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, session.getSessionId(), session.getTtlInEpochSec());
 
-        Project project = projectStore.getProject(projectId, true).get();
+        Project project = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         return user.toUserMeWithBalance(project.getIntercomEmailToIdentityFun());
     }
 
@@ -509,14 +513,17 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         if (!Strings.isNullOrEmpty(userUpdate.getEmail())) {
             if (!Strings.isNullOrEmpty(user.getEmail())
                     && (user.getEmailLastUpdated() == null || user.getEmailLastUpdated().plus(config.sendOnEmailChangedEmailIfLastChangeGreaterThan()).isBefore(Instant.now()))) {
-                ConfigAdmin configAdmin = projectStore.getProject(projectId, true).get().getVersionedConfigAdmin().getConfig();
+                ConfigAdmin configAdmin = projectStore.getProject(projectId, true)
+                        .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"))
+                        .getVersionedConfigAdmin().getConfig();
                 notificationService.onEmailChanged(configAdmin, user, user.getEmail());
             }
         }
 
         user = userStore.updateUser(projectId, userId, userUpdate).getUser();
 
-        Project project = projectStore.getProject(projectId, true).get();
+        Project project = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         return user.toUserMe(project.getIntercomEmailToIdentityFun());
     }
 
@@ -535,11 +542,14 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                     Optional.ofNullable(Strings.emptyToNull(userUpdateAdmin.getTransactionCreate().getSummary())).orElse("Admin adjustment"),
                     Optional.empty());
             userStore.updateUserBalance(projectId, userId, userUpdateAdmin.getTransactionCreate().getAmount(), Optional.empty());
-            ConfigAdmin configAdmin = projectStore.getProject(projectId, true).get().getVersionedConfigAdmin().getConfig();
+            ConfigAdmin configAdmin = projectStore.getProject(projectId, true)
+                    .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"))
+                    .getVersionedConfigAdmin().getConfig();
             UserModel user = userStore.getUser(projectId, userId).get();
             notificationService.onCreditChanged(configAdmin, user, transaction);
         }
-        Project project = projectStore.getProject(projectId, true).get();
+        Project project = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         return userStore.updateUser(projectId, userId, userUpdateAdmin)
                 .getUser()
                 .toUserAdmin(project.getIntercomEmailToIdentityFun());
@@ -549,7 +559,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 1)
     @Override
     public UserAdmin userGetAdmin(String projectId, String userId) {
-        Project project = projectStore.getProject(projectId, true).get();
+        Project project = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         return userStore.getUser(projectId, userId)
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "User not found"))
                 .toUserAdmin(project.getIntercomEmailToIdentityFun());
@@ -582,7 +593,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
             usersById = userStore.getUsers(projectId, searchUsersResponse.getUserIds());
         }
 
-        Project project = projectStore.getProject(projectId, true).get();
+        Project project = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
         return new UserSearchResponse(
                 searchUsersResponse.getCursorOpt().orElse(null),
                 searchUsersResponse.getUserIds().stream()
