@@ -328,9 +328,39 @@ if (!connectConfig.disableAutoFetchCertificate) {
       cluster.fork();
     }
 
+    // Replace a dead worker instead of taking the site down with it. Whatever
+    // killed one worker — an unlucky socket, a single bad request — usually has
+    // nothing to do with the others, and the connections they are serving do
+    // not deserve to be dropped for it.
+    //
+    // A worker that dies immediately and repeatedly is a different problem: the
+    // process cannot start at all (bad config, port already bound), and
+    // reforking would spin. Past that point, stop and let the service manager
+    // restart the whole thing cleanly.
+    const crashWindowMs = 60 * 1000;
+    const crashLimit = 10;
+    const recentDeaths: number[] = [];
+
     cluster.on('exit', (worker, code, signal) => {
-      console.log(`worker ${worker.process.pid} died`);
-      process.exit(42); // Kill entire cluster if one worker dies
+      if (worker.exitedAfterDisconnect) {
+        // Asked to stop, not a fault.
+        return;
+      }
+
+      const now = Date.now();
+      while (recentDeaths.length > 0 && now - recentDeaths[0] > crashWindowMs) {
+        recentDeaths.shift();
+      }
+      recentDeaths.push(now);
+
+      if (recentDeaths.length >= crashLimit) {
+        console.error(`worker ${worker.process.pid} died (${signal || code});`
+          + ` ${recentDeaths.length} deaths within ${crashWindowMs / 1000}s, giving up`);
+        process.exit(42);
+      }
+
+      console.warn(`worker ${worker.process.pid} died (${signal || code}), replacing it`);
+      cluster.fork();
     });
     console.log(`Master started (${process.env.ENV})`);
   }

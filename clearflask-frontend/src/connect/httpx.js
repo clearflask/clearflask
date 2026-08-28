@@ -3,6 +3,12 @@
 'use strict';
 let net = require('net');
 
+// How long a freshly accepted connection may stay silent before we close it.
+// The first byte decides whether this is TLS or plaintext, and it normally
+// follows the handshake immediately, so this only ever expires on a peer that
+// has nothing to say.
+const FIRST_BYTE_TIMEOUT_MS = 30 * 1000;
+
 exports.createServer = (serverHttp, serverHttps) => {
 
   let server = net.createServer(socket => {
@@ -12,7 +18,15 @@ exports.createServer = (serverHttp, serverHttps) => {
     // that nobody listens for, which would kill the whole worker process.
     socket.on('error', () => { });
 
+    // Until the first byte arrives no server owns this socket, so no other
+    // timeout applies to it. Holding connections open and silent is the
+    // cheapest way to tie up a server, so put a bound on it here.
+    const firstByteTimeout = setTimeout(() => socket.destroy(), FIRST_BYTE_TIMEOUT_MS);
+
     socket.once('data', buffer => {
+      // The adopting server applies its own timeouts from here on.
+      clearTimeout(firstByteTimeout);
+
       // Pause the socket
       socket.pause();
 
