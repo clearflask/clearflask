@@ -2,6 +2,43 @@
 
 _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
 
+## 2026-08-28
+- **Resilience follow-ups + triage backlog cleared** (board: "continue and make
+  it more resilient, fix up all the things you found"). Full detail in
+  `minutes/2026-08-28-resilience-followups.md`.
+- Yesterday's fixes measured after ~20h in production: worker deaths 13/day ->
+  **0**, service failures 13/day -> **0**, SSR failures ~1,300/day -> **0**,
+  Tomcat SEVERE 5,241/day -> **0**, render timeouts 1,527 -> **0**, against
+  15,529 successful renders. The application log is now 100% INFO.
+- **Connect no longer kills the whole cluster when one worker dies** — the
+  design the board was asked about yesterday. The master forks a replacement;
+  a crash-loop guard (ten deaths in a minute) still hands off to systemd for the
+  case the old behaviour actually protected against.
+- **Pre-handshake sockets bounded** with a 30s first-byte timeout: until the
+  first byte arrives no server owns the connection, so nothing else timed it out.
+- **30 remaining `getProject(...).get()` call sites** now return 404 instead of
+  500 for an absent project — with the handled-error flood gone from SEVERE,
+  these would have been the noise that replaced it.
+- Verified properly: BUILD SUCCESS, 330 server tests passing, frontend
+  typecheck clean, connect bundle builds, banlist tests pass.
+- **Refork verified on production** (board approved the test): SIGKILLed a live
+  Connect worker — master logged "replacing it", a replacement bound its
+  listeners, systemd never restarted the service (`MainPID` and
+  `ActiveEnterTimestamp` unchanged), and the site served 200s throughout. Under
+  the old behaviour that exact event took the whole site down.
+- **SSM agent noise fixed** (board supplied `AWS_PROFILE=smotana`): created a
+  minimal `clearflask-ssm-agent-policy` and attached it to `cf-kb-role`.
+  Deliberately NOT the AWS-managed `AmazonSSMManagedInstanceCore`, which would
+  also have opened Session Manager as a remote-access path nobody asked for.
+  294 errors in the prior half hour -> 0.
+- BOARD ASKS still open: (1) **check Search Console** for coverage lost while
+  `www` served 500s — the CEO cannot see that data; (2) render capacity cap —
+  recommend leaving as is.
+- LESSON (recorded, cost two false "build passed" claims): never read the exit
+  status of a compound command. Write it to a file, or grep the tool's own
+  success marker. Both of yesterday's local server builds had actually failed
+  on a missing `clearflask-legal` artifact while being reported as clean.
+
 ## 2026-08-27
 - **Production log triage** (board asked "check recent errors/warnings, fix and
   deploy"). Prod itself was healthy the whole time — no outage, no downtime.
