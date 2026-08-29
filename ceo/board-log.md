@@ -20,6 +20,32 @@ _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
   the 08-28 board entry); full measurement table in the 08-28 minutes.
 - LESSON: never call a service restart an outage without measuring the window.
   Report what the logs prove, and measure before characterising user impact.
+- **Access log read for the first time** — the gap the pushback exposed. Four
+  days: 27,010 / 29,694 / 26,862 / 22,883 requests, and **0 / 1 / 0 / 0** 5xx.
+  The single 5xx was the CEO's own curl probe. So the API tier was serving
+  clean responses the whole time: the 5,241 SEVERE traces/day were purely a
+  logging defect, and the `userBind` 500 was real but never hit by a user.
+  LESSON: read the access log first — error logs measure how loudly a system
+  complains, not what it delivered.
+- **The refork fix proved itself unprompted**: a worker died for real at
+  10:28:10 today; it was replaced and rendering continued *in the same second*,
+  with the service never restarting. Better evidence than the staged test.
+- **Fixed what killed it**: `Promised` subscribes to its promise only outside
+  SSR, so a rejection server-side is unclaimed and
+  `--unhandled-rejections=strict` ends the worker. An embed-status render of a
+  post the viewer could not read did exactly that. All four callers were
+  exposed; fixed centrally and at the PostStatus source.
+- **Two dead cron jobs removed** (backed up to `/root/decommissioned-2026-08-29/`):
+  `killbill-cleanup` had logged an error every 30 min — 319 failures, zero
+  successes ever — guarding on `mysqld` when the host runs mariadb, and pointing
+  at a `killbill` database that no longer exists (decommissioned in the Stripe
+  migration). And `/etc/cron.d/clearflask` was malformed (missing the user
+  field), so its nightly restarts never ran; removed rather than repaired,
+  since `/etc/cron.daily/tomcat_restart` already does the Tomcat restart and
+  repairing it would have added a redundant restart plus a needless ~10s
+  connect gap.
+- 21 "Render timeout" warnings today were all inside the nightly Tomcat restart
+  window (03:17). Benign; recorded so nobody chases them.
 
 ## 2026-08-28
 - **Resilience follow-ups + triage backlog cleared** (board: "continue and make
