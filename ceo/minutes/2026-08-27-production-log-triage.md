@@ -53,8 +53,8 @@ Nothing listened for socket errors. `httpx.js` owns the raw socket until it
 hands it to the http or https server, and a client that hangs up before
 finishing its first write — an abandoned TLS handshake, a scanner moving on —
 makes that socket emit `'error'`. Node throws an `'error'` event with no
-listener, and one dead worker calls `process.exit(42)`, so a single reset took
-the whole site down.
+listener, and one dead worker calls `process.exit(42)`, so a single reset
+restarted the whole service.
 
 Fixed at the demultiplexer, on all three listeners, and in the proxy's error
 handler (which always replied with `writeHead` — that throws for WebSocket

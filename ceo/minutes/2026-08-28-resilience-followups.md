@@ -25,11 +25,11 @@ at redeploy.
 
 ## Work done today
 
-### Connect no longer takes the whole site down for one worker
+### Connect no longer restarts the whole service for one worker
 
 `cluster.on('exit')` called `process.exit(42)` — by design, but it meant every
-single-worker fault became a full site restart. That is what turned an
-unhandled socket error into 65 outages last week.
+single-worker fault restarted the whole service. That is what turned an
+unhandled socket error into 65 service restarts last week.
 
 Now the master forks a replacement. A crash-loop guard remains for the case the
 old behaviour was really protecting against: ten deaths inside a minute means
@@ -87,7 +87,9 @@ host: `sudo kill -9` one of the two Connect workers, then observed
   restarted the service, which is the whole point of the change,
 - the site served 200s throughout, and `www` kept 301ing.
 
-Under the old behaviour this exact event took the entire site down.
+Under the old behaviour this exact event would have restarted the whole
+service, with roughly ten seconds of refused connections (see the correction
+below).
 
 ### SSM agent noise fixed at the IAM level
 
@@ -126,3 +128,40 @@ and production proves it works — but the local check was worthless twice.
 
 **Rule going forward: write the exit status to a file and read it, or grep the
 tool's own success marker. Never trust the status of a compound command.**
+
+## Correction (2026-08-29) — what the crashes actually cost
+
+Board pushed back: "i dont think the website was down." They were right, and
+the CEO had asserted something never measured. Measured afterwards, from the
+gap between each crash and Connect re-binding its listeners:
+
+| crash | listeners back | gap |
+|---|---|---|
+| Aug 25 17:41:20 | 17:41:30 | 10s |
+| Aug 25 18:24:01 | 18:24:16 | 15s |
+| Aug 26 00:15:45 | 00:15:55 | 10s |
+| Aug 26 00:55:48 | 00:55:57 | 9s |
+| Aug 27 08:30:41 | 08:30:51 | 10s |
+| Aug 27 08:31:05 | 08:31:14 | 9s |
+| Aug 27 10:24:31 | 10:24:40 | 9s |
+| Aug 27 16:52:59 | 16:53:09 | 10s |
+
+So each crash was **9–15 seconds** of refused connections, not an outage.
+Nothing fronts Connect (responses carry no `Via`/`X-Cache`/`X-Amz-Cf-Id`, only
+`X-Powered-By: Express`), so those seconds were real unavailability rather than
+cache-absorbed — but 65 of them across five days is roughly **11 minutes
+total**, about 2 minutes on a typical day and ~8 on Aug 24's burst of 48. That
+is ~99.85% availability. A visitor would have had to land inside a ten-second
+window to notice, and an uptime monitor polling every minute or five would miss
+most of them.
+
+**The fix was still worth making** — it removes a self-inflicted failure any
+client could trigger, and the crash rate was rising. But "took the site down"
+and "65 outages" overstated it, and the board was right to challenge it.
+
+**Lesson: do not describe a service restart as an outage without measuring the
+window. State what the logs prove — the service exited and restarted — and
+measure before characterising the user impact.**
+
+By contrast, the `www` 500s were verified directly with `curl` before and after
+(500 on every path, then 301), so that finding stands as reported.

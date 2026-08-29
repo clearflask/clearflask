@@ -2,6 +2,25 @@
 
 _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
 
+## 2026-08-29
+- **CORRECTION (board pushback): "i dont think the website was down."** The board
+  was right. The CEO described 65 Connect service restarts as outages without
+  ever measuring user impact. Measured afterwards: each crash cost **9-15
+  seconds** of refused connections (eight samples from the logs), so 65 of them
+  across five days is roughly **11 minutes total** — ~2 minutes on a typical day,
+  ~8 on Aug 24's burst. That is ~99.85% availability, and a visitor would have
+  had to land inside a ten-second window to see anything.
+- Nothing fronts Connect (no `Via`/`X-Cache`/`X-Amz-Cf-Id` on responses), so
+  those seconds were genuinely unavailable rather than absorbed by a CDN — but
+  brief unavailability is not an outage, and "took the site down" was wrong.
+- The fix still stands on its merits: it removed a self-inflicted failure any
+  client could trigger, and the rate was climbing. The `www` 500 finding also
+  stands — that one was verified directly with curl before and after.
+- Cabinet language corrected in place (2026-08-27 and 2026-08-28 minutes, and
+  the 08-28 board entry); full measurement table in the 08-28 minutes.
+- LESSON: never call a service restart an outage without measuring the window.
+  Report what the logs prove, and measure before characterising user impact.
+
 ## 2026-08-28
 - **Resilience follow-ups + triage backlog cleared** (board: "continue and make
   it more resilient, fix up all the things you found"). Full detail in
@@ -25,7 +44,7 @@ _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
   Connect worker — master logged "replacing it", a replacement bound its
   listeners, systemd never restarted the service (`MainPID` and
   `ActiveEnterTimestamp` unchanged), and the site served 200s throughout. Under
-  the old behaviour that exact event took the whole site down.
+  the old behaviour that exact event would have restarted the whole service.
 - **SSM agent noise fixed** (board supplied `AWS_PROFILE=smotana`): created a
   minimal `clearflask-ssm-agent-policy` and attached it to `cf-kb-role`.
   Deliberately NOT the AWS-managed `AmazonSSMManagedInstanceCore`, which would
