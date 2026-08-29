@@ -71,6 +71,11 @@ class PostStatus extends Component<Props & RouteComponentProps & WithStyles<type
     }
 
     this.dataPromise = this.fetchData(props, serverPromise);
+    // Claim the rejection here too, rather than relying on a later render to do
+    // it: the promise exists from this point on whether or not anything goes on
+    // to consume it, and "Permission denied" for a post the viewer cannot read
+    // is an ordinary outcome that must not be able to end the process.
+    this.dataPromise.catch(() => { });
     if (windowIso.isSsr && ssrWait) windowIso.awaitPromises.push(this.dataPromise);
   }
 

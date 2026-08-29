@@ -38,6 +38,13 @@ class Promised<T> extends React.Component<Props<T>, State<T>> {
             val: undefined,
             error,
           }));
+      } else {
+        // Server-side there is no second render to update, so there is nothing
+        // to subscribe for — but the rejection still has to be claimed. Node
+        // ends the process over a rejection nobody listened for, so without
+        // this a post the viewer may not read takes down the worker rendering
+        // it, along with every other request that worker is serving.
+        promiseCurrent.catch(() => { });
       }
     }
 
