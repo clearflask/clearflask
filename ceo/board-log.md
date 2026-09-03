@@ -2,6 +2,68 @@
 
 _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
 
+## 2026-08-29 (later — churn, Canny, SEO)
+- Board: "figure out what to do next", then "do it in parallel, post mortem, seo
+  alts, p2 — but for feature work you need to get my sign off", and on churn
+  "check what those are using now and see why they switched and who they
+  switched to." Minutes: `minutes/2026-08-29-churn-canny-and-seo.md`.
+- **The churn assumption was wrong. Nobody left for a competitor.** Of 12 dead
+  custom domains, one migrated (snow-track.de → **Released**, releasedhub.com)
+  and one was never churn at all (intune-manager.com consolidated into
+  robopack.com, still a live customer). The other ten abandoned feedback boards
+  entirely — **nine never repointed their DNS**, the signature of walking away
+  rather than switching. Every parent company but one still trades; none runs a
+  feedback board today. Report: `reports/churn-post-mortem-2026-08-29.md`.
+- The failure mode is **boards dying of silence**, not missing features. Every
+  churned account was a custom-domain user, and the cheapest plan unlocking a
+  custom domain is the **$6/mo Cloud Starter** — the tier `strategy.md` already
+  says to kill. This promotes P4 pricing and raises activation above AI.
+- **gettippedoff.com still embeds our feedback button** on its live homepage,
+  pointing at a board that no longer exists. Warmest win-back on the list.
+- **Canny gives its AI away free on every tier** — Autopilot includes dedupe,
+  triage, capture, smart replies, summaries at $0, no published cap. Verified on
+  canny.io and cross-checked against four independent pricing write-ups. **This
+  breaks the P2 spec**, which proposed gating dedupe behind Business tier.
+  Report: `reports/canny-competitive-2026-08-29.md`.
+- Canny's real meter is **tracked users** — anyone who posts, votes or comments —
+  free to 25, then ~$19, then $79/mo. It charges for engagement, so a board that
+  works costs more. **We do not meter users at all.** That is a sharper and truer
+  claim than AI parity, and it strengthens as a customer succeeds.
+- **SEO alternative pages shipped** (code complete, NOT pushed — see ask below):
+  `/canny-alternative`, `/uservoice-alternative`, `/fider-alternative`, linked
+  from a new footer dropdown because the marketing site has **no sitemap** and
+  nothing else would point at them. Verified: typecheck 0 errors in `src/`,
+  production build `Compiled successfully` with the code-split chunk emitted.
+- Also corrected: the public compare page advertised ClearFlask at "$10/$100 per
+  tracked user" — neither our price nor our pricing model. Now the live flat
+  $6/$29 with no metering, and Canny's tiers set to the verified figures.
+- **CORRECTION (board pushback): "read our existing competitors page, it lists
+  all of the details on what each one is good at."** The CEO drafted the
+  alternative pages from external research without reading `Competitors.tsx` —
+  our own maintained 30+ platform comparison. Two claims were **wrong** (we said
+  Fider has no whitelabel; our own table shows it supports custom domain, colour,
+  CSS and removing "Powered by"), and the pages badly **under-sold us**: 7
+  content types vs Canny's 3, **fastest page load of all 13 platforms measured**
+  (2.6s LCP vs Canny 8.2s, UserVoice 11.0s), and credit/crowd-funding
+  prioritisation no competitor has. The honest weakness is also sharper than
+  assumed — Canny has ~13 integrations to our three, plus segmentation. All
+  rewritten from our own data, with `Competitors.tsx` named in-code as the source
+  of truth and every page linking to `/product/compare`.
+- LESSON: check our own cabinet and codebase before reaching for external
+  research. The best competitive data we had was already written down, was more
+  accurate than what the web returned, and would have prevented two false claims
+  going onto a public page.
+- LESSON (again, and it caught a false pass this session): `REAL_EXIT` written to
+  the log is the only trustworthy build result. A background job's own exit code
+  reported success while pnpm had aborted before webpack ever ran.
+- BOARD ASKS: (1) **review the competitor copy before it is deployed** — it makes
+  factual claims about named companies on our public site, so the CEO has left it
+  uncommitted pending sign-off; (2) **re-aim P2** — do not gate dedupe, keep the
+  digest, move the headline to ingestion; (3) **Stripe MRR + churn timeline**,
+  still the biggest blind spot; (4) retire the $6 Starter tier?; (5) win back
+  gettippedoff.com (CEO drafts, board sends); (6) the three July 18 outreach
+  items and Search Console are still open after six weeks.
+
 ## 2026-08-29
 - **CORRECTION (board pushback): "i dont think the website was down."** The board
   was right. The CEO described 65 Connect service restarts as outages without

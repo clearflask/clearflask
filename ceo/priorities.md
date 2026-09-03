@@ -99,7 +99,14 @@ and `reports/packaging-audit-2026-07-02.md`). Executing in this order:
 - [ ] DO Marketplace Packer image (after the above).
 
 ## P2 — AI dedupe + weekly digest, then relaunch
-Status: IN PROGRESS (spec drafted 2026-07-13).
+Status: SPEC NEEDS RE-AIM (2026-08-29) — BLOCKED(board sign-off on feature work).
+**Canny gives its AI away free on every tier**, dedupe included
+(`reports/canny-competitive-2026-08-29.md`). The spec's plan to gate dedupe
+behind Business tier is therefore backwards. Proposed re-aim: dedupe is table
+stakes (do not gate it), keep the digest half (cheap, ~70% built, pulls
+quiet-board owners back), and move the headline to **ingestion** — turning
+support conversations into feedback is where Canny's actual moat is. Board must
+sign off before any implementation.
 - [x] Audit LangChain4j usage + post merging (2026-07-13). Big findings: post
       merging is FULLY BUILT (API+model+admin UI, not broken); lexical
       similar-posts already suggests duplicates at post-create; a weekly digest
@@ -115,15 +122,38 @@ Status: IN PROGRESS (spec drafted 2026-07-13).
 - [ ] Relaunch: Product Hunt + HN "Show HN" draft for board review.
 
 ## P3 — Distribution basics
-Status: TODO.
-- [ ] SEO comparison pages: "Canny alternative", "UserVoice alternative",
-      "Fider vs ClearFlask", "Featurebase alternative" on clearflask.com.
+Status: IN PROGRESS.
+- [x] SEO alternative pages shipped 2026-08-29 — `src/site/Alternatives.tsx`,
+      routed at `/canny-alternative`, `/uservoice-alternative`,
+      `/fider-alternative`, linked from a new "Alternatives" footer dropdown
+      (there is **no sitemap for the marketing site**, so footer links are the
+      only crawl path). Each page carries a verified comparison table and an
+      honest paragraph on what the competitor does better. Also corrected the
+      public compare page, which advertised ClearFlask at a "$10/$100 per tracked
+      user" price that is neither our price nor our pricing model.
+- [ ] Featurebase / Frill / UserJot alternative pages — need pricing verified
+      first (not yet researched).
+- [ ] Canny's per-user overage rates beyond each tier are unpublished; the
+      compare page's extrapolation past a tier is still an estimate, flagged
+      in-code. Verify or drop the extrapolation.
+- [ ] Consider a real sitemap.xml for the marketing site.
 - [ ] G2 + Capterra listings (BOARD: account signup).
 - [ ] Finish Slack integration (plan: `plans/slack-integration-plan.md`).
 - [ ] Jira integration next (`plans/jira-integration-exploration.md`).
 
 ## P4 — Pricing restructure
-Status: TODO.
+Status: TODO — but the churn post-mortem promoted this. **Every churned
+custom-domain customer was on a plan reachable from the $6/mo Cloud Starter**,
+the exact tier strategy says to kill (`reports/churn-post-mortem-2026-08-29.md`).
+- [x] Live Stripe catalogue read (`StripeProvisioner.PLAN_SPECS`): Cloud Starter
+      $6/mo, Cloud $29/mo, Cloud Pro $490/yr, Self-host $9/mo · $720/yr, plus
+      variable Sponsor/Business and two grandfathered prices.
+- [ ] BOARD: Stripe MRR + churn timeline. The access logs give churn *identity*
+      but not dates or dollars, so the churn **rate** is still unknown and this
+      decision cannot be made without it.
+- [ ] BOARD: decide whether to retire the $6 Cloud Starter tier.
+- [ ] Lead with "no tracked-user meter" — the sharpest true differentiator
+      against Canny, who charge per person who votes or comments.
 - [ ] Audit current live Stripe plans vs target shape:
       Free (1 project, branded) → ~$29 Growth → ~$99 Business (SSO/whitelabel/AI).
 - [ ] Define open-core boundary for self-host paid features.
