@@ -65,6 +65,14 @@ const LandingCompare = loadable(() => import(/* webpackChunkName: "LandingCompar
 const LandingEmbedFeedbackPage = loadable<any, any>(() => import(/* webpackChunkName: "LandingEmbedFeedbackPage" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingEmbedFeedbackPage, fallback: (<Loading />) });
 const LandingOpenSource = loadable(() => import(/* webpackChunkName: "LandingOpenSource" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingOpenSource, fallback: (<Loading />) });
 const LandingCompany = loadable(() => import(/* webpackChunkName: "LandingCompany" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingCompany, fallback: (<Loading />) });
+const LandingAlternative = loadable<{ alternativeId: string }, any>(() => import(/* webpackChunkName: "LandingAlternative" */'./Alternatives').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingAlternative, fallback: (<Loading />) });
+
+/** Keep in sync with the ids in Alternatives.tsx and the route pattern below. */
+const AlternativeTitles: { [alternativeId: string]: string } = {
+  canny: 'Canny Alternative',
+  uservoice: 'UserVoice Alternative',
+  fider: 'Fider Alternative',
+};
 const LandingPromo = loadable(() => import(/* webpackChunkName: "LandingPromo" */'./LandingPages').then(importSuccess).catch(importFailed), { resolveComponent: cmpts => cmpts.LandingPromo, fallback: (<Loading />) });
 
 const styles = (theme: Theme) => createStyles({
@@ -214,6 +222,17 @@ class Site extends Component<ConnectProps & WithTranslation<'site'> & RouteCompo
     const bottomNavigation: Array<MenuButton | MenuDropdown> = [
       ...menuItemsLeft,
       {
+        // Footer links are how the alternative pages get crawled — there is no
+        // sitemap for the marketing site, so nothing else points at them.
+        type: 'dropdown', title: 'Alternatives', items: [
+          { type: 'button', link: '/product/compare', title: this.props.t('competing-products') },
+          { type: 'divider' },
+          { type: 'button', link: '/canny-alternative', title: 'Canny alternative' },
+          { type: 'button', link: '/uservoice-alternative', title: 'UserVoice alternative' },
+          { type: 'button', link: '/fider-alternative', title: 'Fider alternative' },
+        ]
+      },
+      {
         type: 'dropdown', title: `© ${this.props.t('smotana')}`, items: [
           { type: 'button', link: 'https://smotana.com', linkIsExternal: true, title: 'Smotana.com' },
           { type: 'button', link: '/contact', title: this.props.t('contact') },
@@ -335,6 +354,21 @@ class Site extends Component<ConnectProps & WithTranslation<'site'> & RouteCompo
             <Route exact path='/product/compare'>
               <SetTitle title='30+ Customer Feedback Tools comparison' />
               <LandingCompare />
+            </Route>
+            <Route exact path='/:alternativeId(canny|uservoice|fider)-alternative'>
+              {routeProps => {
+                // Titles live here rather than in Alternatives.tsx so the route can set
+                // the page title without eagerly pulling that chunk into the main bundle.
+                const alternativeId = routeProps.match?.params['alternativeId'];
+                const title = alternativeId && AlternativeTitles[alternativeId];
+                if (!title) return null;
+                return (
+                  <>
+                    <SetTitle title={title} />
+                    <LandingAlternative alternativeId={alternativeId} />
+                  </>
+                );
+              }}
             </Route>
             <Route exact path='/product/scale-with-us'>
               <SetTitle title='Scale with us' />

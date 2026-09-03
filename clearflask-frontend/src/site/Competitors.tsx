@@ -266,9 +266,12 @@ const Platforms: { [platformId: string]: Platform } = {
     mobile: MobileClearFlaskImg,
     pricing: {
       url: 'https://clearflask.com/pricing',
+      // Flat plans with no per-user metering, matching the live Stripe catalogue
+      // (StripeProvisioner.PLAN_SPECS): Cloud Starter $6/mo and Cloud $29/mo.
+      // Deliberately no baseUsers/unitPrice — the price does not move with usage.
       plans: [
-        { basePrice: 10, baseUsers: 50 / percTotalUsersAreTracked, unitPrice: 10, unitUsers: 50 / percTotalUsersAreTracked },
-        { basePrice: 100, baseUsers: 500 / percTotalUsersAreTracked, unitPrice: 50, unitUsers: 500 / percTotalUsersAreTracked },
+        { basePrice: 6 },
+        { basePrice: 29 },
       ],
     },
   },
@@ -295,9 +298,13 @@ const Platforms: { [platformId: string]: Platform } = {
     mobile: MobileCannyImg,
     pricing: {
       url: 'https://canny.io/pricing',
+      // Verified 2026-08-29 against canny.io/pricing: free up to 25 tracked users,
+      // Starter ~$19/mo and Pro $79/mo (both billed annually), Business custom.
+      // The per-user overage rates beyond each tier are not published, so the
+      // unit scaling below is an estimate — see ceo/reports/canny-competitive-2026-08-29.md.
       plans: [
-        { basePrice: 50, baseUsers: 100 / percTotalUsersAreTracked, unitPrice: 20, unitUsers: 100 / percTotalUsersAreTracked },
-        { basePrice: 200, baseUsers: 1000 / percTotalUsersAreTracked, unitPrice: 100, unitUsers: 1000 / percTotalUsersAreTracked },
+        { basePrice: 19, baseUsers: 25 / percTotalUsersAreTracked, unitPrice: 20, unitUsers: 100 / percTotalUsersAreTracked },
+        { basePrice: 79, baseUsers: 100 / percTotalUsersAreTracked, unitPrice: 100, unitUsers: 1000 / percTotalUsersAreTracked },
       ],
     },
   },
