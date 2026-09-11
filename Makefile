@@ -107,12 +107,24 @@ release-github-release:
 		-DgithubReleaseVersion=\$${parsedVersion.majorVersion}.\$${parsedVersion.minorVersion}.\$${parsedVersion.incrementalVersion} \
 		-Dgithub.draft=true --non-recursive github-release:release
 
+# Hosts running the single-host stack, found by a dedicated tag rather than the
+# display Name tag so renaming an instance cannot silently change the target set.
+# Queried with --filters directly: handing an empty id list to --instance-ids
+# makes describe-instances return every instance in the account, which turns a
+# tag that matches nothing into a deploy against unrelated servers.
+SINGLEHOST_TAG := cf-deploy
+SINGLEHOST_TAG_VALUE := singlehost
+SINGLEHOST_HOSTS = $(shell aws ec2 describe-instances --no-paginate --output text \
+		--filters 'Name=tag:$(SINGLEHOST_TAG),Values=$(SINGLEHOST_TAG_VALUE)' 'Name=instance-state-name,Values=running' \
+		--query "Reservations[].Instances[].PublicDnsName")
+ASSERT_SINGLEHOST_HOSTS = test -n "$(strip $(SINGLEHOST_HOSTS))" \
+		|| { echo "ERROR: no running instance tagged $(SINGLEHOST_TAG)=$(SINGLEHOST_TAG_VALUE); refusing to deploy"; exit 1; }
+
 deploy-singlehost:
+	@$(ASSERT_SINGLEHOST_HOSTS)
 	$(eval TIMESTAMP := $(shell date +%Y%m%d%H%M%S))
 	make $(foreach server, \
-		$(shell aws ec2 describe-instances --no-paginate --output text \
-			--instance-ids $(shell aws ec2 describe-instances --filters 'Name=tag:Name,Values=cf-kb' --output text --query 'Reservations[*].Instances[*].InstanceId') \
-			--query "Reservations[].Instances[].{Host:PublicDnsName}"), \
+		$(SINGLEHOST_HOSTS), \
 		deploy-singlehost-$(server) )
 deploy-singlehost-%: get-project-version
 	echo "Deploying to $*"
@@ -123,10 +135,9 @@ deploy-singlehost-%: get-project-version
 	ssh $* "sudo service connect stop && sudo rm -fr /srv/clearflask-connect/* && sudo tar -xzf /home/ec2-user/clearflask-frontend-0.1-connect.tar.gz -C /srv/clearflask-connect && sudo chmod go-rwx -R /srv/clearflask-connect && sudo chown connect:connect -R /srv/clearflask-connect && sudo service connect start"
 
 deploy-connect-singlehost:
+	@$(ASSERT_SINGLEHOST_HOSTS)
 	make $(foreach server, \
-		$(shell aws ec2 describe-instances --no-paginate --output text \
-			--instance-ids $(shell aws ec2 describe-instances --filters 'Name=tag:Name,Values=cf-kb' --output text --query 'Reservations[*].Instances[*].InstanceId') \
-			--query "Reservations[].Instances[].{Host:PublicDnsName}"), \
+		$(SINGLEHOST_HOSTS), \
 		deploy-singlehost-$(server) )
 deploy-connect-singlehost-%: get-project-version
 	echo "Deploying to $*"
@@ -134,10 +145,9 @@ deploy-connect-singlehost-%: get-project-version
 	ssh $* "sudo service connect stop && sudo rm -fr /srv/clearflask-connect/* && sudo tar -xzf /home/ec2-user/clearflask-frontend-0.1-connect.tar.gz -C /srv/clearflask-connect && sudo chmod go-rwx -R /srv/clearflask-connect && sudo chown connect:connect -R /srv/clearflask-connect && sudo service connect start"
 
 deploy-server-singlehost:
+	@$(ASSERT_SINGLEHOST_HOSTS)
 	make $(foreach server, \
-		$(shell aws ec2 describe-instances --no-paginate --output text \
-			--instance-ids $(shell aws ec2 describe-instances --filters 'Name=tag:Name,Values=cf-kb' --output text --query 'Reservations[*].Instances[*].InstanceId') \
-			--query "Reservations[].Instances[].{Host:PublicDnsName}"), \
+		$(SINGLEHOST_HOSTS), \
 		deploy-singlehost-$(server) )
 deploy-server-singlehost-%: get-project-version
 	echo "Deploying to $*"
@@ -227,9 +237,9 @@ autoscale-killbill-suspend:
 autoscale-killbill-resume:
 	aws autoscaling resume-processes --auto-scaling-group-name killbill-webserver --scaling-processes Launch Terminate
 
-list-instances-cf-kb:
+list-instances-singlehost:
 	aws ec2 describe-instances --no-paginate --output table \
-		--instance-ids $(shell aws ec2 describe-instances --filters 'Name=tag:Name,Values=cf-kb' --output text --query 'Reservations[*].Instances[*].InstanceId') \
+		--filters 'Name=tag:$(SINGLEHOST_TAG),Values=$(SINGLEHOST_TAG_VALUE)' \
 		--query "Reservations[].Instances[].{Host:PublicDnsName,Id:InstanceId,AZ:Placement.AvailabilityZone,Type:InstanceType,State:State.Name,Name:Tags[?Key=='Name']|[0].Value}"
 
 list-instances-clearflask:
