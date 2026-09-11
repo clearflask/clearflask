@@ -196,7 +196,10 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     public IdeaCommentSearchResponse ideaCommentSearch(String projectId, String ideaId, IdeaCommentSearch ideaCommentSearch) {
         boolean isParent = ideaCommentSearch.getParentCommentId() != null;
         boolean isInitial = isParent && (ideaCommentSearch.getExcludeChildrenCommentIds() == null || ideaCommentSearch.getExcludeChildrenCommentIds().isEmpty());
-        IdeaStore.IdeaModel idea = ideaStore.getIdea(projectId, ideaId).get();
+        IdeaStore.IdeaModel idea = ideaStore.getIdea(projectId, ideaId)
+                // Filter out private posts for non-admin users
+                .filter(ideaModel -> isModOrAdmin() || !IdeaVisibility.PRIVATE.equals(ideaModel.getVisibility()))
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Post not found"));
         ImmutableSet<CommentModel> comments = commentStore.getCommentsForPost(
                 projectId,
                 ideaId,
@@ -255,7 +258,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 Optional.ofNullable(Strings.emptyToNull(cursor)));
         return new CommentSearchResponse(
                 response.getCursorOpt().orElse(null),
-                toCommentWithVotes(projectId, response.getComments()));
+                toCommentWithVotes(projectId, filterCommentsOnPrivatePosts(projectId, response.getComments())));
     }
 
     @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE, Role.PROJECT_MODERATOR_ACTIVE})
@@ -307,6 +310,29 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
                 ResourceType.COMMENT,
                 subscriptionListener.getEventType().name(),
                 subscriptionListener.getListenerUrl()));
+    }
+
+    private boolean isModOrAdmin() {
+        return securityContext.isUserInRole(Role.PROJECT_ADMIN)
+                || securityContext.isUserInRole(Role.PROJECT_MODERATOR);
+    }
+
+    /**
+     * Drops comments belonging to private posts for non-admin users.
+     */
+    private ImmutableList<CommentModel> filterCommentsOnPrivatePosts(String projectId, ImmutableCollection<CommentModel> comments) {
+        if (comments.isEmpty() || isModOrAdmin()) {
+            return ImmutableList.copyOf(comments);
+        }
+        ImmutableMap<String, IdeaStore.IdeaModel> ideas = ideaStore.getIdeas(projectId, comments.stream()
+                .map(CommentModel::getIdeaId)
+                .collect(ImmutableSet.toImmutableSet()));
+        return comments.stream()
+                // A post that cannot be fetched is also filtered out, fail closed
+                .filter(comment -> Optional.ofNullable(ideas.get(comment.getIdeaId()))
+                        .filter(idea -> !IdeaVisibility.PRIVATE.equals(idea.getVisibility()))
+                        .isPresent())
+                .collect(ImmutableList.toImmutableList());
     }
 
     private ImmutableList<CommentWithVote> toCommentWithVotes(String projectId, ImmutableCollection<CommentModel> comments) {
