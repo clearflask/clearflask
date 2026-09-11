@@ -2,6 +2,29 @@ apiVersion: v1
 entries:
   clearflask:
   - apiVersion: v2
+    appVersion: 2.6.4
+    created: "2026-09-11T16:49:05.498690073Z"
+    description: Open-source feedback management platform (alternative to Canny/UserVoice)
+    digest: 032b8837a90cd4964925a8927e58a81892f325ab060a9a01645a8e347bf9aef8
+    home: https://clearflask.com
+    keywords:
+    - clearflask
+    - feedback
+    - roadmap
+    - feature-requests
+    - customer-feedback
+    - user-feedback
+    maintainers:
+    - email: matus@smotana.com
+      name: Matus Faro
+    name: clearflask
+    sources:
+    - https://github.com/clearflask/clearflask
+    type: application
+    urls:
+    - https://github.com/clearflask/clearflask/releases/download/2.6.4/clearflask-2.6.4.tgz
+    version: 2.6.4
+  - apiVersion: v2
     appVersion: 2.6.3
     created: "2026-07-06T20:50:43.774709136Z"
     description: Open-source feedback management platform (alternative to Canny/UserVoice)
@@ -186,6 +209,30 @@ entries:
     - https://github.com/clearflask/clearflask/releases/download/clearflask-0.1.1/clearflask-0.1.1.tgz
     version: 0.1.1
   clearflask-dependencies:
+  - apiVersion: v2
+    appVersion: "1.0"
+    created: "2026-09-11T16:49:05.499159977Z"
+    description: Optional infrastructure dependencies for ClearFlask (MySQL, LocalStack,
+      ElasticSearch)
+    digest: 9ee1ffb66313831feb5bc2ae7ab452255ca7fa3ebf6d28cb70cea68723ce1fd9
+    home: https://clearflask.com
+    keywords:
+    - clearflask
+    - mysql
+    - localstack
+    - elasticsearch
+    - dynamodb
+    - s3
+    maintainers:
+    - email: matus@smotana.com
+      name: Matus Faro
+    name: clearflask-dependencies
+    sources:
+    - https://github.com/clearflask/clearflask
+    type: application
+    urls:
+    - https://github.com/clearflask/clearflask/releases/download/2.6.4/clearflask-dependencies-2.6.4.tgz
+    version: 2.6.4
   - apiVersion: v2
     appVersion: "1.0"
     created: "2026-07-06T20:50:43.775694501Z"
@@ -378,4 +425,4 @@ entries:
     urls:
     - https://github.com/clearflask/clearflask/releases/download/clearflask-dependencies-0.1.1/clearflask-dependencies-0.1.1.tgz
     version: 0.1.1
-generated: "2026-07-06T20:50:43.773111305Z"
+generated: "2026-09-11T16:49:05.497289494Z"
