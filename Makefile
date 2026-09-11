@@ -138,7 +138,7 @@ deploy-connect-singlehost:
 	@$(ASSERT_SINGLEHOST_HOSTS)
 	make $(foreach server, \
 		$(SINGLEHOST_HOSTS), \
-		deploy-singlehost-$(server) )
+		deploy-connect-singlehost-$(server) )
 deploy-connect-singlehost-%: get-project-version
 	echo "Deploying to $*"
 	scp ./clearflask-frontend/target/clearflask-frontend-$(PROJECT_VERSION)-connect.tar.gz $*:/home/ec2-user/clearflask-frontend-0.1-connect.tar.gz
@@ -148,7 +148,7 @@ deploy-server-singlehost:
 	@$(ASSERT_SINGLEHOST_HOSTS)
 	make $(foreach server, \
 		$(SINGLEHOST_HOSTS), \
-		deploy-singlehost-$(server) )
+		deploy-server-singlehost-$(server) )
 deploy-server-singlehost-%: get-project-version
 	echo "Deploying to $*"
 	scp ./clearflask-server/target/clearflask-server-$(PROJECT_VERSION).war $*:/home/ec2-user/clearflask-server-0.1.war
