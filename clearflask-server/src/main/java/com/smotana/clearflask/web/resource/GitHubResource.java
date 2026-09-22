@@ -89,15 +89,14 @@ public class GitHubResource {
                 Installation installation = parseEventPayload(GitHub.offline(), payload, Installation.class);
                 log.info("Detected installation {}, installationId {}",
                         installation.getAction(), installation.getInstallation().getId());
-                List<GHRepository> repositories;
-                try {
-                    repositories = installation.getRepositories();
-                } catch (NullPointerException ex) {
-                    break; // Silly GitHub library has an NPE in certain cases
+                // Read the repositories straight off the payload. getRepositories() resolves each
+                // one through the client, and this payload is parsed offline, so it would throw.
+                List<Installation.Repository> repositories = installation.getRawRepositories();
+                if (repositories != null) {
+                    repositories.forEach(repository -> log.info(
+                            "Detected repository {} as part of installation, name {} repoId {} installationId {}",
+                            installation.getAction(), repository.getFullName(), repository.getId(), installation.getInstallation().getId()));
                 }
-                repositories.forEach(ghRepository -> log.info(
-                        "Detected repository {} as part of installation, name {} repoId {} installationId {}",
-                        installation.getAction(), ghRepository.getFullName(), ghRepository.getId(), installation.getInstallation().getId()));
                 break;
             case "installation_repositories":
                 InstallationRepositories installationRepositories = parseEventPayload(GitHub.offline(), payload, InstallationRepositories.class);

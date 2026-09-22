@@ -15,7 +15,10 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.*;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -54,6 +57,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 import org.kohsuke.github.*;
 import org.kohsuke.github.GHEventPayload.Issue;
 import org.kohsuke.github.GitHub;
@@ -62,7 +66,6 @@ import org.kohsuke.github.GHEventPayload.IssueComment;
 import javax.ws.rs.core.Response;
 import java.awt.*;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -172,28 +175,37 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                     new BasicNameValuePair("redirect_uri", "https://" + configApp.domain() + "/dashboard/settings/project/github"),
                     new BasicNameValuePair("code", code)),
                     Charsets.UTF_8));
-            DynamoElasticUserStore.OAuthAuthorizationResponse oAuthAuthorizationResponse;
+            int authorizeStatus;
+            String authorizeBody;
             try (CloseableHttpResponse res = client.execute(reqAuthorize)) {
-                if (res.getStatusLine().getStatusCode() < 200
-                        || res.getStatusLine().getStatusCode() > 299) {
-                    log.info("GitHub provider failed authorization for repos, url {} response status {}",
-                            reqAuthorize.getURI(), res.getStatusLine().getStatusCode());
-                    throw new ApiException(Response.Status.FORBIDDEN, "Failed to authorize");
-                }
-                try {
-                    oAuthAuthorizationResponse = gson.fromJson(new InputStreamReader(res.getEntity().getContent(), StandardCharsets.UTF_8), DynamoElasticUserStore.OAuthAuthorizationResponse.class);
-                } catch (JsonSyntaxException | JsonIOException ex) {
-                    log.warn("GitHub provider authorization response cannot parse, url {} response status {}",
-                            reqAuthorize.getURI(), res.getStatusLine().getStatusCode(), ex);
-                    throw new ApiException(Response.Status.SERVICE_UNAVAILABLE, "Failed to fetch", ex);
-                }
+                authorizeStatus = res.getStatusLine().getStatusCode();
+                authorizeBody = EntityUtils.toString(res.getEntity(), StandardCharsets.UTF_8);
+            }
+            if (authorizeStatus < 200 || authorizeStatus > 299) {
+                log.info("GitHub provider failed authorization for repos, url {} response status {}",
+                        reqAuthorize.getURI(), authorizeStatus);
+                throw new ApiException(Response.Status.FORBIDDEN, "Failed to authorize");
+            }
+            Optional<String> authorizeErrorOpt = parseOauthError(authorizeBody);
+            if (authorizeErrorOpt.isPresent()) {
+                log.info("GitHub provider rejected authorization code for repos, error {}", authorizeErrorOpt.get());
+                throw new ApiException(Response.Status.FORBIDDEN, "GitHub rejected the authorization: "
+                        + authorizeErrorOpt.get() + " Start linking your repository again.");
+            }
+            DynamoElasticUserStore.OAuthAuthorizationResponse oAuthAuthorizationResponse;
+            try {
+                oAuthAuthorizationResponse = gson.fromJson(authorizeBody, DynamoElasticUserStore.OAuthAuthorizationResponse.class);
+            } catch (JsonSyntaxException | JsonIOException | IllegalArgumentException ex) {
+                log.warn("GitHub provider authorization response cannot parse, url {} response status {}",
+                        reqAuthorize.getURI(), authorizeStatus, ex);
+                throw new ApiException(Response.Status.BAD_GATEWAY, "GitHub returned a response we did not understand, please try again", ex);
             }
             GitHub userClient = gitHubClientProvider.getOauthClient(oAuthAuthorizationResponse.getAccessToken());
             ImmutableMap.Builder<Long, Long> repositoryAndInstallationIdsBuilder = ImmutableMap.builder();
             ImmutableList.Builder<AvailableRepo> availableReposBuilder = ImmutableList.builder();
             for (GHAppInstallation installation : userClient.getMyself().getAppInstallations()) {
                 GitHub installationClient = gitHubClientProvider.getInstallationClient(installation.getId()).getClient();
-                GitHubClientUtil.setRoot(installation, installationClient);
+                installation.setRoot(installationClient);
                 for (GHRepository repository : installation.listRepositories()) {
                     availableReposBuilder.add(new AvailableRepo(
                             installation.getId(),
@@ -206,8 +218,44 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
             }
             authorizeAccountForRepos(accountId, repositoryAndInstallationIdsBuilder.build());
             return new AvailableRepos(availableReposBuilder.build());
+        } catch (ApiException ex) {
+            throw ex;
+        } catch (HttpException ex) {
+            log.warn("GitHub refused a repo listing call for accountId {}, response status {}",
+                    accountId, ex.getResponseCode(), ex);
+            throw new ApiException(Response.Status.FORBIDDEN,
+                    "GitHub refused the request with status " + ex.getResponseCode()
+                            + ". Check the app is still installed on your repository, then link it again.", ex);
         } catch (IOException ex) {
-            throw new ApiException(Response.Status.FORBIDDEN, "Failed to authorize", ex);
+            log.warn("GitHub repo listing could not reach GitHub for accountId {}", accountId, ex);
+            throw new ApiException(Response.Status.BAD_GATEWAY,
+                    "Could not reach GitHub, please try again", ex);
+        } catch (Exception ex) {
+            // This endpoint is admin-only, so the detail is safe to show and saves a support round-trip
+            log.error("GitHub repo listing failed unexpectedly for accountId {}", accountId, ex);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
+                    "Linking GitHub failed unexpectedly (" + ex.getClass().getSimpleName()
+                            + (Strings.isNullOrEmpty(ex.getMessage()) ? "" : ": " + ex.getMessage())
+                            + "). Please report this to support.", ex);
+        }
+    }
+
+    /**
+     * GitHub answers a bad, expired or already used authorization code with HTTP 200 and an error
+     * in the body rather than an error status, so the body has to be inspected to notice it.
+     */
+    private Optional<String> parseOauthError(String responseBody) {
+        try {
+            JsonObject json = JsonParser.parseString(responseBody).getAsJsonObject();
+            if (!json.has("error")) {
+                return Optional.empty();
+            }
+            JsonElement description = json.get("error_description");
+            return Optional.of(description != null && description.isJsonPrimitive()
+                    ? description.getAsString()
+                    : json.get("error").getAsString());
+        } catch (RuntimeException ex) {
+            return Optional.empty();
         }
     }
 
