@@ -15,10 +15,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.*;
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
@@ -44,6 +41,7 @@ import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.util.ColorUtil;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.MarkdownAndQuillUtil;
+import com.smotana.clearflask.util.OAuthUtil;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.resource.GitHubResource;
@@ -186,7 +184,7 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                         reqAuthorize.getURI(), authorizeStatus);
                 throw new ApiException(Response.Status.FORBIDDEN, "Failed to authorize");
             }
-            Optional<String> authorizeErrorOpt = parseOauthError(authorizeBody);
+            Optional<String> authorizeErrorOpt = OAuthUtil.parseError(authorizeBody);
             if (authorizeErrorOpt.isPresent()) {
                 log.info("GitHub provider rejected authorization code for repos, error {}", authorizeErrorOpt.get());
                 throw new ApiException(Response.Status.FORBIDDEN, "GitHub rejected the authorization: "
@@ -237,25 +235,6 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
                     "Linking GitHub failed unexpectedly (" + ex.getClass().getSimpleName()
                             + (Strings.isNullOrEmpty(ex.getMessage()) ? "" : ": " + ex.getMessage())
                             + "). Please report this to support.", ex);
-        }
-    }
-
-    /**
-     * GitHub answers a bad, expired or already used authorization code with HTTP 200 and an error
-     * in the body rather than an error status, so the body has to be inspected to notice it.
-     */
-    private Optional<String> parseOauthError(String responseBody) {
-        try {
-            JsonObject json = JsonParser.parseString(responseBody).getAsJsonObject();
-            if (!json.has("error")) {
-                return Optional.empty();
-            }
-            JsonElement description = json.get("error_description");
-            return Optional.of(description != null && description.isJsonPrimitive()
-                    ? description.getAsString()
-                    : json.get("error").getAsString());
-        } catch (RuntimeException ex) {
-            return Optional.empty();
         }
     }
 

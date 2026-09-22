@@ -6,7 +6,10 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.CharStreams;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import com.jayway.jsonpath.JsonPathException;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
@@ -74,7 +77,7 @@ public class OAuthUtil {
                 }
                 try {
                     oAuthAuthorizationResponse = gson.fromJson(new InputStreamReader(res.getEntity().getContent(), StandardCharsets.UTF_8), DynamoElasticUserStore.OAuthAuthorizationResponse.class);
-                } catch (JsonSyntaxException | JsonIOException ex) {
+                } catch (JsonSyntaxException | JsonIOException | IllegalArgumentException ex) {
                     log.warn("OAuth provider authorization response cannot parse, projectId {} url {} response status {}",
                             projectId, reqAuthorize.getURI(), res.getStatusLine().getStatusCode(), ex);
                     return Optional.empty();
@@ -149,6 +152,26 @@ public class OAuthUtil {
         } catch (IOException ex) {
             log.warn("OAuth provider failed, projectId {}",
                     projectId, ex);
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Some providers, GitHub among them, answer a bad, expired or already used authorization code
+     * with HTTP 200 and an error in the body rather than an error status, so the body has to be
+     * inspected to notice it. Returns the provider's own description of the error, if any.
+     */
+    public static Optional<String> parseError(String responseBody) {
+        try {
+            JsonObject json = JsonParser.parseString(responseBody).getAsJsonObject();
+            if (!json.has("error")) {
+                return Optional.empty();
+            }
+            JsonElement description = json.get("error_description");
+            return Optional.of(description != null && description.isJsonPrimitive()
+                    ? description.getAsString()
+                    : json.get("error").getAsString());
+        } catch (RuntimeException ex) {
             return Optional.empty();
         }
     }

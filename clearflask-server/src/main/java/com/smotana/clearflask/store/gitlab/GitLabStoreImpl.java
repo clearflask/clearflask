@@ -39,6 +39,7 @@ import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.util.ColorUtil;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.MarkdownAndQuillUtil;
+import com.smotana.clearflask.util.OAuthUtil;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.resource.GitLabResource;
@@ -52,6 +53,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 import org.gitlab4j.api.GitLabApi;
 import org.gitlab4j.api.GitLabApiException;
 import org.gitlab4j.api.models.Issue;
@@ -66,7 +68,6 @@ import org.gitlab4j.api.webhook.ReleaseEvent;
 import javax.ws.rs.core.Response;
 import java.awt.*;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -212,16 +213,25 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
                 log.info("GitLab OAuth token exchange successful for account {}: HTTP {} - Response length: {}",
                         accountId, res.getStatusLine().getStatusCode(), responseBody.length());
 
+                Optional<String> authorizeErrorOpt = OAuthUtil.parseError(responseBody);
+                if (authorizeErrorOpt.isPresent()) {
+                    log.warn("GitLab rejected the authorization code, url {} error {}",
+                            reqAuthorize.getURI(), authorizeErrorOpt.get());
+                    throw new ApiException(Response.Status.UNAUTHORIZED, "GitLab rejected the authorization: "
+                            + authorizeErrorOpt.get() + " Please try connecting again.");
+                }
+
                 try {
                     oAuthResponse = gson.fromJson(responseBody, DynamoElasticUserStore.OAuthAuthorizationResponse.class);
                     log.info("Parsed OAuth response - has access_token: {}, has refresh_token: {}, expires_in: {}",
                             !Strings.isNullOrEmpty(oAuthResponse.getAccessToken()),
                             !Strings.isNullOrEmpty(oAuthResponse.getRefreshToken()),
                             oAuthResponse.getExpiresIn());
-                } catch (JsonSyntaxException | JsonIOException ex) {
+                } catch (JsonSyntaxException | JsonIOException | IllegalArgumentException ex) {
                     log.warn("GitLab provider authorization response cannot parse, url {} response status {} body {}",
                             reqAuthorize.getURI(), res.getStatusLine().getStatusCode(), responseBody, ex);
-                    throw new ApiException(Response.Status.SERVICE_UNAVAILABLE, "Failed to parse GitLab response", ex);
+                    throw new ApiException(Response.Status.BAD_GATEWAY,
+                            "GitLab returned a response we did not understand, please try again", ex);
                 }
             }
 
@@ -364,23 +374,35 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
                     Charsets.UTF_8));
 
             DynamoElasticUserStore.OAuthAuthorizationResponse oAuthResponse;
+            int refreshStatus;
+            String refreshBody;
             try (CloseableHttpResponse res = client.execute(reqRefresh)) {
-                if (res.getStatusLine().getStatusCode() < 200
-                        || res.getStatusLine().getStatusCode() > 299) {
-                    log.info("GitLab token refresh failed, url {} response status {}",
-                            reqRefresh.getURI(), res.getStatusLine().getStatusCode());
-                    throw new ApiException(Response.Status.UNAUTHORIZED,
-                            "Failed to refresh GitLab token. Please re-authorize.");
-                }
-                try {
-                    oAuthResponse = gson.fromJson(
-                            new InputStreamReader(res.getEntity().getContent(), StandardCharsets.UTF_8),
-                            DynamoElasticUserStore.OAuthAuthorizationResponse.class);
-                } catch (JsonSyntaxException | JsonIOException ex) {
-                    log.warn("GitLab token refresh response cannot parse, url {} response status {}",
-                            reqRefresh.getURI(), res.getStatusLine().getStatusCode(), ex);
-                    throw new ApiException(Response.Status.SERVICE_UNAVAILABLE, "Failed to parse GitLab response", ex);
-                }
+                refreshStatus = res.getStatusLine().getStatusCode();
+                refreshBody = res.getEntity() != null
+                        ? EntityUtils.toString(res.getEntity(), StandardCharsets.UTF_8)
+                        : "";
+            }
+            if (refreshStatus < 200 || refreshStatus > 299) {
+                log.info("GitLab token refresh failed, url {} response status {}",
+                        reqRefresh.getURI(), refreshStatus);
+                throw new ApiException(Response.Status.UNAUTHORIZED,
+                        "Failed to refresh GitLab token. Please re-authorize.");
+            }
+            Optional<String> refreshErrorOpt = OAuthUtil.parseError(refreshBody);
+            if (refreshErrorOpt.isPresent()) {
+                log.info("GitLab rejected the refresh token, url {} error {}",
+                        reqRefresh.getURI(), refreshErrorOpt.get());
+                throw new ApiException(Response.Status.UNAUTHORIZED,
+                        "GitLab rejected the stored authorization: " + refreshErrorOpt.get()
+                                + " Please re-authorize.");
+            }
+            try {
+                oAuthResponse = gson.fromJson(refreshBody, DynamoElasticUserStore.OAuthAuthorizationResponse.class);
+            } catch (JsonSyntaxException | JsonIOException | IllegalArgumentException ex) {
+                log.warn("GitLab token refresh response cannot parse, url {} response status {}",
+                        reqRefresh.getURI(), refreshStatus, ex);
+                throw new ApiException(Response.Status.BAD_GATEWAY,
+                        "GitLab returned a response we did not understand, please re-authorize.", ex);
             }
 
             // Calculate new expiration time
@@ -405,9 +427,18 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
                     auth.getAccountId(), auth.getGitlabInstanceUrl());
 
             return refreshedAuth;
+        } catch (ApiException ex) {
+            throw ex;
         } catch (IOException ex) {
             log.warn("Failed to refresh GitLab token due to network error", ex);
             throw new ApiException(Response.Status.SERVICE_UNAVAILABLE, "Failed to refresh GitLab token", ex);
+        } catch (Exception ex) {
+            log.error("Unexpected error refreshing GitLab token for account {} instance {}",
+                    auth.getAccountId(), auth.getGitlabInstanceUrl(), ex);
+            throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR,
+                    "Refreshing the GitLab authorization failed unexpectedly (" + ex.getClass().getSimpleName()
+                            + (Strings.isNullOrEmpty(ex.getMessage()) ? "" : ": " + ex.getMessage())
+                            + "). Please re-authorize.", ex);
         }
     }
 
