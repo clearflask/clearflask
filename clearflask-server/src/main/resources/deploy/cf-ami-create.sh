@@ -60,6 +60,54 @@ WantedBy=multi-user.target
 EOF
 sudo systemctl daemon-reload
 sudo systemctl disable connect
+
+# BEGIN connect-watchdog
+# Connect answers 80/443 directly, so if it stops responding the site is down
+# even though systemd still sees a running process. Probe it from outside the
+# process every 30s and restart it after three consecutive failures. A stopped
+# service is left alone: that is a deploy in progress, not a hang.
+sudo tee /usr/local/bin/connect-watchdog <<"EOF"
+#!/bin/bash
+state=/run/connect-watchdog.failures
+code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 -H 'Host: clearflask.com' http://127.0.0.1:44380/robots.txt)
+if [[ "$code" =~ ^(200|301|302)$ ]]; then
+  echo 0 > "$state"
+  exit 0
+fi
+failures=$(( $(cat "$state" 2>/dev/null || echo 0) + 1 ))
+echo "$failures" > "$state"
+logger -t connect-watchdog "connect not answering (http=$code), $failures consecutive failure(s)"
+if (( failures >= 3 )) && systemctl is-active --quiet connect; then
+  logger -t connect-watchdog "restarting connect.service"
+  echo 0 > "$state"
+  systemctl restart connect
+fi
+EOF
+sudo chmod 755 /usr/local/bin/connect-watchdog
+sudo tee /etc/systemd/system/connect-watchdog.service <<"EOF"
+[Unit]
+Description=Restart ClearFlask Connect when it stops answering
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/connect-watchdog
+EOF
+sudo tee /etc/systemd/system/connect-watchdog.timer <<"EOF"
+[Unit]
+Description=Probe ClearFlask Connect every 30s
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=30s
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target
+EOF
+sudo systemctl daemon-reload
+sudo systemctl enable --now connect-watchdog.timer
+# END connect-watchdog
+
 sudo tee /etc/rsyslog.d/00-connect.conf <<"EOF"
 if $programname == 'Connect' then /var/log/clearflask-connect.log
 & ~

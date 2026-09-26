@@ -12,6 +12,10 @@ export interface ConnectConfig {
   connectToken: string;
   acmeDirectoryUrl?: string,
   workerCount: number, // Leave blank to match cores
+  // V8 old-space cap per worker in MB (--max-old-space-size). A worker that
+  // outgrows it aborts and is replaced, instead of dragging the host into swap.
+  // Defaults to a fifth of system memory, between 384 and 1024.
+  workerHeapMb: number,
   apiBasePath: string,
   parentDomain: string,
   publicPath: string;
@@ -26,9 +30,11 @@ export interface ConnectConfig {
   slackClientId?: string;
 }
 
+const MB = 1024 * 1024;
 var connectConfig: ConnectConfig = {
   listenPort: 44380,
   workerCount: os.cpus().length,
+  workerHeapMb: Math.min(1024, Math.max(384, Math.floor(os.totalmem() / MB / 5))),
   apiBasePath: 'http://localhost:8080',
   parentDomain: 'clearflask.com',
   connectToken: 'EMPTY',
@@ -95,6 +101,7 @@ if (process.env.ENV === 'production'
     parentDomain: envString('CLEARFLASK_DOMAIN'),
     apiBasePath: envString('CLEARFLASK_API_BASE_PATH'),
     listenPort: envNumber('CLEARFLASK_LISTEN_PORT'),
+    workerHeapMb: envNumber('CLEARFLASK_WORKER_HEAP_MB'),
     disableAutoFetchCertificate: envBoolean('CLEARFLASK_DISABLE_AUTO_FETCH_CERTIFICATE'),
     forceRedirectHttpToHttps: envBoolean('CLEARFLASK_FORCE_REDIRECT_HTTPS'),
   };

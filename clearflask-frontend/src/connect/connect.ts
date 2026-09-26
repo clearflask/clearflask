@@ -16,6 +16,7 @@ import path from 'path';
 import process from 'process';
 import serveStatic from 'serve-static';
 import tls, {SecureContext} from 'tls';
+import v8 from 'v8';
 import {CertGetOrCreateResponse} from "../api/connect";
 import {getI18n} from '../i18n-ssr';
 import connectConfig from './config';
@@ -323,10 +324,83 @@ function createApp(serverApi) {
 if (!connectConfig.disableAutoFetchCertificate) {
   // Spin up cluster
   if (cluster.isMaster) {
+    // Cap each worker's heap. Without a cap a leaking worker grows until the
+    // kernel swaps the whole host to a standstill and only then OOM-kills it;
+    // the site is unreachable for the hour in between. With one, V8 aborts the
+    // worker the moment it cannot free enough, and the master replaces it.
+    cluster.setupMaster({
+      execArgv: [...process.execArgv, `--max-old-space-size=${connectConfig.workerHeapMb}`],
+    });
+
+    // Liveness: ping every worker over IPC. A worker whose event loop has
+    // stalled — GC thrash near its heap limit, a runaway render — still holds
+    // its share of accepted connections, so every request routed to it hangs.
+    // The process is alive as far as the cluster is concerned, which is why the
+    // exit handler below never fires for it. Kill it and let that handler
+    // replace it. The clock starts at fork, so a worker that never comes up
+    // at all is caught too.
+    const pingIntervalMs = 10 * 1000;
+    const pingTimeoutMs = 60 * 1000;
+    const lastSeen = new Map<number, number>();
+    cluster.on('fork', worker => lastSeen.set(worker.id, Date.now()));
+    cluster.on('exit', worker => lastSeen.delete(worker.id));
+
     // Fork workers
     for (let i = 0; i < Math.max(1, connectConfig.workerCount); i++) {
       cluster.fork();
     }
+
+    setInterval(() => {
+      const now = Date.now();
+      Object.values(cluster.workers || {}).forEach(worker => {
+        if (!worker || worker.isDead() || worker.exitedAfterDisconnect) return;
+        const seen = lastSeen.get(worker.id);
+        if (seen !== undefined && now - seen > pingTimeoutMs) {
+          console.error(`worker ${worker.process.pid} unresponsive for ${Math.round((now - seen) / 1000)}s, killing it`);
+          lastSeen.delete(worker.id);
+          worker.process.kill('SIGKILL');
+          return;
+        }
+        try {
+          worker.send({ type: 'ping' });
+        } catch (e) {
+          // IPC channel already gone; the exit handler takes it from here.
+        }
+      });
+    }, pingIntervalMs);
+
+    // Rotation: a worker whose memory has crept up asks to be recycled before
+    // it hits the cap. Start its replacement first and retire the old worker
+    // only once the new one is listening, so capacity never drops. One
+    // rotation at a time — under a flood every worker would ask at once, and
+    // forking them all simultaneously is its own outage.
+    let rotating = false;
+    const rotate = (worker: cluster.Worker, reason: string) => {
+      if (rotating || worker.isDead() || worker.exitedAfterDisconnect) return;
+      rotating = true;
+      console.warn(`worker ${worker.process.pid} asked to be recycled (${reason}), starting replacement`);
+      const replacement = cluster.fork();
+      const finish = (ok: boolean) => {
+        replacement.removeListener('listening', onListening);
+        replacement.removeListener('exit', onExit);
+        rotating = false;
+        if (!ok) return;
+        console.warn(`worker ${replacement.process.pid} is listening, retiring worker ${worker.process.pid}`);
+        if (!worker.isDead()) worker.disconnect();
+      };
+      const onListening = () => finish(true);
+      const onExit = () => finish(false);
+      replacement.once('listening', onListening);
+      replacement.once('exit', onExit);
+    };
+
+    cluster.on('message', (worker, message) => {
+      if (message?.type === 'pong') {
+        lastSeen.set(worker.id, Date.now());
+      } else if (message?.type === 'recycle') {
+        rotate(worker, message.reason);
+      }
+    });
 
     // Replace a dead worker instead of taking the site down with it. Whatever
     // killed one worker — an unlucky socket, a single bad request — usually has
@@ -421,6 +495,49 @@ if (!connectConfig.disableAutoFetchCertificate) {
     serverHttps.listen(9443, "0.0.0.0", function () {
       console.info("Https on", (serverHttps as any).address?.()?.port);
     });
+
+    if (cluster.isWorker) {
+      process.on('message', message => {
+        if (message?.type === 'ping') process.send?.({ type: 'pong' });
+      });
+
+      // Once the master retires this worker, the servers stop accepting and the
+      // process exits when its last connection closes — but idle keep-alive
+      // sockets and event streams never close on their own. Give in-flight
+      // work a grace period, then go.
+      cluster.worker.on('disconnect', () => {
+        setTimeout(() => process.exit(0), 30 * 1000).unref();
+      });
+
+      // Ask for a rotation when the heap has grown into the top quarter of its
+      // limit on two consecutive samples (one spike of concurrent renders
+      // should not count), or when non-heap memory has ballooned past it.
+      // heap_size_limit reflects --max-old-space-size, or V8's default without it.
+      const heapLimit = v8.getHeapStatistics().heap_size_limit;
+      const recycleHeapAt = heapLimit * 0.75;
+      const recycleRssAt = heapLimit * 1.25;
+      // The master serves one rotation at a time and drops requests that
+      // arrive during another, so keep asking once a minute until retired.
+      const sampleIntervalMs = 15 * 1000;
+      const minAgeMs = 2 * 60 * 1000;
+      const reaskMs = 60 * 1000;
+      const startedAt = Date.now();
+      const toMb = (bytes: number) => Math.round(bytes / 1024 / 1024);
+      let samplesOver = 0;
+      let samples = 0;
+      let lastRecycleRequestAt = 0;
+      setInterval(() => {
+        const now = Date.now();
+        const { heapUsed, rss } = process.memoryUsage();
+        const summary = `heap ${toMb(heapUsed)}MB of ${toMb(heapLimit)}MB, rss ${toMb(rss)}MB`;
+        if (++samples % 40 === 0) console.info(`Worker #${cluster.worker.id} memory: ${summary}`);
+        samplesOver = (heapUsed > recycleHeapAt || rss > recycleRssAt) ? samplesOver + 1 : 0;
+        if (samplesOver >= 2 && now - startedAt > minAgeMs && now - lastRecycleRequestAt > reaskMs) {
+          lastRecycleRequestAt = now;
+          process.send?.({ type: 'recycle', reason: summary });
+        }
+      }, sampleIntervalMs).unref();
+    }
 
     console.log(`Worker started #${cluster.isWorker ? cluster.worker.id : 'test'}`);
   }

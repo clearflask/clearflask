@@ -2,6 +2,22 @@
 
 _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
 
+## 2026-09-26 — outage: Connect workers leaked into swap
+- Board: "Site is down, figure it out, and make it more resilient." Granted
+  `ssh clearflask`. Minutes: `minutes/2026-09-26-connect-outage.md`.
+- **Down 16:14–16:29 UTC, degraded from ~15:45.** Connect SSR workers leak
+  memory (~290 MB fresh → 1.6–1.8 GB in 1–2 days); a scanner burst pushed one
+  into GC thrash, the kernel OOM-killed it, the other was already at 1.5 GB
+  and stopped serving while still "alive". Restarted `connect.service`; board
+  told by Telegram.
+- Shipped four layers: per-worker V8 heap cap, graceful rotation when a
+  worker's heap climbs, an IPC liveness watchdog in the cluster master, and a
+  systemd timer on the host that restarts Connect when it stops answering.
+  Host watchdog is live now; the rest goes out with the next deploy.
+- OPEN: find the leak (workers now log memory every 10 min); cheap 404 for
+  scanner paths before SSR; **BOARD ASK (costs money): the 3.8 GB box has no
+  headroom** — Tomcat 896 MB heap + two workers + MariaDB fills it.
+
 ## 2026-08-29 (later — churn, Canny, SEO)
 - Board: "figure out what to do next", then "do it in parallel, post mortem, seo
   alts, p2 — but for feature work you need to get my sign off", and on churn
