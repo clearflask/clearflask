@@ -4,6 +4,7 @@ import MomentUtils from '@date-io/moment';
 import {
   Button,
   Checkbox,
+  CircularProgress,
   Collapse,
   Dialog,
   DialogActions,
@@ -18,6 +19,10 @@ import {
   IconButton,
   InputAdornment,
   InputLabel,
+  List,
+  ListItem,
+  ListItemSecondaryAction,
+  ListItemText,
   Link as MuiLink,
   MenuItem,
   Select,
@@ -40,6 +45,7 @@ import DeleteIcon from '@material-ui/icons/DeleteOutline';
 import EditIcon from '@material-ui/icons/Edit';
 import FacebookIcon from '@material-ui/icons/Facebook';
 import GithubIcon from '@material-ui/icons/GitHub';
+import SearchIcon from '@material-ui/icons/Search';
 import CustomIcon from '@material-ui/icons/MoreHoriz';
 import { Alert, AlertTitle, ToggleButton, ToggleButtonGroup } from '@material-ui/lab';
 import { MuiPickersUtilsProvider } from '@material-ui/pickers';
@@ -312,8 +318,25 @@ const styles = (theme: Theme) => createStyles({
       borderBottom: 'none !important',
     },
   },
-  accountSwitcher: {
-    margin: theme.spacing(4, 'auto', 0),
+  loginAs: {
+    maxWidth: 560,
+  },
+  loginAsCurrent: {
+    marginBottom: theme.spacing(2),
+  },
+  loginAsMessage: {
+    marginTop: theme.spacing(1),
+  },
+  loginAsList: {
+    marginTop: theme.spacing(1),
+    maxHeight: 480,
+    overflowY: 'auto',
+    border: `1px solid ${theme.palette.divider}`,
+    borderRadius: theme.shape.borderRadius,
+    padding: 0,
+  },
+  loginAsMore: {
+    marginTop: theme.spacing(1),
   },
 });
 const useStyles = makeStyles(styles);
@@ -5064,46 +5087,63 @@ export const ProjectSettingsLoginAs = (props: {
 }) => {
   const classes = useStyles();
 
-  const [accountSearch, setAccountSearch] = useState<Admin.Account[]>();
-  const [accountSearching, setAccountSearching] = useState<string>();
+  const [searchText, setSearchText] = useState<string>('');
+  const [results, setResults] = useState<Admin.Account[]>();
+  const [cursor, setCursor] = useState<string>();
+  const [searching, setSearching] = useState<boolean>(false);
+  const [error, setError] = useState<string>();
+  const [loggingInAs, setLoggingInAs] = useState<string>();
 
-  const searchAccountsRef = useRef<(newValue: string) => void>();
-  useEffect(() => {
-    const searchAccountsDebounced = debounce(
-      (newValue: string) => ServerAdmin.get().dispatchAdmin().then(d => d.accountSearchSuperAdmin({
-        accountSearchSuperAdmin: {
-          searchText: newValue,
-        },
-      })).then(result => {
-        setAccountSearch(result.results);
-        if (accountSearching === newValue) setAccountSearching(undefined);
-      }).catch(e => {
-        if (accountSearching === newValue) setAccountSearching(undefined);
-      })
-      , SearchTypeDebounceTime);
-    searchAccountsRef.current = newValue => {
-      setAccountSearching(newValue);
-      searchAccountsDebounced(newValue);
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const accountToLabel = (account: Admin.Account): Label => {
-    return {
-      label: account.name,
-      filterString: `${account.name} ${account.email}`,
-      value: account.email,
-    };
+  // Responses may arrive out of order, only the latest request is applied
+  const requestIdRef = useRef<number>(0);
+  const search = (text: string, pageCursor?: string) => {
+    const requestId = ++requestIdRef.current;
+    setSearching(true);
+    setError(undefined);
+    ServerAdmin.get().dispatchAdmin().then(d => d.accountSearchSuperAdmin({
+      cursor: pageCursor,
+      accountSearchSuperAdmin: {
+        searchText: text.trim() || undefined,
+      },
+    })).then(result => {
+      if (requestId !== requestIdRef.current) return;
+      setResults(prev => pageCursor ? [...(prev || []), ...result.results] : result.results);
+      setCursor(result.cursor);
+      setSearching(false);
+    }).catch(e => {
+      if (requestId !== requestIdRef.current) return;
+      setError('Search failed');
+      setSearching(false);
+    });
   };
-  const seenAccountEmails: Set<string> = new Set();
-  const curValue = props.account ? [accountToLabel(props.account)] : [];
-  const accountOptions = [...curValue];
-  props.account && seenAccountEmails.add(props.account.email);
-  accountSearch?.forEach(account => {
-    if (!seenAccountEmails.has(account.email)) {
-      const label = accountToLabel(account);
-      seenAccountEmails.add(account.email);
-      accountOptions.push(label);
-    }
+  const searchRef = useRef(search);
+  searchRef.current = search;
+  const searchDebouncedRef = useRef<(text: string) => void>();
+  if (!searchDebouncedRef.current) {
+    searchDebouncedRef.current = debounce((text: string) => searchRef.current(text), SearchTypeDebounceTime);
+  }
+  useEffect(() => {
+    searchRef.current('');
+  }, []);
+
+  const loginAs = (account: Admin.Account) => {
+    if (loggingInAs || props.account?.email === account.email) return;
+    setLoggingInAs(account.email);
+    setError(undefined);
+    ServerAdmin.get().dispatchAdmin().then(d => d.accountLoginAsSuperAdmin({
+      accountLoginAs: {
+        email: account.email,
+      },
+    }).then(() => d.configGetAllAndUserBindAllAdmin()))
+      .catch(e => setError(`Failed to log in as ${account.email}`))
+      .finally(() => setLoggingInAs(undefined));
+  };
+
+  const seenAccountIds = new Set<string>();
+  const accounts = (results || []).filter(account => {
+    if (seenAccountIds.has(account.accountId)) return false;
+    seenAccountIds.add(account.accountId);
+    return true;
   });
 
   return (
@@ -5111,45 +5151,96 @@ export const ProjectSettingsLoginAs = (props: {
       <Section
         description="Log in to another account."
         content={(
-          <SelectionPicker
-            className={classes.accountSwitcher}
-            disableClearable
-            value={curValue}
-            forceDropdownIcon={false}
-            options={accountOptions}
-            helperText="Switch account"
-            minWidth={50}
-            maxWidth={150}
-            inputMinWidth={0}
-            showTags
-            bareTags
-            disableFilter
-            loading={accountSearching !== undefined}
-            noOptionsMessage="No accounts"
-            onFocus={() => {
-              if (accountSearch === undefined
-                && accountSearching === undefined) {
-                searchAccountsRef.current?.('');
-              }
-            }}
-            onInputChange={(newValue, reason) => {
-              if (reason === 'input') {
-                searchAccountsRef.current?.(newValue);
-              }
-            }}
-            onValueChange={labels => {
-              const email = labels[0]?.value;
-              if (email && props.account?.email !== email) {
-                ServerAdmin.get().dispatchAdmin().then(d => d.accountLoginAsSuperAdmin({
-                  accountLoginAs: {
-                    email,
-                  },
-                }).then(result => {
-                  return d.configGetAllAndUserBindAllAdmin();
-                }));
-              }
-            }}
-          />
+          <div className={classes.loginAs}>
+            {!!props.account && (
+              <Typography variant="body2" color="textSecondary" className={classes.loginAsCurrent}>
+                Currently logged in as <b>{props.account.name}</b> ({props.account.email})
+              </Typography>
+            )}
+            <TextField
+              variant="outlined"
+              size="small"
+              fullWidth
+              autoFocus
+              placeholder="Search by name or email"
+              value={searchText}
+              onChange={e => {
+                setSearchText(e.target.value);
+                searchDebouncedRef.current?.(e.target.value);
+              }}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && accounts.length === 1) {
+                  loginAs(accounts[0]);
+                }
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+                endAdornment: searching ? (
+                  <InputAdornment position="end">
+                    <CircularProgress size={16} />
+                  </InputAdornment>
+                ) : undefined,
+              }}
+            />
+            {!!error && (
+              <Typography variant="body2" color="error" className={classes.loginAsMessage}>{error}</Typography>
+            )}
+            {results !== undefined && accounts.length === 0 && !searching && (
+              <Typography variant="body2" color="textSecondary" className={classes.loginAsMessage}>No accounts found</Typography>
+            )}
+            {accounts.length > 0 && (
+              <List dense className={classes.loginAsList}>
+                {accounts.map(account => {
+                  const isCurrent = props.account?.email === account.email;
+                  return (
+                    <ListItem
+                      key={account.accountId}
+                      button
+                      divider
+                      disabled={!!loggingInAs && loggingInAs !== account.email}
+                      selected={isCurrent}
+                      onClick={() => loginAs(account)}
+                    >
+                      <ListItemText
+                        primary={account.name}
+                        secondary={account.email}
+                        primaryTypographyProps={{ noWrap: true }}
+                        secondaryTypographyProps={{ noWrap: true }}
+                      />
+                      <ListItemSecondaryAction>
+                        {isCurrent ? (
+                          <Typography variant="caption" color="textSecondary">Current</Typography>
+                        ) : (
+                          <Button
+                            size="small"
+                            color="primary"
+                            disabled={!!loggingInAs}
+                            onClick={() => loginAs(account)}
+                          >
+                            {loggingInAs === account.email ? <CircularProgress size={16} /> : 'Log in'}
+                          </Button>
+                        )}
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                  );
+                })}
+              </List>
+            )}
+            {!!cursor && (
+              <Button
+                size="small"
+                disabled={searching}
+                className={classes.loginAsMore}
+                onClick={() => search(searchText, cursor)}
+              >
+                Load more
+              </Button>
+            )}
+          </div>
         )}
       />
     </ProjectSettingsBase>

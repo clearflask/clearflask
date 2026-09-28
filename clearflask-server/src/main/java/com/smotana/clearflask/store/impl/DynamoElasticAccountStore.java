@@ -62,6 +62,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.MultiMatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.ZeroTermsQueryOption;
@@ -495,11 +496,19 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
             }
             QueryBuilder queryBuilder;
             if (searchTextOpt.isPresent()) {
-                queryBuilder = QueryBuilders.multiMatchQuery(searchTextOpt.get(),
-                                "email", "name")
-                        .field("email", 2f)
-                        .fuzziness("AUTO")
-                        .zeroTermsQuery(ZeroTermsQueryOption.ALL);
+                // Prefix match so partially typed names and emails find their account; fuzzy match for typos
+                queryBuilder = QueryBuilders.boolQuery()
+                        .should(QueryBuilders.multiMatchQuery(searchTextOpt.get(),
+                                        "email", "name")
+                                .field("email", 2f)
+                                .type(MultiMatchQueryBuilder.Type.PHRASE_PREFIX)
+                                .boost(2f))
+                        .should(QueryBuilders.multiMatchQuery(searchTextOpt.get(),
+                                        "email", "name")
+                                .field("email", 2f)
+                                .fuzziness("AUTO")
+                                .zeroTermsQuery(ZeroTermsQueryOption.ALL))
+                        .minimumShouldMatch(1);
             } else {
                 queryBuilder = QueryBuilders.matchAllQuery();
             }
@@ -551,12 +560,19 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
             cursorOptNext = mysqlUtil.nextCursor(configSearch, cursorOpt, pageSizeOpt, accountIds.size());
         }
 
-        ImmutableList<Account> accounts = singleTable.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(accountSchema.tableName())
-                        .withPrimaryKeys(accountIdsStream
+        ImmutableList<String> rankedAccountIds = accountIdsStream.collect(ImmutableList.toImmutableList());
+        // Batch get returns items in arbitrary order, restore the search ranking
+        ImmutableMap<String, Account> accountsById = singleTable.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(accountSchema.tableName())
+                        .withPrimaryKeys(rankedAccountIds.stream()
                                 .map(accountId -> accountSchema.primaryKey(ImmutableMap.of(
                                         "accountId", accountId)))
                                 .toArray(PrimaryKey[]::new))))
                 .map(accountSchema::fromItem)
+                .collect(ImmutableMap.toImmutableMap(Account::getAccountId, a -> a, (a, b) -> a));
+        ImmutableList<Account> accounts = rankedAccountIds.stream()
+                .distinct()
+                .map(accountsById::get)
+                .filter(Objects::nonNull)
                 .collect(ImmutableList.toImmutableList());
         accounts.forEach(account -> accountCache.put(account.getAccountId(), Optional.of(account)));
 
