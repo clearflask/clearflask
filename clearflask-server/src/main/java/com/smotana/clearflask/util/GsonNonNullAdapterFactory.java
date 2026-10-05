@@ -63,7 +63,7 @@ public class GsonNonNullAdapterFactory implements TypeAdapterFactory {
                         throw new IllegalStateException(ex);
                     }
                     if (o == null) {
-                        throw new IllegalArgumentException("Json missing non null field " + field.getName() + " in class " + instance.getClass());
+                        throw new IllegalArgumentException("Json missing non null field " + field.getName() + " in " + instance.getClass().getSimpleName());
                     }
                 }
             }

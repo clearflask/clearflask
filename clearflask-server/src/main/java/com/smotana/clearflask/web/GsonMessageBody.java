@@ -14,6 +14,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.MessageBodyReader;
 import javax.ws.rs.ext.MessageBodyWriter;
 import javax.ws.rs.ext.Provider;
@@ -50,6 +51,9 @@ public class GsonMessageBody implements MessageBodyWriter<Object>, MessageBodyRe
             return gson.fromJson(streamReader, genericType);
         } catch (JsonSyntaxException ex) {
             throw new IOException("Failed to parse JSON", ex);
+        } catch (IllegalArgumentException ex) {
+            // Well-formed JSON that fails validation, e.g. a missing required field
+            throw new ApiException(Response.Status.BAD_REQUEST, ex.getMessage(), ex);
         }
     }
 

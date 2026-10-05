@@ -14,6 +14,7 @@ import com.kik.config.ice.ConfigSystem;
 import com.kik.config.ice.annotations.NoDefaultValue;
 import com.smotana.clearflask.core.ServiceInjector;
 import com.smotana.clearflask.proto.EncryptedData;
+import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.crypto.BadPaddingException;
@@ -22,6 +23,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import javax.ws.rs.core.Response;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -105,10 +107,19 @@ public final class DefaultServerSecret implements ServerSecret {
     @Override
     public String decryptString(String encryptedData) {
         checkArgument(encryptedData != null);
+        // Base64 has no spaces; a '+' sent unescaped in a query string arrives as one
+        String base64 = encryptedData.replace(' ', '+');
+        EncryptedData parsed;
         try {
-            return new String(decryptBytes(EncryptedData.parseFrom(Base64.getDecoder().decode(encryptedData))), Charsets.UTF_8);
-        } catch (InvalidProtocolBufferException ex) {
-            throw new RuntimeException(ex);
+            parsed = EncryptedData.parseFrom(Base64.getDecoder().decode(base64));
+        } catch (IllegalArgumentException | InvalidProtocolBufferException ex) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Invalid cursor", ex);
+        }
+        try {
+            return new String(decryptBytes(parsed), Charsets.UTF_8);
+        } catch (RuntimeException ex) {
+            // Tampered ciphertext or one encrypted under a different key
+            throw new ApiException(Response.Status.BAD_REQUEST, "Invalid cursor", ex);
         }
     }
 

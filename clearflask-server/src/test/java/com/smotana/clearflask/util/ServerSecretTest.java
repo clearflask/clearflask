@@ -9,18 +9,22 @@ import com.google.inject.name.Names;
 import com.google.inject.util.Modules;
 import com.kik.config.ice.ConfigSystem;
 import com.smotana.clearflask.testutil.AbstractTest;
+import com.smotana.clearflask.web.ApiException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
+import org.junit.function.ThrowingRunnable;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
+import javax.ws.rs.core.Response;
 import java.util.Base64;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThrows;
 
 @Slf4j
 @RunWith(Parameterized.class)
@@ -85,6 +89,18 @@ public class ServerSecretTest extends AbstractTest {
         assertEquals(expected, actualTwo);
         assertNotEquals(cipherTextOne, cipherTextTwo);
         assertNotEquals(serverSecretOne.encryptString(expected), serverSecretOne.encryptString(expected));
+
+        // '+' arriving as a space after query string decoding
+        assertEquals(expected, serverSecretOne.decryptString(cipherTextOne.replace('+', ' ')));
+
+        assertBadRequest(() -> serverSecretOne.decryptString("not base64!"));
+        assertBadRequest(() -> serverSecretOne.decryptString(Base64.getEncoder().encodeToString(new byte[]{1, 2, 3})));
+        assertBadRequest(() -> serverSecretOne.decryptString(cipherTextTwo));
+    }
+
+    private void assertBadRequest(ThrowingRunnable runnable) {
+        ApiException ex = assertThrows(ApiException.class, runnable);
+        assertEquals(Response.Status.BAD_REQUEST, ex.getStatus());
     }
 
     public static String getRandomSharedKey() {
