@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2019-2026 Matus Faro <matus@smotana.com>
 // SPDX-License-Identifier: Apache-2.0
 import * as assert from 'assert';
-import { isBanned, isHostNotFound, normalizeIp, recordHostNotFound, recordStrike } from './banlist';
+import { isBanned, isHostNotFound, isProbePath, normalizeIp, recordHostNotFound, recordStrike } from './banlist';
 
 // Tests share module state via the Maps inside banlist.ts. Each test below
 // uses a distinct subnet so it can't be polluted by a previous test.
@@ -148,6 +148,26 @@ run('host-not-found cache: full of live entries stops growing but keeps existing
   // Existing key can still refresh its TTL at capacity
   recordHostNotFound('bulk0.example.com', now + 1000);
   assert.strictEqual(isHostNotFound('bulk0.example.com', now + 5 * 60 * 1000 + 500), true);
+});
+
+run('probe paths: exploit scanner targets are recognized', () => {
+  [
+    '/.env', '/.env.local', '/www/.env', '/.git/config', '/.aws/credentials',
+    '/wp-config.php', '/wp-config.php.bak', '/xmlrpc.php', '/index.php/x',
+    '/wp-json/gravitysmtp/v1/tests/mock-data', '/wp-content/plugins/x', '/WP-ADMIN/',
+    '/%c0%ae/WEB-INF/web.xml', '/theme/META-INF/x', '/cgi-bin/test',
+    '/agc/vicidial_mysqli_errors.txt.bak', '/anchor/errors.log', '/backup.sql', '/config.yml',
+  ].forEach(path => assert.strictEqual(isProbePath(path), true, path));
+});
+
+run('probe paths: real ClearFlask routes are not probes', () => {
+  [
+    '/', '/feedback', '/roadmap', '/post/macos-app-support-9yg', '/embed/post/x-y-z',
+    '/user/abc123', '/account', '/dashboard/settings/project/onboarding', '/e/abc',
+    '/product/integrations', '/sso', '/oauth', '/static/js/main.1a2b3c.js', '/manifest.json',
+    '/sw.js', '/favicon.ico', '/robots.txt', '/.well-known/acme-challenge/abc',
+    '/wp', '/wp-is-not-a-dir-here', '/environment', '/changelog',
+  ].forEach(path => assert.strictEqual(isProbePath(path), false, path));
 });
 
 if (failures > 0) {

@@ -23,7 +23,7 @@ import connectConfig from './config';
 import httpx from './httpx';
 import reactRenderer, {replaceParentDomain} from './renderer';
 import ServerConnect from './serverConnect';
-import {isBanned, isHostNotFound, normalizeIp, recordHostNotFound, recordStrike} from './banlist';
+import {isBanned, isHostNotFound, isProbePath, normalizeIp, recordHostNotFound, recordStrike} from './banlist';
 
 Sentry.init({
   dsn: "https://600460a790e34b3e884ebe25ed26944d@o934836.ingest.sentry.io/5884409",
@@ -235,6 +235,10 @@ function createApp(serverApi) {
         return;
       }
     }
+    if (!isExemptPath && isProbePath(req.path)) {
+      res.status(404).set('Cache-Control', 'public, max-age=3600').send('Not found');
+      return;
+    }
     next();
   });
 
@@ -313,6 +317,13 @@ function createApp(serverApi) {
   );
 
   serverApp.all('/*', reactRender);
+
+  // Malformed percent-encoding in the path; Express already answers 400 but
+  // would print a stack trace for every scanner request.
+  serverApp.use((err, req, res, next) => {
+    if (!(err instanceof URIError)) return next(err);
+    res.status(400).send('Bad request');
+  });
 
   serverApp.on('error', function (err) {
     console.error('Failed with', err);

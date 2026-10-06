@@ -45,6 +45,22 @@ export function recordHostNotFound(host: string, now: number = Date.now()): void
   notFoundHosts.set(host, now + HOST_NOT_FOUND_TTL_MS);
 }
 
+// Paths no ClearFlask page can have, requested only by exploit scanners
+// (/.env, /wp-config.php, /WEB-INF/web.xml, ...). Without this each probe is a
+// full SSR of the 404 page, and a scanner sweeping customer subdomains this way
+// has saturated every worker. Post and page slugs are [a-z0-9-], so dot
+// segments and file extensions never collide with a real route.
+const PROBE_PATH = new RegExp([
+  /\/\.(?!well-known\/)/,
+  /\.(php\d?|phtml|asp|aspx|jsp|jspx|cgi|cfm|env|ini|bak|old|save|orig|swp|sql|log|xml|yml|yaml|conf|config)(\/|$)/,
+  /^\/(wp-admin|wp-content|wp-includes|wp-json|wordpress|cgi-bin)(\/|$)/,
+  /(^|\/)(web-inf|meta-inf)(\/|$)/,
+].map(r => r.source).join('|'));
+
+export function isProbePath(path: string): boolean {
+  return PROBE_PATH.test(path.toLowerCase());
+}
+
 export function normalizeIp(raw: string | undefined): string | undefined {
   if (!raw) return undefined;
   return raw.replace(/^::ffff:/, '');
