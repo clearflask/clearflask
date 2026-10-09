@@ -48,6 +48,7 @@ import com.smotana.clearflask.util.BloomFilters;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.OAuthUtil;
+import com.smotana.clearflask.util.OutboundUrlGuard;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.util.WebhookService;
@@ -177,6 +178,8 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     private Config config;
     @Inject
     private Application.Config configApp;
+    @Inject
+    private OutboundUrlGuard outboundUrlGuard;
     @Inject
     @Named("user")
     private ConfigSearch configSearch;
@@ -1316,6 +1319,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     public Optional<UserModel> oauthCreateOrGet(String projectId, NotificationMethodsOauth oauthProvider, String clientSecret, String redirectUrl, String code) {
         return OAuthUtil
                 .fetch(
+                        outboundUrlGuard,
                         gson,
                         projectId,
                         redirectUrl,
@@ -1737,6 +1741,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                 bind(UserStore.class).to(DynamoElasticUserStore.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
                 install(ConfigSystem.configModule(ConfigSearch.class, Names.named("user")));
+                install(OutboundUrlGuard.module());
                 Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(DynamoElasticUserStore.class).asEagerSingleton();
             }
         };

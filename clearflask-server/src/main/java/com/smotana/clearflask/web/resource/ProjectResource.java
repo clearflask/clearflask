@@ -47,6 +47,7 @@ import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
 import com.smotana.clearflask.store.mysql.DefaultMysqlProvider;
 import com.smotana.clearflask.util.DateUtil;
 import com.smotana.clearflask.util.Extern;
+import com.smotana.clearflask.util.OutboundUrlGuard;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.AuthCookie;
@@ -109,6 +110,8 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
     @Context
     private HttpHeaders headers;
+    @Inject
+    private OutboundUrlGuard outboundUrlGuard;
     @Inject
     private Injector injector;
     @Inject
@@ -303,6 +306,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         if (!projectId.equals(configAdmin.getProjectId())) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Mismatching project ID");
         }
+        validateOutboundUrls(configAdmin);
 
         String accountId = getExtendedPrincipal()
                 .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
@@ -455,6 +459,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
         sanitizer.subdomain(configAdmin.getSlug(), isSuperAdmin);
         Optional.ofNullable(Strings.emptyToNull(configAdmin.getDomain())).ifPresent(domain -> sanitizer.domain(domain, isSuperAdmin));
+        validateOutboundUrls(configAdmin);
         Account account = getExtendedPrincipal()
                 .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
                 .flatMap(accountId -> accountStore.getAccount(accountId, true))
@@ -982,6 +987,27 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         return SlackChannelsResponse.builder()
                 .channels(apiChannels)
                 .build();
+    }
+
+    /**
+     * URLs in project config that the server itself will request later. Checked on save so admins get immediate
+     * feedback; the request path enforces the same policy again at connection time.
+     */
+    private void validateOutboundUrls(ConfigAdmin configAdmin) {
+        if (configAdmin.getUsers() == null
+                || configAdmin.getUsers().getOnboarding() == null
+                || configAdmin.getUsers().getOnboarding().getNotificationMethods() == null
+                || configAdmin.getUsers().getOnboarding().getNotificationMethods().getOauth() == null) {
+            return;
+        }
+        for (NotificationMethodsOauth oauth : configAdmin.getUsers().getOnboarding().getNotificationMethods().getOauth()) {
+            outboundUrlGuard.validate(oauth.getAuthorizeUrl(), "OAuth authorize URL");
+            outboundUrlGuard.validate(oauth.getTokenUrl(), "OAuth token URL");
+            outboundUrlGuard.validate(oauth.getUserProfileUrl(), "OAuth user profile URL");
+            if (!Strings.isNullOrEmpty(oauth.getEmailUrl())) {
+                outboundUrlGuard.validate(oauth.getEmailUrl(), "OAuth email URL");
+            }
+        }
     }
 
     public static Module module() {

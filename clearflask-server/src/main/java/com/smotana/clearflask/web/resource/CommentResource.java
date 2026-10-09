@@ -25,6 +25,7 @@ import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.impl.DynamoElasticCommentStore;
 import com.smotana.clearflask.util.BloomFilters;
+import com.smotana.clearflask.util.OutboundUrlGuard;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
@@ -51,6 +52,8 @@ import java.util.stream.Stream;
 @Path(Application.RESOURCE_VERSION)
 public class CommentResource extends AbstractResource implements CommentAdminApi, CommentApi {
 
+    @Inject
+    private OutboundUrlGuard outboundUrlGuard;
     @Inject
     private DynamoElasticCommentStore.Config configCommentStore;
     @Inject
@@ -296,6 +299,7 @@ public class CommentResource extends AbstractResource implements CommentAdminApi
     @Limit(requiredPermits = 100)
     @Override
     public void commentSubscribeAdmin(String projectId, SubscriptionListenerComment subscriptionListener) {
+        outboundUrlGuard.validate(subscriptionListener.getListenerUrl(), "Listener URL");
         projectStore.addWebhookListener(projectId, new ProjectStore.WebhookListener(
                 ResourceType.COMMENT,
                 subscriptionListener.getEventType().name(),

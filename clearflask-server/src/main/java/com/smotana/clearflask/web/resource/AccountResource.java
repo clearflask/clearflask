@@ -97,6 +97,7 @@ import com.smotana.clearflask.util.IntercomUtil;
 import com.smotana.clearflask.util.IpUtil;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.util.OAuthUtil;
+import com.smotana.clearflask.util.OutboundUrlGuard;
 import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
@@ -169,6 +170,8 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
     public static final String SUPER_ADMIN_AUTH_COOKIE_NAME = "cf_sup_auth";
     public static final String ACCOUNT_AUTH_COOKIE_NAME = "cf_act_auth";
 
+    @Inject
+    private OutboundUrlGuard outboundUrlGuard;
     @Inject
     private Config config;
     @Inject
@@ -308,6 +311,7 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
                     throw new ApiException(Response.Status.BAD_REQUEST, "OAuth provider not supported");
                 }
                 oauthResult = OAuthUtil.fetch(
+                        outboundUrlGuard,
                         gson,
                         "account",
                         "https://" + configApp.domain() + "/login",

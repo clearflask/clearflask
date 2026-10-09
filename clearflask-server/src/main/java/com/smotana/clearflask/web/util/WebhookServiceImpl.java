@@ -26,13 +26,14 @@ import com.smotana.clearflask.store.ProjectStore.WebhookListener;
 import com.smotana.clearflask.store.ProjectStore.WebhookListener.ResourceType;
 import com.smotana.clearflask.store.UserStore;
 import com.smotana.clearflask.util.LogUtil;
+import com.smotana.clearflask.util.OutboundUrlGuard;
+import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.security.Sanitizer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 
 import java.util.Map;
 import java.util.concurrent.SynchronousQueue;
@@ -57,6 +58,8 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
     private Gson gson;
     @Inject
     private Sanitizer sanitizer;
+    @Inject
+    private OutboundUrlGuard outboundUrlGuard;
 
     private ListeningExecutorService executor;
     private CloseableHttpClient client;
@@ -66,7 +69,7 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
         executor = MoreExecutors.listeningDecorator(new ThreadPoolExecutor(
                 2, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<>(),
                 new ThreadFactoryBuilder().setNameFormat("WebhookServiceImpl-worker-%d").build()));
-        client = HttpClientBuilder.create().build();
+        client = outboundUrlGuard.newClientBuilder().build();
     }
 
     @Override
@@ -256,6 +259,13 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
             return submit(() -> {
                 String payload = gson.toJson(payloadSupplier.get());
                 for (WebhookListener listener : listeners) {
+                    try {
+                        outboundUrlGuard.validate(listener.getUrl(), "Webhook listener URL");
+                    } catch (ApiException ex) {
+                        log.warn("Skipping webhook listener with disallowed url {} for projectId {}: {}",
+                                listener.getUrl(), projectId, ex.getMessage());
+                        continue;
+                    }
                     log.info("Sending webhook event {} to url {} for projectId {}", eventType, listener.getUrl(), projectId);
                     HttpPost req = new HttpPost(listener.getUrl());
                     req.setEntity(new StringEntity(payload, Charsets.UTF_8));
@@ -301,6 +311,7 @@ public class WebhookServiceImpl extends ManagedService implements WebhookService
                 bind(WebhookService.class).to(WebhookServiceImpl.class).asEagerSingleton();
                 Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(WebhookServiceImpl.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
+                install(OutboundUrlGuard.module());
             }
         };
     }

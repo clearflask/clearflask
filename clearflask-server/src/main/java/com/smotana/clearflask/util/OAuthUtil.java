@@ -4,7 +4,6 @@ package com.smotana.clearflask.util;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
-import com.google.common.io.CharStreams;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
@@ -13,21 +12,17 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import com.jayway.jsonpath.JsonPathException;
 import com.smotana.clearflask.store.impl.DynamoElasticUserStore;
+import com.smotana.clearflask.web.ApiException;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.client.config.CookieSpecs;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 @Slf4j
@@ -41,6 +36,7 @@ public class OAuthUtil {
     }
 
     public static Optional<OAuthResult> fetch(
+            OutboundUrlGuard outboundUrlGuard,
             Gson gson,
             String projectId,
             String redirectUrl,
@@ -53,11 +49,17 @@ public class OAuthUtil {
             String clientId,
             String clientSecret,
             String code) {
-        try (CloseableHttpClient client = HttpClientBuilder.create()
-                // Fixes ResponseProcessCookies "Invalid cookie header ... Invalid 'expires' attribute"
-                // Sent by linkedin during OAuth flow with expiry in the past
-                .setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build())
-                .build()) {
+        // All three URLs are project-admin controlled: refuse anything that is not a public https endpoint, otherwise
+        // this is a server-side request forgery into the internal network with the response read back via JsonPath.
+        try {
+            outboundUrlGuard.validate(tokenUrl, "OAuth token URL");
+            outboundUrlGuard.validate(userProfileUrl, "OAuth user profile URL");
+            emailUrlOpt.ifPresent(emailUrl -> outboundUrlGuard.validate(emailUrl, "OAuth email URL"));
+        } catch (ApiException ex) {
+            log.warn("OAuth provider URL rejected for projectId {}: {}", projectId, ex.getMessage());
+            return Optional.empty();
+        }
+        try (CloseableHttpClient client = outboundUrlGuard.newClientBuilder().build()) {
             HttpPost reqAuthorize = new HttpPost(tokenUrl);
             reqAuthorize.setHeader("Accept", "application/json");
             reqAuthorize.setEntity(new UrlEncodedFormEntity(ImmutableList.of(
@@ -76,7 +78,7 @@ public class OAuthUtil {
                     return Optional.empty();
                 }
                 try {
-                    oAuthAuthorizationResponse = gson.fromJson(new InputStreamReader(res.getEntity().getContent(), StandardCharsets.UTF_8), DynamoElasticUserStore.OAuthAuthorizationResponse.class);
+                    oAuthAuthorizationResponse = gson.fromJson(outboundUrlGuard.readBodyBounded(res.getEntity()), DynamoElasticUserStore.OAuthAuthorizationResponse.class);
                 } catch (JsonSyntaxException | JsonIOException | IllegalArgumentException ex) {
                     log.warn("OAuth provider authorization response cannot parse, projectId {} url {} response status {}",
                             projectId, reqAuthorize.getURI(), res.getStatusLine().getStatusCode(), ex);
@@ -99,8 +101,7 @@ public class OAuthUtil {
                             projectId, reqProfile.getURI(), res.getStatusLine().getStatusCode());
                     return Optional.empty();
                 }
-                profileResponse = CharStreams.toString(new InputStreamReader(
-                        res.getEntity().getContent(), Charsets.UTF_8));
+                profileResponse = outboundUrlGuard.readBodyBounded(res.getEntity());
                 log.trace("OAuth profile url {} returned {} for projectId {}",
                         reqProfile, profileResponse, projectId);
             } catch (IOException ex) {
@@ -121,8 +122,7 @@ public class OAuthUtil {
                                 projectId, reqEmail.getURI(), res.getStatusLine().getStatusCode());
                         return Optional.empty();
                     }
-                    emailResponse = CharStreams.toString(new InputStreamReader(
-                            res.getEntity().getContent(), Charsets.UTF_8));
+                    emailResponse = outboundUrlGuard.readBodyBounded(res.getEntity());
                     log.trace("OAuth email url {} returned {} for projectId {}",
                             emailUrlOpt.get(), emailResponse, projectId);
                 } catch (IOException ex) {

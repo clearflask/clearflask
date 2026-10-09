@@ -150,6 +150,7 @@ import com.smotana.clearflask.web.resource.UserResource;
 import com.smotana.clearflask.web.resource.VoteResource;
 import com.smotana.clearflask.web.security.AuthCookieImpl;
 import com.smotana.clearflask.web.security.AuthenticationFilter;
+import com.smotana.clearflask.util.OutboundUrlGuard;
 import com.smotana.clearflask.web.security.Sanitizer;
 import com.smotana.clearflask.web.security.SecretsGuard;
 import com.smotana.clearflask.web.security.SuperAdminPredicate;
@@ -419,6 +420,7 @@ public enum ServiceInjector {
                 install(ClearFlaskCreditSync.module());
                 install(AuthCookieImpl.module());
                 install(Sanitizer.module());
+                install(OutboundUrlGuard.module());
                 install(IntercomUtil.module());
                 install(ChatwootUtil.module());
                 install(ConfigUtil.module());

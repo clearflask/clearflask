@@ -40,6 +40,7 @@ import com.smotana.clearflask.util.ColorUtil;
 import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.MarkdownAndQuillUtil;
 import com.smotana.clearflask.util.OAuthUtil;
+import com.smotana.clearflask.util.OutboundUrlGuard;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.resource.GitLabResource;
@@ -51,7 +52,6 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.gitlab4j.api.GitLabApi;
@@ -115,6 +115,8 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
     @Inject
     private GitLabResource.Config configGitLabResource;
     @Inject
+    private OutboundUrlGuard outboundUrlGuard;
+    @Inject
     private Application.Config configApp;
     @Inject
     private Gson gson;
@@ -176,7 +178,7 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
 
         String instanceUrl = Strings.isNullOrEmpty(gitlabInstanceUrl) ? DEFAULT_GITLAB_URL : gitlabInstanceUrl;
 
-        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+        try (CloseableHttpClient client = outboundUrlGuard.newClientBuilder().build()) {
             HttpPost reqAuthorize = new HttpPost(instanceUrl + "/oauth/token");
             reqAuthorize.setHeader("Accept", "application/json");
             reqAuthorize.setEntity(new UrlEncodedFormEntity(ImmutableList.of(
@@ -363,7 +365,7 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
                     "GitLab authorization expired and cannot be refreshed. Please re-authorize.");
         }
 
-        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+        try (CloseableHttpClient client = outboundUrlGuard.newClientBuilder().build()) {
             HttpPost reqRefresh = new HttpPost(auth.getGitlabInstanceUrl() + "/oauth/token");
             reqRefresh.setHeader("Accept", "application/json");
             reqRefresh.setEntity(new UrlEncodedFormEntity(ImmutableList.of(
@@ -1142,62 +1144,16 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
     }
 
     /**
-     * Validates a GitLab instance URL to prevent SSRF attacks and other security issues.
+     * Validates a customer supplied GitLab instance URL before the server talks to it. The gitlab4j client has its own
+     * HTTP stack, so the hostname is resolved and checked here right before use rather than inside the client.
      *
-     * @param gitlabInstanceUrl The URL to validate
-     * @throws ApiException if the URL is invalid or potentially malicious
+     * @throws ApiException if the URL is invalid or points at a non-public address
      */
     private void validateGitLabInstanceUrl(String gitlabInstanceUrl) {
         if (Strings.isNullOrEmpty(gitlabInstanceUrl)) {
             return; // Empty is OK, will use default
         }
-
-        try {
-            java.net.URL url = new java.net.URL(gitlabInstanceUrl);
-
-            // Only allow HTTPS protocol for security
-            if (!"https".equals(url.getProtocol())) {
-                throw new ApiException(Response.Status.BAD_REQUEST, "GitLab instance URL must use HTTPS");
-            }
-
-            String host = url.getHost();
-            if (Strings.isNullOrEmpty(host)) {
-                throw new ApiException(Response.Status.BAD_REQUEST, "Invalid GitLab instance URL: no host");
-            }
-
-            // Prevent localhost and private IP ranges to avoid SSRF
-            if (host.equals("localhost")
-                    || host.equals("127.0.0.1")
-                    || host.startsWith("127.")
-                    || host.equals("0.0.0.0")
-                    || host.startsWith("10.")
-                    || host.startsWith("192.168.")
-                    || host.startsWith("169.254.") // AWS metadata service
-                    || host.startsWith("172.16.")
-                    || host.startsWith("172.17.")
-                    || host.startsWith("172.18.")
-                    || host.startsWith("172.19.")
-                    || host.startsWith("172.20.")
-                    || host.startsWith("172.21.")
-                    || host.startsWith("172.22.")
-                    || host.startsWith("172.23.")
-                    || host.startsWith("172.24.")
-                    || host.startsWith("172.25.")
-                    || host.startsWith("172.26.")
-                    || host.startsWith("172.27.")
-                    || host.startsWith("172.28.")
-                    || host.startsWith("172.29.")
-                    || host.startsWith("172.30.")
-                    || host.startsWith("172.31.")
-                    || host.equals("::1")
-                    || host.equals("[::1]")) {
-                throw new ApiException(Response.Status.BAD_REQUEST,
-                    "Invalid GitLab instance URL: private/local addresses not allowed");
-            }
-
-        } catch (java.net.MalformedURLException ex) {
-            throw new ApiException(Response.Status.BAD_REQUEST, "Invalid GitLab instance URL", ex);
-        }
+        outboundUrlGuard.validateAndResolve(gitlabInstanceUrl, "GitLab instance URL");
     }
 
     private <T> ListenableFuture<T> submit(Callable<T> task) {
@@ -1217,6 +1173,7 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
             protected void configure() {
                 bind(GitLabStore.class).to(GitLabStoreImpl.class).asEagerSingleton();
                 install(ConfigSystem.configModule(Config.class));
+                install(OutboundUrlGuard.module());
                 Multibinder.newSetBinder(binder(), ManagedService.class).addBinding().to(GitLabStoreImpl.class).asEagerSingleton();
             }
         };
