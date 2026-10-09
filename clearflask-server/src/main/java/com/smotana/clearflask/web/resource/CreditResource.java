@@ -86,6 +86,7 @@ public class CreditResource extends AbstractResource implements CreditApi, Credi
     @Limit(requiredPermits = 1)
     @Override
     public TransactionSearchResponse transactionSearch(String projectId, String userId, TransactionSearch transactionSearch, String cursor) {
+        assertUserIsSelf(userId);
         ListResponse<TransactionModel> transactionModelListResponse = voteStore.transactionList(projectId, userId, Optional.ofNullable(Strings.emptyToNull(cursor)));
         UserModel user = userStore.getUser(projectId, userId).orElseThrow(() -> new ApiException(Response.Status.UNAUTHORIZED, "User not found"));
         return new TransactionSearchResponse(

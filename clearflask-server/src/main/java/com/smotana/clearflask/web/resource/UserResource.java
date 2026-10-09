@@ -385,6 +385,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 1)
     @Override
     public void userDelete(String projectId, String userId) {
+        assertUserIsSelf(userId);
         userStore.deleteUsers(projectId, ImmutableList.of(userId));
     }
 
@@ -493,6 +494,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 1, challengeAfter = 20)
     @Override
     public UserMe userUpdate(String projectId, String userId, UserUpdate userUpdate) {
+        assertUserIsSelf(userId);
         sanitizer.userName(userUpdate.getName());
         sanitizer.email(userUpdate.getEmail());
 

@@ -3,6 +3,7 @@
 package com.smotana.clearflask.web.resource;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
@@ -46,5 +47,21 @@ public abstract class AbstractResource {
             throw new ApiException(Response.Status.INTERNAL_SERVER_ERROR);
         }
         return Optional.of((ExtendedPrincipal) securityContext.getUserPrincipal());
+    }
+
+    /**
+     * Guards endpoints that take a {@code userId} path parameter but are meant to act on the caller's own user.
+     * Role checks only establish that <i>some</i> user of the project is logged in; without this, any user could
+     * read or modify any other user in the same project by swapping the id in the URL.
+     */
+    protected void assertUserIsSelf(String userId) {
+        String sessionUserId = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedUserSessionOpt)
+                .map(UserSession::getUserId)
+                .orElseThrow(() -> new ApiException(Response.Status.UNAUTHORIZED, "Not logged in"));
+        if (!sessionUserId.equals(userId)) {
+            log.warn("User {} attempted to act on user {}", sessionUserId, userId);
+            throw new ApiException(Response.Status.FORBIDDEN, "Cannot act on behalf of another user");
+        }
     }
 }
