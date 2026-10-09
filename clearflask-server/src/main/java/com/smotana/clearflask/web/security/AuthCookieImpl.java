@@ -61,8 +61,8 @@ public class AuthCookieImpl implements AuthCookie {
 
     @Override
     public void setAuthCookie(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull String cookieName, @NonNull String sessionId, long ttlInEpochSec) {
-        log.trace("Setting {} auth cookie for session id {} ttl {}",
-                cookieName, sessionId, ttlInEpochSec);
+        // Never log the session id itself, it is a bearer credential
+        log.trace("Setting {} auth cookie ttl {}", cookieName, ttlInEpochSec);
         RealCookie.builder()
                 .name(wireName(cookieName))
                 .value(sessionId)
