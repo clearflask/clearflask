@@ -239,5 +239,11 @@ public interface JiraStore {
 
         @NonNull
         String jiraProjectKey;
+
+        /**
+         * Whether the callback URL registered with Jira carries the per-project authentication token. Webhooks
+         * registered before tokens existed are re-registered on the project's next config save; null means not yet.
+         */
+        Boolean hasToken;
     }
 }

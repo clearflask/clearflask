@@ -57,7 +57,11 @@ public class GitHubResource {
     private static final String GITHUB_USER_AGENT_VALUE = "GitHub-Hookshot";
 
     public interface Config {
-        @DefaultValue("secret_shh")
+        /**
+         * Must equal the webhook secret configured on the GitHub App. Inbound events are rejected and repositories
+         * cannot be linked while this is empty; a guessable default would let anyone forge events.
+         */
+        @DefaultValue("")
         String webhookSecret();
     }
 

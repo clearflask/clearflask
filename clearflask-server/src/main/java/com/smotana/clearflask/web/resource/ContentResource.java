@@ -42,8 +42,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class ContentResource extends AbstractResource implements ContentApi, ContentAdminApi {
 
     public interface Config {
-        /** Uploads are buffered in memory and decoded; without a cap a single request can exhaust the heap. */
-        @DefaultValue("10485760")
+        /**
+         * Uploads are buffered in memory and decoded; without a cap a single request can exhaust the heap. Matches
+         * the largest limit the frontend advertises (profile pictures allow 20MB, editor images 10MB).
+         */
+        @DefaultValue("20971520")
         long maxUploadBytes();
     }
 

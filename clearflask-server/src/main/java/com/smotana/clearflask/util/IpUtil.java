@@ -63,8 +63,9 @@ public class IpUtil {
     }
 
     /**
-     * Cloud: CloudFront then ALB each append one entry. Self-host and platform: Connect appends one entry
-     * (http-proxy {@code xfwd}); anything a client sent sits further left and is ignored.
+     * In every production environment Connect is the only proxy that appends an entry (http-proxy {@code xfwd});
+     * the cloud host has no load balancer or CDN in front of it. Anything a client sent sits further left and is
+     * ignored. Installs with a load balancer in front of Connect set {@link #ENV_TRUSTED_PROXY_COUNT}.
      */
     @VisibleForTesting
     static int trustedProxyCount(ServiceInjector.Environment env, String override) {
@@ -79,12 +80,7 @@ public class IpUtil {
                 log.warn("{} is not a number: {}", ENV_TRUSTED_PROXY_COUNT, override);
             }
         }
-        switch (env) {
-            case PRODUCTION_AWS:
-                return 2;
-            default:
-                return 1;
-        }
+        return 1;
     }
 
     /**

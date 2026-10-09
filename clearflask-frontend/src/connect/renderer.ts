@@ -214,10 +214,10 @@ export default function render(): Handler {
       // users, so they are entity-encoded before landing in the markup. The
       // function replacers keep String.replace from interpreting `$` patterns
       // inside user content.
-      html = html.replace(PH_FAVICON_URL, () => he.encode(renderResult.faviconUrl || `${getParentDomainUrl()}/favicon.ico`));
+      html = html.replace(PH_FAVICON_URL, () => he.escape(renderResult.faviconUrl || `${getParentDomainUrl()}/favicon.ico`));
 
       // Page title
-      html = html.replace(PH_PAGE_TITLE, () => he.encode(renderResult.title));
+      html = html.replace(PH_PAGE_TITLE, () => he.escape(renderResult.title));
 
       // JS, CSS
       html = html.replace(PH_LINK_TAGS, renderResult.extractor.getLinkTags());

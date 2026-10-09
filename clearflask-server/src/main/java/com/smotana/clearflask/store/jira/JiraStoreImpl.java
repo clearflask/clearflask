@@ -60,6 +60,7 @@ import com.smotana.clearflask.util.Extern;
 import com.smotana.clearflask.util.LogUtil;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
+import com.smotana.clearflask.web.resource.JiraResource;
 import com.smotana.clearflask.web.security.Sanitizer;
 import io.dataspray.singletable.SingleTable;
 import io.dataspray.singletable.TableSchema;
@@ -101,6 +102,8 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
     private JiraClientProviderImpl.Config configJiraClient;
     @Inject
     private Application.Config configApp;
+    @Inject
+    private JiraResource.Config configJiraResource;
     @Inject
     private Gson gson;
     @Inject
@@ -372,6 +375,27 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
                     || !configPrevious.get().getJira().getCloudId().equals(configAdmin.getJira().getCloudId())
                     || !configPrevious.get().getJira().getProjectKey().equals(configAdmin.getJira().getProjectKey()));
 
+        // Webhooks registered before per-project tokens existed have no token in their callback URL, so events
+        // for them arrive unauthenticated. Re-register them with a token the next time the project's config is
+        // saved; a failure here must not block the unrelated settings save that triggered it.
+        if (!needsWebhookSetup && configAdmin.getJira() != null) {
+            Optional<JiraWebhook> existingWebhookOpt = getWebhook(configAdmin.getProjectId(), configAdmin.getJira().getCloudId());
+            if (existingWebhookOpt.isPresent() && existingWebhookOpt.get().getHasToken() != Boolean.TRUE) {
+                try {
+                    removeIntegrationWebhook(
+                            configAdmin.getProjectId(),
+                            configAdmin.getJira().getCloudId(),
+                            configAdmin.getJira().getProjectKey());
+                    needsWebhookSetup = true;
+                    log.info("Re-registering Jira webhook with a per-project token for project {} cloudId {}",
+                            configAdmin.getProjectId(), configAdmin.getJira().getCloudId());
+                } catch (Exception e) {
+                    log.warn("Failed to remove legacy Jira webhook for project {}, leaving it in place",
+                            configAdmin.getProjectId(), e);
+                }
+            }
+        }
+
         if (needsWebhookSetup) {
             Optional<JiraAuthorization> authOpt = getAuthorization(accountId, configAdmin.getJira().getCloudId());
             if (authOpt.isEmpty()) {
@@ -384,9 +408,14 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
                         configAdmin.getJira().getCloudId(),
                         authOpt.get().getAccessToken());
 
-                // Register webhook
+                // Register webhook. Jira Cloud does not sign REST-registered webhooks, so the per-project token in
+                // the callback URL is the only thing authenticating inbound events (see JiraResource.checkToken).
+                if (Strings.isNullOrEmpty(configJiraResource.webhookSecret())) {
+                    throw new ApiException(Response.Status.SERVICE_UNAVAILABLE, "Jira integration is not configured: webhook secret is missing");
+                }
                 String webhookUrl = "https://" + configApp.domain() + "/api/v1/webhook/jira/project/"
-                        + configAdmin.getProjectId() + "/cloud/" + configAdmin.getJira().getCloudId();
+                        + configAdmin.getProjectId() + "/cloud/" + configAdmin.getJira().getCloudId()
+                        + "?token=" + JiraResource.webhookToken(configJiraResource.webhookSecret(), configAdmin.getProjectId(), configAdmin.getJira().getCloudId());
 
                 RegisterWebhookRequest request = RegisterWebhookRequest.builder()
                         .url(webhookUrl)
@@ -409,6 +438,7 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
                         .cloudId(configAdmin.getJira().getCloudId())
                         .webhookId(registration.getId())
                         .jiraProjectKey(configAdmin.getJira().getProjectKey())
+                        .hasToken(true)
                         .build();
 
                 dynamoDoc.getTable(jiraWebhookSchema.tableName())
@@ -441,15 +471,19 @@ public class JiraStoreImpl extends ManagedService implements JiraStore {
         }
     }
 
-    @Override
-    public void removeIntegrationWebhook(String projectId, String cloudId, String jiraProjectKey) {
-        // Find and delete webhook
-        Optional<JiraWebhook> webhookOpt = Optional.ofNullable(
+    private Optional<JiraWebhook> getWebhook(String projectId, String cloudId) {
+        return Optional.ofNullable(
                 dynamoDoc.getTable(jiraWebhookSchema.tableName())
                         .getItem(new GetItemSpec().withPrimaryKey(jiraWebhookSchema.primaryKey(ImmutableMap.of(
                                 "projectId", projectId,
                                 "cloudId", cloudId)))))
                 .map(jiraWebhookSchema::fromItem);
+    }
+
+    @Override
+    public void removeIntegrationWebhook(String projectId, String cloudId, String jiraProjectKey) {
+        // Find and delete webhook
+        Optional<JiraWebhook> webhookOpt = getWebhook(projectId, cloudId);
 
         if (webhookOpt.isPresent()) {
             // Get project to find account for authorization

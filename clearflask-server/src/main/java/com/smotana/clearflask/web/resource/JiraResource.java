@@ -100,9 +100,10 @@ public class JiraResource {
         checkUserAgent(webhookId);
         checkToken(projectId, cloudId, token, webhookId);
 
-        // Verify signature if secret is configured
-        if (!Strings.isNullOrEmpty(config.webhookSecret())) {
-            String signature = request.getHeader(JIRA_WEBHOOK_SECRET_HEADER);
+        // Jira Cloud does not sign webhooks registered through the REST API, so the per-project token checked
+        // above is what authenticates the event. A signature is verified whenever the sender supplies one.
+        String signature = request.getHeader(JIRA_WEBHOOK_SECRET_HEADER);
+        if (!Strings.isNullOrEmpty(signature)) {
             JiraSignatureVerifier.verifySignature(payload, signature, config.webhookSecret(), webhookId);
         }
 

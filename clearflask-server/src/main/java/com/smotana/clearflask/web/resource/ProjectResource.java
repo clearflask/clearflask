@@ -80,6 +80,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -306,14 +307,14 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         if (!projectId.equals(configAdmin.getProjectId())) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Mismatching project ID");
         }
-        validateOutboundUrls(configAdmin);
-
         String accountId = getExtendedPrincipal()
                 .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
                 .get();
 
         Project project = projectStore.getProject(projectId, false)
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
+
+        validateOutboundUrls(Optional.of(project.getVersionedConfigAdmin().getConfig()), configAdmin);
 
         Account projectAccount = accountStore.getAccount(project.getAccountId(), true).get();
         try {
@@ -424,6 +425,11 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     @Override
     public void projectAdminsRemoveAdmin(String projectId, @Nullable String accountId, @Nullable String invitationId) {
         if (!Strings.isNullOrEmpty(accountId)) {
+            Project project = projectStore.getProject(projectId, false)
+                    .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
+            if (accountId.equals(project.getAccountId())) {
+                throw new ApiException(Response.Status.BAD_REQUEST, "The project owner cannot be removed");
+            }
             projectStore.removeAdmin(projectId, accountId);
             // This is a critical time, if something happens here, there will be inconsistent state in ownership
             accountStore.removeExternalProject(accountId, projectId);
@@ -467,7 +473,7 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
         sanitizer.subdomain(configAdmin.getSlug(), isSuperAdmin);
         Optional.ofNullable(Strings.emptyToNull(configAdmin.getDomain())).ifPresent(domain -> sanitizer.domain(domain, isSuperAdmin));
-        validateOutboundUrls(configAdmin);
+        validateOutboundUrls(Optional.empty(), configAdmin);
         Account account = getExtendedPrincipal()
                 .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
                 .flatMap(accountId -> accountStore.getAccount(accountId, true))
@@ -998,24 +1004,49 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
     }
 
     /**
-     * URLs in project config that the server itself will request later. Checked on save so admins get immediate
-     * feedback; the request path enforces the same policy again at connection time.
+     * URLs in project config that the server itself will request later (the authorize URL is only ever visited by
+     * the browser). Checked on save so admins get immediate feedback; the request path enforces the same policy
+     * again at connection time.
+     * <p>
+     * Only providers that are new or whose URLs changed are checked. Configs saved before this validation existed
+     * may hold providers that would not pass it (half-filled custom providers, placeholder URLs); failing every
+     * unrelated settings save until those are cleaned up would lock admins out of their own settings. Empty URLs are
+     * skipped for the same reason: a provider is commonly saved before all of its fields are filled in.
      */
-    private void validateOutboundUrls(ConfigAdmin configAdmin) {
+    private void validateOutboundUrls(Optional<ConfigAdmin> configPrevious, ConfigAdmin configAdmin) {
+        ImmutableSet<NotificationMethodsOauth> previousOauths = configPrevious
+                .map(ProjectResource::getOauthProviders)
+                .orElse(ImmutableSet.of());
+        for (NotificationMethodsOauth oauth : getOauthProviders(configAdmin)) {
+            if (previousOauths.stream().anyMatch(previous -> sameOutboundUrls(previous, oauth))) {
+                continue;
+            }
+            validateOutboundUrlIfPresent(oauth.getTokenUrl(), "OAuth token URL");
+            validateOutboundUrlIfPresent(oauth.getUserProfileUrl(), "OAuth user profile URL");
+            validateOutboundUrlIfPresent(oauth.getEmailUrl(), "OAuth email URL");
+        }
+    }
+
+    private void validateOutboundUrlIfPresent(String url, String what) {
+        if (!Strings.isNullOrEmpty(url)) {
+            outboundUrlGuard.validate(url, what);
+        }
+    }
+
+    private static boolean sameOutboundUrls(NotificationMethodsOauth a, NotificationMethodsOauth b) {
+        return Objects.equals(a.getTokenUrl(), b.getTokenUrl())
+                && Objects.equals(a.getUserProfileUrl(), b.getUserProfileUrl())
+                && Objects.equals(a.getEmailUrl(), b.getEmailUrl());
+    }
+
+    private static ImmutableSet<NotificationMethodsOauth> getOauthProviders(ConfigAdmin configAdmin) {
         if (configAdmin.getUsers() == null
                 || configAdmin.getUsers().getOnboarding() == null
                 || configAdmin.getUsers().getOnboarding().getNotificationMethods() == null
                 || configAdmin.getUsers().getOnboarding().getNotificationMethods().getOauth() == null) {
-            return;
+            return ImmutableSet.of();
         }
-        for (NotificationMethodsOauth oauth : configAdmin.getUsers().getOnboarding().getNotificationMethods().getOauth()) {
-            outboundUrlGuard.validate(oauth.getAuthorizeUrl(), "OAuth authorize URL");
-            outboundUrlGuard.validate(oauth.getTokenUrl(), "OAuth token URL");
-            outboundUrlGuard.validate(oauth.getUserProfileUrl(), "OAuth user profile URL");
-            if (!Strings.isNullOrEmpty(oauth.getEmailUrl())) {
-                outboundUrlGuard.validate(oauth.getEmailUrl(), "OAuth email URL");
-            }
-        }
+        return ImmutableSet.copyOf(configAdmin.getUsers().getOnboarding().getNotificationMethods().getOauth());
     }
 
     public static Module module() {

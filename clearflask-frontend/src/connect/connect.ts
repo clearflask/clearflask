@@ -219,8 +219,10 @@ export function isUnframeable(hostname: string, path: string): boolean {
 function securityHeaders(req, res, next) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  // Browsers ignore HSTS over plain http, so this is harmless on http-only self-host installs
-  res.setHeader('Strict-Transport-Security', 'max-age=31536000');
+  // Same policy the Java side already sends on /api for every host, so the browser's stored policy does not
+  // flip between page loads and API calls. Browsers ignore HSTS over plain http, so http-only self-host
+  // installs are unaffected.
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
   if (isUnframeable(req.hostname, req.path)) {
     res.setHeader('X-Frame-Options', 'SAMEORIGIN');
     res.setHeader('Content-Security-Policy', "frame-ancestors 'self'");

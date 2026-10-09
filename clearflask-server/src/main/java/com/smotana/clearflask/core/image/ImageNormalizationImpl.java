@@ -41,9 +41,11 @@ public class ImageNormalizationImpl implements ImageNormalization {
 
         /**
          * Decoding allocates width x height x 4 bytes regardless of the compressed size; a tiny PNG declaring
-         * 30k x 30k pixels would need 3.6GB. Checked against the header before decoding.
+         * 30k x 30k pixels would need 3.6GB. Checked against the header before decoding. 25M pixels (5000 x 5000,
+         * ~100MB decoded) comfortably covers 4K and 8K screenshots while keeping a few concurrent uploads within
+         * the server heap; images are resized to a fraction of that anyway.
          */
-        @DefaultValue("50000000")
+        @DefaultValue("25000000")
         long maxPixels();
     }
 

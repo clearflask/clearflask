@@ -8,7 +8,7 @@ import { ReactLiquid } from 'react-liquid';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
 import { ReduxState, Status } from '../../api/server';
-import { isSelfHostLike } from '../../common/util/detectEnv';
+import { isProd, isSelfHostLike } from '../../common/util/detectEnv';
 import ErrorBoundary from '../../common/util/ErrorBoundary';
 import windowIso from '../../common/windowIso';
 
@@ -27,8 +27,17 @@ import windowIso from '../../common/windowIso';
 export function templateScriptsAllowed(): boolean {
   if (windowIso.isSsr) return false;
   if (isSelfHostLike()) return true;
-  return windowIso.location.hostname !== windowIso.parentDomain;
+  // Same parent-domain detection as Main.tsx so the dev server on localhost behaves like the dashboard
+  const isParentDomain = windowIso.location.hostname === windowIso.parentDomain
+    || (!isProd() && windowIso.location.hostname === 'localhost');
+  return !isParentDomain;
 }
+
+/**
+ * Templates commonly open with a <style> block, which the HTML parser hoists into <head> and DOMPurify would
+ * otherwise drop along with it; FORCE_BODY keeps it in place. Link targets carry no script risk.
+ */
+const SANITIZE_OPTIONS = { FORCE_BODY: true, ADD_ATTR: ['target'] };
 
 interface Props {
   template: string;
@@ -59,7 +68,7 @@ class TemplateLiquid extends Component<Props & ConnectProps> {
               if (!renderedTemplate?.__html) return null;
               return scriptsAllowed
                 ? (<DangerouslySetInnerHtmlWithScriptExecution html={renderedTemplate.__html} />)
-                : (<div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderedTemplate.__html) }} />);
+                : (<div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderedTemplate.__html, SANITIZE_OPTIONS) }} />);
             }}
           />
         </ErrorBoundary>

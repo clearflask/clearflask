@@ -341,6 +341,10 @@ public class GitHubStoreImpl extends ManagedService implements GitHubStore {
     }
 
     private void linkRepository(String projectId, GitHubAuthorization authorization) {
+        if (Strings.isNullOrEmpty(configGitHubResource.webhookSecret())) {
+            // Without a secret every inbound event would be rejected, so refuse the link up front
+            throw new ApiException(Response.Status.SERVICE_UNAVAILABLE, "GitHub integration is not configured: webhook secret is missing");
+        }
         GitHub installationClient;
         try {
             installationClient = gitHubClientProvider.getInstallationClient(authorization.getInstallationId()).getClient();

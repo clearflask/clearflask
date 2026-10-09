@@ -31,11 +31,10 @@ public class IpUtilTest {
     }
 
     @Test
-    public void cloudTakesSecondToLastForCloudFrontPlusAlb() {
-        assertEquals("203.0.113.9", IpUtil.getRemoteIp(request("10.0.0.2", "203.0.113.9, 130.176.0.1"), Environment.PRODUCTION_AWS, null));
-        assertEquals("203.0.113.9", IpUtil.getRemoteIp(request("10.0.0.2", "1.2.3.4, 203.0.113.9, 130.176.0.1"), Environment.PRODUCTION_AWS, null));
-        // Only one entry means the request did not come through both proxies; fall back to the socket
-        assertEquals("10.0.0.2", IpUtil.getRemoteIp(request("10.0.0.2", "1.2.3.4"), Environment.PRODUCTION_AWS, null));
+    public void cloudTakesLastEntryAppendedByConnect() {
+        // The cloud host runs Connect directly behind the firewall: exactly one trusted entry, like self-host
+        assertEquals("203.0.113.9", IpUtil.getRemoteIp(request("127.0.0.1", "203.0.113.9"), Environment.PRODUCTION_AWS, null));
+        assertEquals("203.0.113.9", IpUtil.getRemoteIp(request("127.0.0.1", "1.2.3.4, 203.0.113.9"), Environment.PRODUCTION_AWS, null));
     }
 
     @Test
@@ -58,7 +57,7 @@ public class IpUtilTest {
         // Garbage or non-positive overrides fall back to the environment default
         assertEquals(1, IpUtil.trustedProxyCount(Environment.PRODUCTION_SELF_HOST, "0"));
         assertEquals(1, IpUtil.trustedProxyCount(Environment.PRODUCTION_SELF_HOST, "abc"));
-        assertEquals(2, IpUtil.trustedProxyCount(Environment.PRODUCTION_AWS, null));
+        assertEquals(1, IpUtil.trustedProxyCount(Environment.PRODUCTION_AWS, null));
     }
 
     @Test
