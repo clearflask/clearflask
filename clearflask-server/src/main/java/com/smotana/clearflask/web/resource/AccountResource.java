@@ -392,10 +392,14 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
             throw new ApiException(Response.Status.UNAUTHORIZED, "You must login using OAuth provider.");
         }
 
-        String passwordSupplied = passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, credentials.getPassword(), account.getEmail());
-        if (!account.getPassword().equals(passwordSupplied)) {
+        if (!passwordUtil.verify(PasswordUtil.Type.ACCOUNT, credentials.getPassword(), account.getEmail(), account.getPassword())) {
             log.info("Account login incorrect password for email {}", credentials.getEmail());
             throw new ApiException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
+        }
+        if (passwordUtil.needsRehash(account.getPassword())) {
+            // Upgrade legacy hashes now that we have the plaintext
+            account = accountStore.rehashPassword(account.getAccountId(),
+                    passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, credentials.getPassword(), account.getEmail()));
         }
         log.debug("Successful account login for email {}", credentials.getEmail());
 

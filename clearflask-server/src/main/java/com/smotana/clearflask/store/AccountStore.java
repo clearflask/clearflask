@@ -87,6 +87,9 @@ public interface AccountStore {
 
     Account updatePassword(String accountId, String password, Optional<String> sessionToLeaveOpt);
 
+    /** Replaces the stored hash without touching sessions; for upgrading the hash scheme after a successful login. */
+    Account rehashPassword(String accountId, String passwordHash);
+
     AccountAndIndexingFuture updateEmail(String accountId, String emailNew, String sessionIdToLeave);
 
     Account updateApiKey(String accountId, String apiKey);

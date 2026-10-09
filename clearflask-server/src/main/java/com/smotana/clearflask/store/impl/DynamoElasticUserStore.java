@@ -954,6 +954,22 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     }
 
     @Override
+    public UserModel rehashPassword(String projectId, String userId, String passwordHash) {
+        return userSchema.fromItem(userSchema.table().updateItem(new UpdateItemSpec()
+                        .withPrimaryKey(userSchema.primaryKey(Map.of(
+                                "projectId", projectId,
+                                "userId", userId)))
+                        .withConditionExpression("attribute_exists(#partitionKey) AND attribute_exists(#password)")
+                        .withUpdateExpression("SET #password = :password")
+                        .withNameMap(new NameMap()
+                                .with("#partitionKey", userSchema.partitionKeyName())
+                                .with("#password", "password"))
+                        .withValueMap(new ValueMap().withString(":password", passwordHash))
+                        .withReturnValues(ReturnValue.ALL_NEW))
+                .getItem());
+    }
+
+    @Override
     public UserModel userVoteUpdateBloom(String projectId, String userId, String ideaId) {
         UserModel user = getUser(projectId, userId).orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "User not found"));
         BloomFilter<CharSequence> bloomFilter = Optional.ofNullable(user.getVoteBloom())

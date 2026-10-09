@@ -60,6 +60,9 @@ public interface UserStore {
 
     UserModel userVoteUpdateBloom(String projectId, String userId, String ideaId);
 
+    /** Replaces the stored password hash without any other side effect; for upgrading the hash scheme after a successful login. */
+    UserModel rehashPassword(String projectId, String userId, String passwordHash);
+
     UserModel userCommentVoteUpdateBloom(String projectId, String userId, String commentId);
 
     UserModel userExpressUpdateBloom(String projectId, String userId, String ideaId);
