@@ -98,8 +98,9 @@ public interface UserStore {
 
     UserModel createOrGet(String projectId, String guid, Supplier<Optional<String>> emailOptSupplier, Supplier<Optional<String>> nameOptSupplier, boolean isMod);
 
+    /** Session ids are bearer secrets: they must be unpredictable, never time-ordered like the other ids. */
     default String genUserSessionId() {
-        return IdUtil.randomAscId();
+        return IdUtil.randomId();
     }
 
     UserSession createSession(UserModel user, long ttlInEpochSec);
