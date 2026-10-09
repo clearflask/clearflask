@@ -25,7 +25,7 @@ export function intercomLoad(APP_ID) {
         var s = d.createElement('script');
         s.type = 'text/javascript';
         s.async = true;
-        s.src = 'https://widget.intercom.io/widget/' + APP_ID;
+        s.src = 'https://widget.intercom.io/widget/' + encodeURIComponent(APP_ID);
         var x = d.getElementsByTagName('script')[0];
         x.parentNode.insertBefore(s, x);
       };

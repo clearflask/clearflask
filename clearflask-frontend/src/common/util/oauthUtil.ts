@@ -258,7 +258,6 @@ export class OAuthFlow {
       code: oauthCode,
       extraData: oauthState.extraData,
     }
-    console.log("OAuth success", oAuthToken);
 
     return oAuthToken;
   }

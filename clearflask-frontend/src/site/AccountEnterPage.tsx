@@ -211,6 +211,23 @@ interface State {
     resetPasswordError?: string; // reset-password
 }
 
+/**
+ * The return URL receives the account's SSO token, so it must only ever point at this
+ * deployment or one of its subdomains (e.g. product.clearflask.com). A plain suffix match
+ * would also accept "https://notclearflask.com".
+ */
+export function isOwnReturnUrl(url: string): boolean {
+  try {
+    const target = new URL(url);
+    const ownHost = windowIso.location.host;
+    const ownProtocol = windowIso.location.protocol;
+    if (target.protocol !== ownProtocol && target.protocol !== 'https:') return false;
+    return target.host === ownHost || target.host.endsWith('.' + ownHost);
+  } catch (er) {
+    return false;
+  }
+}
+
 class AccountEnterPage extends Component<Props & WithTranslation<'site'> & RouteComponentProps<{}, StaticContext, LocationState | undefined> & ConnectProps & WithStyles<typeof styles, true>, State> {
     readonly cfReturnUrl?: string;
     readonly oauthFlow = new OAuthFlow({accountType: 'admin', redirectPath: '/login'});
@@ -224,7 +241,7 @@ class AccountEnterPage extends Component<Props & WithTranslation<'site'> & Route
 
         try {
             const paramCfr = new URL(windowIso.location.href).searchParams.get('cfr');
-            if (paramCfr && new URL(paramCfr).host.endsWith(windowIso.location.host)) {
+            if (paramCfr && isOwnReturnUrl(paramCfr)) {
                 this.cfReturnUrl = paramCfr;
             }
         } catch (er) {
