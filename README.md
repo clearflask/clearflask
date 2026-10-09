@@ -326,6 +326,8 @@ precedence over values in the file. This is useful on platforms without persiste
 | `CLEARFLASK_AUTH_COOKIE_SECURE` | `true` when serving over HTTPS |
 | `CLEARFLASK_CONNECT_TOKEN` | Shared secret between Connect and Server; set the same value on both containers |
 | `CLEARFLASK_TELEMETRY_ENABLED` | `false` to disable telemetry |
+| `CLEARFLASK_OUTBOUND_ALLOW_PRIVATE_ADDRESSES` | `true` to let project OAuth providers and webhook listeners point at private/internal network addresses (default `false`, keeps server-side requests off your internal network) |
+| `CLEARFLASK_OUTBOUND_ALLOW_PLAIN_HTTP` | `true` to allow `http://` OAuth provider and webhook URLs (default `false`) |
 | `CLEARFLASK_SMTP_HOST` / `CLEARFLASK_SMTP_PORT` / `CLEARFLASK_SMTP_USER` / `CLEARFLASK_SMTP_PASSWORD` / `CLEARFLASK_SMTP_STRATEGY` | Outgoing email via SMTP; setting the host also switches email service to SMTP |
 | `CLEARFLASK_EMAIL_DISPLAY_NAME` / `CLEARFLASK_EMAIL_FROM_LOCAL_PART` / `CLEARFLASK_EMAIL_FROM_DOMAIN` | Outgoing email sender identity |
 | `CLEARFLASK_MYSQL_HOST` / `CLEARFLASK_MYSQL_USER` / `CLEARFLASK_MYSQL_PASSWORD` | MySQL/MariaDB connection |

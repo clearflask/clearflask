@@ -77,6 +77,8 @@ public class SelfHostConfigBootstrap {
             .put("CLEARFLASK_AUTH_COOKIE_SECURE", "com.smotana.clearflask.web.security.AuthCookieImpl$Config.authCookieSecure")
             .put("CLEARFLASK_CONNECT_TOKEN", "com.smotana.clearflask.web.security.AuthenticationFilter$Config.connectToken")
             .put("CLEARFLASK_TELEMETRY_ENABLED", "com.smotana.clearflask.web.Application$Config.enableTelemetry")
+            .put("CLEARFLASK_OUTBOUND_ALLOW_PRIVATE_ADDRESSES", "com.smotana.clearflask.util.OutboundUrlGuard$Config.allowPrivateAddresses")
+            .put("CLEARFLASK_OUTBOUND_ALLOW_PLAIN_HTTP", "com.smotana.clearflask.util.OutboundUrlGuard$Config.allowPlainHttp")
             .put("CLEARFLASK_SMTP_HOST", KEY_SMTP_HOST)
             .put("CLEARFLASK_SMTP_PORT", "com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.smtpPort")
             .put("CLEARFLASK_SMTP_USER", "com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.smtpUser")

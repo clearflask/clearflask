@@ -52,6 +52,7 @@ import com.smotana.clearflask.store.UserStore.UserModel;
 import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.store.VoteStore;
 import com.smotana.clearflask.store.VoteStore.TransactionModel;
+import com.smotana.clearflask.util.OutboundUrlGuard;
 import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
@@ -94,6 +95,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
 
     public static final String USER_AUTH_COOKIE_NAME_PREFIX = "cf_usr_auth_";
 
+    @Inject
+    private OutboundUrlGuard outboundUrlGuard;
     @Inject
     private Config config;
     @Inject
@@ -613,6 +616,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 100)
     @Override
     public void userSubscribeAdmin(String projectId, SubscriptionListenerUser subscriptionListener) {
+        outboundUrlGuard.validate(subscriptionListener.getListenerUrl(), "Listener URL");
         projectStore.addWebhookListener(projectId, new ProjectStore.WebhookListener(
                 ResourceType.USER,
                 subscriptionListener.getEventType().name(),

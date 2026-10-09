@@ -30,6 +30,7 @@ import com.smotana.clearflask.store.UserStore.UserSession;
 import com.smotana.clearflask.store.VoteStore.VoteValue;
 import com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider;
 import com.smotana.clearflask.util.BloomFilters;
+import com.smotana.clearflask.util.OutboundUrlGuard;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
@@ -57,6 +58,8 @@ import java.util.concurrent.TimeoutException;
 @Path(Application.RESOURCE_VERSION)
 public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdminApi {
 
+    @Inject
+    private OutboundUrlGuard outboundUrlGuard;
     @Inject
     private NotificationService notificationService;
     @Inject
@@ -717,6 +720,7 @@ public class IdeaResource extends AbstractResource implements IdeaApi, IdeaAdmin
     @Limit(requiredPermits = 100)
     @Override
     public void ideaSubscribeAdmin(String projectId, SubscriptionListenerIdea subscriptionListener) {
+        outboundUrlGuard.validate(subscriptionListener.getListenerUrl(), "Listener URL");
         projectStore.addWebhookListener(projectId, new ProjectStore.WebhookListener(
                 ResourceType.POST,
                 subscriptionListener.getEventType().name(),
