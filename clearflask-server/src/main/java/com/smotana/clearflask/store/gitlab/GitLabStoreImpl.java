@@ -583,12 +583,16 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
                     .withDeploymentEvents(false)
                     .withReleasesEvents(true);
 
+            if (Strings.isNullOrEmpty(configGitLabResource.webhookSecret())) {
+                throw new ApiException(Response.Status.SERVICE_UNAVAILABLE, "GitLab integration is not configured: webhook secret is missing");
+            }
             api.getProjectApi().addHook(
                     authorization.getProjectId(),
                     webhookUrl.toExternalForm(),
                     hook,
                     true,  // enableSslVerification
-                    configGitLabResource.webhookSecret());
+                    // Per-project token: the customer's GitLab instance never sees the server-wide secret
+                    GitLabResource.webhookToken(configGitLabResource.webhookSecret(), projectId, authorization.getProjectId()));
         } catch (GitLabApiException ex) {
             log.warn("Linking GitLab project failed, could not create webhook. projectId {}, authorization {}",
                     projectId, authorization, ex);
