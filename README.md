@@ -324,6 +324,7 @@ precedence over values in the file. This is useful on platforms without persiste
 | `CLEARFLASK_SUPER_ADMIN_EMAIL` | Email address allowed to sign up as super-admin |
 | `CLEARFLASK_SIGNUP_ENABLED` | `true`/`false`: allow further signups |
 | `CLEARFLASK_AUTH_COOKIE_SECURE` | `true` when serving over HTTPS |
+| `CLEARFLASK_TRUSTED_PROXY_COUNT` | Number of proxies in front of the server that append to `X-Forwarded-For` (default `1`, i.e. Connect only). Set to `2` if a load balancer sits in front of Connect; rate limiting keys on the client IP taken from this position |
 | `CLEARFLASK_CONNECT_TOKEN` | Shared secret between Connect and Server; set the same value on both containers |
 | `CLEARFLASK_TELEMETRY_ENABLED` | `false` to disable telemetry |
 | `CLEARFLASK_OUTBOUND_ALLOW_PRIVATE_ADDRESSES` | `true` to let project OAuth providers and webhook listeners point at private/internal network addresses (default `false`, keeps server-side requests off your internal network) |
