@@ -101,7 +101,7 @@ export const BannerCookieYes = (props: {
     var s = windowIso.document.createElement('script');
     s.id = 'cookieyes';
     s.type = 'text/javascript';
-    s.src = `https://cdn-cookieyes.com/client_data/${props.opts.clientId}/script.js`;
+    s.src = `https://cdn-cookieyes.com/client_data/${encodeURIComponent(props.opts.clientId)}/script.js`;
     s.onload = function () {
       const consentUpdateHandler: ((e: any) => void) = (e: ConsentUpdateEvent) => {
         // Analytics will be triggered only if user

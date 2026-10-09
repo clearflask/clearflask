@@ -22,6 +22,8 @@ export const IframeWithUrlSync = (props: {
   const iframeId = useRef(iframeProps.id || `iframe-url-sync-${randomUuid()}`);
 
   const handleOnMessage = event => {
+    // Only the embedded portal may drive our path and title
+    if (event.origin !== new URL(srcWithoutPathname).origin) return;
     if (typeof event.data !== 'object'
       || event.data.type !== 'pathname-changed'
       || typeof event.data.pathname !== 'string'
