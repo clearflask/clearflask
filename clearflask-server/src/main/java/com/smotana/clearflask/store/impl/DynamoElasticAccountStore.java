@@ -927,6 +927,13 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
     @Extern
     @Override
     public Account updatePassword(String accountId, String password, Optional<String> sessionToLeaveOpt) {
+        Account account = rehashPassword(accountId, password);
+        revokeSessions(account.getAccountId(), sessionToLeaveOpt);
+        return account;
+    }
+
+    @Override
+    public Account rehashPassword(String accountId, String password) {
         Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
                         .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
                         .withConditionExpression("attribute_exists(#partitionKey)")
@@ -938,7 +945,6 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
                         .withReturnValues(ReturnValue.ALL_NEW))
                 .getItem());
         accountCache.put(accountId, Optional.of(account));
-        revokeSessions(account.getAccountId(), sessionToLeaveOpt);
         return account;
     }
 

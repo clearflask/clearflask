@@ -445,13 +445,17 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
         }
 
         if (!Strings.isNullOrEmpty(userLogin.getPassword())) {
-            String passwordSupplied = passwordUtil.saltHashPassword(PasswordUtil.Type.USER, userLogin.getPassword(), user.getUserId());
             if (Strings.isNullOrEmpty(user.getPassword())) {
                 log.info("Account password-login for user with no password for email {}", user.getEmail());
                 throw new ApiException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
-            } else if (!user.getPassword().equals(passwordSupplied)) {
+            } else if (!passwordUtil.verify(PasswordUtil.Type.USER, userLogin.getPassword(), user.getUserId(), user.getPassword())) {
                 log.info("Account login incorrect password for email {}", user.getEmail());
                 throw new ApiException(Response.Status.UNAUTHORIZED, "Email or password incorrect");
+            }
+            if (passwordUtil.needsRehash(user.getPassword())) {
+                // Upgrade legacy hashes now that we have the plaintext
+                user = userStore.rehashPassword(projectId, user.getUserId(),
+                        passwordUtil.saltHashPassword(PasswordUtil.Type.USER, userLogin.getPassword(), user.getUserId()));
             }
             log.debug("Successful user login for email {} via password", userLogin.getEmail());
         } else if (!Strings.isNullOrEmpty(userLogin.getToken())) {
