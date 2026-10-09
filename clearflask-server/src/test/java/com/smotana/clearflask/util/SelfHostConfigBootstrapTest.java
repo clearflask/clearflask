@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.smotana.clearflask.util;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -63,10 +65,27 @@ public class SelfHostConfigBootstrapTest {
     }
 
     @Test(timeout = 30_000L)
-    public void testExistingInstallSecretsUntouched() throws Exception {
+    public void testExistingInstallRotatesForgeableTemplateSecretsOnly() throws Exception {
         String before = read();
         run(false, ImmutableMap.of());
-        assertEquals(before, read());
+        String after = read();
+
+        // Keys anyone could forge tokens with are replaced
+        for (String key : ImmutableList.of(
+                "com.smotana.clearflask.store.impl.DynamoElasticUserStore$Config.tokenSignerPrivKey",
+                "com.smotana.clearflask.util.DefaultServerSecret$Config.sharedKey:cursor",
+                "com.smotana.clearflask.security.ClearFlaskSso$Config.secretKey")) {
+            assertNotEquals(key, getProperty(before, key), getProperty(after, key));
+            assertEquals(key, 1, countOccurrences(after, key + "="));
+        }
+        // The VAPID keypair stays: rotating it would drop every push subscription
+        assertEquals(getProperty(before, "com.smotana.clearflask.core.push.provider.BrowserPushServiceImpl$Config.publicKey"),
+                getProperty(after, "com.smotana.clearflask.core.push.provider.BrowserPushServiceImpl$Config.publicKey"));
+        assertEquals(getProperty(before, getPrivateKeyName()), getProperty(after, getPrivateKeyName()));
+
+        // Second run is a no-op
+        run(false, ImmutableMap.of());
+        assertEquals(after, read());
     }
 
     @Test(timeout = 30_000L)

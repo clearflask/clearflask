@@ -51,10 +51,12 @@
         <options>
             <dsn>https://600460a790e34b3e884ebe25ed26944d@o934836.ingest.sentry.io/5884409</dsn>
         </options>
-        <minimumBreadcrumbLevel>TRACE</minimumBreadcrumbLevel>
+        <!-- Breadcrumbs are attached to every reported event and shipped to a third party; DEBUG/TRACE lines
+             carry session ids, OAuth codes and emails, so only INFO and above are kept. -->
+        <minimumBreadcrumbLevel>INFO</minimumBreadcrumbLevel>
         <minimumEventLevel>WARN</minimumEventLevel>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>TRACE</level>
+            <level>INFO</level>
         </filter>
     </appender>
 
@@ -67,7 +69,9 @@
     <!-- Suppress "Event Subject was not initialized" not playing nice with Tomcat reload -->
     <logger name="com.kik.config.ice.source.AbstractDynamicConfigSource" level="ERROR"/>
 
-    <root level="TRACE">
+    <!-- Every appender filters at INFO or above anyway; keeping the root at TRACE only pays for formatting
+         sensitive debug output that is then dropped. -->
+    <root level="INFO">
         <appender-ref ref="FILE"/>
         <appender-ref ref="ASYNC_EMAIL_SES"/>
         <appender-ref ref="SENTRY"/>

@@ -44,8 +44,8 @@ services:
   clearflask-server:
     image: ghcr.io/clearflask/clearflask-server:latest
     platform: linux/amd64
-    ports:
-      - 8080:8080
+    # Only Connect needs to reach the server, over the compose network. Publishing 8080 would expose the API
+    # directly, bypassing Connect's rate limiting and ban list.
     environment:
       - CLEARFLASK_ENVIRONMENT=PRODUCTION_PLATFORM
       - CLEARFLASK_CREATE_SERVER_CONFIG_IF_MISSING=1
@@ -82,7 +82,6 @@ services:
     volumes:
       - ./data/mysql:/var/lib/mysql
       - ./mysql-db:/docker-entrypoint-initdb.d
-    ports:
-      - 3306:3306
+    # The database uses a well-known root password; never publish it on the host.
     environment:
       - MYSQL_ROOT_PASSWORD=clearflask
