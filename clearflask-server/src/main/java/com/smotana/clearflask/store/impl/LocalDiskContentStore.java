@@ -47,8 +47,8 @@ import java.util.regex.Pattern;
 public class LocalDiskContentStore extends ManagedService implements ContentStore {
 
     private static final String KEY_PREFIX = "img/ugc/";
-    private static final Pattern CONTENT_TYPE_URL_MATCHER_S3 = Pattern.compile("^(?<scheme>[^:]+)://(?<domain>[^/]+)/" + KEY_PREFIX + "(?<projectId>[^/]+)/(?<userId>[^/]+)/(?<fileName>[^?]+\\.(?<extension>[^.?]+))(?<query>\\?[^#]*)?$");
-    private static final Pattern CONTENT_TYPE_URL_MATCHER_PROXY = Pattern.compile("^(?<scheme>[^:]+)://(?<domain>[^/]+)/api" + Application.RESOURCE_VERSION + "/project/(?<projectId>[^/]+)/content/proxy/userId/(?<userId>[^/]+)/file/(?<fileName>[^?]+\\.(?<extension>[^.?]+))(?<query>\\?[^#]*)?$");
+    private static final Pattern CONTENT_TYPE_URL_MATCHER_S3 = Pattern.compile("^(?<scheme>[^:]+)://(?<domain>[^/]+)/" + KEY_PREFIX + "(?<projectId>[^/]+)/(?<userId>[^/]+)/(?<fileName>[^/?]+\\.(?<extension>[^.?]+))(?<query>\\?[^#]*)?$");
+    private static final Pattern CONTENT_TYPE_URL_MATCHER_PROXY = Pattern.compile("^(?<scheme>[^:]+)://(?<domain>[^/]+)/api" + Application.RESOURCE_VERSION + "/project/(?<projectId>[^/]+)/content/proxy/userId/(?<userId>[^/]+)/file/(?<fileName>[^/?]+\\.(?<extension>[^.?]+))(?<query>\\?[^#]*)?$");
     /** Reject any path segment that could escape the base directory or nest into subdirectories. */
     private static final Pattern SAFE_SEGMENT = Pattern.compile("[A-Za-z0-9._-]+");
 

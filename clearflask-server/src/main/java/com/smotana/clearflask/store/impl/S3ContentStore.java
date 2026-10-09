@@ -57,8 +57,8 @@ import java.util.regex.Pattern;
 public class S3ContentStore extends ManagedService implements ContentStore {
 
     private static final String KEY_PREFIX = "img/ugc/";
-    private static final Pattern CONTENT_TYPE_URL_MATCHER_S3 = Pattern.compile("^(?<scheme>[^:]+)://(?<domain>[^/]+)/" + KEY_PREFIX + "(?<projectId>[^/]+)/(?<userId>[^/]+)/(?<fileName>[^?]+\\.(?<extension>[^.?]+))(?<query>\\?[^#]*)?$");
-    private static final Pattern CONTENT_TYPE_URL_MATCHER_PROXY = Pattern.compile("^(?<scheme>[^:]+)://(?<domain>[^/]+)/api" + Application.RESOURCE_VERSION + "/project/(?<projectId>[^/]+)/content/proxy/userId/(?<userId>[^/]+)/file/(?<fileName>[^?]+\\.(?<extension>[^.?]+))(?<query>\\?[^#]*)?$");
+    private static final Pattern CONTENT_TYPE_URL_MATCHER_S3 = Pattern.compile("^(?<scheme>[^:]+)://(?<domain>[^/]+)/" + KEY_PREFIX + "(?<projectId>[^/]+)/(?<userId>[^/]+)/(?<fileName>[^/?]+\\.(?<extension>[^.?]+))(?<query>\\?[^#]*)?$");
+    private static final Pattern CONTENT_TYPE_URL_MATCHER_PROXY = Pattern.compile("^(?<scheme>[^:]+)://(?<domain>[^/]+)/api" + Application.RESOURCE_VERSION + "/project/(?<projectId>[^/]+)/content/proxy/userId/(?<userId>[^/]+)/file/(?<fileName>[^/?]+\\.(?<extension>[^.?]+))(?<query>\\?[^#]*)?$");
 
     public interface Config {
         @DefaultValue("clearflask-upload.s3.amazonaws.com")
@@ -209,7 +209,7 @@ public class S3ContentStore extends ManagedService implements ContentStore {
     private void delete(Optional<String> matchProjectIdOpt, Optional<String> matchUserIdOpt, String url) {
         Optional<ContentUrl> contentUrlOpt = parseContentUrl(url);
         if (!contentUrlOpt.isPresent()
-                || (matchProjectIdOpt.isPresent() && !matchProjectIdOpt.get().equals(contentUrlOpt.get().getUrl()))
+                || (matchProjectIdOpt.isPresent() && !matchProjectIdOpt.get().equals(contentUrlOpt.get().getProjectId()))
                 || (matchUserIdOpt.isPresent() && !matchUserIdOpt.get().equals(contentUrlOpt.get().getUserId()))) {
             return;
         }

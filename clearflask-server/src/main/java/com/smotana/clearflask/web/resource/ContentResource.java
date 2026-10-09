@@ -8,6 +8,8 @@ import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
 import com.smotana.clearflask.api.ContentAdminApi;
 import com.smotana.clearflask.api.ContentApi;
+import com.kik.config.ice.ConfigSystem;
+import com.kik.config.ice.annotations.DefaultValue;
 import com.smotana.clearflask.api.model.ContentUploadResponse;
 import com.smotana.clearflask.core.image.ImageNormalization;
 import com.smotana.clearflask.core.image.ImageNormalization.Image;
@@ -19,6 +21,7 @@ import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
+import com.google.common.io.ByteStreams;
 import org.apache.commons.io.IOUtils;
 
 import javax.annotation.security.RolesAllowed;
@@ -38,6 +41,14 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @Path(Application.RESOURCE_VERSION)
 public class ContentResource extends AbstractResource implements ContentApi, ContentAdminApi {
 
+    public interface Config {
+        /** Uploads are buffered in memory and decoded; without a cap a single request can exhaust the heap. */
+        @DefaultValue("10485760")
+        long maxUploadBytes();
+    }
+
+    @Inject
+    private Config config;
     @Inject
     private ContentStore contentStore;
     @Inject
@@ -143,25 +154,25 @@ public class ContentResource extends AbstractResource implements ContentApi, Con
     }
 
     private Image normalizeImage(InputStream body) {
-        byte[] imgBytes;
-        try (body) {
-            imgBytes = IOUtils.toByteArray(body);
-        } catch (IOException ex) {
-            throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Corrrupted data", ex);
-        }
-        Image imageNormalized = imageNormalization.normalize(imgBytes);
-        return imageNormalized;
+        return imageNormalization.normalize(readBounded(body));
     }
 
     private Image normalizeImageWithSize(InputStream body, double maxWidth, double maxHeight) {
+        return imageNormalization.normalize(readBounded(body), maxWidth, maxHeight);
+    }
+
+    private byte[] readBounded(InputStream body) {
+        long max = config.maxUploadBytes();
         byte[] imgBytes;
         try (body) {
-            imgBytes = IOUtils.toByteArray(body);
+            imgBytes = IOUtils.toByteArray(ByteStreams.limit(body, max + 1));
         } catch (IOException ex) {
             throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Corrrupted data", ex);
         }
-        Image imageNormalized = imageNormalization.normalize(imgBytes, maxWidth, maxHeight);
-        return imageNormalized;
+        if (imgBytes.length > max) {
+            throw new ApiException(Response.Status.REQUEST_ENTITY_TOO_LARGE, "Image is too large, must be at most " + (max / 1024 / 1024) + "MB");
+        }
+        return imgBytes;
     }
 
     public static Module module() {
@@ -169,6 +180,7 @@ public class ContentResource extends AbstractResource implements ContentApi, Con
             @Override
             protected void configure() {
                 bind(ContentResource.class);
+                install(ConfigSystem.configModule(Config.class));
                 Multibinder.newSetBinder(binder(), Object.class, Names.named(Application.RESOURCE_NAME)).addBinding()
                         .to(ContentResource.class);
             }
