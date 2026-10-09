@@ -3,6 +3,10 @@ name: Deploy & Restart (Skip ITs)
 on:
   workflow_dispatch:
 
+# Least privilege for GITHUB_TOKEN: nothing here writes to the repository.
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -37,7 +41,7 @@ jobs:
           Host ec2-*.compute*.amazonaws.com
             IdentityFile ~/.ssh/id_gh_action.pem
             User ec2-user
-            StrictHostKeyChecking no
+            StrictHostKeyChecking accept-new
           EOF
           sudo chmod 600 ~/.ssh/config
       - name: Maven build

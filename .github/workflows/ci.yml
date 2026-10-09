@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ master ]
 
+# Least privilege for GITHUB_TOKEN: nothing here writes to the repository.
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
