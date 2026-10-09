@@ -399,7 +399,7 @@ components:
               type: number
               format: double
         templates:
-          x-clearflask-prop: { order: 3, name: 'Custom page HTML/JS/CSS template', description: 'For advanced customization, replace parts of the site with templates written in Liquid templating language.' }
+          x-clearflask-prop: { order: 3, name: 'Custom page HTML/JS/CSS template', description: 'For advanced customization, replace parts of the site with templates written in Liquid templating language. Scripts only execute on your portal domain; the dashboard preview renders templates as static HTML.' }
           title: Template
           type: object
           required:

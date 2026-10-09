@@ -2,12 +2,33 @@
 // SPDX-License-Identifier: Apache-2.0
 import { NoSsr } from '@material-ui/core';
 import DangerouslySetInnerHtmlWithScriptExecution from 'dangerously-set-html-content';
+import DOMPurify from 'dompurify';
 import React, { Component } from 'react';
 import { ReactLiquid } from 'react-liquid';
 import { connect } from 'react-redux';
 import * as Client from '../../api/client';
 import { ReduxState, Status } from '../../api/server';
+import { isSelfHostLike } from '../../common/util/detectEnv';
 import ErrorBoundary from '../../common/util/ErrorBoundary';
+import windowIso from '../../common/windowIso';
+
+/**
+ * Custom templates are allowed to contain arbitrary JS, but only on the project's own origin
+ * (its subdomain or custom domain) where the JS can reach nothing beyond that project's
+ * user session.
+ *
+ * The dashboard on the parent domain renders the very same templates in its live preview
+ * while holding the account (and possibly super-admin "Login As") session. Any project admin
+ * or invited collaborator could otherwise plant JS that runs against every other admin who
+ * opens the dashboard, so there templates are rendered as static, sanitized HTML.
+ *
+ * Self-host serves dashboard and portal from one origin by design, so it keeps executing.
+ */
+export function templateScriptsAllowed(): boolean {
+  if (windowIso.isSsr) return false;
+  if (isSelfHostLike()) return true;
+  return windowIso.location.hostname !== windowIso.parentDomain;
+}
 
 interface Props {
   template: string;
@@ -22,6 +43,7 @@ interface ConnectProps {
 }
 class TemplateLiquid extends Component<Props & ConnectProps> {
   render() {
+    const scriptsAllowed = templateScriptsAllowed();
     return (
       <NoSsr>
         <ErrorBoundary hideOnError>
@@ -34,8 +56,10 @@ class TemplateLiquid extends Component<Props & ConnectProps> {
               core: this.props.state,
             }}
             render={(renderedTemplate) => {
-              return !renderedTemplate?.__html ? null
-                : (<DangerouslySetInnerHtmlWithScriptExecution html={renderedTemplate.__html} />);
+              if (!renderedTemplate?.__html) return null;
+              return scriptsAllowed
+                ? (<DangerouslySetInnerHtmlWithScriptExecution html={renderedTemplate.__html} />)
+                : (<div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderedTemplate.__html) }} />);
             }}
           />
         </ErrorBoundary>
