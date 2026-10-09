@@ -132,8 +132,8 @@ public class UserBindUtil {
                         oauthTokenOpt.get().getCode());
                 createSession = true;
             } else {
-                log.trace("OAuth failed, token {} with oauth provider present {} client secret present {}",
-                        oauthTokenOpt.get(), oauthMethodOpt.isPresent(), clientSecretOpt.isPresent());
+                log.trace("OAuth failed, oauth id {} with oauth provider present {} client secret present {}",
+                        oauthTokenOpt.get().getId(), oauthMethodOpt.isPresent(), clientSecretOpt.isPresent());
             }
         }
 

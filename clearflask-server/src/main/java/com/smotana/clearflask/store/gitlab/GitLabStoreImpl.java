@@ -200,8 +200,8 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
 
                 if (res.getStatusLine().getStatusCode() < 200
                         || res.getStatusLine().getStatusCode() > 299) {
-                    log.warn("GitLab OAuth token exchange failed: HTTP {} - Response: {}",
-                            res.getStatusLine().getStatusCode(), responseBody);
+                    log.warn("GitLab OAuth token exchange failed: HTTP {} - Response length: {}",
+                            res.getStatusLine().getStatusCode(), responseBody.length());
 
                     if (res.getStatusLine().getStatusCode() == 401) {
                         throw new ApiException(Response.Status.UNAUTHORIZED,
@@ -228,8 +228,8 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
                             !Strings.isNullOrEmpty(oAuthResponse.getRefreshToken()),
                             oAuthResponse.getExpiresIn());
                 } catch (JsonSyntaxException | JsonIOException | IllegalArgumentException ex) {
-                    log.warn("GitLab provider authorization response cannot parse, url {} response status {} body {}",
-                            reqAuthorize.getURI(), res.getStatusLine().getStatusCode(), responseBody, ex);
+                    log.warn("GitLab provider authorization response cannot parse, url {} response status {} body length {}",
+                            reqAuthorize.getURI(), res.getStatusLine().getStatusCode(), responseBody.length(), ex);
                     throw new ApiException(Response.Status.BAD_GATEWAY,
                             "GitLab returned a response we did not understand, please try again", ex);
                 }

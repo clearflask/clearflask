@@ -15,6 +15,7 @@ import io.dataspray.singletable.DynamoTable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NonNull;
+import lombok.ToString;
 import lombok.Value;
 import org.gitlab4j.api.models.Issue;
 import org.gitlab4j.api.webhook.IssueEvent;
@@ -100,9 +101,11 @@ public interface GitLabStore {
         long projectId;
 
         @NonNull
+        @ToString.Exclude
         String accessToken;
 
         @NonNull
+        @ToString.Exclude
         String refreshToken;
 
         @NonNull
