@@ -116,8 +116,10 @@ server:
   service:
     type: ClusterIP
     port: 8080
-    jmxPort: 9950
-    jmxRmiPort: 9951
+    # Unauthenticated JMX exposes every config value including signing keys; leave disabled unless you also
+    # restrict access with a NetworkPolicy. Set e.g. jmxPort: 9950 / jmxRmiPort: 9951 to enable.
+    jmxPort: null
+    jmxRmiPort: null
 
   # Resource limits
   resources:

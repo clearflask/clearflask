@@ -119,6 +119,7 @@ public class SelfHostConfigBootstrap {
             if (configJustCreated) {
                 changed |= generateFreshSecrets(lines, random);
             } else {
+                changed |= rotateTemplateSecretsOnExistingInstall(lines, random);
                 warnIfTemplateSecretsPresent(lines);
             }
 
@@ -148,7 +149,36 @@ public class SelfHostConfigBootstrap {
         return changed;
     }
 
-    /** Existing installs keep their secrets; auto-rotating would break push subscriptions, SSO and sign-in links. */
+    /**
+     * Existing installs that still run on the publicly-known template values for the sign-in link signer, the cursor
+     * key or the SSO key get fresh values: anyone can forge sign-in links and SSO tokens with the published ones, and
+     * rotating them only invalidates outstanding sign-in links and search cursors. The VAPID keypair is left alone and
+     * only warned about since rotating it silently drops every browser push subscription.
+     */
+    @VisibleForTesting
+    static boolean rotateTemplateSecretsOnExistingInstall(List<String> lines, SecureRandom random) {
+        boolean changed = false;
+        if (hasTemplateValue(lines, KEY_TOKEN_SIGNER)) {
+            changed |= setProperty(lines, KEY_TOKEN_SIGNER, randomBase64(random, 172));
+            log.warn("SECURITY: replaced the publicly-known template sign-in token signer key with a fresh one; outstanding sign-in links are invalid");
+        }
+        if (hasTemplateValue(lines, KEY_CURSOR_SHARED_KEY)) {
+            changed |= setProperty(lines, KEY_CURSOR_SHARED_KEY, randomBase64(random, 32));
+            log.warn("SECURITY: replaced the publicly-known template cursor key with a fresh one");
+        }
+        if (hasTemplateValue(lines, KEY_SSO_SECRET)) {
+            changed |= setProperty(lines, KEY_SSO_SECRET, randomUuid(random));
+            log.warn("SECURITY: replaced the publicly-known template SSO secret with a fresh one");
+        }
+        return changed;
+    }
+
+    private static boolean hasTemplateValue(List<String> lines, String key) {
+        Optional<String> valueOpt = getProperty(lines, key);
+        return valueOpt.isPresent() && valueOpt.get().equals(TEMPLATE_SECRETS.get(key));
+    }
+
+    /** Remaining template secrets (VAPID keypair) are only warned about; rotating them would break push subscriptions. */
     private static void warnIfTemplateSecretsPresent(List<String> lines) {
         List<String> affected = new ArrayList<>();
         for (Map.Entry<String, String> entry : TEMPLATE_SECRETS.entrySet()) {

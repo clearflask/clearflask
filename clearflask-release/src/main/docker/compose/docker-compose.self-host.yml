@@ -20,11 +20,13 @@ services:
       - ./connect:/opt/clearflask/
   clearflask-server:
     image: ghcr.io/clearflask/clearflask-server:latest
-    ports:
-      - 8080:8080
-      # JMX
-      - 9950:9950
-      - 9951:9951
+    # Only Connect needs to reach the server, over the compose network. Publishing 8080 on the host would
+    # expose the API directly, bypassing Connect's rate limiting and ban list. Uncomment for debugging only.
+    #ports:
+    #  - 8080:8080
+    #  # JMX (also requires CATALINA_OPTS enabling it, see server.Dockerfile)
+    #  - 9950:9950
+    #  - 9951:9951
     environment:
       - CLEARFLASK_ENVIRONMENT=PRODUCTION_SELF_HOST
       - CLEARFLASK_CREATE_SERVER_CONFIG_IF_MISSING=1
@@ -47,8 +49,10 @@ services:
     volumes:
       - ./data/mysql:/var/lib/mysql
       - ./mysql-db:/docker-entrypoint-initdb.d
-    ports:
-      - 3306:3306
+    # The database uses a well-known root password; never publish it on the host.
+    # Uncomment only for local debugging on a trusted machine.
+    #ports:
+    #  - 3306:3306
     environment:
       - MYSQL_ROOT_PASSWORD=clearflask
   # ElasticSearch (disabled by default)

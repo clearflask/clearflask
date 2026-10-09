@@ -18,6 +18,9 @@ services:
     environment:
       - CLEARFLASK_ENVIRONMENT=DEVELOPMENT_LOCAL
       - JAVA_OPTS="-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:9999"
+      # Local-only unauthenticated JMX for JVisualVM/JConsole. Overrides the image's CATALINA_OPTS, so the
+      # --add-opens flags from server.Dockerfile are repeated here.
+      - CATALINA_OPTS=-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.port=9950 -Dcom.sun.management.jmxremote.rmi.port=9951 -Djava.rmi.server.hostname=0.0.0.0 -Dlog4j2.formatMsgNoLookups=true --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED --add-opens java.base/sun.reflect.generics.reflectiveObjects=ALL-UNNAMED --add-opens java.base/java.security.cert=ALL-UNNAMED
     depends_on:
       - localstack
       - mysql-db

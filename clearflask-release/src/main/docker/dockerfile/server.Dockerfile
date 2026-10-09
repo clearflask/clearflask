@@ -1,15 +1,10 @@
 FROM tomcat:9.0-jdk17-temurin
 EXPOSE 8080
-# JMX
-EXPOSE 9950
-EXPOSE 9951
-ENV CATALINA_OPTS="-Dcom.sun.management.jmxremote \
- -Dcom.sun.management.jmxremote.authenticate=false \
- -Dcom.sun.management.jmxremote.ssl=false \
- -Dlog4j2.formatMsgNoLookups=true \
- -Dcom.sun.management.jmxremote.port=9950 \
- -Dcom.sun.management.jmxremote.rmi.port=9951 \
- -Djava.rmi.server.hostname=0.0.0.0 \
+# JMX is intentionally not enabled here. Unauthenticated remote JMX exposes every config value (including
+# signing keys and credentials) and lets anyone who can reach the port change config and log levels. For local
+# development docker-compose.local.yml sets CATALINA_OPTS with JMX on; production operators who need JMX
+# should enable it with authentication and SSL, bound to localhost.
+ENV CATALINA_OPTS="-Dlog4j2.formatMsgNoLookups=true \
  --add-opens java.base/java.lang=ALL-UNNAMED \
  --add-opens java.base/java.util=ALL-UNNAMED \
  --add-opens java.base/java.lang.reflect=ALL-UNNAMED \
