@@ -103,8 +103,9 @@ public interface AccountStore {
 
     ListenableFuture<Void> deleteAccount(String accountId);
 
+    /** Session ids are bearer secrets: they must be unpredictable, never time-ordered like the other ids. */
     default String genSessionId() {
-        return IdUtil.randomAscId();
+        return IdUtil.randomId();
     }
 
     AccountSession createSession(Account account, long ttlInEpochSec);

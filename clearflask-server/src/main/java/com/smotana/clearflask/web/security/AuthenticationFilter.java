@@ -317,7 +317,13 @@ public class AuthenticationFilter implements ContainerRequestFilter {
                             role, authenticatedUserSessionOpt.get().getUserId(), authenticatedUserSessionOpt.get().getProjectId(), pathParamProjectIdOpt.get());
                     return false;
                 }
-                if (authenticatedUserSessionOpt.get().getIsMod() != Boolean.TRUE) {
+                // Check the user record rather than the isMod snapshot taken when the session was created: a
+                // demoted moderator or removed teammate would otherwise keep moderator rights for the life of the
+                // session (up to 300 days, auto-renewed).
+                boolean isMod = userStore.getUser(authenticatedUserSessionOpt.get().getProjectId(), authenticatedUserSessionOpt.get().getUserId())
+                        .map(UserStore.UserModel::getIsMod)
+                        .orElse(Boolean.FALSE) == Boolean.TRUE;
+                if (!isMod) {
                     log.trace("Role {} with user {} not being a mod", role, authenticatedUserSessionOpt.get().getUserId());
                     return false;
                 }

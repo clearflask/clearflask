@@ -862,6 +862,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             userUpdatedBuilder.isMod(updates.getIsMod());
             indexUpdates.put("isMod", updates.getIsMod() == Boolean.TRUE);
             mysqlUpdates.setIsmod(updates.getIsMod());
+            updateSessionsModStatus(projectId, userId, updates.getIsMod());
         }
         if (updates.getPic() != null) {
             nameMap.put("#pic", "pic");

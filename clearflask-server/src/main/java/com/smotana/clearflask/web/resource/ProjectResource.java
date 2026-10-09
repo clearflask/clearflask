@@ -427,6 +427,14 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
             projectStore.removeAdmin(projectId, accountId);
             // This is a critical time, if something happens here, there will be inconsistent state in ownership
             accountStore.removeExternalProject(accountId, projectId);
+            // The teammate's auto-created portal user is a moderator; strip that and end its sessions, otherwise the
+            // removed teammate keeps moderating through the portal
+            userStore.getUserByIdentifier(projectId, UserStore.IdentifierType.GUID, accountId)
+                    .filter(user -> user.getIsMod() == Boolean.TRUE)
+                    .ifPresent(user -> {
+                        userStore.updateUser(projectId, user.getUserId(), UserUpdateAdmin.builder().isMod(false).build());
+                        userStore.revokeSessions(projectId, user.getUserId(), Optional.empty());
+                    });
         }
         if (!Strings.isNullOrEmpty(invitationId)) {
             projectStore.revokeInvitation(projectId, invitationId);
