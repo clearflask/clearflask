@@ -59,13 +59,19 @@ public class SelfHostConfigBootstrap {
             "com.smotana.clearflask.store.impl.DynamoElasticUserStore$Config.tokenSignerPrivKey",
             "vKsQVLtZ0iU1hcqZNvCi/orKMLXvp6OQ2Cim6APxqAnheE9WblrSO6nOp/Zw7a4VW9jDP4A/FEWas4BKj4Y1DhwNy9AeS4oVOHgKpa4xVkVtUsF8nMlmXxG+3ukkl18/tr8H4GXPMBxO7BgSXDEBe3zet/AkMSyNq2FbAMOWzeeeWW1lEWDJ/3jv2laVFG5EoKnSzsZnYbPcntM9RnlFo0d8TouUapqxIc4dWQ==",
             "com.smotana.clearflask.security.ClearFlaskSso$Config.secretKey",
-            "439E5B12-F4D6-4BEF-9890-2CEEEFA67A8D");
+            "439E5B12-F4D6-4BEF-9890-2CEEEFA67A8D",
+            "com.smotana.clearflask.web.resource.GitLabResource$Config.webhookSecret",
+            "c0ffee5ecre7000000000000000000000000000000000000000000000000gitlab",
+            "com.smotana.clearflask.web.resource.JiraResource$Config.webhookSecret",
+            "c0ffee5ecre7000000000000000000000000000000000000000000000000jira00");
 
     private static final String KEY_VAPID_PUBLIC = "com.smotana.clearflask.core.push.provider.BrowserPushServiceImpl$Config.publicKey";
     private static final String KEY_VAPID_PRIVATE = "com.smotana.clearflask.core.push.provider.BrowserPushServiceImpl$Config.privateKey";
     private static final String KEY_CURSOR_SHARED_KEY = "com.smotana.clearflask.util.DefaultServerSecret$Config.sharedKey:cursor";
     private static final String KEY_TOKEN_SIGNER = "com.smotana.clearflask.store.impl.DynamoElasticUserStore$Config.tokenSignerPrivKey";
     private static final String KEY_SSO_SECRET = "com.smotana.clearflask.security.ClearFlaskSso$Config.secretKey";
+    private static final String KEY_GITLAB_WEBHOOK_SECRET = "com.smotana.clearflask.web.resource.GitLabResource$Config.webhookSecret";
+    private static final String KEY_JIRA_WEBHOOK_SECRET = "com.smotana.clearflask.web.resource.JiraResource$Config.webhookSecret";
     private static final String KEY_SUPER_ADMIN_REGEX = "com.smotana.clearflask.web.security.SuperAdminPredicate$Config.superAdminEmailRegex";
     private static final String KEY_SMTP_HOST = "com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.smtpHost";
     private static final String KEY_EMAIL_USE_SERVICE = "com.smotana.clearflask.core.push.provider.EmailServiceImpl$Config.useService";
@@ -142,8 +148,10 @@ public class SelfHostConfigBootstrap {
         changed |= setProperty(lines, KEY_CURSOR_SHARED_KEY, randomBase64(random, 32));
         changed |= setProperty(lines, KEY_TOKEN_SIGNER, randomBase64(random, 172));
         changed |= setProperty(lines, KEY_SSO_SECRET, randomUuid(random));
+        changed |= setProperty(lines, KEY_GITLAB_WEBHOOK_SECRET, randomHex(random, 32));
+        changed |= setProperty(lines, KEY_JIRA_WEBHOOK_SECRET, randomHex(random, 32));
         if (changed) {
-            log.info("Generated fresh install-specific secrets (VAPID keypair, cursor key, token signer, SSO key)");
+            log.info("Generated fresh install-specific secrets (VAPID keypair, cursor key, token signer, SSO key, webhook secrets)");
         }
         return changed;
     }
@@ -239,6 +247,12 @@ public class SelfHostConfigBootstrap {
                 .filter(line -> line.startsWith(key + "="))
                 .findFirst()
                 .map(line -> line.substring(key.length() + 1));
+    }
+
+    private static String randomHex(SecureRandom random, int numBytes) {
+        byte[] bytes = new byte[numBytes];
+        random.nextBytes(bytes);
+        return WebhookTokenUtil.toHex(bytes);
     }
 
     private static String randomBase64(SecureRandom random, int numBytes) {

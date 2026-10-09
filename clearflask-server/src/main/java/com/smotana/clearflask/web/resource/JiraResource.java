@@ -19,6 +19,7 @@ import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.util.JiraSignatureVerifier;
 import com.smotana.clearflask.util.LogUtil;
+import com.smotana.clearflask.util.WebhookTokenUtil;
 import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
 
@@ -51,8 +52,20 @@ public class JiraResource {
         @DefaultValue("true")
         boolean enabled();
 
+        /**
+         * Server-side secret from which per-project webhook tokens are derived, see {@link WebhookTokenUtil}. Jira
+         * Cloud does not sign REST-registered webhooks, so the token embedded in the registered callback URL is the
+         * only thing authenticating inbound events. Webhooks are rejected while this is empty.
+         */
         @DefaultValue("")
         String webhookSecret();
+
+        /**
+         * Webhooks registered before tokens existed have no token in their URL and are therefore unauthenticated.
+         * Only enable temporarily while re-linking existing Jira integrations.
+         */
+        @DefaultValue("false")
+        boolean acceptLegacyUnauthenticated();
     }
 
     @Context
@@ -75,6 +88,7 @@ public class JiraResource {
     public void webhookProject(
             @PathParam("projectId") @NotNull String projectId,
             @PathParam("cloudId") @NotNull String cloudId,
+            @QueryParam("token") String token,
             @Valid String payload) {
 
         if (!config.enabled()) {
@@ -84,6 +98,7 @@ public class JiraResource {
 
         String webhookId = getWebhookId();
         checkUserAgent(webhookId);
+        checkToken(projectId, cloudId, token, webhookId);
 
         // Verify signature if secret is configured
         if (!Strings.isNullOrEmpty(config.webhookSecret())) {
@@ -256,6 +271,34 @@ public class JiraResource {
             webhookId = "jira-" + System.currentTimeMillis();
         }
         return webhookId;
+    }
+
+    private void checkToken(String projectId, String cloudId, String token, String webhookId) {
+        String configuredSecret = config.webhookSecret();
+        if (Strings.isNullOrEmpty(configuredSecret)) {
+            if (LogUtil.rateLimitAllowLog("jira-resource-no-secret")) {
+                log.error("Jira webhook secret is not configured, rejecting webhook {}. Set JiraResource$Config.webhookSecret.", webhookId);
+            }
+            throw new InternalServerErrorException("Jira webhook secret not configured");
+        }
+        if (WebhookTokenUtil.matches(webhookToken(configuredSecret, projectId, cloudId), token)) {
+            return;
+        }
+        if (Strings.isNullOrEmpty(token) && config.acceptLegacyUnauthenticated()) {
+            if (LogUtil.rateLimitAllowLog("jira-resource-legacy-unauthenticated")) {
+                log.warn("Accepting unauthenticated legacy Jira webhook for projectId {} cloudId {}; re-link the integration", projectId, cloudId);
+            }
+            return;
+        }
+        if (LogUtil.rateLimitAllowLog("jira-resource-token-mismatch")) {
+            log.warn("Jira webhook token mismatch for projectId {} cloudId {} webhookId {}", projectId, cloudId, webhookId);
+        }
+        throw new BadRequestException("Invalid token");
+    }
+
+    /** Token embedded in the callback URL registered with Jira; only valid for that one project/site pair. */
+    public static String webhookToken(String secret, String projectId, String cloudId) {
+        return WebhookTokenUtil.derive(secret, "jira", projectId, cloudId);
     }
 
     private void checkUserAgent(String webhookId) {

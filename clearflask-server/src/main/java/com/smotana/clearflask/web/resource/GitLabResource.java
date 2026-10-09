@@ -16,6 +16,7 @@ import com.smotana.clearflask.store.ProjectStore;
 import com.smotana.clearflask.store.ProjectStore.Project;
 import com.smotana.clearflask.store.gitlab.GitLabClientProvider;
 import com.smotana.clearflask.util.LogUtil;
+import com.smotana.clearflask.util.WebhookTokenUtil;
 import com.smotana.clearflask.web.Application;
 import lombok.extern.slf4j.Slf4j;
 import org.gitlab4j.api.webhook.IssueEvent;
@@ -48,12 +49,20 @@ public class GitLabResource {
 
     public interface Config {
         /**
-         * Secret token for GitLab webhook validation.
+         * Server-side secret from which per-project webhook tokens are derived, see {@link WebhookTokenUtil}.
          * MUST be configured in production - empty default will cause webhooks to fail.
-         * Generate a strong random secret and configure both in ClearFlask and GitLab webhook settings.
+         * The secret itself is never sent to GitLab; each linked project gets its own derived token.
          */
         @DefaultValue("")
         String webhookSecret();
+
+        /**
+         * Webhooks created before per-project tokens existed carry the raw global secret. Accepting it keeps those
+         * links working, at the cost that anyone who learned the secret from their own GitLab instance can still
+         * forge events for any project. Re-link GitLab projects and then set this to false.
+         */
+        @DefaultValue("true")
+        boolean acceptLegacyGlobalToken();
     }
 
     @Context
@@ -79,7 +88,7 @@ public class GitLabResource {
             @PathParam("projectId") @NotNull String projectId,
             @PathParam("gitlabProjectId") @NotNull long gitlabProjectId,
             @Valid String payload) {
-        checkToken();
+        checkToken(projectId, gitlabProjectId);
         String eventType = getEventType();
 
         Optional<Project> projectOpt = Optional.empty();
@@ -132,7 +141,7 @@ public class GitLabResource {
         }
     }
 
-    private void checkToken() {
+    private void checkToken(String projectId, long gitlabProjectId) {
         String configuredSecret = config.webhookSecret();
         if (Strings.isNullOrEmpty(configuredSecret)) {
             log.error("GitLab webhook secret is not configured. Please set a secure random secret in the configuration.");
@@ -140,12 +149,26 @@ public class GitLabResource {
         }
 
         String token = Strings.nullToEmpty(request.getHeader(GITLAB_TOKEN_HEADER));
-        if (!configuredSecret.equals(token)) {
-            if (LogUtil.rateLimitAllowLog("gitlab-resource-token-mismatch")) {
-                log.warn("GitLab webhook token mismatch");
-            }
-            throw new BadRequestException("Invalid token");
+        String expectedToken = webhookToken(configuredSecret, projectId, gitlabProjectId);
+        if (WebhookTokenUtil.matches(expectedToken, token)) {
+            return;
         }
+        if (config.acceptLegacyGlobalToken() && WebhookTokenUtil.matches(configuredSecret, token)) {
+            if (LogUtil.rateLimitAllowLog("gitlab-resource-legacy-token")) {
+                log.warn("GitLab webhook for projectId {} gitlabProjectId {} authenticated with the legacy global token;"
+                        + " re-link the project to switch to a per-project token", projectId, gitlabProjectId);
+            }
+            return;
+        }
+        if (LogUtil.rateLimitAllowLog("gitlab-resource-token-mismatch")) {
+            log.warn("GitLab webhook token mismatch for projectId {} gitlabProjectId {}", projectId, gitlabProjectId);
+        }
+        throw new BadRequestException("Invalid token");
+    }
+
+    /** Token registered with GitLab for a given link; only valid for that one project pair. */
+    public static String webhookToken(String secret, String projectId, long gitlabProjectId) {
+        return WebhookTokenUtil.derive(secret, "gitlab", projectId, String.valueOf(gitlabProjectId));
     }
 
     private String getEventType() {

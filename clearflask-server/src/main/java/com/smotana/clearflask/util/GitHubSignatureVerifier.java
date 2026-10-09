@@ -8,57 +8,58 @@ import lombok.extern.slf4j.Slf4j;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.ws.rs.BadRequestException;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Locale;
 
 @Slf4j
 public class GitHubSignatureVerifier {
 
     private static final String HMAC_SHA256_ALGORITHM = "HmacSHA256";
-    private static final char[] HEX = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+    private static final String SIGNATURE_PREFIX = "sha256=";
 
     /**
-     * From: https://github.com/guigarage/github-hooks/blob/master/src/main/java/com/guigarage/github/hooks/SignatureCrypto.java
-     * <p>
-     * Modified to use SHA256
+     * Verifies the {@code X-Hub-Signature-256} header of a GitHub webhook. Fails closed: any missing or malformed
+     * input, an unconfigured secret, or an internal error rejects the request.
      */
     public static void verifySignature(String payload, String signature, String secret, String eventGuid) {
-        try {
-            if (Strings.isNullOrEmpty(payload)
-                    || Strings.isNullOrEmpty(secret)
-                    || Strings.isNullOrEmpty(signature)
-                    || !signature.startsWith("sha256=")) {
-                if (LogUtil.rateLimitAllowLog("github-signature-verifier-wrong-input")) {
-                    log.warn("Invalid signature input, signature {} guid {}", signature, eventGuid);
-                }
+        if (Strings.isNullOrEmpty(secret)) {
+            if (LogUtil.rateLimitAllowLog("github-signature-verifier-no-secret")) {
+                log.error("GitHub webhook secret is not configured, rejecting webhook guid {}", eventGuid);
             }
-            Mac mac = Mac.getInstance(HMAC_SHA256_ALGORITHM);
-            SecretKeySpec signingKey = new SecretKeySpec(secret.getBytes(), HMAC_SHA256_ALGORITHM);
-            mac.init(signingKey);
-            byte[] rawHmac = mac.doFinal(payload.getBytes());
-            String expected = signature.substring(7); // strip "sha256="
-            final int amount = rawHmac.length;
-            char[] raw = new char[2 * amount];
-            int j = 0;
-            for (byte b : rawHmac) {
-                raw[j++] = HEX[(0xF0 & b) >>> 4];
-                raw[j++] = HEX[(0x0F & b)];
+            throw new BadRequestException("Signature failed");
+        }
+        if (Strings.isNullOrEmpty(payload)
+                || Strings.isNullOrEmpty(signature)
+                || !signature.startsWith(SIGNATURE_PREFIX)) {
+            if (LogUtil.rateLimitAllowLog("github-signature-verifier-wrong-input")) {
+                log.warn("Invalid signature input, signature present {} guid {}", !Strings.isNullOrEmpty(signature), eventGuid);
             }
-            String actual = new String(raw);
+            throw new BadRequestException("Signature failed");
+        }
 
-            if (!expected.equals(actual)) {
-                if (LogUtil.rateLimitAllowLog("github-signature-verifier-mismatch")) {
-                    log.warn("GitHub signature failed, expected {} actual {} signature {} guid {}",
-                            expected, actual, signature, eventGuid);
-                }
-                throw new BadRequestException("Signature failed");
-            }
+        byte[] actual;
+        try {
+            Mac mac = Mac.getInstance(HMAC_SHA256_ALGORITHM);
+            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), HMAC_SHA256_ALGORITHM));
+            actual = mac.doFinal(payload.getBytes(StandardCharsets.UTF_8));
         } catch (NoSuchAlgorithmException | InvalidKeyException | IllegalStateException ex) {
-            if (LogUtil.rateLimitAllowLog("github-signature-verifier-failure")) {
-                log.warn("Failed to compute signature", ex);
+            log.error("Failed to compute GitHub signature, guid {}", eventGuid, ex);
+            throw new BadRequestException("Signature failed");
+        }
+
+        String expectedHex = signature.substring(SIGNATURE_PREFIX.length()).toLowerCase(Locale.ROOT);
+        String actualHex = WebhookTokenUtil.toHex(actual);
+        if (!MessageDigest.isEqual(
+                expectedHex.getBytes(StandardCharsets.UTF_8),
+                actualHex.getBytes(StandardCharsets.UTF_8))) {
+            if (LogUtil.rateLimitAllowLog("github-signature-verifier-mismatch")) {
+                // Never log the computed signature: it is a valid signature for this payload
+                log.warn("GitHub signature mismatch, guid {}", eventGuid);
             }
+            throw new BadRequestException("Signature failed");
         }
     }
-
-
 }
