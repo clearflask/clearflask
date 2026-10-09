@@ -58,7 +58,7 @@ public class Sanitizer {
         boolean htmlSanitizerEnabled();
 
         @DefaultValue("<p style=\"color: #e60000;\">Cannot display corrupted message</p>")
-        boolean htmlSanitizerInvalidHtmlMessage();
+        String htmlSanitizerInvalidHtmlMessage();
     }
 
     @Inject

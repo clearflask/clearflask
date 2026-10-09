@@ -38,6 +38,13 @@ public class ImageNormalizationImpl implements ImageNormalization {
 
         @DefaultValue("true")
         boolean keepGifsAsIs();
+
+        /**
+         * Decoding allocates width x height x 4 bytes regardless of the compressed size; a tiny PNG declaring
+         * 30k x 30k pixels would need 3.6GB. Checked against the header before decoding.
+         */
+        @DefaultValue("50000000")
+        long maxPixels();
     }
 
     private static final String COMMENT_INDEX = "comment";
@@ -65,7 +72,12 @@ public class ImageNormalizationImpl implements ImageNormalization {
 
             if (numImages < 1) {
                 throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Empty image");
-            } else if ("gif".equals(format) && numImages > 1 && config.keepGifsAsIs()) {
+            }
+            long pixels = (long) imageReader.getWidth(0) * (long) imageReader.getHeight(0);
+            if (pixels > config.maxPixels()) {
+                throw new ApiException(Response.Status.UNSUPPORTED_MEDIA_TYPE, "Image dimensions are too large");
+            }
+            if ("gif".equals(format) && numImages > 1 && config.keepGifsAsIs()) {
                 return new Image(ContentType.GIF.getMediaType(), imgBytes);
             } else {
                 return writeJpeg(imageReader.read(0), maxWidth, maxHeight);
