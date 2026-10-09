@@ -70,6 +70,8 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     private CommentStore commentStore;
     @Inject
     private ProjectStore projectStore;
+    @Inject
+    private AuthCookie authCookie;
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
@@ -112,7 +114,7 @@ public class AuthenticationFilter implements ContainerRequestFilter {
     }
 
     private Optional<AccountSession> getAccountSessionForCookieName(ContainerRequestContext requestContext, String cookieName) {
-        return Optional.ofNullable(requestContext.getCookies().get(cookieName))
+        return Optional.ofNullable(requestContext.getCookies().get(authCookie.wireName(cookieName)))
                 .map(Cookie::getValue)
                 .filter(this::isValidSessionId)
                 .flatMap(accountStore::getSession);
