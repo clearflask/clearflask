@@ -102,8 +102,8 @@ public class OAuthUtil {
                     return Optional.empty();
                 }
                 profileResponse = outboundUrlGuard.readBodyBounded(res.getEntity());
-                log.trace("OAuth profile url {} returned {} for projectId {}",
-                        reqProfile, profileResponse, projectId);
+                log.trace("OAuth profile url {} returned {} chars for projectId {}",
+                        reqProfile.getURI(), profileResponse.length(), projectId);
             } catch (IOException ex) {
                 log.debug("OAuth provider failed fetching profile, projectId {} url {}",
                         projectId, reqProfile.getURI(), ex);
@@ -123,8 +123,8 @@ public class OAuthUtil {
                         return Optional.empty();
                     }
                     emailResponse = outboundUrlGuard.readBodyBounded(res.getEntity());
-                    log.trace("OAuth email url {} returned {} for projectId {}",
-                            emailUrlOpt.get(), emailResponse, projectId);
+                    log.trace("OAuth email url {} returned {} chars for projectId {}",
+                            emailUrlOpt.get(), emailResponse.length(), projectId);
                 } catch (IOException ex) {
                     log.debug("OAuth provider failed fetching email, projectId {} url {}",
                             projectId, reqEmail.getURI(), ex);
