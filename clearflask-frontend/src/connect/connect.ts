@@ -204,6 +204,30 @@ function addAcmeRoute(server) {
   );
 }
 
+// Paths on the parent domain that are never meant to be embedded. Project portals, /embed and /embed-status
+// must stay frameable: customers put them in iframes on their own sites.
+const UNFRAMEABLE_PATH = /^\/(dashboard|login|signup|invitation|coupon|forgot-password|reset-password|invoice)(\/|$)/;
+
+export function isUnframeable(hostname: string, path: string): boolean {
+  return hostname === connectConfig.parentDomain && UNFRAMEABLE_PATH.test(path);
+}
+
+/**
+ * Baseline response headers. The Java side sets HSTS and nosniff on /api already; the pages Connect renders
+ * had none, which left the dashboard and billing pages clickjackable and let browsers sniff content types.
+ */
+function securityHeaders(req, res, next) {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  // Browsers ignore HSTS over plain http, so this is harmless on http-only self-host installs
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000');
+  if (isUnframeable(req.hostname, req.path)) {
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('Content-Security-Policy', "frame-ancestors 'self'");
+  }
+  next();
+}
+
 function createApp(serverApi) {
   const serverApp = express();
   const reactRender = reactRenderer();
@@ -242,6 +266,7 @@ function createApp(serverApi) {
     next();
   });
 
+  serverApp.use(securityHeaders);
   serverApp.use(cookieParser());
   serverApp.use(compression({
     filter: (req, res) => {
