@@ -1233,7 +1233,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             log.warn("Token signature verification failed: {}", ex.getMessage());
             return Optional.empty();
         } catch (ExpiredJwtException ex) {
-            log.trace("Token is past expiration {}", token);
+            log.trace("Token is past expiration, length {}", token.length());
             return Optional.empty();
         }
 
@@ -1243,15 +1243,15 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             projectId = claims.get("pid", String.class);
             userId = claims.get("uid", String.class);
         } catch (RequiredTypeException ex) {
-            log.warn("Invalid type in token {}", token);
+            log.warn("Invalid type in token (length {})", token.length());
             return Optional.empty();
         }
         if (projectId == null) {
-            log.warn("Missing pid in token {}", token);
+            log.warn("Missing pid in token (length {})", token.length());
             return Optional.empty();
         }
         if (userId == null) {
-            log.warn("Missing uid in token {}", token);
+            log.warn("Missing uid in token (length {})", token.length());
             return Optional.empty();
         }
 
@@ -1288,7 +1288,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
                     .getBody();
         } catch (UnsupportedJwtException | MalformedJwtException | SignatureException ex) {
             if (LogUtil.rateLimitAllowLog("ssoCreateOrGet-failed-parse")) {
-                log.warn("Failed to parse token {}", token, ex);
+                log.warn("Failed to parse token (length {})", token.length(), ex);
             }
             return Optional.empty();
         } catch (ExpiredJwtException ex) {
@@ -1305,7 +1305,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             guid = claims.get("guid", String.class);
             if (guid == null) {
                 if (LogUtil.rateLimitAllowLog("ssoCreateOrGet-missing-guid")) {
-                    log.warn("Missing guid in token {}", token);
+                    log.warn("Missing guid in token (length {})", token.length());
                 }
                 return Optional.empty();
             }
@@ -1313,7 +1313,7 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             nameOpt = Optional.ofNullable(claims.get("name", String.class));
         } catch (RequiredTypeException ex) {
             if (LogUtil.rateLimitAllowLog("ssoCreateOrGet-invalid-type")) {
-                log.warn("Invalid type in token {}", token, ex);
+                log.warn("Invalid type in token (length {})", token.length(), ex);
             }
             return Optional.empty();
         }
