@@ -5,6 +5,7 @@ import { ServerStyleSheets } from '@material-ui/core';
 import htmlparser from 'cheerio';
 import { Handler } from 'express';
 import fs from 'fs';
+import he from 'he';
 import { i18n, Resource } from 'i18next';
 import path from 'path';
 import { resetServerContext } from 'react-beautiful-dnd';
@@ -209,19 +210,23 @@ export default function render(): Handler {
       html = html.replace(PH_OAUTH_CONFIG, `<script>window.__OAUTH_CONFIG__=${JSON.stringify(oauthConfig)}</script>`);
 
       // Favicon
-      html = html.replace(PH_FAVICON_URL, renderResult.faviconUrl || `${getParentDomainUrl()}/favicon.ico`);
+      // Title and favicon come from project config and post titles, i.e. from
+      // users, so they are entity-encoded before landing in the markup. The
+      // function replacers keep String.replace from interpreting `$` patterns
+      // inside user content.
+      html = html.replace(PH_FAVICON_URL, () => he.encode(renderResult.faviconUrl || `${getParentDomainUrl()}/favicon.ico`));
 
       // Page title
-      html = html.replace(PH_PAGE_TITLE, renderResult.title);
+      html = html.replace(PH_PAGE_TITLE, () => he.encode(renderResult.title));
 
       // JS, CSS
       html = html.replace(PH_LINK_TAGS, renderResult.extractor.getLinkTags());
       html = html.replace(PH_STYLE_TAGS, renderResult.extractor.getStyleTags());
       html = html.replace(PH_SCRIPT_TAGS, renderResult.extractor.getScriptTags());
-      html = html.replace(PH_MUI_STYLE_TAGS, renderResult.muiSheets.toString());
+      html = html.replace(PH_MUI_STYLE_TAGS, () => renderResult.muiSheets.toString());
 
       // Add rendered html
-      html = html.replace(PH_MAIN_SCREEN, renderResult.renderedScreen);
+      html = html.replace(PH_MAIN_SCREEN, () => renderResult.renderedScreen);
 
       // Add populated stores
       if (storesState.serverAdminStore !== undefined || storesState.serverStores !== undefined) {
@@ -231,7 +236,7 @@ export default function render(): Handler {
         };
         !!storesState.serverStores && Object.entries(storesState.serverStores)
           .forEach(([id, store]) => storesStateSerializable.serverStores![id] = store.getState());
-        html = html.replace(PH_STORE_CONTENT, htmlDataCreate('__SSR_STORE_INITIAL_STATE__', storesStateSerializable));
+        html = html.replace(PH_STORE_CONTENT, () => htmlDataCreate('__SSR_STORE_INITIAL_STATE__', storesStateSerializable));
       } else {
         html = html.replace(PH_STORE_CONTENT, '');
       }
@@ -249,7 +254,7 @@ export default function render(): Handler {
           i18nStore[l][ns] = i18n.services.resourceStore.data[l]?.[ns];
         });
       });
-      html = html.replace(PH_I18N_INIT_STORE, htmlDataCreate('__SSR_I18N_INIT_STORE__', i18nStore));
+      html = html.replace(PH_I18N_INIT_STORE, () => htmlDataCreate('__SSR_I18N_INIT_STORE__', i18nStore));
 
       res.writeHead(staticRouterContext.statusCode || 200, {
         'Content-Type': 'text/html',
