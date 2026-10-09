@@ -61,6 +61,11 @@ public class MockAuthCookie implements AuthCookie {
     }
 
     @Override
+    public String wireName(String cookieName) {
+        return cookieName;
+    }
+
+    @Override
     public void unsetAuthCookie(HttpServletRequest request, HttpServletResponse response, String cookieName) {
         if (mockExtendedSecurityContext != null) {
             if (ACCOUNT_AUTH_COOKIE_NAME.equals(cookieName)) {
