@@ -127,3 +127,6 @@ fabric.properties
 # Claude Code local/runtime artifacts
 .claude/settings.local.json
 .claude/*.lock
+
+# Paseo (agent workspace manager) per-project config
+paseo.json
