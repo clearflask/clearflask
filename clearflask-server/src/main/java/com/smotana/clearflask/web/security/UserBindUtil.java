@@ -75,10 +75,14 @@ public class UserBindUtil {
             authCookie.setAuthCookie(request, response, USER_AUTH_COOKIE_NAME_PREFIX + projectId, userSessionOpt.get().getSessionId(), userSessionOpt.get().getTtlInEpochSec());
         }
 
-        // Auto login using auth token
-        if (!userOpt.isPresent() && authTokenOpt.isPresent()) {
-            userOpt = userStore.verifyToken(authTokenOpt.get());
-            if (userOpt.isPresent()) {
+        // Auto login using auth token. A signed token wins over whatever session the browser already holds: an
+        // account holder following the dashboard's portal link may already have an anonymous session on the portal
+        // and would otherwise stay anonymous.
+        if (authTokenOpt.isPresent()) {
+            Optional<UserModel> tokenUserOpt = userStore.verifyToken(authTokenOpt.get());
+            if (tokenUserOpt.isPresent()
+                    && (!userOpt.isPresent() || !userOpt.get().getUserId().equals(tokenUserOpt.get().getUserId()))) {
+                userOpt = tokenUserOpt;
                 createSession = true;
             }
         }

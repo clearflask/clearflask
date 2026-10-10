@@ -2,6 +2,14 @@
 ## SPDX-License-Identifier: Apache-2.0
 components:
   schemas:
+    ProjectPortalLoginLink:
+      type: object
+      required:
+        - url
+      properties:
+        url:
+          type: string
+          description: Portal URL carrying a short-lived token that signs the caller in as their moderator user
     Config:
       x-clearflask-page: { name: 'General' }
       description: Config properties visible both to client app and admins.
@@ -1795,6 +1803,26 @@ components:
             schema:
               type: string
               format: binary
+/project/{projectId}/admin/portal-login-link:
+  post:
+    operationId: projectPortalLoginLinkAdmin
+    description: >
+      Returns a link to the project's portal that signs the caller in as their own moderator user. Dashboard and
+      portal cookies are scoped to their own hosts, so this one-time signed link is how an account holder gets from
+      the dashboard to a moderator session on the portal. The token in the link is short-lived.
+    tags: [ ProjectAdmin ]
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: 'api-project.yaml#/components/schemas/ProjectPortalLoginLink'
 /project/{projectId}/admin/admins:
   get:
     operationId: projectAdminsListAdmin

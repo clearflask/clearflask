@@ -75,6 +75,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.text.ParseException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -94,6 +97,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.smotana.clearflask.core.push.NotificationServiceImpl.AUTH_TOKEN_PARAM_NAME;
 import static com.smotana.clearflask.web.resource.UserResource.USER_AUTH_COOKIE_NAME_PREFIX;
 
 @Slf4j
@@ -107,6 +111,10 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
 
         @DefaultValue("100")
         double importRateLimitPerSecond();
+
+        /** Lifetime of the signed link that takes an account holder from the dashboard to their portal as moderator. */
+        @DefaultValue("PT5M")
+        Duration portalLoginLinkExpiry();
     }
 
     @Context
@@ -398,6 +406,29 @@ public class ProjectResource extends AbstractResource implements ProjectApi, Pro
         notificationService.onTeammateInvite(invitation);
 
         return new ProjectAdminsInviteResult(invitation.toInvitationAdmin());
+    }
+
+    /**
+     * Dashboard and portal cookies are scoped to their own hosts, so an account holder opening their portal from the
+     * dashboard would arrive anonymous. This mints a short-lived signed auto-login token for the account's own
+     * moderator user, the same mechanism notification emails use, and returns the portal URL carrying it.
+     */
+    @RolesAllowed({Role.PROJECT_ADMIN})
+    @Limit(requiredPermits = 1)
+    @Override
+    public ProjectPortalLoginLink projectPortalLoginLinkAdmin(String projectId) {
+        String accountId = getExtendedPrincipal()
+                .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
+                .orElseThrow(() -> new ApiException(Response.Status.UNAUTHORIZED, "Not logged in"));
+        Account account = accountStore.getAccount(accountId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.UNAUTHORIZED, "Account not found"));
+        Project project = projectStore.getProject(projectId, true)
+                .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
+        UserModel user = userStore.accountCreateOrGet(projectId, account);
+        String authToken = userStore.createToken(projectId, user.getUserId(), config.portalLoginLinkExpiry());
+        String url = "https://" + Project.getHostname(project.getVersionedConfigAdmin().getConfig(), configApp)
+                + "/?" + AUTH_TOKEN_PARAM_NAME + "=" + URLEncoder.encode(authToken, StandardCharsets.UTF_8);
+        return new ProjectPortalLoginLink(url);
     }
 
     @RolesAllowed({Role.PROJECT_ADMIN})

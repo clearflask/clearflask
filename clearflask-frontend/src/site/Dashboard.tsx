@@ -830,10 +830,23 @@ export class Dashboard extends Component<Props & ConnectProps & WithTranslation<
                     type: 'button' as 'button', tourAnchorProps: {
                       anchorId: 'dashboard-visit-portal', placement: 'bottom' as 'bottom',
                     },
-                    link: projectLink,
-                    linkIsExternal: true,
                     onClick: () => {
-                      !windowIso.isSsr && windowIso.open(projectLink, '_blank');
+                      if (!windowIso.isSsr) {
+                        // Dashboard cookies never reach the portal host, so ask the server for a one-time signed
+                        // link that lands the account holder on the portal as their moderator user. The tab is
+                        // opened synchronously so popup blockers do not eat it while the link is fetched.
+                        const portalWindow = windowIso.open('', '_blank');
+                        ServerAdmin.get().dispatchAdmin()
+                          .then(d => d.projectPortalLoginLinkAdmin({ projectId: activeProject!.projectId }))
+                          .then(result => result.url, () => projectLink)
+                          .then(url => {
+                            if (portalWindow) {
+                              portalWindow.location.href = url;
+                            } else {
+                              windowIso.open(url, '_blank');
+                            }
+                          });
+                      }
                       tourSetGuideState('visit-project', TourDefinitionGuideState.Completed);
                     }, title: this.props.t('visit'), icon: VisitIcon,
                   }] : []),
