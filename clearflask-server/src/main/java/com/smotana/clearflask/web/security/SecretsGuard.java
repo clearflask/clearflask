@@ -58,7 +58,16 @@ public class SecretsGuard {
             fail("ClearFlaskSso.secretKey is set to the published template value from config-selfhost.cfg; anyone can forge SSO tokens with it. Generate a new value, e.g. uuidgen");
         }
         if (CONNECT_TOKEN_PLACEHOLDER.equals(authConfig.connectToken())) {
-            fail("AuthenticationFilter.connectToken is set to the published placeholder from config-local.cfg");
+            if (env == Environment.PRODUCTION_SELF_HOST) {
+                // The plain docker-compose self-host install ships Connect and the server with the same published
+                // token and no way to generate a shared one on first boot. The server port is not published, so
+                // the token only guards the compose-internal network; warn loudly instead of refusing to start.
+                log.warn("SECURITY: AuthenticationFilter.connectToken is the published placeholder. Set"
+                        + " CLEARFLASK_CONNECT_TOKEN to the same random value on both the clearflask-server and"
+                        + " clearflask-connect containers, and never publish the server port.");
+            } else {
+                fail("AuthenticationFilter.connectToken is set to the published placeholder from config-local.cfg");
+            }
         }
         SecretKey signerKey = userStoreConfig.tokenSignerPrivKey();
         if (signerKey != null && Arrays.equals(signerKey.getEncoded(), TOKEN_SIGNER_PRIV_KEY_PLACEHOLDER)) {

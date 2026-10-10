@@ -180,6 +180,16 @@ public class SelfHostConfigBootstrap {
             changed |= setProperty(lines, KEY_SSO_SECRET, randomUuid(random));
             log.warn("SECURITY: replaced the publicly-known template SSO secret with a fresh one");
         }
+        // Webhook secrets were introduced after many installs were created: absent means the GitLab and Jira
+        // integrations refuse to link until a secret exists, and the template value is public, so a fresh value is
+        // right either way. Only webhooks registered with a template-derived token stop working, and those were
+        // forgeable anyway.
+        for (String key : new String[]{KEY_GITLAB_WEBHOOK_SECRET, KEY_JIRA_WEBHOOK_SECRET}) {
+            if (getProperty(lines, key).isEmpty() || hasTemplateValue(lines, key)) {
+                changed |= setProperty(lines, key, randomHex(random, 32));
+                log.warn("SECURITY: generated a fresh webhook secret for {}", key);
+            }
+        }
         return changed;
     }
 

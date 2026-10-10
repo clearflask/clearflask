@@ -325,7 +325,6 @@ curl http://localhost:4566/health
 
 **Check configuration:**
 ```bash
-kubectl get configmap clearflask-server -o yaml
 kubectl get secret clearflask-server -o yaml
 ```
 

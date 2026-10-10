@@ -295,7 +295,10 @@ helm upgrade clearflask . \
 
 ### JMX Metrics
 
-Server exposes JMX on port 9950 for monitoring.
+JMX is off by default: the image no longer enables it, and `server.service.jmxPort` / `server.service.jmxRmiPort` are
+`null`. If you need it for debugging, set both values and pass the matching `-Dcom.sun.management.jmxremote.*` flags
+through `CATALINA_OPTS`, and never expose the port outside the cluster: JMX has no authentication and gives full access
+to the server's configuration, including its secrets.
 
 ## Support
 
