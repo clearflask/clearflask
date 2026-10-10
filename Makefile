@@ -54,12 +54,13 @@ clearflask-release/target/run-docker-compose-selfhost/docker-compose.yml: get-pr
 	mkdir clearflask-release/target/run-docker-compose-selfhost
 	tar -xzf clearflask-release/target/clearflask-release-$(PROJECT_VERSION)-docker-compose-self-host.tar.gz -C clearflask-release/target/run-docker-compose-selfhost
 	sed -i'.original' 's,ghcr.io/clearflask,clearflask,g' clearflask-release/target/run-docker-compose-selfhost/docker-compose.yml
+	test -f clearflask-release/target/run-docker-compose-selfhost/.env || printf 'CLEARFLASK_CONNECT_TOKEN=%s\n' "$$(openssl rand -hex 16)" > clearflask-release/target/run-docker-compose-selfhost/.env
 selfhost-up: clearflask-release/target/run-docker-compose-selfhost/docker-compose.yml
-	docker-compose -f clearflask-release/target/run-docker-compose-selfhost/docker-compose.yml --profile with-deps up -d
-	docker-compose -f clearflask-release/target/run-docker-compose-selfhost/docker-compose.yml --profile with-deps logs -f
+	docker-compose --env-file clearflask-release/target/run-docker-compose-selfhost/.env -f clearflask-release/target/run-docker-compose-selfhost/docker-compose.yml --profile with-deps up -d
+	docker-compose --env-file clearflask-release/target/run-docker-compose-selfhost/.env -f clearflask-release/target/run-docker-compose-selfhost/docker-compose.yml --profile with-deps logs -f
 selfhost-down: clearflask-release/target/run-docker-compose-selfhost/docker-compose.yml
-	docker-compose -f clearflask-release/target/run-docker-compose-selfhost/docker-compose.yml --profile with-deps down -t 0
-	docker-compose -f clearflask-release/target/run-docker-compose-selfhost/docker-compose.yml --profile with-deps rm
+	docker-compose --env-file clearflask-release/target/run-docker-compose-selfhost/.env -f clearflask-release/target/run-docker-compose-selfhost/docker-compose.yml --profile with-deps down -t 0
+	docker-compose --env-file clearflask-release/target/run-docker-compose-selfhost/.env -f clearflask-release/target/run-docker-compose-selfhost/docker-compose.yml --profile with-deps rm
 
 killbill-sleep-%:
 	curl -v \

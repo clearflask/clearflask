@@ -1,6 +1,10 @@
-## SPDX-FileCopyrightText: 2019-2022 Matus Faro <matus@smotana.com>
+## SPDX-FileCopyrightText: 2019-2026 Matus Faro <matus@smotana.com>
 ## SPDX-License-Identifier: Apache-2.0
-version: '3.8'
+##
+## BEFORE STARTING: Connect and the server authenticate to each other with a shared token that
+## must be unique to your install. Generate one and put it in a .env file next to this compose
+## file (docker-compose reads it automatically):
+##   echo "CLEARFLASK_CONNECT_TOKEN=$(openssl rand -hex 16)" > .env
 volumes:
   data:
     driver: local
@@ -16,6 +20,7 @@ services:
       - NODE_ENV=production
       - ENV=selfhost
       - CLEARFLASK_CREATE_CONNECT_CONFIG_IF_MISSING=1
+      - CLEARFLASK_CONNECT_TOKEN=${CLEARFLASK_CONNECT_TOKEN:?set a generated shared token in .env, e.g. echo "CLEARFLASK_CONNECT_TOKEN=$(openssl rand -hex 16)" > .env}
     volumes:
       - ./connect:/opt/clearflask/
   clearflask-server:
@@ -30,6 +35,7 @@ services:
     environment:
       - CLEARFLASK_ENVIRONMENT=PRODUCTION_SELF_HOST
       - CLEARFLASK_CREATE_SERVER_CONFIG_IF_MISSING=1
+      - CLEARFLASK_CONNECT_TOKEN=${CLEARFLASK_CONNECT_TOKEN:?set a generated shared token in .env, e.g. echo "CLEARFLASK_CONNECT_TOKEN=$(openssl rand -hex 16)" > .env}
     volumes:
       - ./server:/opt/clearflask/
     healthcheck:

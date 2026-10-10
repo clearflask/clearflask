@@ -13,7 +13,6 @@
 ## to this compose file:
 ##   echo "CLEARFLASK_CONNECT_TOKEN=$(openssl rand -hex 16)" > .env
 ## One-click marketplace platforms inject this automatically (per-install secret).
-version: '3.8'
 volumes:
   data:
     driver: local

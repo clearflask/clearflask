@@ -82,9 +82,11 @@ custom domain required, it works entirely on your generated domain:
 
 For a quick start using [Docker](https://www.docker.com/products/docker-desktop), download
 the [Docker Compose service file](clearflask-release/src/main/docker/compose/docker-compose.self-host.yml)
-as `docker-compose.yml`, and run the following:
+as `docker-compose.yml`, generate the shared token Connect and the server use to authenticate to each other,
+and run the following:
 
 ```shell
+echo "CLEARFLASK_CONNECT_TOKEN=$(openssl rand -hex 16)" > .env
 docker-compose --profile with-deps up
 ```
 
@@ -301,10 +303,13 @@ the [Helm Chart documentation](clearflask-helm/README.md).
 ### Setup
 
 1. Download the [Docker Compose service file](clearflask-release/src/main/docker/compose/docker-compose.self-host.yml)
-2. Run it with `docker-compose --profile with-deps up` which creates few configuration files in your local directory
-3. Carefully read and modify `server/config-selfhost.cfg`.
-4. Carefully read and modify `connect/connect.config.json`.
-5. Adjust the Docker Compose service file to add/remove dependencies if you are hosting them outside of Docker
+2. Create a `.env` file next to it holding a fresh shared token for Connect and the server:
+   `echo "CLEARFLASK_CONNECT_TOKEN=$(openssl rand -hex 16)" > .env`. Both containers read it from there; the
+   compose file refuses to start without it.
+3. Run it with `docker-compose --profile with-deps up` which creates few configuration files in your local directory
+4. Carefully read and modify `server/config-selfhost.cfg`.
+5. Carefully read and modify `connect/connect.config.json`.
+6. Adjust the Docker Compose service file to add/remove dependencies if you are hosting them outside of Docker
 
 On the first run, install-specific secrets (VAPID keypair, cursor encryption key, token signing key, SSO key)
 are generated automatically into `server/config-selfhost.cfg`. Installs created before this behavior existed
