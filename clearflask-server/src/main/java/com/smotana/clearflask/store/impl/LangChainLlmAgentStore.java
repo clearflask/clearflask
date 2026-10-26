@@ -79,7 +79,7 @@ public class LangChainLlmAgentStore implements LlmAgentStore {
     @Inject
     private LlmToolingStore llmToolingStore;
 
-    private final Cache<String, AnswerSubscriber> messageIdToSubscriber = CacheBuilder.newBuilder()
+    private final Cache<List<String>, AnswerSubscriber> messageIdToSubscriber = CacheBuilder.newBuilder()
             .expireAfterWrite(Duration.ofMinutes(15))
             .build();
     private volatile OpenAiStreamingChatModel model;
@@ -143,7 +143,7 @@ public class LangChainLlmAgentStore implements LlmAgentStore {
             @Override
             public void onNext(String token) {
                 try {
-                    Optional<AnswerSubscriber> subscriberOpt = Optional.ofNullable(LangChainLlmAgentStore.this.messageIdToSubscriber.getIfPresent(responseMessageId));
+                    Optional<AnswerSubscriber> subscriberOpt = Optional.ofNullable(LangChainLlmAgentStore.this.messageIdToSubscriber.getIfPresent(ImmutableList.of(projectId, convoId, responseMessageId)));
 
                     if (!subscriberOpt.isPresent()) {
                         pendingTokens.append(token);
@@ -171,7 +171,7 @@ public class LangChainLlmAgentStore implements LlmAgentStore {
                 }
                 try {
                     MessageModel messageModel = llmHistoryStore.putMessage(responseMessageId, convoId, ConvoMessage.AuthorTypeEnum.ALERT, "Failed to ask AI, please try again later.");
-                    Optional.ofNullable(LangChainLlmAgentStore.this.messageIdToSubscriber.getIfPresent(responseMessageId))
+                    Optional.ofNullable(LangChainLlmAgentStore.this.messageIdToSubscriber.getIfPresent(ImmutableList.of(projectId, convoId, responseMessageId)))
                             .ifPresent(subscriber -> subscriber.onComplete(messageModel));
                 } catch (Exception ex) {
                     if (LogUtil.rateLimitAllowLog("LangChainLlmAgentStore-onError-fail")) {
@@ -199,7 +199,7 @@ public class LangChainLlmAgentStore implements LlmAgentStore {
                                 log.error("Recursion limit reached, stopping execution");
                             }
                             MessageModel messageModel = llmHistoryStore.putMessage(responseMessageId, convoId, ConvoMessage.AuthorTypeEnum.ALERT, "AI fell into recursion, please try again later.");
-                            Optional.ofNullable(LangChainLlmAgentStore.this.messageIdToSubscriber.getIfPresent(responseMessageId))
+                            Optional.ofNullable(LangChainLlmAgentStore.this.messageIdToSubscriber.getIfPresent(ImmutableList.of(projectId, convoId, responseMessageId)))
                                     .ifPresent(subscriber -> subscriber.onComplete(messageModel));
                             return;
                         }
@@ -227,7 +227,7 @@ public class LangChainLlmAgentStore implements LlmAgentStore {
                     MessageModel messageModel = llmHistoryStore.putMessage(responseMessageId, convoId, ConvoMessage.AuthorTypeEnum.AI, response.content().text(),
                             Optional.ofNullable(response.tokenUsage().inputTokenCount()).map(Long::valueOf).orElse(null),
                             Optional.ofNullable(response.tokenUsage().outputTokenCount()).map(Long::valueOf).orElse(null));
-                    Optional.ofNullable(LangChainLlmAgentStore.this.messageIdToSubscriber.getIfPresent(responseMessageId))
+                    Optional.ofNullable(LangChainLlmAgentStore.this.messageIdToSubscriber.getIfPresent(ImmutableList.of(projectId, convoId, responseMessageId)))
                             .ifPresent(subscriber -> subscriber.onComplete(messageModel));
                     llmMemoryStore.add(convoId, response.content());
                 } catch (Exception ex) {
@@ -249,7 +249,8 @@ public class LangChainLlmAgentStore implements LlmAgentStore {
 
         // First subscribe to the message, if the message is still in progress, the asynchronous process will stream
         // tokens and then call onComplete when the message is complete.
-        this.messageIdToSubscriber.put(messageId, subscriber);
+        // A known message ID must not let a subscriber in another conversation intercept live tokens.
+        this.messageIdToSubscriber.put(ImmutableList.of(projectId, convoId, messageId), subscriber);
 
         // If this message is already complete, we need to call onComplete ourselves.
         // This here is why we have an at-least-once guarantee for the onComplete call.

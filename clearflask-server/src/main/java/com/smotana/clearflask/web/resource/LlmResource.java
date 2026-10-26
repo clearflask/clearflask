@@ -65,7 +65,7 @@ public class LlmResource extends AbstractResource implements LlmAdminApi, LlmSup
     @Inject
     private Gson gson;
 
-    @RolesAllowed({Role.ADMINISTRATOR})
+    @RolesAllowed({Role.PROJECT_ADMIN})
     @Limit(requiredPermits = 1)
     @Override
     public void convoDeleteAdmin(String projectId, String convoId) {
@@ -77,7 +77,7 @@ public class LlmResource extends AbstractResource implements LlmAdminApi, LlmSup
                 convoId);
     }
 
-    @RolesAllowed({Role.ADMINISTRATOR})
+    @RolesAllowed({Role.PROJECT_ADMIN})
     @Limit(requiredPermits = 1)
     @Override
     public ConvoDetailsResponse convoDetailsAdmin(String projectId, String convoId) {
@@ -99,7 +99,7 @@ public class LlmResource extends AbstractResource implements LlmAdminApi, LlmSup
                 .collect(ImmutableList.toImmutableList()));
     }
 
-    @RolesAllowed({Role.ADMINISTRATOR})
+    @RolesAllowed({Role.PROJECT_ADMIN})
     @Limit(requiredPermits = 1)
     @Override
     public ConvoListResponse convoListAdmin(String projectId) {
@@ -114,7 +114,7 @@ public class LlmResource extends AbstractResource implements LlmAdminApi, LlmSup
                 .collect(ImmutableList.toImmutableList()));
     }
 
-    @RolesAllowed({Role.ADMINISTRATOR_ACTIVE})
+    @RolesAllowed({Role.PROJECT_ADMIN_ACTIVE})
     @Limit(requiredPermits = 100, challengeAfter = 30)
     @Override
     public CreateMessageResponse messageCreateAdmin(String projectId, String convoId, ConvoMessageCreate convoMessageCreate) {
@@ -143,7 +143,7 @@ public class LlmResource extends AbstractResource implements LlmAdminApi, LlmSup
         return llmAgentStore.ask(projectId, accountId, convoModel.getConvoId(), convoMessageCreate.getContent(), promptOverrideOpt);
     }
 
-    @RolesAllowed({Role.ADMINISTRATOR})
+    @RolesAllowed({Role.PROJECT_ADMIN})
     @Limit(requiredPermits = 1)
     @Override
     // SSE for some reason requires re-stating annotations from the interface
@@ -152,6 +152,9 @@ public class LlmResource extends AbstractResource implements LlmAdminApi, LlmSup
     @Produces({"text/event-stream"})
     public void messageStreamGetAdmin(@PathParam("projectId") @NotNull String projectId, @PathParam("convoId") @NotNull String convoId, @PathParam("messageId") @NotNull String messageId, @Context Sse sse, @Context SseEventSink eventSink) {
         try {
+            // Streaming must enforce the same conversation ownership as the history endpoints.
+            llmHistoryStore.getConvo(projectId, getAuthenticatedAccountId(), convoId)
+                    .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Convo not found"));
             llmAgentStore.awaitAnswer(projectId, convoId, messageId, new LlmAgentStore.AnswerSubscriber() {
 
                 @Override
