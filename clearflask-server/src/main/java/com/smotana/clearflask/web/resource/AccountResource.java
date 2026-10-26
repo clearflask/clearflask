@@ -102,6 +102,7 @@ import com.smotana.clearflask.util.PasswordUtil;
 import com.smotana.clearflask.web.ApiException;
 import com.smotana.clearflask.web.Application;
 import com.smotana.clearflask.web.security.AuthCookie;
+import com.smotana.clearflask.web.security.RegistrationCaptcha;
 import com.smotana.clearflask.web.security.ExtendedSecurityContext.ExtendedPrincipal;
 import com.smotana.clearflask.web.security.Role;
 import com.smotana.clearflask.web.security.SuperAdminPredicate;
@@ -230,6 +231,8 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
     private LocalLicenseStore localLicenseStore;
     @Inject
     private AntiSpam antiSpam;
+    @Inject
+    private RegistrationCaptcha registrationCaptcha;
 
     @PermitAll
     @Limit(requiredPermits = 10)
@@ -267,6 +270,8 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
         if (accountOpt.isEmpty()
                 && accountBindAdmin != null
                 && accountBindAdmin.getOauthToken() != null) {
+            // Challenge before consuming the provider's one-use OAuth code.
+            registrationCaptcha.require(request, getExtendedPrincipal());
             Optional<OAuthUtil.OAuthResult> oauthResult;
             boolean trustEmailVerified = false;
             String providerName = "OAuth provider";
@@ -538,7 +543,7 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
     }
 
     @PermitAll
-    @Limit(requiredPermits = 10, challengeAfter = 3)
+    @Limit(requiredPermits = 10)
     @Override
     public AccountAdmin accountSignupAdmin(AccountSignupAdmin signup) {
         antiSpam.onAccountSignup(request, signup);
@@ -565,6 +570,7 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
             Optional<String> couponIdOpt,
             Optional<String> preferredPlanIdOpt,
             Optional<Long> preferredPriceOpt) {
+        registrationCaptcha.require(request, getExtendedPrincipal());
         if (!config.signupEnabled()) {
             throw new ApiException(Response.Status.BAD_REQUEST, "Signups are disabled");
         }
@@ -646,6 +652,7 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
                 null,
                 Instant.now());
         account = accountStore.createAccount(account).getAccount();
+        log.info("REGISTRATION_CREATED accountId={} ip={}", account.getAccountId(), IpUtil.getRemoteIp(request, env));
 
         // Create customer in KillBill asynchronously because:
         // - It takes too long

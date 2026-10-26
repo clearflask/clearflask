@@ -115,6 +115,15 @@ public class CaptchaChallenger implements Challenger {
     @Extern
     @Override
     public boolean verify(String remoteIp, String target, String solutionStr) {
+        return verify(remoteIp, target, solutionStr, config.allowOnUnavailable());
+    }
+
+    /** Registration must not succeed if CAPTCHA is disabled or its provider fails. */
+    public boolean verifyRegistration(String remoteIp, String target, String solutionStr) {
+        return config.enabled() && verify(remoteIp, target, solutionStr, false);
+    }
+
+    private boolean verify(String remoteIp, String target, String solutionStr, boolean allowOnUnavailable) {
         if (!config.enabled()) {
             log.debug("Not enabled, skipping");
             return true;
@@ -128,6 +137,9 @@ public class CaptchaChallenger implements Challenger {
             return false;
         }
 
+        if (solution == null) {
+            return false;
+        }
         if (!Version.RECAPTCHA_V2.equals(solution.getVersion())) {
             log.warn("Captcha version mismatch, expecting {} received {}", Version.RECAPTCHA_V2, solution.getVersion());
             return false;
@@ -144,7 +156,7 @@ public class CaptchaChallenger implements Challenger {
 
         if (response.getStatus() != 200) {
             log.warn("Captcha service returned status {} response {}", response.getStatus(), response);
-            return config.allowOnUnavailable();
+            return allowOnUnavailable;
         }
 
         String responseStr = response.readEntity(String.class);
@@ -153,7 +165,7 @@ public class CaptchaChallenger implements Challenger {
             captchaResponse = gson.fromJson(responseStr, RecaptchaV2Response.class);
         } catch (JsonSyntaxException ex) {
             log.warn("Captcha service response cannot be parsed, given '{}'", responseStr);
-            return config.allowOnUnavailable();
+            return allowOnUnavailable;
         }
 
         if (captchaResponse.getErrorCodes() != null
@@ -162,7 +174,7 @@ public class CaptchaChallenger implements Challenger {
                 || captchaResponse.getErrorCodes().contains("bad-request"))) {
             log.warn("Captcha service error codes {} for solution {} ip {}",
                     captchaResponse.getErrorCodes(), solution, remoteIp);
-            return config.allowOnUnavailable();
+            return allowOnUnavailable;
         }
 
         log.trace("challenge result {} ip {} target {}", captchaResponse, remoteIp, target);
