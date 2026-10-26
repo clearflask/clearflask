@@ -88,14 +88,17 @@ public class AuthenticationFilter implements ContainerRequestFilter {
         Optional<AccountSession> accountSessionOpt = getAccountSessionForCookieName(requestContext, AccountResource.ACCOUNT_AUTH_COOKIE_NAME);
         Optional<AccountSession> superAccountSessionOpt = getAccountSessionForCookieName(requestContext, AccountResource.SUPER_ADMIN_AUTH_COOKIE_NAME);
 
-        Optional<String> authenticatedAccountIdOpt = accountByApiKey.map(Account::getAccountId)
-                .or(() -> accountSessionOpt.map(AccountSession::getAccountId));
         Optional<String> authenticatedSuperAccountIdOpt = accountByApiKey
                 .filter(account -> superAdminPredicate.isEmailSuperAdmin(account.getEmail()))
                 .map(Account::getAccountId)
                 .or(() -> superAccountSessionOpt
                         .filter(session -> superAdminPredicate.isEmailSuperAdmin(session.getEmail()))
                         .map(AccountSession::getAccountId));
+        // A deleted impersonated account can leave only the verified superadmin session.
+        // Keep a valid regular identity first so impersonation retains its project scope.
+        Optional<String> authenticatedAccountIdOpt = accountByApiKey.map(Account::getAccountId)
+                .or(() -> accountSessionOpt.map(AccountSession::getAccountId))
+                .or(() -> authenticatedSuperAccountIdOpt);
         Optional<UserSession> authenticatedUserSessionOpt = getPathParameter(requestContext, "projectId")
                 .or(() -> getPathParameter(requestContext, "slug")
                         .flatMap(slug -> projectStore.getProjectBySlug(slug, true)

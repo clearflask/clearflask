@@ -27,6 +27,22 @@ Present: board (Matus), Codex.
   page and email-confirmation dialog. Independent deployed-code inspection
   confirmed the verified-superadmin CAPTCHA exemption, preserved pre-authentication
   IP rate limiting, and project-specific AI authorization.
-- Authenticated manual browser walkthrough was unavailable because the browser
-  session had expired and sign-in was not refreshed. No production account was
-  deleted during feature verification. No versioned release was cut.
+- Authenticated manual browser walkthrough was unavailable. Subsequent diagnosis
+  corrected the initial expired-login explanation: a valid superadmin session
+  survived deletion of the impersonated account, but protected dashboard requests
+  did not fall back to that identity. No production account was deleted during
+  feature verification. No versioned release was cut.
+- Follow-up fixes that mismatch by using the validated superadmin identity only
+  when no API-key or regular-session identity exists. Valid impersonation keeps
+  precedence, and project permissions remain scoped to the effective account.
+  Regression coverage includes revoked impersonation, ordinary sessions,
+  untrusted/expired super cookies, and unrelated-project denial.
+- After sign-in was restored, the production superadmin page loaded, account
+  search returned results, and the delete-confirmation dialog opened and canceled
+  successfully without CAPTCHA. Its final delete button remained disabled until
+  email confirmation. No account was deleted during this check.
+- Session-fallback validation: the new suite reproduced three expected failures
+  before the fix and passed afterward. Full `CI=true` clean reactor install passed
+  380 Java tests and four UI regressions, frontend/Connect compilation and all
+  module packaging. Only local Docker images were skipped because the local daemon
+  was unavailable; production artifacts are built by CI.
