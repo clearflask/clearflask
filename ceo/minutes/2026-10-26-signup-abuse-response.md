@@ -28,3 +28,15 @@ Present: board (Matus), Codex.
 - Full `CI=true` clean reactor install passed 386 Java tests, four UI regressions,
   frontend/Connect compilation and module packaging. Local Docker image creation
   alone was skipped because the local daemon is unavailable; CI builds production.
+- CAPTCHA deployment completed successfully in SaaS production. Live checks of
+  direct and trailing-slash signup, account OAuth, portal registration and portal
+  SSO each returned a CAPTCHA challenge before creation; health remained `ok`.
+- Follow-up integration activity required temporary containment. OAuth exchange
+  and refresh now restrict the credential destination to an administrator-configured
+  provider base URL. Corroborating incident details and credential-maintenance
+  actions remain private. The affected integration stays disabled pending
+  credential rotation; its disabled response was verified in production.
+- Integration follow-up validation passed the full `CI=true` clean reactor build:
+  390 Java tests, four UI regressions, frontend/Connect builds and packaging.
+  Tests reject foreign destinations before credential access and cover refresh
+  of previously stored foreign authorizations as well as configured providers.

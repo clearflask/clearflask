@@ -69,6 +69,7 @@ import javax.ws.rs.core.Response;
 import java.awt.*;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -105,6 +106,10 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
 
         @DefaultValue("")
         String clientSecret();
+
+        /** The administrator-configured provider to which these OAuth credentials belong. */
+        @DefaultValue("https://gitlab.com")
+        String oauthInstanceUrl();
 
         @DefaultValue("P1D")
         Duration authExpiry();
@@ -174,9 +179,7 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
         }
 
         // Validate instance URL to prevent SSRF attacks
-        validateGitLabInstanceUrl(gitlabInstanceUrl);
-
-        String instanceUrl = Strings.isNullOrEmpty(gitlabInstanceUrl) ? DEFAULT_GITLAB_URL : gitlabInstanceUrl;
+        String instanceUrl = validateGitLabInstanceUrl(gitlabInstanceUrl);
 
         try (CloseableHttpClient client = outboundUrlGuard.newClientBuilder().build()) {
             HttpPost reqAuthorize = new HttpPost(instanceUrl + "/oauth/token");
@@ -358,6 +361,7 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
      * @throws ApiException if token refresh fails
      */
     private GitLabAuthorization refreshAccessToken(GitLabAuthorization auth) {
+        String instanceUrl = validateGitLabInstanceUrl(auth.getGitlabInstanceUrl());
         if (Strings.isNullOrEmpty(auth.getRefreshToken())) {
             log.warn("Cannot refresh GitLab token: no refresh token available for account {} instance {}",
                     auth.getAccountId(), auth.getGitlabInstanceUrl());
@@ -366,7 +370,7 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
         }
 
         try (CloseableHttpClient client = outboundUrlGuard.newClientBuilder().build()) {
-            HttpPost reqRefresh = new HttpPost(auth.getGitlabInstanceUrl() + "/oauth/token");
+            HttpPost reqRefresh = new HttpPost(instanceUrl + "/oauth/token");
             reqRefresh.setHeader("Accept", "application/json");
             reqRefresh.setEntity(new UrlEncodedFormEntity(ImmutableList.of(
                     new BasicNameValuePair("grant_type", "refresh_token"),
@@ -1153,11 +1157,30 @@ public class GitLabStoreImpl extends ManagedService implements GitLabStore {
      *
      * @throws ApiException if the URL is invalid or points at a non-public address
      */
-    private void validateGitLabInstanceUrl(String gitlabInstanceUrl) {
-        if (Strings.isNullOrEmpty(gitlabInstanceUrl)) {
-            return; // Empty is OK, will use default
+    private String validateGitLabInstanceUrl(String gitlabInstanceUrl) {
+        // Public-address validation alone does not authorize sending our client secret
+        // to a caller-supplied OAuth server. Pin both exchange and refresh to config.
+        String configured = config.oauthInstanceUrl().replaceAll("/+$", "");
+        String requested = Strings.isNullOrEmpty(gitlabInstanceUrl) ? configured : gitlabInstanceUrl.replaceAll("/+$", "");
+        URI trusted;
+        URI candidate;
+        try {
+            trusted = URI.create(configured);
+            candidate = URI.create(requested);
+        } catch (IllegalArgumentException ex) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "Invalid GitLab OAuth provider URL");
         }
-        outboundUrlGuard.validateAndResolve(gitlabInstanceUrl, "GitLab instance URL");
+        if (!"https".equalsIgnoreCase(trusted.getScheme()) || trusted.getHost() == null
+                || trusted.getUserInfo() != null || trusted.getRawQuery() != null || trusted.getRawFragment() != null
+                || !"https".equalsIgnoreCase(candidate.getScheme()) || candidate.getHost() == null
+                || candidate.getUserInfo() != null || candidate.getRawQuery() != null || candidate.getRawFragment() != null
+                || !trusted.getHost().equalsIgnoreCase(candidate.getHost())
+                || (trusted.getPort() == -1 ? 443 : trusted.getPort()) != (candidate.getPort() == -1 ? 443 : candidate.getPort())
+                || !trusted.getRawPath().equals(candidate.getRawPath())) {
+            throw new ApiException(Response.Status.BAD_REQUEST, "GitLab instance does not match the configured OAuth provider");
+        }
+        outboundUrlGuard.validateAndResolve(configured, "GitLab OAuth provider");
+        return configured;
     }
 
     private <T> ListenableFuture<T> submit(Callable<T> task) {
