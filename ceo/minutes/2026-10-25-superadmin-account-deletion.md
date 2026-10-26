@@ -25,3 +25,7 @@ Participants: Matus (board), Codex.
   locally because the Docker daemon is unresponsive; all modules compile, and
   only local container-image creation is omitted. Production artifacts are built
   by the normal CI deployment workflow.
+- Initial feature deployment stopped before rollout because CI promotes React hook
+  warnings to errors. Replaced search cleanup ref mutation with explicit mounted
+  lifecycle gating and added a stale-search regression. Follow-up validation uses
+  `CI=true` to match production compilation policy; targeted lint has zero warnings.

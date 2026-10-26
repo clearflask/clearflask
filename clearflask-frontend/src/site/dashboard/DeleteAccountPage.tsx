@@ -20,7 +20,13 @@ export default function DeleteAccountPage(props: { account: Admin.AccountAdmin }
   const [deleting, setDeleting] = useState(false);
   const deletingRef = useRef(false);
   const requestId = useRef(0);
+  const mounted = useRef(false);
   const deletedIds = useRef(new Set<string>());
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
 
   const search = async (text: string, pageCursor?: string) => {
     const id = ++requestId.current;
@@ -32,7 +38,7 @@ export default function DeleteAccountPage(props: { account: Admin.AccountAdmin }
         cursor: pageCursor,
         accountSearchSuperAdmin: { searchText: text.trim() || undefined },
       });
-      if (id !== requestId.current) return;
+      if (!mounted.current || id !== requestId.current) return;
       setResults(previous => {
         const accounts = new Map<string, Admin.Account>();
         [...(pageCursor ? previous : []), ...response.results].forEach(account => {
@@ -42,9 +48,9 @@ export default function DeleteAccountPage(props: { account: Admin.AccountAdmin }
       });
       setCursor(response.cursor);
     } catch (e) {
-      if (id === requestId.current) setError('Account search failed. Please try again.');
+      if (mounted.current && id === requestId.current) setError('Account search failed. Please try again.');
     } finally {
-      if (id === requestId.current) setSearching(false);
+      if (mounted.current && id === requestId.current) setSearching(false);
     }
   };
 
@@ -52,7 +58,6 @@ export default function DeleteAccountPage(props: { account: Admin.AccountAdmin }
     const timer = setTimeout(() => search(searchText), 300);
     return () => {
       clearTimeout(timer);
-      ++requestId.current;
     };
   }, [searchText]); // eslint-disable-line react-hooks/exhaustive-deps
 

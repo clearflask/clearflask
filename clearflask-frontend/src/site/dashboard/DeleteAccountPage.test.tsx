@@ -83,3 +83,20 @@ test('keeps failure visible and blocks duplicate deletion while request is pendi
   expect(document.body.textContent).toContain('The deletion may be incomplete');
   expect(button('Permanently delete').disabled).toBe(false);
 });
+
+test('ignores a stale account search after a newer query completes', async () => {
+  let resolveOld: (response: any) => void = () => {};
+  dispatcher.accountSearchSuperAdmin
+    .mockImplementationOnce(() => new Promise(resolve => { resolveOld = resolve; }))
+    .mockResolvedValueOnce({ results: [{ accountId: 'new', name: 'New result', email: 'new@example.com' }] });
+  const input = container.querySelector('input')!;
+  act(() => { Simulate.change(input, { target: { value: 'old' } } as any); });
+  act(() => { jest.advanceTimersByTime(300); });
+  await flush();
+  act(() => { Simulate.change(input, { target: { value: 'new' } } as any); });
+  act(() => { jest.advanceTimersByTime(300); });
+  await flush();
+  await act(async () => { resolveOld({ results: [target] }); });
+  expect(container.textContent).toContain('New result');
+  expect(container.textContent).not.toContain(target.email);
+});
