@@ -1137,8 +1137,9 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
     private void deleteAccount(Account account) {
         account.getProjectIds().forEach(projectId -> projectResource.projectDeleteAdmin(account, projectId));
         account.getExternalProjectIds().forEach(projectId -> projectStore.removeAdmin(projectId, account.getAccountId()));
-        accountStore.deleteAccount(account.getAccountId());
+        // Billing needs the account record to look up the customer and subscriptions.
         billing.closeAccount(account.getAccountId());
+        accountStore.deleteAccount(account.getAccountId());
     }
 
     @RolesAllowed({Role.ADMINISTRATOR})

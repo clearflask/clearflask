@@ -12,6 +12,7 @@ import { TourAnchor } from '../../common/tour';
 import setTitle from "../../common/util/titleUtil";
 import { Dashboard, DashboardPageContext, ProjectSettingsMainSize } from "../Dashboard";
 import BillingPage from './BillingPage';
+import DeleteAccountPage from './DeleteAccountPage';
 import {
   AccountSettingsNotifications,
   ProjectSettingsAdvancedEnter,
@@ -263,6 +264,10 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
         break;
     }
   } else if (activeSubPath[0] === 'super') {
+    if (!this.props.isSuperAdmin) {
+      context.showWarning = 'Super admin access required';
+      return;
+    }
     context.sections.push({
       name: 'menu',
       breakAction: 'menu',
@@ -272,6 +277,7 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
           items={[
             { type: 'heading', text: 'Super Admin' } as MenuHeading,
             { type: 'item', slug: 'settings/super/loginas', name: 'Login As', offset: 1 } as MenuItem,
+            { type: 'item', slug: 'settings/super/delete-account', name: 'Delete Account', offset: 1 } as MenuItem,
             { type: 'item', slug: 'settings/super/coupons', name: 'Coupons', offset: 1 } as MenuItem,
           ]}
           activePath={activePath}
@@ -286,6 +292,10 @@ export async function renderSettings(this: Dashboard, context: DashboardPageCont
         mainContent = (
           <ProjectSettingsLoginAs account={this.props.account} />
         );
+        break;
+      case 'delete-account':
+        setTitle('Delete Account - ' + this.props.t('dashboard'));
+        mainContent = (<DeleteAccountPage account={this.props.account} />);
         break;
       case 'coupons':
         setTitle('Coupons - ' + this.props.t('dashboard'));

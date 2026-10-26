@@ -26,7 +26,8 @@ import java.util.Optional;
 public class LimiterDynamicFeature implements DynamicFeature {
 
     private enum TargetType {
-        IP,
+        IP_RATE,
+        IP_CHALLENGE,
         SESSION_PRINCIPAL
     }
 
@@ -48,9 +49,14 @@ public class LimiterDynamicFeature implements DynamicFeature {
         Limit limit = limitOpt.get();
 
         configuration.register(
-                new LimiterFilter(TargetType.IP, limit),
+                new LimiterFilter(TargetType.IP_RATE, limit),
                 // Execute before authentication
                 Priorities.AUTHENTICATION - 10);
+
+        configuration.register(
+                new LimiterFilter(TargetType.IP_CHALLENGE, limit),
+                // CAPTCHA needs verified authentication; IP rate limiting still runs before auth.
+                Priorities.AUTHENTICATION + 5);
 
         Optional<RolesAllowed> rolesAllowedOpt = getAnnotation(RolesAllowed.class, resourceInfo);
         if (!rolesAllowedOpt.isPresent() || rolesAllowedOpt.get().value().length <= 0) {
@@ -94,7 +100,8 @@ public class LimiterDynamicFeature implements DynamicFeature {
             String remoteIp = IpUtil.getRemoteIp(request, env);
             String target;
             switch (targetType) {
-                case IP:
+                case IP_RATE:
+                case IP_CHALLENGE:
                     target = remoteIp;
                     break;
                 case SESSION_PRINCIPAL:
@@ -109,7 +116,19 @@ public class LimiterDynamicFeature implements DynamicFeature {
                     throw new InternalServerErrorException("Unknown target type: " + targetType);
             }
 
-            limiter.filter(requestContext, limit, remoteIp, target);
+            switch (targetType) {
+                case IP_RATE:
+                    limiter.rateLimit(requestContext, limit, remoteIp, target);
+                    break;
+                case IP_CHALLENGE:
+                    limiter.challenge(requestContext, limit, remoteIp, target);
+                    break;
+                case SESSION_PRINCIPAL:
+                    limiter.filter(requestContext, limit, remoteIp, target);
+                    break;
+                default:
+                    throw new InternalServerErrorException("Unknown target type: " + targetType);
+            }
         }
     }
 }

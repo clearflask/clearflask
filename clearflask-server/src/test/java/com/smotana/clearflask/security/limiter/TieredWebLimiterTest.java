@@ -15,6 +15,8 @@ import com.smotana.clearflask.security.limiter.challenge.MockChallenger;
 import com.smotana.clearflask.security.limiter.rate.LocalRateLimiter;
 import com.smotana.clearflask.testutil.AbstractTest;
 import com.smotana.clearflask.web.ApiException;
+import com.smotana.clearflask.web.security.ExtendedSecurityContext;
+import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -93,6 +95,59 @@ public class TieredWebLimiterTest extends AbstractTest {
             // Expected
         }
         limiter.filter(createRequestContext(Optional.of("true")), limit, "127.0.0.1", "a");
+    }
+
+    @Test(timeout = 10_000L)
+    public void superadminSkipsCaptchaIncludingWhileImpersonating() {
+        Limit limit = createLimit(Optional.empty(), Optional.of(0));
+        ContainerRequestContext context = authenticatedContext(Optional.of("superadmin"), true);
+        limiter.filter(context, limit, "127.0.0.1", "impersonated-account");
+        limiter.filter(context, limit, "127.0.0.1", "127.0.0.1");
+
+        // A request from the same IP without verified superadmin authentication is challenged.
+        assertChallenged(authenticatedContext(Optional.empty(), false), limit);
+        assertChallenged(createRequestContext(Optional.empty()), limit);
+        ContainerRequestContext spoofed = createRequestContext(Optional.empty());
+        javax.ws.rs.core.SecurityContext unverified = Mockito.mock(javax.ws.rs.core.SecurityContext.class);
+        Mockito.when(unverified.isUserInRole(Role.SUPER_ADMIN)).thenReturn(true);
+        Mockito.when(spoofed.getSecurityContext()).thenReturn(unverified);
+        assertChallenged(spoofed, limit);
+        // A role claim alone or an authenticated ID without the role is insufficient.
+        assertChallenged(authenticatedContext(Optional.empty(), true), limit);
+        assertChallenged(authenticatedContext(Optional.of("superadmin"), false), limit);
+    }
+
+    @Test(timeout = 10_000L)
+    public void superadminStillRateLimited() {
+        ContainerRequestContext context = authenticatedContext(Optional.of("superadmin"), true);
+        Limit limit = createLimit(Optional.of(Integer.MAX_VALUE), Optional.of(0));
+        // Guava may grant the initial request and charge the bucket for subsequent requests.
+        try {
+            limiter.filter(context, limit, "127.0.0.1", "superadmin");
+            limiter.filter(context, limit, "127.0.0.1", "superadmin");
+            fail("Superadmin must still consume rate permits");
+        } catch (ApiException expected) {
+            assertEquals(429, expected.getStatus().getStatusCode());
+        }
+    }
+
+    private ContainerRequestContext authenticatedContext(Optional<String> superAccountId, boolean hasSuperRole) {
+        ContainerRequestContext context = createRequestContext(Optional.empty());
+        ExtendedSecurityContext security = ExtendedSecurityContext.create("127.0.0.1",
+                Optional.of("impersonated-account"), superAccountId, Optional.empty(), Optional.empty(),
+                Optional.empty(), role -> hasSuperRole && Role.SUPER_ADMIN.equals(role), context);
+        Mockito.when(context.getSecurityContext()).thenReturn(security);
+        return context;
+    }
+
+    private void assertChallenged(ContainerRequestContext context, Limit limit) {
+        try {
+            limiter.filter(context, limit, "127.0.0.1", "127.0.0.1");
+            fail("Unverified superadmin must be challenged");
+        } catch (WebApplicationException expected) {
+            assertEquals(429, expected.getResponse().getStatus());
+            org.junit.Assert.assertNotNull(expected.getResponse().getHeaderString(TieredWebLimiter.CHALLENGE_HEADER));
+        }
     }
 
     @Test(timeout = 10_000L)

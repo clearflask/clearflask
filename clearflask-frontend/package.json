@@ -180,7 +180,8 @@
     "build-connect": "rm -fR target/dist && webpack --node-env production -c webpack.config.connect.js",
     "audit-fix": "./node/node_modules/pnpm/bin/pnpm.cjs audit --fix",
     "eject": "react-scripts eject",
-    "test": "./node/node src/connect/banlist.test-runner.js && NODE_ENV=test ENV=test ./node/node --unhandled-rejections=strict --trace-warnings src/connect/test.js",
+    "test": "./node/node_modules/pnpm/bin/pnpm.cjs run test:account-deletion && ./node/node src/connect/banlist.test-runner.js && NODE_ENV=test ENV=test ./node/node --unhandled-rejections=strict --trace-warnings src/connect/test.js",
+    "test:account-deletion": "CI=true ./node/node ./node_modules/react-scripts/bin/react-scripts.js test --watchAll=false --runInBand --runTestsByPath src/site/dashboard/DeleteAccountPage.test.tsx",
     "test:banlist": "./node/node src/connect/banlist.test-runner.js",
     "analyze": "GENERATE_SOURCEMAP=true react-app-rewired build && source-map-explorer 'build/static/js/*.js'"
   },

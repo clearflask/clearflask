@@ -6,5 +6,12 @@ import javax.ws.rs.container.ContainerRequestContext;
 
 public interface Limiter {
 
-    void filter(ContainerRequestContext requestContext, Limit limit, String remoteIp, String target);
+    default void filter(ContainerRequestContext requestContext, Limit limit, String remoteIp, String target) {
+        rateLimit(requestContext, limit, remoteIp, target);
+        challenge(requestContext, limit, remoteIp, target);
+    }
+
+    void rateLimit(ContainerRequestContext requestContext, Limit limit, String remoteIp, String target);
+
+    void challenge(ContainerRequestContext requestContext, Limit limit, String remoteIp, String target);
 }

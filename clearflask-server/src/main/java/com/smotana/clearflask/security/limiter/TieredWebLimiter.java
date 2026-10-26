@@ -14,6 +14,8 @@ import com.smotana.clearflask.api.model.ErrorResponse;
 import com.smotana.clearflask.security.limiter.challenge.ChallengeLimiter;
 import com.smotana.clearflask.security.limiter.rate.RateLimiter;
 import com.smotana.clearflask.web.ApiException;
+import com.smotana.clearflask.web.security.ExtendedSecurityContext;
+import com.smotana.clearflask.web.security.Role;
 import lombok.extern.slf4j.Slf4j;
 import rx.Observable;
 
@@ -139,7 +141,7 @@ public class TieredWebLimiter implements Limiter {
 
 
     @Override
-    public void filter(ContainerRequestContext requestContext, Limit limit, String remoteIp, String target) {
+    public void rateLimit(ContainerRequestContext requestContext, Limit limit, String remoteIp, String target) {
         if (!config.enabled()) {
             log.debug("Not enabled, skipping");
             return;
@@ -155,6 +157,22 @@ public class TieredWebLimiter implements Limiter {
                 throw new ApiException(
                         Response.Status.TOO_MANY_REQUESTS,
                         config.rateLimitedUserFacingMessage());
+            }
+        }
+
+    }
+
+    @Override
+    public void challenge(ContainerRequestContext requestContext, Limit limit, String remoteIp, String target) {
+        if (!config.enabled()) return;
+        // Only server-verified superadmin authentication exempts this request from CAPTCHA.
+        // This includes impersonation via a valid superadmin session; never exempt an IP.
+        if (requestContext != null && requestContext.getSecurityContext() instanceof ExtendedSecurityContext) {
+            ExtendedSecurityContext security = (ExtendedSecurityContext) requestContext.getSecurityContext();
+            if (security.getUserPrincipal() != null
+                    && security.getUserPrincipal().getAuthenticatedSuperAccountIdOpt().isPresent()
+                    && security.isUserInRole(Role.SUPER_ADMIN)) {
+                return;
             }
         }
 
