@@ -29,3 +29,11 @@ and packaging. Local Docker images alone were skipped because the local daemon
 is unavailable. Targeted lint passed with zero warnings. Built dashboard bundle
 contains both abuse controls and no typed-email deletion prompt. The separate
 watcher's expired branch was tested to exit before account lookup or log scans.
+
+Production deployment 40711818156 succeeded for application commit f6e4a60c.
+Live superadmin GET/PUT/readback confirms both registrations and mandatory
+registration CAPTCHA enabled; anonymous settings access returns 403. All five
+non-creating registration boundary probes return 429 with a CAPTCHA challenge.
+The live dashboard.0bf2353c.chunk.js matches the tested local bundle and contains
+the new controls and confirmation dialog, without the typed-email prompt.
+Health returns 200. No production account was deleted for validation.
