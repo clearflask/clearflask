@@ -3,6 +3,8 @@ package com.smotana.clearflask.web.security;
 import com.smotana.clearflask.core.ServiceInjector.Environment;
 import com.smotana.clearflask.security.limiter.challenge.CaptchaChallenger;
 import org.junit.Test;
+import com.smotana.clearflask.api.model.RegistrationAbuseSettings;
+import com.smotana.clearflask.web.ApiException;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.WebApplicationException;
 import java.lang.reflect.Field;
@@ -62,6 +64,37 @@ public class RegistrationCaptchaTest {
         }
     }
 
+    @Test
+    public void disabledCaptchaAllowsRegistrationWithoutProviderCall() throws Exception {
+        Fixture f = new Fixture();
+        when(f.policy.get()).thenReturn(new RegistrationAbuseSettings(true, false));
+        f.guard.require(f.request, Optional.empty());
+        verifyNoInteractions(f.challenger);
+    }
+
+    @Test
+    public void disabledRegistrationsRejectEvenWhenCaptchaIsDisabled() throws Exception {
+        Fixture f = new Fixture();
+        when(f.policy.get()).thenReturn(new RegistrationAbuseSettings(false, false));
+        doThrow(new ApiException(javax.ws.rs.core.Response.Status.FORBIDDEN)).when(f.policy).requireRegistrationsEnabled();
+        try {
+            f.guard.require(f.request, Optional.empty());
+            fail("registration must be disabled");
+        } catch (ApiException e) {
+            assertEquals(403, e.getStatus().getStatusCode());
+        }
+        verifyNoInteractions(f.challenger);
+    }
+
+    @Test
+    public void loginPreflightDoesNotBlockExistingIdentityWhenRegistrationsDisabled() throws Exception {
+        Fixture f = new Fixture();
+        when(f.policy.get()).thenReturn(new RegistrationAbuseSettings(false, false));
+        f.guard.requireCaptcha(f.request, Optional.empty());
+        verify(f.policy, never()).requireRegistrationsEnabled();
+        verifyNoInteractions(f.challenger);
+    }
+
     private static void assertChallenged(Fixture f) {
         try {
             f.guard.require(f.request, Optional.empty());
@@ -75,8 +108,11 @@ public class RegistrationCaptchaTest {
     private static class Fixture {
         final RegistrationCaptcha guard = new RegistrationCaptcha();
         final HttpServletRequest request = mock(HttpServletRequest.class);
+        final RegistrationAbusePolicy policy = mock(RegistrationAbusePolicy.class);
         final CaptchaChallenger challenger = mock(CaptchaChallenger.class);
         Fixture() throws Exception {
+            inject(guard, "abusePolicy", policy);
+            when(policy.get()).thenReturn(new RegistrationAbuseSettings(true, true));
             inject(guard, "env", Environment.TEST);
             inject(guard, "challenger", challenger);
             when(request.getRemoteAddr()).thenReturn("127.0.0.1");

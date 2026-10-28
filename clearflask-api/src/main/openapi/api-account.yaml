@@ -2,6 +2,14 @@
 ## SPDX-License-Identifier: Apache-2.0
 components:
   schemas:
+    RegistrationAbuseSettings:
+      type: object
+      required: [registrationsEnabled, registrationCaptchaEnabled]
+      properties:
+        registrationsEnabled:
+          type: boolean
+        registrationCaptchaEnabled:
+          type: boolean
     Plan:
       type: object
       required:
@@ -1391,3 +1399,29 @@ components:
         $ref: 'api-client.yaml#/components/responses/Ok'
       '401':
         $ref: 'api-client.yaml#/components/responses/Unauthorized'
+
+/superadmin/abuse/registration:
+  get:
+    operationId: registrationAbuseGetSuperAdmin
+    tags: [ AccountSuperAdmin ]
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationAbuseSettings'
+  put:
+    operationId: registrationAbuseUpdateSuperAdmin
+    tags: [ AccountSuperAdmin ]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RegistrationAbuseSettings'
+    responses:
+      '200':
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationAbuseSettings'

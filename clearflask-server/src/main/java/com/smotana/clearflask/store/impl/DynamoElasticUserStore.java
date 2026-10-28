@@ -175,6 +175,8 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
     private final HashFunction hashFunction = Hashing.murmur3_128(-223823442);
 
     @Inject
+    private com.smotana.clearflask.web.security.RegistrationAbusePolicy registrationAbusePolicy;
+    @Inject
     private Config config;
     @Inject
     private Application.Config configApp;
@@ -1406,6 +1408,9 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
             }
         }
         if (!userOpt.isPresent()) {
+            if (!isMod) {
+                registrationAbusePolicy.requireRegistrationsEnabled();
+            }
             Optional<String> nameOpt = nameOptSupplier.get();
             userOpt = Optional.of(createUser(new UserModel(
                     projectId,

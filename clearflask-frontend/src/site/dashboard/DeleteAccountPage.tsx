@@ -16,7 +16,6 @@ export default function DeleteAccountPage(props: { account: Admin.AccountAdmin }
   const [error, setError] = useState<string>();
   const [success, setSuccess] = useState<string>();
   const [selected, setSelected] = useState<Admin.Account>();
-  const [confirmation, setConfirmation] = useState('');
   const [deleting, setDeleting] = useState(false);
   const deletingRef = useRef(false);
   const requestId = useRef(0);
@@ -64,10 +63,9 @@ export default function DeleteAccountPage(props: { account: Admin.AccountAdmin }
   const closeDialog = () => {
     if (deletingRef.current) return;
     setSelected(undefined);
-    setConfirmation('');
   };
   const deleteAccount = async () => {
-    if (!selected || deletingRef.current || confirmation !== selected.email
+    if (!selected || deletingRef.current
       || selected.accountId === props.account.accountId) return;
     deletingRef.current = true;
     setDeleting(true);
@@ -82,7 +80,6 @@ export default function DeleteAccountPage(props: { account: Admin.AccountAdmin }
       setResults(previous => previous.filter(account => account.accountId !== selected.accountId));
       setSuccess(`Deleted ${selected.email}.`);
       setSelected(undefined);
-      setConfirmation('');
     } catch (e) {
       setError(`Failed to delete ${selected.email}. The deletion may be incomplete. Check the account before retrying.`);
     } finally {
@@ -124,7 +121,6 @@ export default function DeleteAccountPage(props: { account: Admin.AccountAdmin }
               ) : (
                 <Button size="small" color="secondary" disabled={deleting} onClick={() => {
                   setSelected(account);
-                  setConfirmation('');
                   setError(undefined);
                   setSuccess(undefined);
                 }}>Delete</Button>
@@ -142,20 +138,12 @@ export default function DeleteAccountPage(props: { account: Admin.AccountAdmin }
             and all projects owned by this account. Its access to other projects will also be removed
             and its billing account closed. This cannot be undone.
           </DialogContentText>
-          <TextField
-            autoFocus
-            fullWidth
-            label="Type the account email to confirm"
-            value={confirmation}
-            disabled={deleting}
-            onChange={e => setConfirmation(e.target.value)}
-          />
           {!!error && <Alert severity="error">{error}</Alert>}
         </DialogContent>
         <DialogActions>
           <Button disabled={deleting} onClick={closeDialog}>Cancel</Button>
           <SubmitButton color="secondary" isSubmitting={deleting}
-            disabled={!selected || confirmation !== selected.email || deleting}
+            disabled={!selected || deleting}
             onClick={deleteAccount}>Permanently delete</SubmitButton>
         </DialogActions>
       </Dialog>

@@ -24,6 +24,8 @@ import com.smotana.clearflask.api.PlanAdminApi;
 import com.smotana.clearflask.api.PlanSuperAdminApi;
 import com.smotana.clearflask.api.model.AccountAcceptInvitationResponse;
 import com.smotana.clearflask.api.model.AccountAdmin;
+import com.smotana.clearflask.api.model.RegistrationAbuseSettings;
+import com.smotana.clearflask.web.security.RegistrationAbusePolicy;
 import com.smotana.clearflask.api.model.AccountAttrsUpdateAdmin;
 import com.smotana.clearflask.api.model.AccountBilling;
 import com.smotana.clearflask.api.model.AccountBillingPayment;
@@ -233,6 +235,8 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
     private AntiSpam antiSpam;
     @Inject
     private RegistrationCaptcha registrationCaptcha;
+    @Inject
+    private RegistrationAbusePolicy registrationAbusePolicy;
 
     @PermitAll
     @Limit(requiredPermits = 10)
@@ -271,7 +275,7 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
                 && accountBindAdmin != null
                 && accountBindAdmin.getOauthToken() != null) {
             // Challenge before consuming the provider's one-use OAuth code.
-            registrationCaptcha.require(request, getExtendedPrincipal());
+            registrationCaptcha.requireCaptcha(request, getExtendedPrincipal());
             Optional<OAuthUtil.OAuthResult> oauthResult;
             boolean trustEmailVerified = false;
             String providerName = "OAuth provider";
@@ -947,6 +951,24 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
                                 .build())
                         .collect(java.util.stream.Collectors.toList()))
                 .build();
+    }
+
+    @RolesAllowed({Role.SUPER_ADMIN})
+    @Limit(requiredPermits = 1)
+    @Override
+    public RegistrationAbuseSettings registrationAbuseGetSuperAdmin() {
+        return registrationAbusePolicy.get();
+    }
+
+    @RolesAllowed({Role.SUPER_ADMIN})
+    @Limit(requiredPermits = 1)
+    @Override
+    public RegistrationAbuseSettings registrationAbuseUpdateSuperAdmin(RegistrationAbuseSettings settings) {
+        RegistrationAbuseSettings result = registrationAbusePolicy.update(settings);
+        log.info("Registration abuse settings changed by superadmin {}: registrationsEnabled={} registrationCaptchaEnabled={}",
+                getExtendedPrincipal().flatMap(ExtendedPrincipal::getAuthenticatedSuperAccountIdOpt).orElse("unknown"),
+                result.getRegistrationsEnabled(), result.getRegistrationCaptchaEnabled());
+        return result;
     }
 
     @RolesAllowed({Role.SUPER_ADMIN})

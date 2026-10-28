@@ -26,9 +26,20 @@ public class RegistrationCaptcha {
     private Environment env;
     @Inject
     private CaptchaChallenger challenger;
+    @Inject
+    private RegistrationAbusePolicy abusePolicy;
 
     public void require(HttpServletRequest request, Optional<ExtendedSecurityContext.ExtendedPrincipal> principal) {
+        abusePolicy.requireRegistrationsEnabled();
+        requireCaptcha(request, principal);
+    }
+
+    /** Preflight for flows that may sign in an existing user or register a new one. */
+    public void requireCaptcha(HttpServletRequest request, Optional<ExtendedSecurityContext.ExtendedPrincipal> principal) {
         if (Boolean.TRUE.equals(request.getAttribute(VERIFIED_ATTRIBUTE))) {
+            return;
+        }
+        if (!abusePolicy.get().getRegistrationCaptchaEnabled()) {
             return;
         }
         // Preserve the existing exemption for an authenticated, server-validated superadmin.

@@ -91,7 +91,7 @@ public class UserBindUtil {
 
         // Auto login using sso token
         if (!userOpt.isPresent() && ssoTokenOpt.isPresent()) {
-            registrationCaptcha.require(request, extendedPrincipalOpt);
+            registrationCaptcha.requireCaptcha(request, extendedPrincipalOpt);
             Project project = projectStore.getProject(projectId, true)
                     .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
             userOpt = userStore.ssoCreateOrGet(projectId, project.getVersionedConfigAdmin().getConfig().getSsoSecretKey(), ssoTokenOpt.get());
@@ -102,7 +102,7 @@ public class UserBindUtil {
 
         // Auto login using oauth token
         if (!userOpt.isPresent() && oauthTokenOpt.isPresent()) {
-            registrationCaptcha.require(request, extendedPrincipalOpt);
+            registrationCaptcha.requireCaptcha(request, extendedPrincipalOpt);
             Project project = projectStore.getProject(projectId, true)
                     .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Project does not exist or was deleted by owner"));
             Optional<NotificationMethodsOauth> oauthMethodOpt = project.getVersionedConfigAdmin().getConfig().getUsers().getOnboarding().getNotificationMethods().getOauth().stream()

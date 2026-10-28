@@ -10,6 +10,8 @@ servers:
   - url: https://clearflask.com/api/v1
 
 paths:
+  /superadmin/abuse/registration:
+    $ref: 'api-account.yaml#/~1superadmin~1abuse~1registration'
   # api-client.yaml
   /project/{projectId}/ideasearch:
     $ref: 'api-idea.yaml#/~1project~1{projectId}~1ideasearch'

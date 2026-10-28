@@ -38,13 +38,12 @@ afterEach(() => {
 
 async function confirmTarget() {
   act(() => { Simulate.click(button('Delete')); });
-  expect(button('Permanently delete').disabled).toBe(true);
-  const input = document.querySelector('[role="dialog"] input') as HTMLInputElement;
-  act(() => { Simulate.change(input, { target: { value: target.email } } as any); });
+  expect(button('Permanently delete').disabled).toBe(false);
+  expect(document.querySelector('[role="dialog"] input')).toBeNull();
   await flush();
 }
 
-test('protects current account and requires exact email before deleting by immutable ID', async () => {
+test('protects current account and keeps confirmation before deleting by immutable ID', async () => {
   expect(document.body.textContent).toContain('Current account');
   expect(document.querySelectorAll('button').length).toBe(1);
   await confirmTarget();

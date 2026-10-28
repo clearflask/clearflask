@@ -171,7 +171,7 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 100)
     @Override
     public UserCreateResponse userCreate(String projectId, UserCreate userCreate) {
-        registrationCaptcha.require(request, getExtendedPrincipal());
+        registrationCaptcha.requireCaptcha(request, getExtendedPrincipal());
         antiSpam.onUserSignup(request, projectId, userCreate);
         if (!Strings.isNullOrEmpty(userCreate.getName())) {
             sanitizer.userName(userCreate.getName());
@@ -195,6 +195,8 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 return new UserCreateResponse(false, true, null);
             }
         }
+
+        registrationCaptcha.require(request, getExtendedPrincipal());
 
         NotificationMethods notificationMethods = project.getVersionedConfigAdmin()
                 .getConfig()
