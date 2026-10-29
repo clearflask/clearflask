@@ -119,8 +119,6 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     private UserBindUtil userBindUtil;
     @Inject
     private AntiSpam antiSpam;
-    @Inject
-    private com.smotana.clearflask.web.security.RegistrationCaptcha registrationCaptcha;
 
     @PermitAll
     @Limit(requiredPermits = 100, challengeAfter = 3)
@@ -171,7 +169,6 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
     @Limit(requiredPermits = 100)
     @Override
     public UserCreateResponse userCreate(String projectId, UserCreate userCreate) {
-        registrationCaptcha.requireCaptcha(request, getExtendedPrincipal());
         antiSpam.onUserSignup(request, projectId, userCreate);
         if (!Strings.isNullOrEmpty(userCreate.getName())) {
             sanitizer.userName(userCreate.getName());
@@ -195,8 +192,6 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
                 return new UserCreateResponse(false, true, null);
             }
         }
-
-        registrationCaptcha.require(request, getExtendedPrincipal());
 
         NotificationMethods notificationMethods = project.getVersionedConfigAdmin()
                 .getConfig()

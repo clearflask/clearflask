@@ -50,16 +50,16 @@ export default function AbuseSettingsPage() {
     }
   };
   return <ProjectSettingsBase title="Anti-spam / Abuse">
-    <Typography paragraph>These settings apply to new dashboard accounts and portal users across all projects. Existing users can still sign in.</Typography>
+    <Typography paragraph>These settings apply only to new dashboard/admin accounts. Portal user registrations are unaffected. Existing users can still sign in.</Typography>
     {!!error && <Alert severity="error">{error}</Alert>}
     {!settings && !error && <CircularProgress aria-label="Loading abuse settings" size={24} />}
     {!!settings && <>
-      <FormControlLabel label="Allow new registrations" control={<Switch checked={settings.registrationsEnabled} disabled={saving}
+      <FormControlLabel label="Allow new admin account registrations" control={<Switch checked={settings.registrationsEnabled} disabled={saving}
         onChange={(_, checked) => { setSettings({ ...settings, registrationsEnabled: checked }); setSaved(false); }} />} />
-      <FormControlLabel label="Require CAPTCHA for every registration" control={<Switch checked={settings.registrationCaptchaEnabled} disabled={saving}
+      <FormControlLabel label="Require CAPTCHA for every admin account registration" control={<Switch checked={settings.registrationCaptchaEnabled} disabled={saving}
         onChange={(_, checked) => { setSettings({ ...settings, registrationCaptchaEnabled: checked }); setSaved(false); }} />} />
       <Typography paragraph variant="body2">Authenticated superadmins retain their CAPTCHA exemption. Normal rate limits remain active.</Typography>
-      {!settings.registrationsEnabled && <Alert severity="warning">New registrations will be blocked until enabled again.</Alert>}
+      {!settings.registrationsEnabled && <Alert severity="warning">New admin account registrations will be blocked until enabled again.</Alert>}
       {saved && <Alert severity="success">Abuse settings saved.</Alert>}
       <SubmitButton isSubmitting={saving} disabled={saving} onClick={save}>Save</SubmitButton>
     </>}

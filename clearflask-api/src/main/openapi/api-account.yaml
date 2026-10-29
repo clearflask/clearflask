@@ -3,6 +3,7 @@
 components:
   schemas:
     RegistrationAbuseSettings:
+      description: Controls dashboard/admin account signups only. Portal user registrations are unaffected.
       type: object
       required: [registrationsEnabled, registrationCaptchaEnabled]
       properties:

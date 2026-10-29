@@ -19,7 +19,7 @@ import java.util.Map;
 
 import static io.dataspray.singletable.TableType.Primary;
 
-/** Shared, strongly consistent registration controls across application instances. */
+/** Shared, strongly consistent dashboard account registration controls. */
 @Singleton
 public class RegistrationAbusePolicy {
     private final TableSchema<Settings> schema;
@@ -39,7 +39,7 @@ public class RegistrationAbusePolicy {
 
     public void requireRegistrationsEnabled() {
         if (!get().getRegistrationsEnabled()) {
-            throw new ApiException(Response.Status.FORBIDDEN, "New registrations are temporarily disabled");
+            throw new ApiException(Response.Status.FORBIDDEN, "New admin account registrations are temporarily disabled");
         }
     }
 

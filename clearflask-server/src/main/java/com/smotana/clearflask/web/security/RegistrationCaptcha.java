@@ -17,7 +17,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Optional;
 
-/** Mandatory CAPTCHA at public registration boundaries, independent of IP history. */
+/** Optional mandatory CAPTCHA for dashboard account registration only. */
 @Slf4j
 @Singleton
 public class RegistrationCaptcha {
@@ -57,7 +57,7 @@ public class RegistrationCaptcha {
         throw new WebApplicationException(Response.status(Response.Status.TOO_MANY_REQUESTS)
                 .type(MediaType.APPLICATION_JSON)
                 .header("x-cf-challenge", challenger.issue(ip, target))
-                .entity(new ErrorResponse("Solve the challenge to register"))
+                .entity(new ErrorResponse("Solve the challenge to register an admin account"))
                 .build());
     }
 }
