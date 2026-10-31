@@ -102,6 +102,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_READ_BATCH_MAX_SIZE;
 import static com.smotana.clearflask.store.dynamo.DefaultDynamoDbProvider.DYNAMO_WRITE_BATCH_MAX_SIZE;
 import static com.smotana.clearflask.store.elastic.ElasticUtil.*;
 import static com.smotana.clearflask.store.mysql.DefaultMysqlProvider.ID_MAX_LENGTH;
@@ -419,11 +420,13 @@ public class DynamoElasticUserStore extends ManagedService implements UserStore 
         if (userIds.isEmpty()) {
             return ImmutableMap.of();
         }
-        return singleTable.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(userSchema.tableName()).withPrimaryKeys(userIds.stream()
+        // DynamoDB limits each batch to 100 distinct keys, including large subscriber lists.
+        return StreamSupport.stream(Iterables.partition(ImmutableSet.copyOf(userIds), DYNAMO_READ_BATCH_MAX_SIZE).spliterator(), false)
+                .flatMap(batch -> singleTable.retryUnprocessed(dynamoDoc.batchGetItem(new TableKeysAndAttributes(userSchema.tableName()).withPrimaryKeys(batch.stream()
                         .map(userId -> userSchema.primaryKey(Map.of(
                                 "projectId", projectId,
                                 "userId", userId)))
-                        .toArray(PrimaryKey[]::new))))
+                        .toArray(PrimaryKey[]::new)))))
                 .map(userSchema::fromItem)
                 .collect(ImmutableMap.toImmutableMap(
                         UserModel::getUserId,
