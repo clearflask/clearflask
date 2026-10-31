@@ -17,4 +17,14 @@ missing records, and a partial response requiring a retry across multiple batche
 Validation: full CI=true all-module clean install passed with 401 Java tests,
 frontend UI regressions, production frontend/Connect compilation, and packaging.
 Integration tests and local Docker image creation were skipped; CI builds the
-production deployment artifacts. Production deployment: pending.
+production deployment artifacts.
+
+Production deployment completed successfully via GitHub Actions run
+[41201805031](https://github.com/clearflask/clearflask/actions/runs/41201805031),
+shipping commit `a6d1043f`. The served backend version is
+`20261031124633-2.7.1-SNAPSHOT`. Deployed `getUsers` bytecode confirms distinct IDs
+partitioned into batches of 100. Live health returned HTTP 200. No new application
+WARN/ERROR entries were observed in the immediate post-deployment check.
+
+No customer post was changed to trigger notifications during validation. The
+previously failed notification task is not automatically replayed by this fix.
