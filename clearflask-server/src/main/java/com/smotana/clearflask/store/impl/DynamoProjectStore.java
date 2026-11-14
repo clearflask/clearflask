@@ -566,10 +566,14 @@ public class DynamoProjectStore implements ProjectStore {
     }
 
     @Override
-    public String acceptInvitation(String invitationId, String accepteeAccountId) {
+    public String acceptInvitation(String invitationId, String accepteeAccountId, String accepteeEmail) {
         InvitationModel invitation = getInvitation(invitationId)
                 .filter(Predicate.not(InvitationModel::isAccepted))
                 .orElseThrow(() -> new ApiException(Response.Status.NOT_FOUND, "Invitation expired"));
+        // Bind the invitation capability to its intended email on both acceptance paths.
+        if (accepteeEmail == null || !invitation.getInvitedEmail().equalsIgnoreCase(accepteeEmail)) {
+            throw new ApiException(Response.Status.FORBIDDEN, "Sign in with the invited email address");
+        }
         dynamo.transactWriteItems(new TransactWriteItemsRequest().withTransactItems(ImmutableList.<TransactWriteItem>builder()
                 .add(new TransactWriteItem().withUpdate(new Update()
                         .withTableName(projectSchema.tableName())
@@ -587,13 +591,14 @@ public class DynamoProjectStore implements ProjectStore {
                         .withTableName(invitationSchema.tableName())
                         .withKey(ItemUtils.toAttributeValueMap(invitationSchema.primaryKey(Map.of(
                                 "invitationId", invitationId))))
-                        .withConditionExpression("attribute_exists(#partitionKey)")
+                        .withConditionExpression("attribute_exists(#partitionKey) AND attribute_not_exists(#isAcceptedByAccountId) AND #ttlInEpochSec > :now")
                         .withUpdateExpression("SET #isAcceptedByAccountId = :isAcceptedByAccountId, #ttlInEpochSec = :ttlInEpochSec")
                         .withExpressionAttributeNames(Map.of(
                                 "#partitionKey", invitationSchema.partitionKeyName(),
                                 "#isAcceptedByAccountId", "isAcceptedByAccountId",
                                 "#ttlInEpochSec", "ttlInEpochSec"))
                         .withExpressionAttributeValues(Map.of(
+                                ":now", invitationSchema.toAttrValue("ttlInEpochSec", Instant.now().getEpochSecond()),
                                 ":isAcceptedByAccountId", invitationSchema.toAttrValue("isAcceptedByAccountId", accepteeAccountId),
                                 ":ttlInEpochSec", invitationSchema.toAttrValue("ttlInEpochSec",
                                         Instant.now().plus(config.invitationExpireAfterAccepted()).getEpochSecond())))))

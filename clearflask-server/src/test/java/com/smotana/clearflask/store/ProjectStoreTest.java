@@ -126,7 +126,21 @@ public class ProjectStoreTest extends AbstractTest {
 
         assertEquals(ImmutableSet.of(), store.getProject(projectId, true).get().getModel().getAdminsAccountIds());
         String admin1AccountId = IdUtil.randomId();
-        assertEquals(projectId, store.acceptInvitation(invitation.getInvitationId(), admin1AccountId));
+        try {
+            store.acceptInvitation(invitation.getInvitationId(), admin1AccountId, "attacker@example.com");
+            fail("An unrelated email must not redeem an invitation");
+        } catch (com.smotana.clearflask.web.ApiException expected) {
+            assertEquals(403, expected.getStatus().getStatusCode());
+        }
+        assertEquals(Optional.of(invitationExpected), store.getInvitation(invitation.getInvitationId()));
+        assertEquals(ImmutableSet.of(), store.getProject(projectId, true).get().getModel().getAdminsAccountIds());
+        assertEquals(projectId, store.acceptInvitation(invitation.getInvitationId(), admin1AccountId, "Sandy@example.com"));
+        try {
+            store.acceptInvitation(invitation.getInvitationId(), IdUtil.randomId(), "sandy@example.com");
+            fail("An invitation must only be accepted once");
+        } catch (com.smotana.clearflask.web.ApiException expected) {
+            assertEquals(404, expected.getStatus().getStatusCode());
+        }
         assertEquals(ImmutableSet.of(admin1AccountId), store.getProject(projectId, true).get().getModel().getAdminsAccountIds());
 
         String admin2AccountId = IdUtil.randomId();

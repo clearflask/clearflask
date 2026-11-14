@@ -607,7 +607,7 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
 
         // Accept invitation
         ImmutableSet<String> externalProjectIds = invitationIdOpt
-                .map(invitationId -> projectStore.acceptInvitation(invitationId, accountId))
+                .map(invitationId -> projectStore.acceptInvitation(invitationId, accountId, email))
                 .stream()
                 .collect(ImmutableSet.toImmutableSet());
         boolean isTeammate = !externalProjectIds.isEmpty();
@@ -1203,7 +1203,9 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
                 .flatMap(ExtendedPrincipal::getAuthenticatedAccountIdOpt)
                 .get();
 
-        String projectId = projectStore.acceptInvitation(invitationId, accountId);
+        Account account = accountStore.getAccount(accountId, false)
+                .orElseThrow(() -> new ApiException(Response.Status.UNAUTHORIZED));
+        String projectId = projectStore.acceptInvitation(invitationId, accountId, account.getEmail());
         // This is a critical time, if something happens here, admin may be partially added
         accountStore.addExternalProject(accountId, projectId);
 

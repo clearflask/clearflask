@@ -76,7 +76,7 @@ public interface ProjectStore {
     /**
      * @return projectId
      */
-    String acceptInvitation(String invitationId, String accepteeAccountId);
+    String acceptInvitation(String invitationId, String accepteeAccountId, String accepteeEmail);
 
     void revokeInvitation(String projectId, String invitationId);
 
