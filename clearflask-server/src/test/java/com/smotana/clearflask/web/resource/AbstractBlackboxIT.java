@@ -124,6 +124,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.glassfish.grizzly.filterchain.FilterChainContext;
+import org.glassfish.grizzly.http.HttpRequestPacket;
+import org.glassfish.grizzly.http.server.Request;
+import org.glassfish.grizzly.servlet.WebappContext;
 import org.glassfish.grizzly.servlet.HttpServletRequestImpl;
 import org.glassfish.grizzly.servlet.HttpServletResponseImpl;
 import org.junit.Before;
@@ -136,6 +140,7 @@ import org.killbill.billing.invoice.api.InvoiceStatus;
 import org.killbill.billing.notification.plugin.api.ExtBusEventType;
 
 import javax.ws.rs.core.MediaType;
+import java.io.IOException;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
@@ -146,6 +151,7 @@ import static io.jsonwebtoken.SignatureAlgorithm.HS512;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.mock;
 
 @Slf4j
 public abstract class AbstractBlackboxIT extends AbstractIT {
@@ -360,8 +366,8 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
         super.setup();
         // Resource-flow tests use synthetic signups; CAPTCHA enforcement has dedicated tests.
         registrationAbusePolicy.update(new RegistrationAbuseSettings(true, false));
-        HttpServletRequestImpl request = HttpServletRequestImpl.create();
         HttpServletResponseImpl response = HttpServletResponseImpl.create();
+        HttpServletRequestImpl request = createRequest(response);
         ImmutableSet.of(
                 accountResource,
                 projectResource,
@@ -380,6 +386,15 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
         resetPaymentPlugin();
 
         s3.createBucket(contentUploadBucketName);
+    }
+
+    static HttpServletRequestImpl createRequest(HttpServletResponseImpl response) throws IOException {
+        Request backingRequest = Request.create();
+        backingRequest.initialize(HttpRequestPacket.builder().method("POST").uri("/").build(),
+                mock(FilterChainContext.class), null);
+        HttpServletRequestImpl request = HttpServletRequestImpl.create();
+        request.initialize(backingRequest, response, new WebappContext("integration-test"));
+        return request;
     }
 
     @Value
