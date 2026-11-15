@@ -124,6 +124,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.http.HttpRequestPacket;
 import org.glassfish.grizzly.http.server.Request;
@@ -141,6 +142,7 @@ import org.killbill.billing.notification.plugin.api.ExtBusEventType;
 
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
@@ -152,6 +154,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @Slf4j
 public abstract class AbstractBlackboxIT extends AbstractIT {
@@ -389,9 +392,14 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     }
 
     static HttpServletRequestImpl createRequest(HttpServletResponseImpl response) throws IOException {
+        Connection<InetSocketAddress> connection = mock(Connection.class);
+        when(connection.getPeerAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 12345));
+        FilterChainContext context = mock(FilterChainContext.class);
+        when(context.getConnection()).thenReturn(connection);
+        HttpRequestPacket packet = HttpRequestPacket.builder().method("POST").uri("/").build();
+        packet.setConnection(connection);
         Request backingRequest = Request.create();
-        backingRequest.initialize(HttpRequestPacket.builder().method("POST").uri("/").build(),
-                mock(FilterChainContext.class), null);
+        backingRequest.initialize(packet, context, null);
         HttpServletRequestImpl request = HttpServletRequestImpl.create();
         request.initialize(backingRequest, response, new WebappContext("integration-test"));
         return request;
