@@ -30,6 +30,7 @@ import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.IdeaCreate;
 import com.smotana.clearflask.api.model.IdeaWithVote;
 import com.smotana.clearflask.api.model.NewProjectResult;
+import com.smotana.clearflask.api.model.RegistrationAbuseSettings;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.api.model.UserCreate;
 import com.smotana.clearflask.api.model.UserMeWithBalance;
@@ -113,6 +114,7 @@ import com.smotana.clearflask.web.resource.PaymentTestPluginConfigure.PaymentTes
 import com.smotana.clearflask.web.security.MockAuthCookie;
 import com.smotana.clearflask.web.security.MockExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Sanitizer;
+import com.smotana.clearflask.web.security.RegistrationAbusePolicy;
 import com.smotana.clearflask.web.security.SuperAdminPredicate;
 import com.smotana.clearflask.web.security.UserBindUtil;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
@@ -190,6 +192,8 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     private AmazonS3 s3;
     @Inject
     protected Gson gson;
+    @Inject
+    private RegistrationAbusePolicy registrationAbusePolicy;
 
     protected long userNumber = 0L;
     protected final String contentUploadBucketName = "mock-" + IdUtil.randomId();
@@ -354,6 +358,8 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     @Before
     public void setup() throws Exception {
         super.setup();
+        // Resource-flow tests use synthetic signups; CAPTCHA enforcement has dedicated tests.
+        registrationAbusePolicy.update(new RegistrationAbuseSettings(true, false));
         HttpServletRequestImpl request = HttpServletRequestImpl.create();
         HttpServletResponseImpl response = HttpServletResponseImpl.create();
         ImmutableSet.of(
