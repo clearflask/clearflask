@@ -66,6 +66,7 @@ import com.smotana.clearflask.core.push.provider.MockEmailService;
 import com.smotana.clearflask.security.CertFetcherImpl;
 import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.security.SimpleEmailValidator;
+import com.smotana.clearflask.security.limiter.challenge.CaptchaChallenger;
 import com.smotana.clearflask.security.limiter.rate.LocalRateLimiter;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.CloudLocalLicenseStore;
@@ -266,6 +267,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 MockBrowserPushService.module(),
                 MockEmailService.module(),
                 LocalRateLimiter.module(),
+                CaptchaChallenger.module(),
                 ResourceLegalStore.module(),
                 CommonPlanVerifyStore.module(),
                 SuperAdminPredicate.module(),
