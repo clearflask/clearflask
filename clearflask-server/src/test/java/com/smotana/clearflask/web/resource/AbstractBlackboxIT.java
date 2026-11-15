@@ -30,6 +30,7 @@ import com.smotana.clearflask.api.model.ConfigAdmin;
 import com.smotana.clearflask.api.model.IdeaCreate;
 import com.smotana.clearflask.api.model.IdeaWithVote;
 import com.smotana.clearflask.api.model.NewProjectResult;
+import com.smotana.clearflask.api.model.RegistrationAbuseSettings;
 import com.smotana.clearflask.api.model.SubscriptionStatus;
 import com.smotana.clearflask.api.model.UserCreate;
 import com.smotana.clearflask.api.model.UserMeWithBalance;
@@ -66,6 +67,7 @@ import com.smotana.clearflask.core.push.provider.MockEmailService;
 import com.smotana.clearflask.security.CertFetcherImpl;
 import com.smotana.clearflask.security.ClearFlaskSso;
 import com.smotana.clearflask.security.SimpleEmailValidator;
+import com.smotana.clearflask.security.limiter.challenge.CaptchaChallenger;
 import com.smotana.clearflask.security.limiter.rate.LocalRateLimiter;
 import com.smotana.clearflask.store.AccountStore;
 import com.smotana.clearflask.store.CloudLocalLicenseStore;
@@ -112,6 +114,7 @@ import com.smotana.clearflask.web.resource.PaymentTestPluginConfigure.PaymentTes
 import com.smotana.clearflask.web.security.MockAuthCookie;
 import com.smotana.clearflask.web.security.MockExtendedSecurityContext;
 import com.smotana.clearflask.web.security.Sanitizer;
+import com.smotana.clearflask.web.security.RegistrationAbusePolicy;
 import com.smotana.clearflask.web.security.SuperAdminPredicate;
 import com.smotana.clearflask.web.security.UserBindUtil;
 import com.smotana.clearflask.web.util.WebhookServiceImpl;
@@ -121,6 +124,11 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.glassfish.grizzly.Connection;
+import org.glassfish.grizzly.filterchain.FilterChainContext;
+import org.glassfish.grizzly.http.HttpRequestPacket;
+import org.glassfish.grizzly.http.server.Request;
+import org.glassfish.grizzly.servlet.WebappContext;
 import org.glassfish.grizzly.servlet.HttpServletRequestImpl;
 import org.glassfish.grizzly.servlet.HttpServletResponseImpl;
 import org.junit.Before;
@@ -133,6 +141,8 @@ import org.killbill.billing.invoice.api.InvoiceStatus;
 import org.killbill.billing.notification.plugin.api.ExtBusEventType;
 
 import javax.ws.rs.core.MediaType;
+import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
@@ -143,6 +153,8 @@ import static io.jsonwebtoken.SignatureAlgorithm.HS512;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @Slf4j
 public abstract class AbstractBlackboxIT extends AbstractIT {
@@ -189,6 +201,8 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     private AmazonS3 s3;
     @Inject
     protected Gson gson;
+    @Inject
+    private RegistrationAbusePolicy registrationAbusePolicy;
 
     protected long userNumber = 0L;
     protected final String contentUploadBucketName = "mock-" + IdUtil.randomId();
@@ -266,6 +280,7 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
                 MockBrowserPushService.module(),
                 MockEmailService.module(),
                 LocalRateLimiter.module(),
+                CaptchaChallenger.module(),
                 ResourceLegalStore.module(),
                 CommonPlanVerifyStore.module(),
                 SuperAdminPredicate.module(),
@@ -352,8 +367,10 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
     @Before
     public void setup() throws Exception {
         super.setup();
-        HttpServletRequestImpl request = HttpServletRequestImpl.create();
+        // Resource-flow tests use synthetic signups; CAPTCHA enforcement has dedicated tests.
+        registrationAbusePolicy.update(new RegistrationAbuseSettings(true, false));
         HttpServletResponseImpl response = HttpServletResponseImpl.create();
+        HttpServletRequestImpl request = createRequest(response);
         ImmutableSet.of(
                 accountResource,
                 projectResource,
@@ -372,6 +389,20 @@ public abstract class AbstractBlackboxIT extends AbstractIT {
         resetPaymentPlugin();
 
         s3.createBucket(contentUploadBucketName);
+    }
+
+    static HttpServletRequestImpl createRequest(HttpServletResponseImpl response) throws IOException {
+        Connection<InetSocketAddress> connection = mock(Connection.class);
+        when(connection.getPeerAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 12345));
+        FilterChainContext context = mock(FilterChainContext.class);
+        when(context.getConnection()).thenReturn(connection);
+        HttpRequestPacket packet = HttpRequestPacket.builder().method("POST").uri("/").build();
+        packet.setConnection(connection);
+        Request backingRequest = Request.create();
+        backingRequest.initialize(packet, context, null);
+        HttpServletRequestImpl request = HttpServletRequestImpl.create();
+        request.initialize(backingRequest, response, new WebappContext("integration-test"));
+        return request;
     }
 
     @Value
