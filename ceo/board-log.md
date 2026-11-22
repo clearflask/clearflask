@@ -23,8 +23,8 @@ _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
   count is 5 (API, Google Analytics, Hotjar, Intercom Messenger, GitHub), Slack and
   Jira in beta. GitLab outbound sync is not wired. Outbound webhooks exist but are
   off with no UI. Zapier is claimed in copy but not built.
-- **Slack/Jira fixes** on a branch: an authorization flaw in Slack workspace linking
-  fixed; Slack hook for admin-created comments added; Jira sync no longer stops an
+- **Slack/Jira fixes** on a branch: stricter validation of Slack workspace linking
+  added; Slack hook for admin-created comments added; Jira sync no longer stops an
   hour after linking (offline access + refresh-token rotation). Jira's 30-day
   webhook refresh is still missing.
 - **Distribution batch** on a branch: marketing sitemap, Featurebase / Frill /

@@ -19,7 +19,7 @@ Four pieces of finished work are waiting on the board, not on engineering.
       self-host setups, not clearflask.com. Regression test included. TODO: push
       (CI validates), then include in the next patch release.
 - [ ] **Slack + Jira fixes** (branch `worktree-agent-ad0182cc63e4a7152`, not merged):
-      fixed an authorization flaw in Slack workspace linking; added the missing
+      added stricter validation of Slack workspace linking; added the missing
       Slack notification for admin-created comments; fixed Jira token lifecycle
       (sync stopped about an hour after linking; now requests offline access and
       rotates refresh tokens). Existing Jira customers must re-link once after

@@ -33,8 +33,8 @@ consolidate board asks, and put activation before AI. Board: "do it all."
   production config now has it enabled; whether that maintenance happened is a
   board question. Outbound webhooks exist, default off, no UI. Zapier is claimed in
   copy but not built.
-- **Slack/Jira fixes** (branch, not merged): authorization flaw in Slack workspace
-  linking fixed; Slack hook for admin-created comments added; Jira token lifecycle
+- **Slack/Jira fixes** (branch, not merged): stricter validation of Slack workspace
+  linking added; Slack hook for admin-created comments added; Jira token lifecycle
   fixed (offline access, refresh-token rotation). Jira customers re-link once after
   deploy. Jira 30-day webhook refresh still missing.
 - **Distribution** (branch, not merged): marketing sitemap and robots `Sitemap:`
