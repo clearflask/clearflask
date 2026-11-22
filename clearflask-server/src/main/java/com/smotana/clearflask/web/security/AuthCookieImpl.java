@@ -63,6 +63,10 @@ public class AuthCookieImpl implements AuthCookie {
     public void setAuthCookie(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull String cookieName, @NonNull String sessionId, long ttlInEpochSec) {
         // Never log the session id itself, it is a bearer credential
         log.trace("Setting {} auth cookie ttl {}", cookieName, ttlInEpochSec);
+        // Must precede the session cookie: browsers apply Set-Cookie headers in order, and on hosts without a
+        // registrable domain (localhost, IP addresses) a Domain attribute equal to the host addresses the very same
+        // cookie as the host-only one whenever the wire name is unprefixed. Expiring last would delete the session.
+        expireLegacyDomainCookie(request, response, cookieName);
         RealCookie.builder()
                 .name(wireName(cookieName))
                 .value(sessionId)
@@ -73,7 +77,6 @@ public class AuthCookieImpl implements AuthCookie {
                 .sameSite(sameSiteFor(cookieName))
                 .build()
                 .addToResponse(response);
-        expireLegacyDomainCookie(request, response, cookieName);
     }
 
     @Override
@@ -103,9 +106,9 @@ public class AuthCookieImpl implements AuthCookie {
     }
 
     /**
-     * Earlier releases set every auth cookie with an explicit {@code Domain} attribute. Browsers treat that as a
-     * different cookie than the host-only cookie set above, so clear it explicitly or the two would coexist (and the
-     * domain-wide one would keep leaking to subdomains until it expires).
+     * Earlier releases set every auth cookie with an explicit {@code Domain} attribute. On a registrable domain
+     * browsers treat that as a different cookie than the host-only one, so clear it explicitly or the two would
+     * coexist (and the domain-wide one would keep leaking to subdomains until it expires).
      * <p>
      * TODO Remove a few releases after this shipped.
      */

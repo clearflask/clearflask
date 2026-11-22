@@ -108,6 +108,25 @@ public class AuthCookieImplTest {
         assertTrue(cookie, cookie.contains("; SameSite=Strict"));
     }
 
+    /**
+     * On localhost and IP-address hosts a browser treats {@code Domain=<host>} as the host-only cookie itself, so with
+     * unprefixed names the clean-up cookie and the session cookie are one and the same. The session must be written
+     * last or it is deleted by the response that created it.
+     */
+    @Test
+    public void legacyCleanUpPrecedesSessionCookieSoItCannotDeleteIt() {
+        for (boolean secure : new boolean[]{false, true}) {
+            HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
+            create(secure).setAuthCookie(request(), response, "cf_usr_auth_proj", "sessord", 4102444800L);
+
+            List<String> headers = setCookieHeaders(response);
+            assertEquals(headers.toString(), 2, headers.size());
+            assertTrue(headers.get(0), headers.get(0).startsWith("cf_usr_auth_proj=;"));
+            assertTrue(headers.get(0), headers.get(0).contains("; Domain=" + SERVER_NAME));
+            assertTrue(headers.get(1), headers.get(1).startsWith("cf_usr_auth_proj=sessord;"));
+        }
+    }
+
     @Test
     public void legacyDomainWideCookieIsExpiredOnSet() {
         HttpServletResponse response = Mockito.mock(HttpServletResponse.class);
