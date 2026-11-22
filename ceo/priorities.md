@@ -1,173 +1,136 @@
 # Priorities — Working Backlog
 
-_Last updated: 2026-07-13. Statuses: TODO / IN PROGRESS / BLOCKED(on) / DONE._
+_Last updated: 2026-11-21. Statuses: TODO / IN PROGRESS / BLOCKED(on) / DONE.
+Finished history lives in `board-log.md` and `minutes/`; this file keeps only what
+is still open plus one-line DONE markers where they explain current state._
 
-## P0 — Lean-compose variant (BOARD-approved 2026-07-03; unblocks all listings)
-Drop localstack: local-disk file storage + embedded/local DynamoDB so the stack
-is server + connect + MariaDB. Durable fix for the packaging blocker that stalled
-the Railway live test (server hung on localstack over IPv6 private net). Unlocks
-Railway + PikaPods + Umbrel + CasaOS.
-- [x] Scope the two swaps — done (`specs/lean-compose.md`).
-- [x] Design: NOT an option inside self-host — a new **PRODUCTION_PLATFORM**
-      deployment type (board call). Self-hosters untouched.
-- [x] Implement — committed `e5c93029` (+ test fix `6c2e5a94`). **CI GREEN.** The
-      parameterized ServiceInjectorTest now builds the injector for PRODUCTION_PLATFORM
-      successfully (validates the wiring). Includes LocalDiskContentStore, file-backed
-      EmbeddedDynamoDbProvider, config-platform.cfg, native-lib packaging,
-      docker-compose.platform.yml.
-- [~] Release 2.6.0 cut to publish platform images + native libs (CI doesn't push
-      images). Monitoring. Needed before any deploy test.
-- [x] **Durability test PASSED (2.6.1, local docker amd64 emulation).** Platform
-      server boots fully (native lib extracted from WAR, embedded DynamoDB init,
-      health 200). Created super-admin account via API (HTTP 200) → sqlite
-      `shared-local-instance.db` persisted to the volume → **restarted the server
-      container → logged in with the pre-restart account (HTTP 200)**. Data survives
-      restart. Platform-hosting validated end-to-end.
-- [x] **Proven LIVE on Railway (2026-07-05).** Template rebuilt for the platform
-      stack; public instance worked end-to-end (dashboard, signup, project,
-      /api/health). Torn down after board test. Fixes on master: mariadb IPv6
-      bind, dummy AWS creds, JVM heap cap for 1 GB hosts, connect mkdir.
-- [x] **Single-tenant platform mode (2026-07-06, `527bea61`).** Answers the
-      subdomain constraint: one project on the root domain, super-admin-only
-      signup, project cap 1, no slug/domain fields. Generated host domains are
-      now fully usable without custom DNS. Plus `make platform-up` local stack.
-- [x] **Single-tenant mode VALIDATED end-to-end locally (2026-07-06)** on
-      locally-built amd64 images via `make platform-up` (no release needed —
-      release-free test process now in `ceo/CLAUDE.md`): non-admin signup
-      rejected; admin signup OK; create wizard has no slug/domain fields;
-      project bound to root domain; portal + anonymous SSR served on root
-      domain; second project blocked by API; "Add project" hidden; data +
-      session survived server restart.
-- [x] Release 2.6.3 (patch) — board-approved 2026-07-06, shipped. GHCR images
-      `2.6.3` + Helm charts published; carries single-tenant platform mode.
-- [x] **Railway template rebuilt on 2.6.3 + live re-test PASSED (2026-07-08).**
-      All 3 services Online first try; single-tenant verified live; portal works
-      on the generated domain. See minutes/2026-07-08-railway-retest.md.
-- [x] **PUBLISHED (2026-07-08): https://railway.com/deploy/clearflask** — live on
-      the Railway marketplace with full listing copy; stale 9geeXl deleted; test
-      project torn down. P0 COMPLETE.
-- [x] Follow-ups investigated (2026-07-13): the **50% OSS promo is over** (was a
-      limited-time offer; current program is 15% base + 10% support bonus = 25%
-      max — we're already at max potential, nothing to enroll). The **+10% bonus
-      is automatic**: answer user questions in the Template Queue
-      (station.railway.com/my-template-queue) as they arrive — no enrollment.
-      NEW opportunity: **Open Source Partner application** (railway.com/partners
-      → "Become a partner") gives a Verified badge + featured placement, same
-      rates. BOARD: submit the form (CEO drafted answers in
-      `specs/railway-template.md`).
-- [ ] Monitor Template Queue for user questions (answers earn the +10% bonus;
-      draft answers for board review per posting rules) + listing analytics.
-- [ ] amd64-only platform image constraint (sqlite4java has no arm64 build) —
-      release images are already amd64+arm64 via buildx; platform runs amd64.
-      Documented; revisit only if arm64 pulls of the server image cause reports.
+## P0 — Ship what is already built (review queue)
+Four pieces of finished work are waiting on the board, not on engineering.
+- [ ] **Admin email verification** (branch `feat/admin-email-verification-review`,
+      uncommitted; plan `plans/admin-email-verification.md` on that branch).
+      Browser walkthrough done in all three modes: *mandatory* returns 403 on
+      protected admin APIs until verified; *optional* shows a notice and lets the
+      user continue; *off* sends nothing and offers manual verify. Switching an
+      existing account from off to mandatory did not lock it out. Not yet walked
+      through: invitation flows. BLOCKED(board: review screenshots, then merge).
+- [ ] **Localhost session cookie fix** — on local master (`2db32b46`), not pushed.
+      On plain-HTTP localhost / IP-address hosts the session cookie was deleted in
+      the same response that set it, so sign-in was lost on reload. Affects some
+      self-host setups, not clearflask.com. Regression test included. TODO: push
+      (CI validates), then include in the next patch release.
+- [ ] **Slack + Jira fixes** (branch `worktree-agent-ad0182cc63e4a7152`, not merged):
+      fixed an authorization flaw in Slack workspace linking; added the missing
+      Slack notification for admin-created comments; fixed Jira token lifecycle
+      (sync stopped about an hour after linking; now requests offline access and
+      rotates refresh tokens). Existing Jira customers must re-link once after
+      deploy. BLOCKED(board: approve deploy + re-link notice).
+- [ ] **Distribution batch** (branch `worktree-agent-a9057785feca03888`, not merged):
+      marketing `sitemap.xml` + robots `Sitemap:` line; Featurebase, Frill and
+      Released alternative pages (vendor prices verified 2026-11-21); pricing-page
+      line "Flat pricing with no tracked-user meter." BLOCKED(board: the two copy
+      questions in P3).
 
-## P1 — Self-host marketplace listings (passive revenue + funnel)
-Status: IN PROGRESS — research done (see `reports/marketplace-research-2026-07-02.md`
-and `reports/packaging-audit-2026-07-02.md`). Executing in this order:
-- [x] Research listing requirements + revenue share per platform. Verdict: Railway
-      first (self-serve, 15–25% cash kickback, 50% OSS promo live), then PikaPods
-      (20% share, Fider already there), Elestio (negotiate ~20–30%), DO Marketplace
-      (funnel only), Umbrel/CasaOS (cheap PRs). Coolify blocked until 1,000 stars.
-- [x] Audit self-host packaging. Verdict: ~70% ready; 4-container stack, no env-var
-      config, shared hardcoded secrets (advisory-grade), localstack/DynamoDB is the
-      architectural gap.
-- [x] First-boot secret generation (`SelfHostConfigBootstrap.java`) — committed
-      `87a4dd4a`, CI validating.
-- [x] Env-var config support (server + connect) — committed `87a4dd4a`.
-- [x] Cut release 2.5.0 — GHCR images `:latest`/`:2.5.0` now carry env-var
-      support. Workflow green, tag pushed, Helm charts published.
-- [~] Railway template: BUILT and SAVED in Railway (Matus's account), name
-      "ClearFlask", deploy URL railway.com/deploy/9geeXl. 4 services wired via
-      cross-service refs + secret(32) connect token, volumes attached,
-      super-admin email left as user-fill. NOT YET PUBLISHED — live-testing a
-      deploy first (project "zippy-amazement"). See `specs/railway-template.md`.
-- [x] Outreach drafts written: `outreach/pikapods-draft.md`,
-      `outreach/elestio-draft.md`. BOARD: review + send.
-- [ ] Lean compose variant dropping localstack (local-disk file storage; embedded
-      answer for DynamoDB) — unlocks PikaPods/Umbrel/CasaOS cheaply.
-- [x] Lean compose variant — DONE via P0 (PRODUCTION_PLATFORM stack, 2.6.3).
-- [x] README "Deploy on Railway" button added (2026-07-13) — one-click deploy
-      section at the top of Self Hosting; every deploy through it earns kickback.
-- [ ] BOARD: submission channels re-verified 2026-07-18 (see `outreach/`):
-      (a) PikaPods — post the drafted **app-request on feedback.pikapods.com**
-      (their real intake; no ClearFlask request exists) + optional email
-      follow-up to hello@pikapods.com; (b) Elestio — send draft to
-      **contact@elest.io** (their stated partnerships address), Discord
-      (discord.gg/4T4JGaMYrD) as fallback. Both drafts pitch the lean
-      3-container stack + live Railway listing.
-- [ ] Prepare listing assets: description, screenshots, logo, categories.
-- [ ] DO Marketplace Packer image (after the above).
+## P1 — Activation v1 (ahead of all AI work)
+Status: SPEC READY — BLOCKED(board sign-off). `specs/activation.md`.
+Boards die of silence (`reports/churn-post-mortem-2026-08-29.md`), and AI only
+helps a board that already has traffic. Sharpest finding: **an owner gets no email
+when a real user posts** — the first post passes in silence. The first-run
+checklist exists but renders at the bottom of the home page, under empty charts,
+with the "start collecting feedback" steps last.
+- [ ] BOARD: answer the spec's open questions (sequence, activation bar, read-only
+      baseline scan, email volume, trial email, plan gating on GitHub/API).
+- [ ] v1 (~4 sessions, no new infrastructure): owner alert on the first five
+      external posts; checklist moved to the top and reordered, with import and
+      "post on behalf" surfaced; day-3/day-7 rescue emails plus one quiet-board
+      email per four weeks; measurement fields + baseline report.
+- [ ] 60-day read; if cohorts are not visibly above baseline, stop and move to
+      ingestion.
 
-## P2 — AI dedupe + weekly digest, then relaunch
-Status: SPEC NEEDS RE-AIM (2026-08-29) — BLOCKED(board sign-off on feature work).
-**Canny gives its AI away free on every tier**, dedupe included
-(`reports/canny-competitive-2026-08-29.md`). The spec's plan to gate dedupe
-behind Business tier is therefore backwards. Proposed re-aim: dedupe is table
-stakes (do not gate it), keep the digest half (cheap, ~70% built, pulls
-quiet-board owners back), and move the headline to **ingestion** — turning
-support conversations into feedback is where Canny's actual moat is. Board must
-sign off before any implementation.
-- [x] Audit LangChain4j usage + post merging (2026-07-13). Big findings: post
-      merging is FULLY BUILT (API+model+admin UI, not broken); lexical
-      similar-posts already suggests duplicates at post-create; a weekly digest
-      cron ALREADY RUNS (WeeklyDigestService + OnDigest email + plan gating);
-      LLM plumbing exists (LangChain4j/OpenAI, global key). No embedding infra.
-- [x] Spec drafted: `specs/ai-dedupe-digest.md` — v1 is LLM-reranked lexical
-      candidates (no vector DB), admin "suggested merges" endpoint + UI, AI
-      themes + duplicates sections in the existing digest. BOARD: review spec
-      (esp. gating: Business-tier on cloud, own-API-key on self-host; also
-      plan-gate the currently-ungated AI chat).
-- [ ] Implement (est. a few sessions; no new infra/schema).
-- [ ] Ship behind a plan flag (Business tier / cloud).
-- [ ] Relaunch: Product Hunt + HN "Show HN" draft for board review.
+## P2 — Integrations (audited 2026-11-21)
+The old "Finish Slack" / "Jira next" items were stale: Slack, Jira, GitLab and
+GitHub are all built and have production credentials configured.
+- Honest publishable count: **5** — API, Google Analytics, Hotjar, Intercom
+  Messenger, GitHub. **Beta:** Slack, Jira. Marketing copy should match this.
+- [ ] Merge + deploy the Slack/Jira fixes (P0).
+- [ ] Jira: refresh webhooks before their 30-day expiry (missing today; links go
+      quiet after a month).
+- [ ] GitLab: outbound sync (ClearFlask → GitLab) is not wired; inbound works.
+      October minutes recorded GitLab disabled pending credential maintenance, but
+      production config now has it enabled. BOARD: confirm the maintenance was
+      completed. Not listed as an integration until both are settled.
+- [ ] Outbound webhooks exist but default off with no admin UI. Small UI would make
+      them a real integration point.
+- [ ] Zapier is claimed in copy but not built — remove the claim (or build it
+      later on top of webhooks).
 
-## P3 — Distribution basics
+## P3 — Distribution
 Status: IN PROGRESS.
-- [x] SEO alternative pages shipped 2026-08-29 — `src/site/Alternatives.tsx`,
-      routed at `/canny-alternative`, `/uservoice-alternative`,
-      `/fider-alternative`, linked from a new "Alternatives" footer dropdown
-      (there is **no sitemap for the marketing site**, so footer links are the
-      only crawl path). Each page carries a verified comparison table and an
-      honest paragraph on what the competitor does better. Also corrected the
-      public compare page, which advertised ClearFlask at a "$10/$100 per tracked
-      user" price that is neither our price nor our pricing model.
-- [ ] Featurebase / Frill / UserJot alternative pages — need pricing verified
-      first (not yet researched).
-- [ ] Canny's per-user overage rates beyond each tier are unpublished; the
-      compare page's extrapolation past a tier is still an estimate, flagged
-      in-code. Verify or drop the extrapolation.
-- [ ] Consider a real sitemap.xml for the marketing site.
-- [ ] G2 + Capterra listings (BOARD: account signup).
-- [ ] Finish Slack integration (plan: `plans/slack-integration-plan.md`).
-- [ ] Jira integration next (`plans/jira-integration-exploration.md`).
+- [x] DONE: Railway template live (2026-07-08); README deploy button; Canny /
+      UserVoice / Fider alternative pages (2026-08-29).
+- [ ] Merge the distribution batch (P0) once two copy questions are answered:
+      (a) confirm `releasedhub.com` is the same company as `released.so`;
+      (b) the public pricing page sells only Cloud $29 and Self-host $9, while the
+      comparison/alternative pages cite a $6 entry plan and a "free plan" that does
+      not appear to be on sale. Fix the copy to match whatever the board decides
+      in P4.
+- [ ] BOARD: PikaPods app request + Elestio email (drafts in `outreach/`, open since
+      July); Railway Open Source Partner form (answers in `specs/railway-template.md`).
+- [ ] BOARD: G2 + Capterra listings (account signup); Google Search Console.
+- [ ] UserJot alternative page (pricing not yet verified).
+- [ ] Canny per-user overage past each tier is unpublished; verify or drop the
+      extrapolation on the compare page.
+- [ ] DO Marketplace image; Umbrel/CasaOS PRs (lean platform stack makes them cheap).
+- [ ] Monitor Railway Template Queue (answers earn the support bonus; drafts for
+      board review).
 
-## P4 — Pricing restructure
-Status: TODO — but the churn post-mortem promoted this. **Every churned
-custom-domain customer was on a plan reachable from the $6/mo Cloud Starter**,
-the exact tier strategy says to kill (`reports/churn-post-mortem-2026-08-29.md`).
-- [x] Live Stripe catalogue read (`StripeProvisioner.PLAN_SPECS`): Cloud Starter
-      $6/mo, Cloud $29/mo, Cloud Pro $490/yr, Self-host $9/mo · $720/yr, plus
-      variable Sponsor/Business and two grandfathered prices.
-- [ ] BOARD: Stripe MRR + churn timeline. The access logs give churn *identity*
-      but not dates or dollars, so the churn **rate** is still unknown and this
-      decision cannot be made without it.
-- [ ] BOARD: decide whether to retire the $6 Cloud Starter tier.
-- [ ] Lead with "no tracked-user meter" — the sharpest true differentiator
-      against Canny, who charge per person who votes or comments.
-- [ ] Audit current live Stripe plans vs target shape:
-      Free (1 project, branded) → ~$29 Growth → ~$99 Business (SSO/whitelabel/AI).
-- [ ] Define open-core boundary for self-host paid features.
-- [ ] BOARD decision: approve final pricing before touching live Stripe catalog.
+## P4 — Pricing
+Status: TODO — partly informed, still BLOCKED(board: Stripe MRR + churn).
+- Account-record read (2026-11-21; Stripe itself not read): very few accounts are
+  in an active paid monthly state; the $6 Cloud Starter tier has no active
+  subscribers; most active accounts are on lifetime or grandfathered plans. Every
+  churned custom-domain board in the post-mortem was on a plan reachable from the
+  cheap tiers.
+- [ ] BOARD: Stripe MRR + churn timeline — still the biggest blind spot; account
+      records give state, not dollars or dates.
+- [ ] BOARD: retire Cloud Starter? The account read removes the main argument for
+      keeping it. Decide together with the free-plan question in P3.
+- [ ] **Signup drop:** signups fell to roughly a quarter of the earlier monthly rate
+      in October and November, coinciding with the fake-signup cleanup and the
+      registration CAPTCHA rollout. Find out whether CAPTCHA (or any other October
+      change) is turning away real users before reading anything into pricing.
+- [ ] Lead with "no tracked-user meter" (pricing-page line is in the P0 batch).
+- [ ] Target shape: Free (1 project, branded) → ~$29 → ~$99 (SSO/whitelabel/AI);
+      define the self-host open-core boundary; board approves before any Stripe
+      catalogue change.
 
-## P5 — Trust quick-wins (feeds the pitch, small effort)
-Status: IN PROGRESS.
-- [x] Fix README self-host quick-start email (`admin@clearflask.com` →
-      `admin@localhost`) and wrong telemetry opt-out key (2026-07-02).
-- [ ] Fix CSS injection (`clearflask-frontend/src/app/AppThemeProvider.tsx:102`).
-- [ ] Cookie security flags (`AuthenticationFilter.java:111-138`).
-- [ ] Fix comment replies (`CommentList.tsx:29`) — demo-path bug.
-- [ ] Default telemetry off for self-host or fix docs; gate JMX behind opt-in;
-      bump EOL image pins (localstack 0.14.3, mariadb 10.5, ES 7.10.0).
+## P5 — Trust, security, operations
+Re-verified against the code 2026-11-21.
+- [x] DONE (dropped): CSS injection in `AppThemeProvider.tsx` — font family is
+      sanitized (`2feea4ee`); remaining custom CSS is an intended admin feature.
+- [x] DONE (dropped): cookie flags — `AuthCookieImpl` sets HttpOnly, SameSite,
+      Secure and the `__Host-` prefix on secure deployments.
+- [x] DONE (dropped): comment replies — `CommentList.tsx` renders replies and a
+      reply box; the old TODO is gone.
+- [x] DONE (dropped): JMX — not enabled in the server image; only the local dev
+      compose turns it on.
+- [x] DONE: October security response (AI authorization, registration CAPTCHA,
+      OAuth destination binding, superadmin abuse controls), releases 2.7.1–2.7.3;
+      invitation acceptance bound to the intended email (2.7.3).
+- [ ] Production Connect runs an end-of-life Node.js release (the image already uses
+      Node 20). Plan the host upgrade.
+- [ ] Bump EOL image pins in the compose files: localstack 0.14.3, mariadb 10.5,
+      Elasticsearch 7.10.0.
+- [ ] Self-host telemetry still defaults on; it is documented with a working opt-out.
+      Decide: keep (documented) or default off.
+- [ ] Connect worker memory leak: protections hold (workers 270–430 MB of an 816 MB
+      cap; ~1 GB free on the host), root cause not found. The box has little
+      headroom; a larger instance costs money (board).
+
+## P6 — AI dedupe + digest (after activation)
+Status: SPEC NEEDS RE-AIM — BLOCKED(board sign-off). `specs/ai-dedupe-digest.md`.
+Canny gives AI dedupe away on every tier, so do not gate dedupe; keep the digest
+half; move the headline to ingestion (support conversations → feedback). Revisit
+after activation v1's 60-day read.
 
 ## Explicitly NOT doing (unless it feeds the above)
 - React 18 / MUI 5 / Webpack 5 / Java 17 migrations.

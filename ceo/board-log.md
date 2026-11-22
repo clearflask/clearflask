@@ -2,6 +2,79 @@
 
 _Newest first. BOARD ASK = waiting on Matus. DECISION = direction agreed._
 
+## 2026-11-21 — review and plan
+- Board approved the CEO's plan with "do it all": finish admin email verification,
+  close incident loose ends, refresh the cabinet, re-audit integrations, take small
+  distribution wins, consolidate board asks, and put activation before AI.
+  Minutes: `minutes/2026-11-21-review-and-plan.md`.
+- **DECISION: activation before AI.** `specs/activation.md` drafted. Key finding:
+  an owner gets **no email when a real user posts**, and the first-run checklist
+  renders at the bottom of the home page. AI work (P6) waits for activation v1.
+- **Admin email verification** walked through in the browser in all three modes
+  (mandatory blocks protected admin APIs with 403 until verified; optional shows a
+  notice and lets the user continue; off sends nothing and offers manual verify).
+  Switching an existing account to mandatory did not lock it out. Two bugs found
+  and fixed: the session cookie was dropped on plain-HTTP localhost/IP hosts
+  (affects some self-host setups, not clearflask.com; fix `2db32b46` on master
+  with a regression test), and the optional-mode notice rendered in the narrow
+  side menu (fixed on the feature branch). Invitation flows not yet walked through.
+- **Integrations audit:** Slack, Jira, GitLab and GitHub are all built with
+  production credentials configured; "finish Slack / Jira next" was stale. Honest
+  count is 5 (API, Google Analytics, Hotjar, Intercom Messenger, GitHub), Slack and
+  Jira in beta. GitLab outbound sync is not wired. Outbound webhooks exist but are
+  off with no UI. Zapier is claimed in copy but not built.
+- **Slack/Jira fixes** on a branch: an authorization flaw in Slack workspace linking
+  fixed; Slack hook for admin-created comments added; Jira sync no longer stops an
+  hour after linking (offline access + refresh-token rotation). Jira's 30-day
+  webhook refresh is still missing.
+- **Distribution batch** on a branch: marketing sitemap, Featurebase / Frill /
+  Released alternative pages (prices verified on vendor sites today), and a
+  "no tracked-user meter" pricing line. Found a copy inconsistency: the pricing
+  page sells Cloud $29 and Self-host $9 only, while comparison pages cite a $6
+  entry plan and a free plan.
+- **Revenue read (account records only; Stripe not read):** very few accounts in an
+  active paid monthly state, no active Cloud Starter subscribers, most active
+  accounts on lifetime or grandfathered plans. Signups fell to roughly a quarter of
+  their earlier monthly rate in October and November, coinciding with fake-signup
+  cleanup and registration CAPTCHA. Needs investigation before pricing moves.
+- **Production health:** up, health ok, Connect memory protections working
+  (workers well under their cap, ~1 GB free). Production Connect runs an
+  end-of-life Node.js release. The temporary incident probe watcher is gone from
+  the host (its one-month expiry passed) — that loose end is closed.
+- Housekeeping: pruned 7 dead worktrees and 10 merged local branches.
+- **BOARD ASKS — new:**
+  1. Review the email-verification screenshots; approve merge.
+  2. Approve deploying the Slack/Jira fixes, with a notice that Jira customers
+     re-link once.
+  3. Confirm Released (`releasedhub.com`) is `released.so`; decide the $6 / free-plan
+     copy on comparison pages.
+  4. Confirm whether the GitLab credential maintenance from October was completed
+     (production config has GitLab enabled).
+  5. Approve investigating the signup drop (is CAPTCHA turning away real users?).
+  6. Sign off activation v1 and answer the spec's open questions.
+- **BOARD ASKS — still open from earlier:**
+  7. PikaPods app request, Elestio email, Railway Open Source Partner form (since July).
+  8. G2 + Capterra signups; Google Search Console.
+  9. Stripe MRR + churn timeline.
+  10. Retire the $6 Cloud Starter tier?
+  11. AI spec re-aim sign-off (after activation).
+  12. Win-back note to the one site still embedding a dead board (CEO drafts,
+      board sends).
+
+## 2026-11-14 — invitation fix, release 2.7.3
+- Project invitation acceptance is now bound to the email the invitation was sent
+  to (`54e38702`, with a regression test). Deployed to the SaaS (skip-ITs deploy
+  succeeded) and released as **2.7.3** the same day.
+- Master CI failed afterwards on integration-test fixtures that predated
+  registration CAPTCHA; fixed 2026-11-15 (`eec257e8`..`25c323af`), CI green.
+
+## 2026-10-25 → 2026-10-31 — security response, releases 2.7.1 and 2.7.2
+- Recorded in `minutes/2026-10-*`: AI project-authorization fix, registration
+  CAPTCHA, OAuth destination binding, superadmin account deletion and abuse
+  controls (scoped to dashboard accounts only on 10-29), subscriber-notification
+  batching fix. Released 2.7.1 (10-26) and 2.7.2 (10-31). Incident detail is kept
+  privately, outside this cabinet.
+
 ## 2026-09-26 — outage: Connect workers leaked into swap
 - Board: "Site is down, figure it out, and make it more resilient." Granted
   `ssh clearflask`. Minutes: `minutes/2026-09-26-connect-outage.md`.
