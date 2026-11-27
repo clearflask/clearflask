@@ -132,6 +132,7 @@ public class AccountStoreIT extends AbstractIT {
                 null,
                 null,
                 null,
+                null,
                 null);
         store.createAccount(account).getIndexingFuture().get();
         assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
@@ -184,6 +185,17 @@ public class AccountStoreIT extends AbstractIT {
         assertEquals(Optional.of(account), store.getAccountByEmail(account.getEmail()));
         assertEquals(Optional.of(accountSession1), store.getSession(accountSession1.getSessionId()));
         assertEquals(Optional.empty(), store.getSession(accountSession2.getSessionId()));
+
+        Account beforeReset = account;
+        account = store.resetPassword(beforeReset, "reset-hash").orElseThrow();
+        assertNotNull(account.getPasswordResetGeneration());
+        assertEquals(Optional.empty(), store.getSession(accountSession1.getSessionId()));
+        assertEquals(Optional.empty(), store.resetPassword(beforeReset, "stale-reset-hash"));
+
+        Account afterReset = store.resetPassword(account, "second-reset-hash").orElseThrow();
+        assertNotEquals(account.getPasswordResetGeneration(), afterReset.getPasswordResetGeneration());
+        assertEquals(Optional.of(afterReset), store.getAccount(account.getAccountId(), false));
+        account = afterReset;
 
         String projectId = IdUtil.randomId();
         ImmutableSet<String> initialProjectIds = account.getProjectIds();
@@ -258,6 +270,7 @@ public class AccountStoreIT extends AbstractIT {
                 null,
                 null,
                 null,
+                null,
                 null);
         store.createAccount(account).getIndexingFuture().get();
 
@@ -315,6 +328,7 @@ public class AccountStoreIT extends AbstractIT {
                 null,
                 null,
                 ImmutableSet.of(),
+                null,
                 null,
                 null,
                 null,
@@ -404,6 +418,7 @@ public class AccountStoreIT extends AbstractIT {
                 null,
                 null,
                 null,
+                null,
                 null);
 
         ImmutableSet<String> digestOptOutExpected = ImmutableSet.of();
@@ -445,6 +460,7 @@ public class AccountStoreIT extends AbstractIT {
                 null,
                 null,
                 null,
+                null,
                 null);
         String accountId2 = store.genAccountId("POIPLMQWPEEBQWNBENWQMNVEM");
         Account account2 = new Account(
@@ -463,6 +479,7 @@ public class AccountStoreIT extends AbstractIT {
                 null,
                 null,
                 ImmutableSet.of(),
+                null,
                 null,
                 null,
                 null,
@@ -530,6 +547,7 @@ public class AccountStoreIT extends AbstractIT {
                 null,
                 null,
                 ImmutableSet.of(),
+                null,
                 null,
                 null,
                 null,

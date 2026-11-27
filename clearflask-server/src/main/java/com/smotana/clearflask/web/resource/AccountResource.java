@@ -447,7 +447,11 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
             return;
         }
 
-        TokenVerifyStore.Token token = tokenVerifyStore.createToken("adminPasswordReset", account.getAccountId());
+        if (!tokenVerifyStore.tryAcquireRecoveryEmail(account.getEmail())) {
+            return;
+        }
+
+        TokenVerifyStore.Token token = tokenVerifyStore.createToken(passwordResetScope(account));
         // Create compound token: accountId:token for password reset
         String compoundToken = account.getAccountId() + ":" + token.getToken();
         notificationService.onAdminForgotPassword(account, compoundToken);
@@ -487,22 +491,14 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
             throw new ApiException(Response.Status.BAD_REQUEST, "Invalid or expired reset link");
         }
 
-        boolean tokenValid = tokenVerifyStore.useToken(tokenStr, "adminPasswordReset", accountId);
-        if (!tokenValid) {
-            log.info("Password reset with invalid or expired token for accountId {}", accountId);
-            throw new ApiException(Response.Status.BAD_REQUEST, "Invalid or expired reset link");
-        }
+        Account account = accountStore.getAccount(accountId, false)
+                .filter(current -> !Strings.isNullOrEmpty(current.getPassword()))
+                .filter(current -> tokenVerifyStore.useToken(tokenStr, passwordResetScope(current)))
+                .orElseThrow(() -> new ApiException(Response.Status.BAD_REQUEST, "Invalid or expired reset link"));
 
-        Optional<Account> accountOpt = accountStore.getAccount(accountId, false);
-        if (!accountOpt.isPresent()) {
-            log.warn("Password reset token valid but account {} not found", accountId);
-            throw new ApiException(Response.Status.BAD_REQUEST, "Invalid or expired reset link");
-        }
-        Account account = accountOpt.get();
-
-        // Update the password
         String passwordHashed = passwordUtil.saltHashPassword(PasswordUtil.Type.ACCOUNT, accountPasswordReset.getPassword(), account.getEmail());
-        account = accountStore.updatePassword(account.getAccountId(), passwordHashed, Optional.empty());
+        account = accountStore.resetPassword(account, passwordHashed)
+                .orElseThrow(() -> new ApiException(Response.Status.BAD_REQUEST, "Invalid or expired reset link"));
         log.info("Password reset successful for account {}", account.getEmail());
 
         // Create a session for the user
@@ -515,6 +511,13 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
         }
 
         return account.toAccountAdmin(intercomUtil, chatwootUtil, planStore, cfSso, superAdminPredicate);
+    }
+
+    private static String[] passwordResetScope(Account account) {
+        String generation = account.getPasswordResetGeneration();
+        return generation == null
+                ? new String[]{"adminPasswordReset", account.getAccountId()}
+                : new String[]{"adminPasswordReset", account.getAccountId(), generation};
     }
 
     @PermitAll
@@ -654,7 +657,8 @@ public class AccountResource extends AbstractResource implements AccountApi, Acc
                 null,
                 null,
                 null,
-                Instant.now());
+                Instant.now(),
+                null);
         account = accountStore.createAccount(account).getAccount();
         log.info("REGISTRATION_CREATED accountId={} ip={}", account.getAccountId(), IpUtil.getRemoteIp(request, env));
 

@@ -16,6 +16,16 @@ public interface TokenVerifyStore {
 
     boolean useToken(String tokenStr, String... targetIdParts);
 
+    /** Reserves the next password recovery email for this recipient across server instances. */
+    boolean tryAcquireRecoveryEmail(String recipient);
+
+    @Value
+    @DynamoTable(type = Primary, partitionKeys = "recipientHash", rangePrefix = "recoveryEmailCooldown")
+    class RecoveryEmailCooldown {
+        String recipientHash;
+        long ttlInEpochSec;
+    }
+
     /**
      * Persisted form of a verification token. The {@link #token} stored on disk is the
      * server-side hash; the plaintext value is only ever returned to the caller of

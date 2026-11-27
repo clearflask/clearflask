@@ -87,6 +87,9 @@ public interface AccountStore {
 
     Account updatePassword(String accountId, String password, Optional<String> sessionToLeaveOpt);
 
+    /** Updates the verified credentials and invalidates the account's outstanding reset links. */
+    Optional<Account> resetPassword(Account expectedAccount, String passwordHash);
+
     /** Replaces the stored hash without touching sessions; for upgrading the hash scheme after a successful login. */
     Account rehashPassword(String accountId, String passwordHash);
 
@@ -247,6 +250,9 @@ public interface AccountStore {
          * cancellation semantics. Nullable for legacy rows; callers fall back to {@code created}.
          */
         Instant statusChangedAt;
+
+        /** Changes on password reset. Absent for accounts using the initial reset-token scope. */
+        String passwordResetGeneration;
 
         /**
          * Workaround for Self-Hosted ClearFlask to get the status of the subscription on-deman
