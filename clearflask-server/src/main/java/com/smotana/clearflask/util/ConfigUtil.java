@@ -70,7 +70,7 @@ public class ConfigUtil extends ManagedService {
     private Set<String> findEmails() {
         Set<String> emails = Sets.newHashSet();
         accountStore.listAllAccounts(account -> {
-            if ((config2 + "-" + config3).equals(account.getPlanid()) || (config2 + config3 + "-free").equals(account.getPlanid())) {
+            if ((config2 + config3 + "-" + config1 + "d").equals(account.getPlanid())) {
                 emails.add(account.getEmail());
             }
         });
