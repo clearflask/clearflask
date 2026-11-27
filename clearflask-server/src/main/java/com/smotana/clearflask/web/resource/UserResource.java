@@ -134,14 +134,19 @@ public class UserResource extends AbstractResource implements UserApi, UserAdmin
             return;
         }
 
-        if (userOpt.get().getSsoGuid() != null) {
-            log.info("Forgot password for sso user {}", userOpt.get().getEmail());
+        UserModel user = userOpt.get();
+        if (user.getSsoGuid() != null) {
+            log.info("Forgot password for sso user {}", user.getEmail());
+            return;
+        }
+
+        if (Strings.isNullOrEmpty(user.getEmail()) || !tokenVerifyStore.tryAcquireRecoveryEmail(user.getEmail())) {
             return;
         }
 
         notificationService.onForgotPassword(
                 projectOpt.get().getVersionedConfigAdmin().getConfig(),
-                userOpt.get());
+                user);
     }
 
     @PermitAll

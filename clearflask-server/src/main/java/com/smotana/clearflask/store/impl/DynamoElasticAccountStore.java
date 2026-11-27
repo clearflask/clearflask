@@ -932,6 +932,44 @@ public class DynamoElasticAccountStore extends ManagedService implements Account
         return account;
     }
 
+    @Extern
+    @Override
+    public Optional<Account> resetPassword(Account expectedAccount, String passwordHash) {
+        String accountId = expectedAccount.getAccountId();
+        String generation = UUID.randomUUID().toString();
+        String expectedGeneration = expectedAccount.getPasswordResetGeneration();
+        ValueMap values = new ValueMap()
+                .withString(":password", passwordHash)
+                .withString(":expectedPassword", expectedAccount.getPassword())
+                .withString(":expectedEmail", expectedAccount.getEmail())
+                .withString(":generation", generation);
+        String generationCondition = "attribute_not_exists(#generation)";
+        if (expectedGeneration != null) {
+            values.withString(":expectedGeneration", expectedGeneration);
+            generationCondition = "#generation = :expectedGeneration";
+        }
+
+        Account account;
+        try {
+            account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()
+                            .withPrimaryKey(accountSchema.primaryKey(Map.of("accountId", accountId)))
+                            .withConditionExpression("#password = :expectedPassword AND #email = :expectedEmail AND " + generationCondition)
+                            .withUpdateExpression("SET #password = :password, #generation = :generation")
+                            .withNameMap(new NameMap()
+                                    .with("#password", "password")
+                                    .with("#email", "email")
+                                    .with("#generation", "passwordResetGeneration"))
+                            .withValueMap(values)
+                            .withReturnValues(ReturnValue.ALL_NEW))
+                    .getItem());
+        } catch (ConditionalCheckFailedException ex) {
+            return Optional.empty();
+        }
+        accountCache.put(accountId, Optional.of(account));
+        revokeSessions(accountId, Optional.empty());
+        return Optional.of(account);
+    }
+
     @Override
     public Account rehashPassword(String accountId, String password) {
         Account account = accountSchema.fromItem(accountSchema.table().updateItem(new UpdateItemSpec()

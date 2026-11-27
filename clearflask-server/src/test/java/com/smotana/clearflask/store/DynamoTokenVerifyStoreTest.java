@@ -79,6 +79,20 @@ public class DynamoTokenVerifyStoreTest extends AbstractTest {
     }
 
     @Test(timeout = 10_000L)
+    public void testRecoveryEmailCooldown() {
+        assertTrue(store.tryAcquireRecoveryEmail("Member@example.com"));
+        assertFalse(store.tryAcquireRecoveryEmail("member@EXAMPLE.COM"));
+        assertTrue(store.tryAcquireRecoveryEmail("other@example.com"));
+    }
+
+    @Test(timeout = 10_000L)
+    public void testRecoveryEmailCanBeReservedAfterExpiry() throws Exception {
+        configSet(DynamoTokenVerifyStore.Config.class, "recoveryEmailCooldown", "PT0S");
+        assertTrue(store.tryAcquireRecoveryEmail("member@example.com"));
+        assertTrue(store.tryAcquireRecoveryEmail("member@example.com"));
+    }
+
+    @Test(timeout = 10_000L)
     public void testUseTokenRejectsEmptyAndNull() {
         String targetId = IdUtil.randomId();
         assertFalse(store.useToken(null, targetId));

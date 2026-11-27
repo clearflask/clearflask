@@ -4,6 +4,9 @@ package com.smotana.clearflask.store.impl;
 
 import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
+import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
+import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.Hashing;
@@ -25,6 +28,7 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.Locale;
 
 @Slf4j
 @Singleton
@@ -39,6 +43,9 @@ public class DynamoTokenVerifyStore implements TokenVerifyStore {
 
         @DefaultValue("PT15M")
         Duration tokenExpiry();
+
+        @DefaultValue("PT1M")
+        Duration recoveryEmailCooldown();
     }
 
     @Inject
@@ -49,10 +56,12 @@ public class DynamoTokenVerifyStore implements TokenVerifyStore {
     private final SecureRandom secureRandom = new SecureRandom();
 
     private TableSchema<Token> tokenSchema;
+    private TableSchema<RecoveryEmailCooldown> cooldownSchema;
 
     @Inject
     private void setup() {
         tokenSchema = singleTable.parseTableSchema(Token.class);
+        cooldownSchema = singleTable.parseTableSchema(RecoveryEmailCooldown.class);
     }
 
     @Extern
@@ -92,6 +101,25 @@ public class DynamoTokenVerifyStore implements TokenVerifyStore {
         return MessageDigest.isEqual(expected, actual)
                 && targetId.equals(deletedToken.getTargetId())
                 && deletedToken.getTtlInEpochSec() >= Instant.now().getEpochSecond();
+    }
+
+    @Extern
+    @Override
+    public boolean tryAcquireRecoveryEmail(String recipient) {
+        Instant now = Instant.now();
+        String recipientHash = hashToken(recipient.toLowerCase(Locale.ROOT));
+        RecoveryEmailCooldown cooldown = new RecoveryEmailCooldown(
+                recipientHash, now.plus(config.recoveryEmailCooldown()).getEpochSecond());
+        try {
+            cooldownSchema.table().putItem(new PutItemSpec()
+                    .withItem(cooldownSchema.toItem(cooldown))
+                    .withConditionExpression("attribute_not_exists(#ttl) OR #ttl <= :now")
+                    .withNameMap(new NameMap().with("#ttl", "ttlInEpochSec"))
+                    .withValueMap(new ValueMap().withLong(":now", now.getEpochSecond())));
+            return true;
+        } catch (ConditionalCheckFailedException ex) {
+            return false;
+        }
     }
 
     private String genTokenPlaintext() {
